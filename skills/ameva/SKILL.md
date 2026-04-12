@@ -1,6 +1,6 @@
 ---
 name: ameva
-description: "Ameva (Iter 34) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
+description: "Ameva (Iter 35) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
 condition: "사용자가 Corpus Registry에 등록된 도메인 질문을 할 때 (현재: WTP/VALUE GAP/L1-L5/Career Mirror, viral growth/K-factor, SaaS/AI monetization/pricing). 미등록 도메인은 entity 모드로 실행 + miss 카운터 증가 → ≥1회 시 Auto-Corpus Builder 자동 트리거. Corpus Router: primary trigger 매칭 → confidence-scored; related_domain 매칭 → confidence=0.30 + context modifier filter; no-match → entity fallback."
 termination: "모든 핵심 주장에 [GROUNDED:doc_id] 또는 [UNCERTAIN+검증방법] 태그 부여 완료 AND active_corpus.scope_gate 통과 AND Outward Profile (user_domain_knowledge 포함) 적용 완료 AND Stage 2 Q0+corpus.sycophancy_checks 실행 완료 AND Pre-output Quality Gate 12개 체크 통과 (product-scope WARN + dual-corpus: [X-GROUNDED] 태그 + primary-secondary 모순 검사 포함)"
 status: stable
@@ -1268,6 +1268,15 @@ else:
 
 - Mode Gate → Stage 1 Draft → Stage 2 Adversarial → Stage 3 Deliver
 - Claim Grounding Protocol 적용 (Stage 1 Draft 중)
+- Stage 2 Adversarial — corpus_mode=="corpus" 시: Q0 meta-sycophancy → `active_corpus.sycophancy_checks` (Q1~Q7) 자동 주입 **(P14 신규: Mode A도 Step 4 동일 프로토콜 적용)**
+  ```
+  corpus_mode == "corpus":
+      Q0 meta-sycophancy check (항상 먼저)
+      for Q in active_corpus.sycophancy_checks:
+          [PASS: {evidence}] 또는 [FLAGGED: {오류} + {수정}]
+  corpus_mode == "generic":
+      /conceptual 기본 adversarial Q0-Q6 적용 (corpus 없으므로 domain check 생략)
+  ```
 - Step 0 Outward Profile + user_domain_knowledge → Stage 3 Deliver에 적용
 - Announce:
   ```
@@ -1291,6 +1300,7 @@ WebSearch (mcp__websearch__search_web) 최소 1회
 Blind spots: {corpus vs external 간 gap}
 ```
 
+- Stage 2 Adversarial — corpus_mode=="corpus" 시: Q0 + `active_corpus.sycophancy_checks` 주입 **(P14 신규: Mode B도 동일 프로토콜)**
 - Announce:
   ```
   [ameva: Mode B | corpus={doc_ids} | /conceptual + RAG | {epistemic_basis}/{causal_model}]
@@ -2257,7 +2267,7 @@ L4 진단 시 가격은 ₩39K-59K 구간, ₩49K 티어 권장. [GROUNDED: P2]
 | 도메인 | WTP/VALUE GAP | 범용 | B2B SaaS WTP |
 | L2 dispatch | ✅ corpus-weighted | ✅ 동적 | ❌ |
 | Claim grounding | [GROUNDED:doc_id] 필수 | OBSERVED/INFERRED | 없음 |
-| Stage 2 Adversarial | WTP sycophancy 7-check | 범용 6Q | 없음 |
+| Stage 2 Adversarial | corpus.sycophancy_checks 전 모드 주입 (Q0+Q1~Q7, P14) | 범용 6Q | 없음 |
 | 사용 시 | WTP/VALUE GAP 모든 질문 | 범용 추론 | B2B WTP 검증 설계 |
 
 ## 새 도메인 Corpus 등록 가이드
