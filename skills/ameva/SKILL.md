@@ -1,6 +1,6 @@
 ---
 name: ameva
-description: "Ameva (Iter 42) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
+description: "Ameva (Iter 43) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17), Korean postposition particle stripping — 조사 제거로 한국어 쿼리 매칭 복구, confidence threshold 0.25→0.15 (P22). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
 condition: "사용자가 Corpus Registry에 등록된 도메인 질문을 할 때 (현재: WTP/VALUE GAP/L1-L5/Career Mirror, viral growth/K-factor, SaaS/AI monetization/pricing). 미등록 도메인은 entity 모드로 실행 + miss 카운터 증가 → ≥1회 시 Auto-Corpus Builder 자동 트리거. Corpus Router: primary trigger 매칭 → confidence-scored; related_domain 매칭 → confidence=0.30 + context modifier filter; no-match → entity fallback."
 termination: "모든 핵심 주장에 [GROUNDED:doc_id] 또는 [UNCERTAIN+검증방법] 태그 부여 완료 AND active_corpus.scope_gate 통과 AND Outward Profile (user_domain_knowledge 포함) 적용 완료 AND Stage 2 Q0+corpus.sycophancy_checks 실행 완료 AND Pre-output Quality Gate 12개 체크 통과 (product-scope WARN + dual-corpus: [X-GROUNDED] 태그 + primary-secondary 모순 검사 포함)"
 status: stable
@@ -485,8 +485,25 @@ if session_corpus_state:
 # 1. Query에서 도메인 신호 추출 (토큰 + 멀티워드 구문 모두 추출)
 query_norm = query.lower().replace("-", "").replace("_", "")
 
-# 토큰 레벨 신호 (개별 단어)
-token_signals = [normalize(t) for t in query.split() if len(t) > 1]
+# P22: Korean postposition particle stripping
+# Prevents "K-factor를" → "kfactor를" from failing to match trigger "k-factor" → "kfactor"
+# Korean particles attach directly to nouns/proper nouns; stripping recovers the base token.
+import re
+_KO_PARTICLES = re.compile(
+    r'(가|이|는|은|를|을|의|와|과|로|으로|에서|에게|에|서|도|만|까지|부터|한테|처럼|마다)$'
+)
+def _strip_particles(token_norm: str) -> str:
+    return _KO_PARTICLES.sub('', token_norm)
+
+# 토큰 레벨 신호 (개별 단어) — both raw and particle-stripped forms
+token_signals = []
+for t in query.split():
+    if len(t) > 1:
+        n = normalize(t)
+        token_signals.append(n)
+        stripped = _strip_particles(n)
+        if stripped != n and len(stripped) > 1:
+            token_signals.append(stripped)   # e.g. "kfactor를" → also add "kfactor"
 
 # 구문 레벨 신호 (멀티워드 trigger 매칭 — "growth loop", "k factor" 등)
 # 각 trigger를 query 전체 텍스트에서 substring 검색으로 보강
@@ -638,10 +655,10 @@ elif len(matched) == 0:
         → Step 0 직행 (Corpus Pre-step 실행 안 함 — 현재 쿼리는 generic)
 
 # confidence gate (매칭 있어도 신뢰도 낮으면 generic)
-# threshold = 0.25 (recall-based 공식 기준: 쿼리 신호 4개 중 1개 매칭 = 통과)
-# 근거: "WTP sales 전략" 같은 cross-domain 쿼리에서 WTP 1개만 매칭돼도 wtp corpus가 적합
-# 0.5 → false negative 과다 (짧은 쿼리에서 domain signal 1개 = 0.25-0.33)
-if active_corpus and confidence < 0.25:
+# threshold = 0.15 (P22: lowered from 0.25 — IDF recall denominator grows with query length)
+# 근거: 6+ token 쿼리에서 2개 high-IDF 매칭도 conf~0.17 → 0.25 threshold false negative 과다
+# 벤치마크 검증: 22/22 PASS at 0.15 (experiments/hypothesis_validation/ameva_benchmark.py)
+if active_corpus and confidence < 0.15:
     corpus_mode = "generic"
     secondary_corpus = None
     emit: "[CORPUS ROUTER] Low confidence ({confidence:.2f}) → entity mode (Corpus Pre-step skipped)"
