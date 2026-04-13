@@ -1,6 +1,6 @@
 ---
 name: ameva
-description: "Ameva (Iter 41) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
+description: "Ameva (Iter 42) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
 condition: "사용자가 Corpus Registry에 등록된 도메인 질문을 할 때 (현재: WTP/VALUE GAP/L1-L5/Career Mirror, viral growth/K-factor, SaaS/AI monetization/pricing). 미등록 도메인은 entity 모드로 실행 + miss 카운터 증가 → ≥1회 시 Auto-Corpus Builder 자동 트리거. Corpus Router: primary trigger 매칭 → confidence-scored; related_domain 매칭 → confidence=0.30 + context modifier filter; no-match → entity fallback."
 termination: "모든 핵심 주장에 [GROUNDED:doc_id] 또는 [UNCERTAIN+검증방법] 태그 부여 완료 AND active_corpus.scope_gate 통과 AND Outward Profile (user_domain_knowledge 포함) 적용 완료 AND Stage 2 Q0+corpus.sycophancy_checks 실행 완료 AND Pre-output Quality Gate 12개 체크 통과 (product-scope WARN + dual-corpus: [X-GROUNDED] 태그 + primary-secondary 모순 검사 포함)"
 status: stable
@@ -758,8 +758,28 @@ Secondary corpus (secondary_corpus) — 경량 실행:
 | 없음 | `[UNCERTAIN+검증방법]` | 항상 검증방법 병기 |
 
 ```
-1. Query 분류 (taxonomy):
-   active_corpus.taxonomy_groups 기준으로 질문 유형 감지
+0. RWR Pre-step — Query를 corpus taxonomy 언어로 번역 (P21 신규 — mandatory, 항상 실행)
+   """
+   원 질문이 표면어(surface term)를 사용할 경우 taxonomy_groups 매칭이 실패한다.
+   active_corpus.rwr_hints로 표면어를 도메인 taxonomy 용어로 번역한 후 step 1 진입.
+   (RRR: Rewrite-Retrieve-Read, arXiv:2305.14283)
+   """
+   rewritten_query = query  # 기본: 원 질문
+   applied_hints = []
+   for surface_term, taxonomy_term in active_corpus.rwr_hints.items():
+       if normalize(surface_term) in normalize(query):
+           rewritten_query = rewritten_query.replace(surface_term, taxonomy_term)
+           applied_hints.append(f"{surface_term} → {taxonomy_term}")
+
+   if applied_hints:
+       emit: f"[RWR] 표면어 번역: {applied_hints} → query 재작성"
+   else:
+       emit: f"[RWR] 번역 불필요 (표면어 없음) — 원 질문 사용"
+
+   # 이후 모든 단계는 rewritten_query를 query로 사용 (step 1-5)
+
+1. Query 분류 (taxonomy) — rewritten_query 기반:
+   active_corpus.taxonomy_groups 기준으로 질문 유형 감지 (rewritten_query 사용)
    → 해당 그룹의 doc_ids를 우선 로드 (복합 질문 → 다중 그룹 동시)
    (wtp 예시: 이론→[T1-T4], 진단→[D1-D4], 제품→[P1-P5], 전략→[S1-S5], 검증→[V1-V3])
 
@@ -785,15 +805,20 @@ Secondary corpus (secondary_corpus) — 경량 실행:
 
 **Corpus Query Rewrite (RRR — Rewrite-Retrieve-Read, arXiv:2305.14283)**:
 
-```
-원 질문이 모호하거나 도메인 이론 언어로 번역이 필요한 경우, corpus 검색 전에 rewrite.
-active_corpus.rwr_hints 번역 테이블 사용:
+P21: Step 0(RWR Pre-step)로 **공식 통합** — 이제 조건부가 아닌 mandatory 단계.
+taxonomy_groups는 도메인 용어 기준이므로, 표면어 쿼리는 반드시 번역 후 doc 선택에 진입해야 함.
 
+```
 예 (corpus: wtp):
-  원 질문: "이 제품 WTP가 얼마나 될까요?"
-  Rewrite: "L1-L5 어느 레벨인지, Gap_Intensity = Functional + Social_Position 어느 쪽이
-            지배적인지, Attainability 판단 근거, Social_Amplifier 조건 충족 여부"
-  → 이 rewritten query로 doc_ids 선택
+  원 질문: "이 제품 돈 낼 의향이 얼마나 될까요?"  ← 표면어
+  rwr_hints: "돈 낼 의향" → "WTP, D(WTP)_instantaneous"
+  rewritten_query: "이 제품 WTP, D(WTP)_instantaneous가 얼마나 될까요?"
+  → taxonomy: 이론[T1,T2] + 진단[D1] 선택 (표면어만 있었다면 taxonomy 미매칭 위험)
+
+  원 질문: "잘 나가는 사람처럼 보이고 싶어서 구매하는 게 WTP에 영향을 미치나요?"
+  rwr_hints: "잘 나가는 사람" → "Social_Amplifier, reference group"
+  rewritten_query: "Social_Amplifier, reference group이 WTP에 영향을 미치나요?"
+  → taxonomy: 이론[T2] (Social_Amplifier 정의 포함) 선택
 ```
 
 **Corpus Tool 호출 형식**:
