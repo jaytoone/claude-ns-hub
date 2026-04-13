@@ -1,6 +1,6 @@
 ---
 name: ameva
-description: "Ameva (Iter 40) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
+description: "Ameva (Iter 41) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
 condition: "사용자가 Corpus Registry에 등록된 도메인 질문을 할 때 (현재: WTP/VALUE GAP/L1-L5/Career Mirror, viral growth/K-factor, SaaS/AI monetization/pricing). 미등록 도메인은 entity 모드로 실행 + miss 카운터 증가 → ≥1회 시 Auto-Corpus Builder 자동 트리거. Corpus Router: primary trigger 매칭 → confidence-scored; related_domain 매칭 → confidence=0.30 + context modifier filter; no-match → entity fallback."
 termination: "모든 핵심 주장에 [GROUNDED:doc_id] 또는 [UNCERTAIN+검증방법] 태그 부여 완료 AND active_corpus.scope_gate 통과 AND Outward Profile (user_domain_knowledge 포함) 적용 완료 AND Stage 2 Q0+corpus.sycophancy_checks 실행 완료 AND Pre-output Quality Gate 12개 체크 통과 (product-scope WARN + dual-corpus: [X-GROUNDED] 태그 + primary-secondary 모순 검사 포함)"
 status: stable
@@ -1587,6 +1587,56 @@ emit("[L2-AGG] " + str(len(l2_results)) + " skills | " + str(len(consensus)) + "
 
 **L1(2nd) Stage 1은 aggregator 역할**: `aggregated_context`를 기반으로 합의 주장은 강조, 충돌은 [X-CONFLICT]로 표면화, 불확실은 [UNCERTAIN]으로 처리.
 단일 L2 스킬인 경우 (len(l2_results)==1): 직접 전달, aggregation 없음.
+
+**P20: extract_shared_claims / contradiction 구현 명세**
+
+두 함수는 LLM 추론으로 실행한다 (정규식 파싱 아님 — 의미론적 판단 필요).
+
+```python
+def extract_shared_claims(result1: str, result2: str) -> list[str]:
+    """
+    두 L2 결과가 공통으로 다루는 주제/주장을 추출한다.
+    
+    알고리즘:
+    1. result1에서 핵심 주장 목록 추출 (LLM: "이 텍스트의 주요 주장 5개를 bullet로")
+    2. result2에서 동일 추출
+    3. 두 목록의 의미론적 교집합 반환
+       — "교집합"은 동의어/다른 표현이어도 같은 개념이면 포함
+       — e.g., result1: "K-factor ≥ 1 필요" ↔ result2: "바이럴 계수가 1 초과해야"  → 동일 주장
+    4. 반환 형식: ["주장1 (공통)", "주장2 (공통)", ...]
+    
+    Dual-corpus 변종 (corpus_mode=="dual"):
+    — primary corpus 문서에서 추출한 주장 vs secondary corpus 문서 주장 교차
+    — 각 주장에 corpus 출처 태그: "[wtp: X] ↔ [marketing: Y] → 공통: Z"
+    """
+
+def contradiction(claim: str, result1: str, result2: str) -> bool:
+    """
+    두 L2 결과가 동일 주장에 대해 서로 반대 입장을 취하는지 판단한다.
+    
+    판단 기준 (LLM 추론):
+    - CONTRADICT: 한쪽이 X를 주장하고 다른쪽이 NOT-X를 명시적/암묵적으로 주장
+      e.g., result1: "WTP는 L-level로 측정" vs result2: "WTP는 가격 민감도로만 측정"
+    - COMPATIBLE: 다른 표현이지만 논리적으로 공존 가능
+      e.g., result1: "K-factor 높이려면 activation 우선" vs result2: "loop velocity도 중요"
+    - COMPLEMENTARY: 각자 다른 각도에서 같은 진실을 부분적으로 설명
+      → COMPATIBLE로 처리
+
+    반환: True (CONTRADICT) | False (COMPATIBLE/COMPLEMENTARY)
+
+    충돌 심각도 (contradiction=True일 때):
+    - HARD: 수치/정의 수준 충돌 → [X-CONFLICT:HARD] — 사용자에게 반드시 노출
+    - SOFT: 강조점 차이 / 맥락 의존 → [X-CONFLICT:SOFT] — 주석으로 처리
+    emit: "[L2-CONFLICT:{severity}] {claim[:60]} | {s1} vs {s2}"
+    ```
+    
+    Dual-corpus 충돌 해소 우선순위:
+    1. 두 corpus의 primary_domain이 다르면 → COMPLEMENTARY (각자 관할 영역)
+       e.g., wtp(demand_theory) vs marketing_growth(go_to_market): 충돌 아님
+    2. 같은 primary_domain에서 충돌 → HARD 검사 필요
+    3. corpus.layer 차이 (L2 vs L3) → L3이 더 specific — 충돌 아님, L3 우선
+    """
+```
 
 
 
