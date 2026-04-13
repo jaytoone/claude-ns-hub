@@ -1,6 +1,6 @@
 ---
 name: ameva
-description: "Ameva (Iter 37) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 — deprecated_claims 필드 기반 Stage 1.5 Step C + Quality Gate (P16). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
+description: "Ameva (Iter 38) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
 condition: "사용자가 Corpus Registry에 등록된 도메인 질문을 할 때 (현재: WTP/VALUE GAP/L1-L5/Career Mirror, viral growth/K-factor, SaaS/AI monetization/pricing). 미등록 도메인은 entity 모드로 실행 + miss 카운터 증가 → ≥1회 시 Auto-Corpus Builder 자동 트리거. Corpus Router: primary trigger 매칭 → confidence-scored; related_domain 매칭 → confidence=0.30 + context modifier filter; no-match → entity fallback."
 termination: "모든 핵심 주장에 [GROUNDED:doc_id] 또는 [UNCERTAIN+검증방법] 태그 부여 완료 AND active_corpus.scope_gate 통과 AND Outward Profile (user_domain_knowledge 포함) 적용 완료 AND Stage 2 Q0+corpus.sycophancy_checks 실행 완료 AND Pre-output Quality Gate 12개 체크 통과 (product-scope WARN + dual-corpus: [X-GROUNDED] 태그 + primary-secondary 모순 검사 포함)"
 status: stable
@@ -502,6 +502,34 @@ def extract_phrase_signals(query_norm, corpus_triggers):
 
 signals = token_signals  # 기본: 토큰 레벨
 
+# P17: IDF weighting — corpus-specific triggers get confidence boost vs generic terms
+# "빠짐", "Ethical_Coefficient" → appear in 1 corpus → high IDF → high confidence
+# "gap", "growth", "전략" → appear in many corpora → low IDF → low confidence
+import math
+_trigger_freq = {}  # normalized_trigger → count of corpora containing it
+for _c in CORPUS_REGISTRY:
+    _seen = set()
+    for _t in _c.trigger:
+        _tn = normalize(_t)
+        if _tn not in _seen:
+            _trigger_freq[_tn] = _trigger_freq.get(_tn, 0) + 1
+            _seen.add(_tn)
+_N = max(len(CORPUS_REGISTRY), 2)  # avoid log(0); floor at 2
+
+def _idf(t_norm):
+    """log(N / df + 1), clamped [0.3, 2.5]
+    - Generic multi-corpus terms → df high → IDF ~0.3
+    - Corpus-specific terms → df=1 → IDF = log(N+1) ~1.4 for N=3
+    """
+    df = _trigger_freq.get(t_norm, 1)
+    return max(0.3, min(2.5, math.log(_N / df + 1)))
+
+def _idf_conf(overlap_tokens, all_signals):
+    """IDF-weighted recall: Σidf(matched) / Σidf(all_query_signals)"""
+    numer = sum(_idf(t) for t in overlap_tokens)
+    denom = sum(_idf(t) for t in all_signals) or 1.0
+    return min(numer / denom, 1.0)
+
 # 2. Corpus Registry 매칭 (토큰 + 구문 매칭 통합)
 matched = []
 for corpus in CORPUS_REGISTRY:
@@ -517,14 +545,14 @@ for corpus in CORPUS_REGISTRY:
 # 3. 선택 로직 + confidence 계산
 if len(matched) == 1:
     best = matched[0]
-    confidence = best.overlap_count / len(signals)  # recall-based: 쿼리 신호 중 몇 개가 매칭됐는가
+    confidence = _idf_conf(best[2], signals)  # P17: IDF-weighted recall (specific triggers boost)
     active_corpus = best.corpus
 elif len(matched) > 1:
     sorted_matched = sorted(matched, key=lambda x: x[1], reverse=True)
     primary_m = sorted_matched[0]
     secondary_m = sorted_matched[1]
-    primary_conf = primary_m[1] / len(signals)
-    secondary_conf = secondary_m[1] / len(signals)
+    primary_conf = _idf_conf(primary_m[2], signals)    # P17: IDF-weighted
+    secondary_conf = _idf_conf(secondary_m[2], signals)  # P17: IDF-weighted
 
     if primary_conf >= 0.25 and secondary_conf >= 0.20:
         # DUAL-CORPUS MODE: both corpora have sufficient signal strength
