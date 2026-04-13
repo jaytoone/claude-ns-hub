@@ -1,6 +1,6 @@
 ---
 name: ameva
-description: "Ameva (Iter 39) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
+description: "Ameva (Iter 40) — Entity에 Corpus Registry를 추가한 도메인 전문가 계층. 등록된 도메인(WTP/VALUE GAP/L1-L5, viral growth/K-factor, SaaS monetization/pricing)에 대해 논문급 grounding을 보장: 모든 주장에 [GROUNDED:doc_id] 필수, 12-check Quality Gate, dual-corpus cross-domain mode (P5), corpus-agnostic L2 pass-through (P6), draft corpus status guard (P7), CRAG-lite heuristic retrieval check (P8), multi-turn routing continuity (P9), MoA L2 explicit aggregation (P10), SELF-RAG [IsUse]+multi-doc grounding (P11), corpus-aware template routing (P12), evidence grade draft-downgrade (P13), corpus sycophancy 전 모드 주입 (P14), Generic Fallback 3단계 템플릿+intensity markers+closure (P15), corpus-agnostic deprecated 주장 체크 (P16), Corpus Router IDF weighting — corpus-specific triggers 신뢰도 부스트, generic 다중출현 토큰 패널티 (P17). 미등록 도메인은 entity fallback + Auto-Corpus Builder 자동 트리거. /entity가 일반 추론이면 /ameva는 도메인 전문가 — grounding 없는 도메인 질문엔 entity, corpus 기반 검증이 필요하면 ameva."
 condition: "사용자가 Corpus Registry에 등록된 도메인 질문을 할 때 (현재: WTP/VALUE GAP/L1-L5/Career Mirror, viral growth/K-factor, SaaS/AI monetization/pricing). 미등록 도메인은 entity 모드로 실행 + miss 카운터 증가 → ≥1회 시 Auto-Corpus Builder 자동 트리거. Corpus Router: primary trigger 매칭 → confidence-scored; related_domain 매칭 → confidence=0.30 + context modifier filter; no-match → entity fallback."
 termination: "모든 핵심 주장에 [GROUNDED:doc_id] 또는 [UNCERTAIN+검증방법] 태그 부여 완료 AND active_corpus.scope_gate 통과 AND Outward Profile (user_domain_knowledge 포함) 적용 완료 AND Stage 2 Q0+corpus.sycophancy_checks 실행 완료 AND Pre-output Quality Gate 12개 체크 통과 (product-scope WARN + dual-corpus: [X-GROUNDED] 태그 + primary-secondary 모순 검사 포함)"
 status: stable
@@ -1068,6 +1068,97 @@ Step 5: Corpus Promotion Pipeline (Step 4 통과 후 자동 실행)
 ```
 - corpus_mode="generic" 때마다 로그 업데이트 → count ≥2 → 다음 세션 시작 시 자동 트리거
 - `rotation_on_resume` 방식 (live-inf 참조): 세션 시작 시 miss log 체크 → threshold 초과 도메인 있으면 Step 2 자동 실행 (인간 개입 없음 — Step 4 QA + Step 5 Promotion까지 자동)
+
+---
+
+### 새 도메인 Corpus 등록 가이드 (P19 — Manual Registration)
+
+**언제 사용**: Auto-Corpus Builder(자동)가 아닌 사람이 직접 새 corpus를 등록할 때.
+레퍼런스가 이미 있거나, 도메인 이론을 잘 아는 저자가 고품질 corpus를 수작업으로 작성할 때 권장.
+
+#### Step 1: 도메인 분류 (Domain Hierarchy 매핑)
+
+```
+Domain Hierarchy 트리 참조:
+  demand_theory / go_to_market / product / research
+
+판단 기준:
+  "이 도메인의 핵심 질문은 무엇인가?"
+  - WHY people buy → demand_theory (e.g., WTP, JTBD, mental accounting)
+  - HOW to reach market → go_to_market (e.g., growth loops, sales)
+  - WHAT to build → product (e.g., PLG, PMF)
+  - HOW to know → research (e.g., interviews, experiments)
+
+layer 선택:
+  L1 = 순수 이론 (공리, 공식, 원리만 — 예: 경제학 수요 함수)
+  L2 = 응용 이론 (L1을 특정 도메인에 적용 — 예: WTP in SaaS)
+  L3 = 제품 특화 (특정 제품 수치/설계 — product_docs 사용)
+```
+
+#### Step 2: Trigger 설계 체크리스트
+
+```
+□ 최소 5개 트리거 정의 (다국어 포함: 한글 + 영어)
+□ corpus-specific 트리거 ≥1개 (IDF ≥1.0 가능한 고유 용어)
+    예: "빠짐", "Ethical_Coefficient" (WTP만 사용), "K-factor" (마케팅만 사용)
+□ 일반 용어(gap, growth, 전략)만으로 구성 금지 — IDF 낮아 false positive 발생
+□ 멀티워드 트리거 포함 (예: "growth loop", "viral coefficient")
+    → extract_phrase_signals() 멀티워드 매칭으로 처리됨
+□ 다른 corpus trigger와 중복 점검 → 중복 많을수록 dual-corpus 오발동 위험
+```
+
+#### Step 3: 필수 필드 작성 기준
+
+| 필드 | 최소 기준 | 품질 기준 (auto-promote 통과) |
+|------|----------|------------------------------|
+| `trigger` | 5개 이상 | corpus-specific ≥1개 (IDF≥1.0) |
+| `core_theory` | 공백 아님 | 수식 또는 형식 정의 포함 |
+| `scope_gate` | 2개 이상 | yes/no 형식 ("~인가?") |
+| `sycophancy_checks` | 3개 이상 | 도메인 특화 오류 패턴 — 일반 주의사항 금지 |
+| `gap_patterns` | 2개 이상 | 감지 신호 + 의미 모두 명시 |
+| `rwr_hints` | 3쌍 이상 | 표면어 → taxonomy 용어 번역 |
+| `docs` | 최소 T1(이론) + T4(반증) | T1+T4+D1+S1 = 4-doc 기본 구조 권장 |
+
+#### Step 4: Routing 검증 (등록 전 필수)
+
+```python
+# 샘플 쿼리 3개로 Corpus Router 시뮬레이션:
+test_queries = [
+    "{domain} 핵심 개념 질문",        # 명시적 트리거 포함
+    "{related_term} 관련 질문",       # 간접 트리거 (cross-domain)
+    "완전히 다른 도메인 질문",          # false positive 방지 확인
+]
+
+for q in test_queries:
+    result = corpus_router_simulate(q, CORPUS_REGISTRY)
+    # 1번: confidence ≥ 0.30 (매칭 확인)
+    # 2번: confidence ≥ 0.25 또는 related_domain 매칭
+    # 3번: corpus_mode == "generic" 이어야 함 (false positive 없음)
+```
+
+#### Step 5: 흔한 등록 실수 5가지
+
+```
+❌ M1: trigger에 일반 단어만 포함
+   예: ["sales", "strategy", "growth"] → 여러 corpus와 충돌 → dual-corpus 오발동
+   수정: corpus-specific 고유 용어 추가 (해당 도메인 전용 기술 용어)
+
+❌ M2: sycophancy_checks가 일반 주의사항
+   예: Q1: "틀린 정보를 말하지 않았는가?" → 도메인과 무관 → Stage 2에서 동작 안 함
+   수정: 해당 도메인의 구체적 오류 패턴 (e.g., WTP: "enthusiasm≠WTP 혼동")
+
+❌ M3: scope_gate 없이 등록
+   → 모든 질문에 corpus 적용 → 무관한 도메인에서 false grounding
+   수정: 적용 조건 2개 이상 명시, out_action으로 대안 프레임워크 제시
+
+❌ M4: status: stable로 직접 설정 (draft 생략)
+   → auto-promote 기준(Step 4 QA) 미검증 corpus가 운영 진입
+   수정: 항상 status: draft로 시작 → Step 4 QA → 6/6 통과 후 stable
+
+❌ M5: product_docs에 일반 이론 docs 포함
+   → 일반 질문에서도 PRODUCT-SCOPE WARN emit → 노이즈
+   수정: product_docs는 특정 제품(e.g., Career Mirror)에만 유효한 수치가 있는 docs만
+```
 
 ---
 
