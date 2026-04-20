@@ -146,6 +146,12 @@ import subprocess as _sp
 
 _CHAT_MEMORY_HOOK = HOOK_DIR / "chat-memory.py"
 
+# Env for dashboard-internal hook invocations — suppresses telemetry
+# emission from the child process so the dashboard's own samples/graph
+# refresh does not generate new "user events" that re-trigger itself.
+_INTERNAL_ENV = {**os.environ, "CTX_DASHBOARD_INTERNAL": "1"}
+
+
 def _run_chat_memory(prompt: str) -> str:
     if not _CHAT_MEMORY_HOOK.exists():
         return ""
@@ -154,10 +160,30 @@ def _run_chat_memory(prompt: str) -> str:
             ["python3", str(_CHAT_MEMORY_HOOK)],
             input=json.dumps({"prompt": prompt, "cwd": os.getcwd()}),
             capture_output=True, text=True, timeout=5,
+            env=_INTERNAL_ENV,
         )
         return r.stdout
     except Exception:
         return ""
+
+
+# Override ctx_report._run_bm25_memory to also pass CTX_DASHBOARD_INTERNAL,
+# so samples computation (which uses this helper) doesn't emit telemetry.
+_original_run_bm25 = _ctx._run_bm25_memory
+def _run_bm25_memory_internal(prompt: str) -> str:
+    if not _ctx._BM25_HOOK.exists():
+        return ""
+    try:
+        r = _sp.run(
+            ["python3", str(_ctx._BM25_HOOK), "--rich"],
+            input=json.dumps({"prompt": prompt, "cwd": os.getcwd()}),
+            capture_output=True, text=True, timeout=5,
+            env=_INTERNAL_ENV,
+        )
+        return r.stdout
+    except Exception:
+        return ""
+_ctx._run_bm25_memory = _run_bm25_memory_internal
 
 
 def _parse_cm(hook_output: str, max_entries: int = 2) -> list:
