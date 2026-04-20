@@ -560,7 +560,8 @@ def _render_rich_live(args, refresh_seconds: float = 2.0):
         print(e, file=sys.stderr); sys.exit(2)
 
     # Cache: persistent events + file position + last size (for rotation detection)
-    state = {"events": [], "pos": 0, "size": 0, "last_len": -1}
+    # `data` is the aggregated metrics dict — only recomputed when events change.
+    state = {"events": [], "pos": 0, "size": 0, "data": None}
 
     def _read_new():
         """Append newly-added events to state['events']. Drop events older than cutoff."""
@@ -598,6 +599,11 @@ def _render_rich_live(args, refresh_seconds: float = 2.0):
                 state["events"].pop(0)
 
     def _snapshot():
+        """Render current state. Only re-parses file + recomputes metrics
+        when the file has grown since the last tick; otherwise re-uses the
+        cached data dict so the render is essentially free. The timestamp
+        inside _build_rich_group updates on every call."""
+        prev_size = state["size"]
         _read_new()
         events = state["events"]
         if not events:
@@ -605,24 +611,17 @@ def _render_rich_live(args, refresh_seconds: float = 2.0):
                 f"[yellow]No events in {LOG} matching --since={args.since}.[/yellow]\n"
                 f"[dim]Enable: touch ~/.claude/ctx-telemetry.enabled[/dim]"
             )
-        data = _compute_metrics(events)
-        state["last_len"] = len(events)
-        return _build_rich_group(args, events, data, live=True)
+        # Recompute metrics only when file changed (or first call)
+        if state["data"] is None or state["size"] != prev_size:
+            state["data"] = _compute_metrics(events)
+        return _build_rich_group(args, events, state["data"], live=True)
 
     try:
         with Live(_snapshot(), console=console, refresh_per_second=4,
                   screen=False, transient=False) as live:
             while True:
                 time.sleep(refresh_seconds)
-                prev_len = state["last_len"]
-                prev_size = state["size"]
-                # Peek file size cheaply; skip render if nothing new
-                try:
-                    cur_size = LOG.stat().st_size if LOG.exists() else 0
-                except OSError:
-                    cur_size = prev_size
-                if cur_size != prev_size:
-                    live.update(_snapshot())
+                live.update(_snapshot())
     except KeyboardInterrupt:
         console.print("[dim]— exited watch mode —[/dim]")
 
