@@ -96,7 +96,8 @@ _ALLOWED_KEYS = {
     # P1: utility-rate Stop hook — did assistant reference injected context?
     # by_block is a nested dict {block: {total, referenced}} — still counts-only,
     # no content. Sanitizer relaxes primitive guard for this event only.
-    "utility_measured": {"total_items", "referenced_items", "by_block", "response_len"},
+    "utility_measured": {"total_items", "referenced_items", "by_block", "response_len",
+                         "hits_by_mode", "semantic_available"},
     # Activation-moment trigger (Wow toast): high-utility + old-decision recall
     "wow_fired": {"total_items", "referenced_items", "response_len"},
 }
@@ -106,8 +107,8 @@ def _sanitize(event_type: str, payload: dict) -> dict:
     """Strip any key not in the whitelist for this event type.
     Defensive: blocks accidental content leakage if a caller adds unsafe fields."""
     allowed = _ALLOWED_KEYS.get(event_type, set())
-    # utility_measured's by_block is a 1-level nested dict of counts
-    allow_nested_dict_for = {"utility_measured": {"by_block"}}
+    # utility_measured's by_block AND hits_by_mode are 1-level nested dicts of counts
+    allow_nested_dict_for = {"utility_measured": {"by_block", "hits_by_mode"}}
     out = {}
     for k, v in (payload or {}).items():
         if k not in allowed:

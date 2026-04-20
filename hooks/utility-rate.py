@@ -23,6 +23,7 @@ Privacy: no content logged; only counts + block names.
 """
 import json
 import os
+import socket
 import sqlite3
 import sys
 import time
@@ -38,6 +39,74 @@ WOW_EVENT_FILE = HOME / ".claude" / ".ctx-wow-event.json"   # latest qualifying 
 # Wow-trigger gates
 WOW_UTILITY_MIN = 0.70      # utility_rate ≥ 70%
 WOW_AGE_MIN_DAYS = 14       # at least one referenced item ≥ 14 days old
+
+
+# ── T1: Semantic similarity via vec-daemon ───────────────────────────
+VEC_SOCK = HOME / ".local" / "share" / "claude-vault" / "vec-daemon.sock"
+SEMANTIC_THRESHOLD = 0.85
+# e5-small calibration (empirical, 2026-04-20):
+#   related pairs:    cos ∈ [0.84, 0.90]  (item subject vs on-topic response chunk)
+#   unrelated pairs:  cos ∈ [0.74, 0.78]  (shared "query:" prefix gives high baseline)
+# 0.85 sits at the floor of "related", above the unrelated ceiling.
+
+
+def _embed(text: str, timeout: float = 0.8) -> list | None:
+    """Query vec-daemon for an embedding. Returns None on any failure."""
+    if not VEC_SOCK.exists() or not text:
+        return None
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect(str(VEC_SOCK))
+        s.sendall((json.dumps({"q": text[:1000]}) + "\n").encode("utf-8"))
+        buf = b""
+        while b"\n" not in buf:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            buf += chunk
+        s.close()
+        resp = json.loads(buf.split(b"\n", 1)[0].decode("utf-8"))
+        if resp.get("ok"):
+            return resp.get("emb")
+    except Exception:
+        pass
+    return None
+
+
+def _cosine(a: list, b: list) -> float:
+    """Cosine similarity for already-normalized vectors (vec-daemon normalizes)."""
+    if not a or not b or len(a) != len(b):
+        return 0.0
+    return sum(x * y for x, y in zip(a, b))
+
+
+def _chunk_response(text: str, chunk_chars: int = 400, overlap: int = 80) -> list:
+    """Split response into overlapping chunks so a long response doesn't dilute
+    any single item's cosine. Chunks span paragraphs when possible."""
+    if not text:
+        return []
+    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+    chunks = []
+    for p in paragraphs:
+        if len(p) <= chunk_chars:
+            chunks.append(p)
+        else:
+            # Slide a window through long paragraphs
+            start = 0
+            while start < len(p):
+                chunks.append(p[start:start + chunk_chars])
+                start += chunk_chars - overlap
+    return chunks[:20]   # hard cap — ceiling on vec-daemon calls per measurement
+
+
+def _item_text(item: dict) -> str:
+    """Reconstruct a natural-language description from an item's tokens.
+    Prefer the raw subject if preserved; fall back to joining tokens."""
+    if item.get("subject"):
+        return item["subject"]
+    tokens = item.get("tokens", [])
+    return " ".join(tokens) if tokens else ""
 
 
 def _log_event(event_type: str, payload: dict):
@@ -157,24 +226,54 @@ def main():
     # Case-insensitive substring match on distinctive tokens
     response_l = response.lower()
 
+    # ── T1: pre-compute response-chunk embeddings (one daemon call per chunk)
+    # If vec-daemon is unreachable, we fall back to pure substring match per item.
+    response_chunks = _chunk_response(response)
+    chunk_embeddings = []
+    semantic_available = False
+    for chunk in response_chunks:
+        emb = _embed(chunk)
+        if emb:
+            chunk_embeddings.append(emb)
+            semantic_available = True
+
     by_block = {}
     total = 0
     referenced = 0
+    hits_by_mode = {"substring": 0, "semantic": 0, "both": 0}
     max_referenced_age = 0    # oldest decision date among referenced items (for wow trigger)
+
     for it in items:
         block = it.get("block", "?")
         tokens = it.get("tokens", [])
         by_block.setdefault(block, {"total": 0, "referenced": 0})
         by_block[block]["total"] += 1
         total += 1
-        # Item is "referenced" if ANY of its distinctive tokens appears in the response
-        hit = any(
-            len(t) >= 4 and t.lower() in response_l
-            for t in tokens
-        )
+
+        # Substring check (fast, catches verbatim echoes)
+        sub_hit = any(len(t) >= 4 and t.lower() in response_l for t in tokens)
+
+        # Semantic check (catches paraphrase, synonym, cross-language)
+        sem_hit = False
+        if semantic_available:
+            item_text = _item_text(it)
+            if item_text:
+                item_emb = _embed(item_text)
+                if item_emb:
+                    max_sim = max((_cosine(item_emb, ce) for ce in chunk_embeddings),
+                                  default=0.0)
+                    sem_hit = max_sim >= SEMANTIC_THRESHOLD
+
+        hit = sub_hit or sem_hit
         if hit:
             referenced += 1
             by_block[block]["referenced"] += 1
+            if sub_hit and sem_hit:
+                hits_by_mode["both"] += 1
+            elif sub_hit:
+                hits_by_mode["substring"] += 1
+            else:
+                hits_by_mode["semantic"] += 1
             # Track oldest referenced decision date
             date_str = it.get("date")
             if date_str:
@@ -190,6 +289,8 @@ def main():
         "referenced_items": referenced,
         "by_block": by_block,
         "response_len": len(response),
+        "hits_by_mode": hits_by_mode,
+        "semantic_available": semantic_available,
     })
 
     # ── Wow-trigger: specific-old-recall + high-utility, fired once ever ──

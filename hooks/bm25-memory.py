@@ -884,7 +884,11 @@ def main():
                     subj = s[close_idx + 1:].strip()
                     tokens = _extract_content_tokens(subj, n=5)
                     if tokens:
-                        item = {"block": "g1", "tokens": tokens}
+                        item = {
+                            "block": "g1",
+                            "tokens": tokens,
+                            "subject": subj[:200],  # preserved for semantic scoring
+                        }
                         if len(date_str) == 10 and date_str[4] == "-" and date_str[7] == "-":
                             item["date"] = date_str
                         injection["items"].append(item)
@@ -900,7 +904,11 @@ def main():
                         parts = [p for p in stem.replace("-", " ").replace("_", " ").split()
                                  if len(p) >= 4 and not p.isdigit()]
                         tokens = [fname] + parts[:4]
-                        injection["items"].append({"block": "g2_docs", "tokens": tokens})
+                        # Subject for semantic: the filename's natural-language form
+                        subject = " ".join(parts) if parts else fname
+                        injection["items"].append({
+                            "block": "g2_docs", "tokens": tokens, "subject": subject[:200]
+                        })
                 # G2-PREFETCH: symbol names (function/class) + their path
                 elif ": " in s and "@" in s and any(k in s for k in ("Function:", "Class:", "Method:", "Module:", "File:")):
                     try:
@@ -909,7 +917,11 @@ def main():
                         path_base = path.rsplit("/", 1)[-1] if path else ""
                         tokens = [t for t in [name, path_base] if t and len(t) >= 4]
                         if tokens:
-                            injection["items"].append({"block": "g2_prefetch", "tokens": tokens})
+                            injection["items"].append({
+                                "block": "g2_prefetch",
+                                "tokens": tokens,
+                                "subject": f"{name} in {path}"[:200],
+                            })
                     except Exception:
                         pass
             Path(os.path.expanduser("~/.claude/last-injection.json")).write_text(
