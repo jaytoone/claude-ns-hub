@@ -132,6 +132,116 @@ def _latency_histogram(events):
     return [{"bucket": k, "count": v} for k, v in buckets.items()]
 
 
+# ── Samples: invoke real hooks on recent prompts ──────────────────────
+# Phase 2a: proves each function works by showing actual prompt → output
+# pairs that a human can eye-check for relevance. Reuses the helpers
+# from ctx-report.py. Computed on a slower background cadence (60s) than
+# the main SSE snapshot (2s) to keep per-tick cost cheap.
+
+import subprocess as _sp
+
+_CHAT_MEMORY_HOOK = HOOK_DIR / "chat-memory.py"
+
+def _run_chat_memory(prompt: str) -> str:
+    if not _CHAT_MEMORY_HOOK.exists():
+        return ""
+    try:
+        r = _sp.run(
+            ["python3", str(_CHAT_MEMORY_HOOK)],
+            input=json.dumps({"prompt": prompt, "cwd": os.getcwd()}),
+            capture_output=True, text=True, timeout=5,
+        )
+        return r.stdout
+    except Exception:
+        return ""
+
+
+def _parse_cm(hook_output: str, max_entries: int = 2) -> list:
+    """Parse chat-memory stdout. Returns list of {role, project, preview}."""
+    # chat-memory emits a header line then JSON; find the `{` line
+    json_part = ""
+    for line in hook_output.split("\n"):
+        if line.strip().startswith("{"):
+            json_part = line
+            break
+    if not json_part:
+        return []
+    try:
+        payload = json.loads(json_part)
+        ctx = payload.get("hookSpecificOutput", {}).get("additionalContext", "")
+    except Exception:
+        return []
+    # Find the [CHAT-MEMORY] block
+    if "[CHAT-MEMORY]" not in ctx:
+        return []
+    body = ctx.split("[CHAT-MEMORY]", 1)[1]
+    # First line is the header — skip it; then entries separated by \n---\n
+    body = body.split("\n", 1)[1] if "\n" in body else body
+    entries = body.split("\n---\n")
+    out = []
+    for entry in entries[:max_entries]:
+        entry = entry.strip()
+        if not entry.startswith("["):
+            continue
+        # [user@Project] text...  or  [assistant@Project] text...
+        close = entry.find("]")
+        if close < 0:
+            continue
+        tag = entry[1:close]          # "user@CTX"
+        rest = entry[close + 1:].strip()
+        role, _, project = tag.partition("@")
+        out.append({
+            "role": role.strip() or "?",
+            "project": project.strip() or "?",
+            "preview": rest[:120] + ("…" if len(rest) > 120 else ""),
+        })
+    return out
+
+
+def _compute_samples(n_prompts: int = 3) -> dict:
+    """Pull N recent user prompts from vault.db, invoke real hooks on each,
+    return structured samples for the dashboard."""
+    prompts = _ctx._recent_user_prompts(n=n_prompts)
+    result = {"computed_at": time.time(), "prompts": []}
+    for ts, content in prompts:
+        preview = content[:120] + ("…" if len(content) > 120 else "")
+        bm_out = _ctx._run_bm25_memory(content)
+        cm_out = _run_chat_memory(content)
+        result["prompts"].append({
+            "ts": ts,
+            "preview": preview,
+            "cm": _parse_cm(cm_out, max_entries=2),
+            "g1": _ctx._extract_block(bm_out, "[RECENT DECISIONS]")[:3],
+            "g2_docs": _ctx._extract_block(bm_out, "[G2-DOCS]")[:3],
+            "g2_prefetch": _ctx._extract_block(bm_out, "[G2-PREFETCH]")[:3],
+        })
+    return result
+
+
+# Cached samples + background refresh
+SAMPLE_CACHE = {"computed_at": 0, "prompts": []}
+SAMPLE_REFRESH_SECONDS = 60
+
+
+async def _samples_refresher():
+    """Background task: recompute samples every SAMPLE_REFRESH_SECONDS."""
+    loop = asyncio.get_event_loop()
+    while True:
+        try:
+            # Run in executor because bm25-memory + chat-memory calls are sync
+            # and each takes ~200-500ms; don't block the event loop.
+            data = await loop.run_in_executor(None, _compute_samples, 3)
+            SAMPLE_CACHE.update(data)
+        except Exception as e:
+            SAMPLE_CACHE["error"] = str(e)
+        await asyncio.sleep(SAMPLE_REFRESH_SECONDS)
+
+
+@app.on_event("startup")
+async def _on_startup():
+    asyncio.create_task(_samples_refresher())
+
+
 # ── Recent events tail (for the live stream panel) ────────────────────
 def _recent_events(events, n: int = 50):
     tail = events[-n:] if len(events) > n else events
@@ -242,6 +352,7 @@ def _build_snapshot():
         "notices": notices,
         "other": other,
         "recent": _recent_events(events, n=30),
+        "samples": SAMPLE_CACHE,
         "thresholds": {
             "cm_hybrid_min": int(TH["cm_hybrid_pct_min"] * 100),
             "g2_docs_max": int(TH["g2_docs_over_concern"] * 100),
@@ -260,6 +371,15 @@ async def root():
 @app.get("/api/snapshot")
 async def snapshot():
     return JSONResponse(_build_snapshot())
+
+
+@app.post("/api/samples/refresh")
+async def refresh_samples():
+    """Force an immediate samples recompute (ignores the 60s cache)."""
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(None, _compute_samples, 3)
+    SAMPLE_CACHE.update(data)
+    return JSONResponse({"ok": True, "computed_at": data["computed_at"]})
 
 
 @app.get("/stream")

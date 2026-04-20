@@ -27,7 +27,10 @@ header {
   padding: 14px 24px;
   border-bottom: 1px solid var(--panel-border);
   background: var(--panel);
-  position: sticky; top: 0; z-index: 10;
+  /* Not sticky — avoids overlapping System Health on fullPage screenshots
+     and keeps the layout simple. User can always scroll up. */
+  position: relative;
+  z-index: 10;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand .dot {
@@ -166,6 +169,87 @@ main {
 .events .ev .hk { color: var(--cyan); }
 .events .ev .bk { color: var(--text); }
 .events .ev .dur { text-align: right; color: var(--text-dim); }
+
+/* ── Samples (function proof) ──────────────────────── */
+.btn-small {
+  background: var(--panel);
+  color: var(--cyan);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-family: var(--mono);
+  cursor: pointer;
+  margin-left: auto;
+}
+.btn-small:hover { background: rgba(88,166,255,0.1); border-color: var(--cyan); }
+.btn-small:disabled { opacity: 0.5; cursor: wait; }
+.right { margin-left: auto !important; }
+
+.sample {
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: rgba(255,255,255,0.01);
+}
+.sample .q {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--cyan);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--panel-border);
+}
+.sample .q .prompt { color: var(--text); font-weight: 500; }
+.sample .q .ts { color: var(--text-dim); font-size: 11px; float: right; }
+
+.blocks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.block {
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 6px 8px;
+  min-height: 60px;
+}
+.block .name {
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.block .name .tag {
+  background: rgba(88,166,255,0.12);
+  color: var(--cyan);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+}
+.block .items { color: var(--text); line-height: 1.5; }
+.block .items .it {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 0;
+}
+.block.cm .name .tag { background: rgba(188,140,255,0.15); color: var(--purple); }
+.block.empty .items { color: var(--text-dim); font-style: italic; }
+.block .cm-entry { padding: 2px 0; border-top: 1px dashed rgba(255,255,255,0.05); }
+.block .cm-entry:first-child { border-top: 0; }
+.block .cm-entry .who { color: var(--purple); font-size: 10px; margin-right: 6px; }
+
+@media (max-width: 1100px) {
+  .blocks { grid-template-columns: repeat(2, 1fr); }
+}
 
 /* ── Footer ─────────────────────────────────────────── */
 footer {

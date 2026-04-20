@@ -62,6 +62,69 @@ function renderOther(other) {
   return other.map(o => `<span class="pill">${esc(o.label)} <span class="count">×${esc(o.count)}</span></span>`).join("");
 }
 
+function fmtTs(ts) {
+  if (!ts) return "";
+  // ts is ISO8601 (from vault.db) — take HH:MM
+  try {
+    const s = String(ts);
+    const m = s.match(/T(\d\d:\d\d)/);
+    return m ? m[1] : s.slice(0, 16);
+  } catch { return String(ts).slice(0, 16); }
+}
+
+function renderBlock(name, tag, items, itemClass = "it") {
+  const cls = items && items.length ? "" : "empty";
+  const body = items && items.length
+    ? items.map(i => `<div class="${itemClass}" title="${esc(i)}">${esc(i)}</div>`).join("")
+    : `<div class="it">— none —</div>`;
+  return `
+    <div class="block ${cls} ${name.toLowerCase()}">
+      <div class="name"><span>${esc(name)}</span><span class="tag">${esc(tag)}</span></div>
+      <div class="items">${body}</div>
+    </div>`;
+}
+
+function renderCmBlock(cm) {
+  const cls = cm && cm.length ? "" : "empty";
+  const body = cm && cm.length
+    ? cm.map(e => `
+        <div class="cm-entry">
+          <span class="who">${esc(e.role)}@${esc(e.project)}</span><span title="${esc(e.preview)}">${esc(e.preview)}</span>
+        </div>`).join("")
+    : `<div class="it">— none —</div>`;
+  return `
+    <div class="block cm ${cls}">
+      <div class="name"><span>CM</span><span class="tag">chat memory</span></div>
+      <div class="items">${body}</div>
+    </div>`;
+}
+
+function renderSamples(samples) {
+  const host = $("samples");
+  const ageEl = $("samples-age");
+  if (!samples || !samples.prompts || samples.prompts.length === 0) {
+    host.innerHTML = `<div style="color:var(--text-dim); padding:12px; font-family:var(--mono); font-size:12px;">Computing samples… (first run can take ~1-2s)</div>`;
+    ageEl.textContent = "";
+    return;
+  }
+  const ageSec = Math.max(0, Math.round(Date.now()/1000 - samples.computed_at));
+  ageEl.textContent = `computed ${ageSec}s ago`;
+  host.innerHTML = samples.prompts.map(p => `
+    <div class="sample">
+      <div class="q">
+        <span class="ts">${esc(fmtTs(p.ts))}</span>
+        <span class="prompt">${esc(p.preview)}</span>
+      </div>
+      <div class="blocks">
+        ${renderCmBlock(p.cm)}
+        ${renderBlock("G1", "decisions", p.g1)}
+        ${renderBlock("G2-DOCS", "BM25 docs", p.g2_docs)}
+        ${renderBlock("G2-PREFETCH", "code graph", p.g2_prefetch)}
+      </div>
+    </div>
+  `).join("");
+}
+
 function renderEvents(evs) {
   if (!evs || evs.length === 0) return `<div style="color:var(--text-dim); padding:10px;">No recent events.</div>`;
   return evs.map(e => `
@@ -120,8 +183,22 @@ function apply(snap) {
   $("notices").innerHTML = renderNotices(snap.notices);
   $("other").innerHTML = renderOther(snap.other);
   $("events").innerHTML = renderEvents(snap.recent);
+  renderSamples(snap.samples);
   $("thresholds").textContent = fmtThresholds(snap.thresholds);
 }
+
+// "refresh" button — POST to /api/samples/refresh to force a recompute now
+document.addEventListener("click", async (e) => {
+  if (e.target && e.target.id === "refresh-samples") {
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = "…";
+    try {
+      await fetch("/api/samples/refresh", { method: "POST" });
+      // SSE will pick up the fresh cache on next tick
+    } catch (err) { console.error(err); }
+    setTimeout(() => { btn.disabled = false; btn.textContent = "refresh"; }, 2000);
+  }
+});
 
 function connect() {
   const status = $("conn-status");
