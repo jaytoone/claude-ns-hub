@@ -26,11 +26,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 try:
-    from rich.console import Console
+    from rich.console import Console, Group
     from rich.panel import Panel
     from rich.table import Table
     from rich.text import Text
     from rich.progress_bar import ProgressBar
+    from rich.live import Live
     from rich import box
     _RICH_OK = True
 except ImportError:
@@ -423,26 +424,29 @@ def _bar_row(label: str, pct_value: float, threshold: float, raw: str,
     return (label, bar, raw, symbol)
 
 
-def _render_rich(args, events, data):
-    """Render a COMPACT rich report. Target: ~15-18 lines total so Claude Code
-    displays it inline without collapsing. One panel (System Health) does the
-    heavy lifting; everything else is one-line summaries."""
-    console = Console(force_terminal=True, color_system="truecolor")
+def _build_rich_group(args, events, data, live: bool = False):
+    """Build the rich renderable group. Returns a Group so it can be printed
+    once or wrapped in a Live() for watch mode."""
+    items = []
 
     # ── Inline header (1 line): title + event count + activity mini-summary
     days_summary = " · ".join(
         f"[cyan]{d.split()[1]}[/cyan] {n}" for d, n in
         sorted(data["daily_counts"].items(), key=lambda kv: kv[0], reverse=True)[:3]
     )
-    console.print(
+    watch_tag = f"  [bold magenta]● LIVE[/bold magenta]" if live else ""
+    header = (
         f"[bold cyan]CTX Telemetry[/bold cyan] "
         f"[dim]since={args.since} ·[/dim] [bold]{len(events)}[/bold] events "
-        f"[dim]·[/dim] {days_summary}"
+        f"[dim]·[/dim] {days_summary}{watch_tag}"
     )
+    items.append(Text.from_markup(header))
 
     if len(events) < TH["min_events_for_eval"]:
-        console.print(f"[yellow]⚠ Sample too small (<{TH['min_events_for_eval']}). "
-                      f"Verdicts are provisional.[/yellow]")
+        items.append(Text.from_markup(
+            f"[yellow]⚠ Sample too small (<{TH['min_events_for_eval']}). "
+            f"Verdicts are provisional.[/yellow]"
+        ))
 
     # ── System Health panel — compact progress bars (only meaningful metrics)
     health_table = Table.grid(padding=(0, 1), expand=False)
@@ -494,7 +498,7 @@ def _render_rich(args, events, data):
 
     g, y, r = data["flags_g"], data["flags_y"], data["flags_r"]
     style, headline = _grade_style(g, y, r)
-    console.print(Panel(
+    items.append(Panel(
         health_table,
         title=f"[bold]System Health[/bold]  [{style}]{headline}[/{style}]",
         box=box.ROUNDED, border_style=style, padding=(0, 1),
@@ -503,10 +507,10 @@ def _render_rich(args, events, data):
     # ── Quality notices — one-line summary
     if data["quality_notices"]:
         parts = [f"[yellow]~[/yellow] {m}" for m, _ in data["quality_notices"]]
-        console.print(
+        items.append(Text.from_markup(
             f"[bold yellow]Quality notices:[/bold yellow] {' · '.join(parts)} "
             f"[dim]· --explain/--deep to verify[/dim]"
-        )
+        ))
 
     # ── Other signals — one-line summary (only if any)
     other = []
@@ -518,14 +522,57 @@ def _render_rich(args, events, data):
         total = sum(data["grep_signals"].values())
         other.append(f"grep-fallback ×{total}")
     if other:
-        console.print(f"[dim]Other:[/dim] {' · '.join(other)}")
+        items.append(Text.from_markup(f"[dim]Other:[/dim] {' · '.join(other)}"))
 
-    console.print(
+    items.append(Text.from_markup(
         f"[dim]Thresholds: CM ≥{int(TH['cm_hybrid_pct_min']*100)}% │ "
         f"g2_docs <{int(TH['g2_docs_over_concern']*100)}% │ "
         f"g2_grep <{int(TH['g2_grep_over_concern']*100)}% │ "
         f"p95 <{TH['bm25_p95_ms_yellow']}ms[/dim]"
-    )
+    ))
+
+    if live:
+        from datetime import datetime as _dt
+        items.append(Text.from_markup(
+            f"[dim]Updated {_dt.now().strftime('%H:%M:%S')}  ·  Ctrl+C to exit[/dim]"
+        ))
+
+    return Group(*items)
+
+
+def _render_rich(args, events, data):
+    """One-shot render."""
+    console = Console(force_terminal=True, color_system="truecolor")
+    console.print(_build_rich_group(args, events, data))
+
+
+def _render_rich_live(args, refresh_seconds: float = 2.0):
+    """Watch mode: re-read telemetry and re-render every N seconds until Ctrl+C."""
+    import time
+    console = Console(force_terminal=True, color_system="truecolor")
+    try:
+        cutoff = parse_since(args.since)
+    except ValueError as e:
+        print(e, file=sys.stderr); sys.exit(2)
+
+    def _snapshot():
+        events = load_events(cutoff)
+        if not events:
+            return Text.from_markup(
+                f"[yellow]No events in {LOG} matching --since={args.since}.[/yellow]\n"
+                f"[dim]Enable: touch ~/.claude/ctx-telemetry.enabled[/dim]"
+            )
+        data = _compute_metrics(events)
+        return _build_rich_group(args, events, data, live=True)
+
+    try:
+        with Live(_snapshot(), console=console, refresh_per_second=4,
+                  screen=False, transient=False) as live:
+            while True:
+                time.sleep(refresh_seconds)
+                live.update(_snapshot())
+    except KeyboardInterrupt:
+        console.print("[dim]— exited watch mode —[/dim]")
 
 
 def _compute_metrics(events):
@@ -617,7 +664,18 @@ def main():
                     help="run a concrete spot-check for one yellow/red metric")
     ap.add_argument("--deep", action="store_true",
                     help="auto-run spot-checks for every yellow/red metric after the main report")
+    ap.add_argument("--watch", nargs="?", const=2.0, type=float, default=None,
+                    metavar="SECONDS",
+                    help="live dashboard mode — refresh every N seconds (default 2). Ctrl+C to exit")
     args = ap.parse_args()
+
+    # ── Watch mode: live dashboard
+    if args.watch is not None:
+        if not _RICH_OK:
+            print("--watch requires the 'rich' library (pip install rich)", file=sys.stderr)
+            sys.exit(2)
+        _render_rich_live(args, refresh_seconds=args.watch)
+        return
 
     if args.plain:
         global COLOR, GREEN, YELLOW, RED, DIM, BOLD, RESET, FLAG_G, FLAG_Y, FLAG_R
