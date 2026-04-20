@@ -836,31 +836,80 @@ def main():
             # Collect distinctive substrings from emitted blocks.
             # Each item is (block, signature) — signature is a 4-20 char
             # distinctive substring the assistant's response can echo.
+            # Meta/filler words from commit subjects that never represent a topic.
+            # Drops CTX's internal taxonomy (live-infinite, iter, goal_vN) + conventional
+            # commit prefixes + common English verbs — anything that would generate
+            # false-positive matches against unrelated responses.
+            _META_WORDS = frozenset([
+                "live-infinite", "live-inf", "omc-live", "iter", "live",
+                "goal_v1", "goal_v2", "goal_v3", "goal",
+                "feat", "fix", "refactor", "perf", "docs", "test", "chore",
+                "success", "section", "update", "add", "remove", "change",
+                "fixed", "added", "removed", "completed",
+            ])
+            # Header-row detector for "> **G1/G2**" and similar markdown headers
+            _is_header_line = lambda st: st.startswith("> **") and "** (" in st
+
+            def _extract_content_tokens(subject: str, n: int = 5) -> list:
+                """Pick up to N distinctive content tokens from a commit subject.
+                Filters meta words, pure digits, punctuation-only fragments.
+                Prefers longer words (more specific = better substring hit rate)."""
+                candidates = []
+                for w in subject.split():
+                    w_clean = w.strip(".,()[]{}:;!?\"'").lower()
+                    if len(w_clean) < 4:
+                        continue
+                    if w_clean in _META_WORDS:
+                        continue
+                    if w_clean.replace("/", "").replace(".", "").replace("-", "").isdigit():
+                        continue   # 20260402, 58/∞, etc.
+                    # Keep case of original for better citation-style match
+                    candidates.append(w.strip(".,()[]{}:;!?\"'"))
+                # Dedup preserving order, sort by length desc for specificity
+                seen = set()
+                uniq = [t for t in candidates if not (t.lower() in seen or seen.add(t.lower()))]
+                uniq.sort(key=lambda t: -len(t))
+                return uniq[:n]
+
             for line in lines:
                 s = line.strip()
+                # Skip markdown headers like "> **G1** (time memory): ..." — they are
+                # not items, they're section labels that would leak into signatures.
+                if _is_header_line(s):
+                    continue
                 # G1 decisions: "> [YYYY-MM-DD] subject" — capture date for age-based wow trigger
                 if s.startswith("> [") and "]" in s:
                     close_idx = s.index("]")
                     date_str = s[3:close_idx]
                     subj = s[close_idx + 1:].strip()
-                    tokens = [w for w in subj.split() if len(w) >= 4][:3]
+                    tokens = _extract_content_tokens(subj, n=5)
                     if tokens:
                         item = {"block": "g1", "tokens": tokens}
-                        # Only store YYYY-MM-DD dates (filter malformed)
                         if len(date_str) == 10 and date_str[4] == "-" and date_str[7] == "-":
                             item["date"] = date_str
                         injection["items"].append(item)
-                # G2-DOCS entries: "  > filename.md" → filename as signature
+                # G2-DOCS entries: "  > filename.md" → filename AS signature AND
+                # also extract date-token + topic words from filename for more hit
+                # surface (e.g. "20260411-g1-generalization-validation.md" also
+                # matches on "generalization" / "validation").
                 elif s.startswith("> ") and (".md" in s or s.endswith(".py")):
                     fname = s.lstrip("> ").strip().split(" §")[0].split()[0]
                     if fname:
-                        injection["items"].append({"block": "g2_docs", "tokens": [fname]})
-                # G2-PREFETCH: symbol names
+                        # filename + its stem words as tokens
+                        stem = fname.rsplit(".", 1)[0]
+                        parts = [p for p in stem.replace("-", " ").replace("_", " ").split()
+                                 if len(p) >= 4 and not p.isdigit()]
+                        tokens = [fname] + parts[:4]
+                        injection["items"].append({"block": "g2_docs", "tokens": tokens})
+                # G2-PREFETCH: symbol names (function/class) + their path
                 elif ": " in s and "@" in s and any(k in s for k in ("Function:", "Class:", "Method:", "Module:", "File:")):
                     try:
                         name = s.split(":", 1)[1].split("@")[0].strip()
-                        if name and len(name) >= 4:
-                            injection["items"].append({"block": "g2_prefetch", "tokens": [name]})
+                        path = s.split("@", 1)[1].strip() if "@" in s else ""
+                        path_base = path.rsplit("/", 1)[-1] if path else ""
+                        tokens = [t for t in [name, path_base] if t and len(t) >= 4]
+                        if tokens:
+                            injection["items"].append({"block": "g2_prefetch", "tokens": tokens})
                     except Exception:
                         pass
             Path(os.path.expanduser("~/.claude/last-injection.json")).write_text(
