@@ -23,7 +23,7 @@ VAULT_DB = Path(os.path.expanduser("~/.local/share/claude-vault/vault.db"))
 INJ_FILE = Path(os.path.expanduser("~/.claude/last-injection.json"))
 BM25_HOOK = Path(os.path.expanduser("~/.claude/hooks/bm25-memory.py"))
 
-N_SAMPLES = 60           # balance between speed (each call ~500ms) and signal
+N_SAMPLES = 200          # larger sample for tighter confidence interval
 MIN_PROMPT_LEN = 40
 MAX_PROMPT_LEN = 400
 MIN_RESPONSE_LEN = 200   # tiny responses aren't informative
@@ -62,7 +62,7 @@ def sample_pairs(n: int) -> list:
         cwd = project_to_cwd(project)
         if not cwd:
             continue
-        if seen_projects[project] >= 8:   # cap per-project to prevent skew
+        if seen_projects[project] >= 25:  # cap per-project (larger for N=200)
             continue
         out.append((prompt, response, cwd, project))
         seen_projects[project] += 1
