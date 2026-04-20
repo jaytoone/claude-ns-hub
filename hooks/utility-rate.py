@@ -4,7 +4,10 @@ utility-rate.py — Stop hook that measures CTX injection utility (P1).
 
 After each assistant turn, reads:
   1. The items bm25-memory injected into the turn (~/.claude/last-injection.json)
-  2. The latest assistant message from vault.db
+  2. The just-emitted assistant response from Claude Code's transcript_path
+     (passed in the Stop hook's stdin JSON). Authoritative source — no race
+     with claude-vault-incremental. Falls back to vault.db if transcript
+     not available.
 
 Substring-matches each item's distinctive tokens against the assistant's
 response. Emits a `utility_measured` telemetry event with:
@@ -46,25 +49,85 @@ def _log_event(event_type: str, payload: dict):
         pass
 
 
-def _latest_assistant_content() -> str:
-    """Return text of the most recent assistant turn from vault.db (last 5 min)."""
+def _from_transcript(transcript_path: str) -> str:
+    """Return concatenation of ALL assistant text blocks emitted since the
+    last user message in Claude Code's transcript .jsonl.
+
+    Why not just "the last assistant message":
+      A single assistant turn in Claude Code is a sequence of alternating
+      text-block / tool-use / tool-result entries. If we take only the last
+      *text block*, we miss the narrative that appeared BEFORE the final
+      tool call — often the part most relevant for utility scoring.
+      Joining all text since the last user message captures the full
+      response the user actually saw.
+
+    This is the authoritative, race-free source — the transcript is written
+    by Claude Code BEFORE any Stop hook fires, unlike vault.db which is
+    populated asynchronously by claude-vault-incremental.
+    """
+    if not transcript_path or not os.path.exists(transcript_path):
+        return ""
+    chunks_since_user: list[str] = []
+    try:
+        with open(transcript_path, encoding="utf-8") as f:
+            for line in f:
+                try:
+                    d = json.loads(line.strip())
+                except Exception:
+                    continue
+                t = d.get("type")
+                if t == "user":
+                    # Reset — we only care about text emitted since the
+                    # most recent user turn (i.e., the current response).
+                    chunks_since_user = []
+                    continue
+                if t != "assistant":
+                    continue
+                msg = d.get("message", {})
+                content = msg.get("content", [])
+                if isinstance(content, str):
+                    if content.strip():
+                        chunks_since_user.append(content)
+                elif isinstance(content, list):
+                    for c in content:
+                        if isinstance(c, dict) and c.get("type") == "text":
+                            text = c.get("text", "")
+                            if text and text.strip():
+                                chunks_since_user.append(text)
+    except Exception:
+        pass
+    return "\n".join(chunks_since_user)
+
+
+def _from_vault() -> str:
+    """Fallback: most recent assistant turn from vault.db.
+    Note — vault.db updates on Stop via claude-vault-incremental (async),
+    so this often lags the transcript by one turn. Kept as fallback only."""
     if not VAULT_DB.exists():
         return ""
     try:
         c = sqlite3.connect(f"file:{VAULT_DB}?mode=ro", uri=True, timeout=2.0)
-        cutoff = time.time() - 300
-        # vault.db stores `timestamp` as ISO string; fallback to id-ordered
         row = c.execute(
-            "SELECT content, timestamp FROM messages "
-            "WHERE role='assistant' "
-            "ORDER BY id DESC LIMIT 1"
+            "SELECT content FROM messages WHERE role='assistant' ORDER BY id DESC LIMIT 1"
         ).fetchone()
         c.close()
-        if not row:
-            return ""
-        return row[0] or ""
+        return (row[0] or "") if row else ""
     except Exception:
         return ""
+
+
+def _read_stop_stdin() -> dict:
+    """Stop hook receives {session_id, transcript_path, stop_hook_active} on stdin.
+    Returns {} if stdin is empty (backward compat / manual invocation)."""
+    try:
+        if sys.stdin.isatty():
+            return {}
+        raw = sys.stdin.read()
+        if not raw.strip():
+            return {}
+        return json.loads(raw)
+    except Exception:
+        return {}
 
 
 def main():
@@ -82,7 +145,13 @@ def main():
     if time.time() - inj.get("ts", 0) > 600:
         return
 
-    response = _latest_assistant_content()
+    # Prefer Claude Code's transcript (race-free, authoritative); fall back
+    # to vault.db only if transcript_path wasn't provided. This fixes the
+    # "always scoring previous turn's response" bug where utility-rate and
+    # claude-vault-incremental both ran async and utility-rate often read
+    # vault.db BEFORE incremental finished writing the current turn.
+    stop_input = _read_stop_stdin()
+    response = _from_transcript(stop_input.get("transcript_path", "")) or _from_vault()
     if not response:
         return
     # Case-insensitive substring match on distinctive tokens
