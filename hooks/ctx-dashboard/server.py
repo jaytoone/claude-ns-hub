@@ -394,12 +394,19 @@ def _recent_events(events, n: int = 50):
 def _compute_utility(events) -> dict:
     """Aggregate `utility_measured` events over the window.
 
-    Returns {overall, by_block, n_turns} where:
-      overall       = total_referenced / total_items (all blocks combined)
-      by_block.<b>  = {rate, n} per block (g1, g2_docs, g2_prefetch)
-      n_turns       = number of measured assistant turns in the window
+    Only counts events newer than bm25-memory.py's mtime — tokenizer changes
+    invalidate prior measurements (different token signatures = incompatible
+    data). Self-healing: any future fix auto-discards stale utility events.
+
+    Returns {overall, by_block, n_turns, stale_skipped}.
     """
-    utility_events = [e for e in events if e.get("type") == "utility_measured"]
+    try:
+        bm25_mtime = os.path.getmtime(HOOK_DIR / "bm25-memory.py")
+    except OSError:
+        bm25_mtime = 0
+    all_utility = [e for e in events if e.get("type") == "utility_measured"]
+    utility_events = [e for e in all_utility if e.get("ts", 0) >= bm25_mtime]
+    stale_skipped = len(all_utility) - len(utility_events)
     total_items = sum(e.get("total_items", 0) for e in utility_events)
     total_ref = sum(e.get("referenced_items", 0) for e in utility_events)
     by_block_totals = {}
@@ -418,6 +425,7 @@ def _compute_utility(events) -> dict:
             }
     return {
         "n_turns": len(utility_events),
+        "stale_skipped": stale_skipped,
         "overall_rate": (total_ref / total_items) if total_items else None,
         "total_items": total_items,
         "by_block": by_block,

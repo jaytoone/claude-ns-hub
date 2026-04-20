@@ -78,7 +78,7 @@ function renderUtility(u) {
       <div class="big ${cls}">${pct}%</div>
       <div>
         <div>Overall utility</div>
-        <div class="sub">${esc(u.n_turns)} turns measured · ${esc(u.total_items)} items injected</div>
+        <div class="sub">${esc(u.n_turns)} turns measured · ${esc(u.total_items)} items injected${u.stale_skipped ? ` · ${esc(u.stale_skipped)} stale pre-fix events skipped` : ''}</div>
       </div>
     </div>
     ${blockRows}
