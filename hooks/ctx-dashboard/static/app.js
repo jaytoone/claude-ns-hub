@@ -128,22 +128,34 @@ function nodeStyle(type) {
 
 function edgeStyle(type, weight, isCurrent) {
   const base = {
-    width: Math.max(0.5, Math.min(3, weight * 0.7)),
+    width: Math.max(0.6, Math.min(3.2, weight * 0.8)),
     smooth: { enabled: true, type: "continuous" },
   };
+  // Retrieval edges (prompt → decision/doc) are the MAIN value signal — keep them vivid.
+  // current = glowing green; past = saturated cyan (not faded dashed grey).
   if (type === "recall-d" || type === "recall-w") {
+    const isDoc = type === "recall-w";
     return Object.assign(base, {
-      color: { color: isCurrent ? "#3fb950" : "rgba(88,166,255,0.25)",
-               highlight: "#3fb950", opacity: isCurrent ? 1.0 : 0.4 },
-      width: isCurrent ? Math.max(1.5, weight * 0.5) : base.width,
-      dashes: !isCurrent,
+      color: isCurrent
+        ? { color: "#3fb950", highlight: "#56d364", opacity: 1.0 }
+        : { color: isDoc ? "#bc8cff" : "#58a6ff", highlight: "#3fb950", opacity: 0.85 },
+      width: isCurrent ? Math.max(2.4, weight * 0.6) : Math.max(1.0, weight * 0.4),
+      shadow: isCurrent ? { enabled: true, color: "#3fb950", size: 8, x: 0, y: 0 } : false,
     });
   }
+  // Topic edges (doc ↔ doc) — cluster indicator, bright-ish purple
   if (type === "topic") {
-    return Object.assign(base, { color: { color: "rgba(188,140,255,0.35)", highlight: "#bc8cff", opacity: 0.5 } });
+    return Object.assign(base, {
+      color: { color: "#bc8cff", highlight: "#d2a8ff", opacity: 0.55 },
+      width: Math.max(0.8, weight * 3.0),
+    });
   }
+  // Temporal edges (same-day decisions) — structural glue, subtle but visible
   if (type === "temporal") {
-    return Object.assign(base, { color: { color: "rgba(125,133,144,0.15)", highlight: "#7d8590", opacity: 0.3 }, width: 0.5 });
+    return Object.assign(base, {
+      color: { color: "#58a6ff", highlight: "#79c0ff", opacity: 0.25 },
+      width: 0.8,
+    });
   }
   return base;
 }
@@ -179,17 +191,33 @@ function renderGraph(g) {
     nodes: new vis.DataSet(visNodes),
     edges: new vis.DataSet(visEdges),
   };
+  // Per-edge physics: temporal edges have short tight springs (cluster same-day
+  // decisions together); topic edges medium; retrieval edges long (radial cone).
+  visEdges.forEach(e => {
+    if (e.type === "temporal")       { e.length = 55;  e.physics = true; }
+    else if (e.type === "topic")     { e.length = 140; e.physics = true; }
+    else if (e.type === "recall-d")  { e.length = 220; e.physics = true; }
+    else if (e.type === "recall-w")  { e.length = 240; e.physics = true; }
+  });
+
   const options = {
     interaction: { hover: true, tooltipDelay: 100, dragView: true, zoomView: true },
     physics: {
       enabled: true,
       solver: "forceAtlas2Based",
-      forceAtlas2Based: { gravitationalConstant: -40, centralGravity: 0.01, springLength: 100, springConstant: 0.08, damping: 0.5 },
-      stabilization: { iterations: 200, fit: true },
-      maxVelocity: 50,
+      forceAtlas2Based: {
+        gravitationalConstant: -65,    // stronger node repulsion → sharper cluster gaps
+        centralGravity: 0.004,         // let clusters drift apart
+        springLength: 110,
+        springConstant: 0.11,          // tighter springs within connected nodes
+        damping: 0.55,
+        avoidOverlap: 0.3,
+      },
+      stabilization: { iterations: 320, fit: true },
+      maxVelocity: 60,
     },
-    nodes: { borderWidth: 1, shadow: false },
-    edges: { selectionWidth: 1.5 },
+    nodes: { borderWidth: 1.5, shadow: false },
+    edges: { selectionWidth: 2.5 },
   };
 
   graphNetwork = new vis.Network(canvas, data, options);
