@@ -547,7 +547,11 @@ def _render_rich(args, events, data):
 
 
 def _render_rich_live(args, refresh_seconds: float = 2.0):
-    """Watch mode: re-read telemetry and re-render every N seconds until Ctrl+C."""
+    """Watch mode: tail-follow telemetry JSONL and re-render every N seconds.
+
+    Avoids re-parsing the whole file each tick — on first tick reads once,
+    then only appends new lines from the saved file position. Handles file
+    truncation/rotation by falling back to full re-read when size shrinks."""
     import time
     console = Console(force_terminal=True, color_system="truecolor")
     try:
@@ -555,14 +559,54 @@ def _render_rich_live(args, refresh_seconds: float = 2.0):
     except ValueError as e:
         print(e, file=sys.stderr); sys.exit(2)
 
+    # Cache: persistent events + file position + last size (for rotation detection)
+    state = {"events": [], "pos": 0, "size": 0, "last_len": -1}
+
+    def _read_new():
+        """Append newly-added events to state['events']. Drop events older than cutoff."""
+        if not LOG.exists():
+            return
+        try:
+            st = LOG.stat()
+        except OSError:
+            return
+        # Rotation / truncation → re-read from scratch
+        if st.st_size < state["size"]:
+            state["events"].clear()
+            state["pos"] = 0
+        state["size"] = st.st_size
+        if state["pos"] >= st.st_size:
+            return
+        try:
+            with LOG.open() as f:
+                f.seek(state["pos"])
+                for line in f:
+                    if not line.endswith("\n"):  # partial line — stop before it
+                        break
+                    try:
+                        r = json.loads(line)
+                    except Exception:
+                        continue
+                    if cutoff is None or r.get("ts", 0) >= cutoff:
+                        state["events"].append(r)
+                state["pos"] = f.tell()
+        except OSError:
+            return
+        # Drop events that have aged out of the window (cheap: only check front)
+        if cutoff is not None and state["events"]:
+            while state["events"] and state["events"][0].get("ts", 0) < cutoff:
+                state["events"].pop(0)
+
     def _snapshot():
-        events = load_events(cutoff)
+        _read_new()
+        events = state["events"]
         if not events:
             return Text.from_markup(
                 f"[yellow]No events in {LOG} matching --since={args.since}.[/yellow]\n"
                 f"[dim]Enable: touch ~/.claude/ctx-telemetry.enabled[/dim]"
             )
         data = _compute_metrics(events)
+        state["last_len"] = len(events)
         return _build_rich_group(args, events, data, live=True)
 
     try:
@@ -570,7 +614,15 @@ def _render_rich_live(args, refresh_seconds: float = 2.0):
                   screen=False, transient=False) as live:
             while True:
                 time.sleep(refresh_seconds)
-                live.update(_snapshot())
+                prev_len = state["last_len"]
+                prev_size = state["size"]
+                # Peek file size cheaply; skip render if nothing new
+                try:
+                    cur_size = LOG.stat().st_size if LOG.exists() else 0
+                except OSError:
+                    cur_size = prev_size
+                if cur_size != prev_size:
+                    live.update(_snapshot())
     except KeyboardInterrupt:
         console.print("[dim]— exited watch mode —[/dim]")
 
