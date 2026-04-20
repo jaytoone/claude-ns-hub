@@ -117,12 +117,27 @@ function renderGraphLegend() {
 }
 
 function nodeStyle(type) {
+  // Larger minimums so hover hitboxes are mouse-friendly. Keeps hierarchy
+  // (current > decision > doc > prompt) while making even the smallest
+  // node comfortably clickable.
   switch (type) {
-    case "current":  return { color: { background: "#3fb950", border: "#56d364" }, size: 22, font: { color: "#fff", size: 14, face: "ui-monospace" }, shape: "dot", borderWidth: 3 };
-    case "decision": return { color: { background: "#58a6ff", border: "#1f6feb" }, size: 10, font: { color: "#7d8590", size: 10 }, shape: "dot" };
-    case "doc":      return { color: { background: "#bc8cff", border: "#8957e5" }, size: 9,  font: { color: "#7d8590", size: 10 }, shape: "dot" };
-    case "prompt":   return { color: { background: "#30363d", border: "#484f58" }, size: 7,  font: { color: "#6e7681", size: 9 },  shape: "dot" };
-    default:         return { color: { background: "#888", border: "#666" }, size: 8, shape: "dot" };
+    case "current":  return {
+      color: { background: "#3fb950", border: "#56d364", highlight: { background: "#56d364", border: "#7ee08f" }, hover: { background: "#56d364", border: "#7ee08f" } },
+      size: 26, font: { color: "#fff", size: 14, face: "ui-monospace" }, shape: "dot", borderWidth: 3,
+    };
+    case "decision": return {
+      color: { background: "#58a6ff", border: "#1f6feb", highlight: { background: "#79c0ff", border: "#388bfd" }, hover: { background: "#79c0ff", border: "#388bfd" } },
+      size: 13, font: { color: "#c9d1d9", size: 11 }, shape: "dot", borderWidth: 1.5,
+    };
+    case "doc":      return {
+      color: { background: "#bc8cff", border: "#8957e5", highlight: { background: "#d2a8ff", border: "#a371f7" }, hover: { background: "#d2a8ff", border: "#a371f7" } },
+      size: 12, font: { color: "#c9d1d9", size: 11 }, shape: "dot", borderWidth: 1.5,
+    };
+    case "prompt":   return {
+      color: { background: "#6e7681", border: "#8b949e", highlight: { background: "#8b949e", border: "#b1bac4" }, hover: { background: "#8b949e", border: "#b1bac4" } },
+      size: 10, font: { color: "#8b949e", size: 10 }, shape: "dot", borderWidth: 1.5,
+    };
+    default: return { color: { background: "#888", border: "#666" }, size: 10, shape: "dot" };
   }
 }
 
@@ -201,7 +216,7 @@ function renderGraph(g) {
   });
 
   const options = {
-    interaction: { hover: true, tooltipDelay: 100, dragView: true, zoomView: true },
+    interaction: { hover: true, hoverConnectedEdges: true, tooltipDelay: 80, dragView: true, zoomView: true },
     physics: {
       enabled: true,
       solver: "forceAtlas2Based",
