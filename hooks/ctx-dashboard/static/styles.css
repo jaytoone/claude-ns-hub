@@ -134,6 +134,30 @@ main {
 .bars .b .bucket { color: var(--text-dim); }
 .bars .b .count { text-align: right; color: var(--cyan); }
 
+/* ── Utility (P1 outcome signal) ───────────────────── */
+#utility-body { font-family: var(--mono); font-size: 12px; }
+#utility-body .overall {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  padding-bottom: 10px; border-bottom: 1px dashed var(--panel-border);
+}
+#utility-body .overall .big {
+  font-size: 28px; font-weight: 700; color: var(--green);
+  font-family: var(--mono); line-height: 1;
+}
+#utility-body .overall .big.mid { color: var(--yellow); }
+#utility-body .overall .big.low { color: var(--red); }
+#utility-body .overall .sub { color: var(--text-dim); font-size: 11px; }
+#utility-body .row {
+  display: grid; grid-template-columns: 110px 1fr 80px; align-items: center;
+  gap: 10px; padding: 4px 0;
+}
+#utility-body .row .name { color: var(--text); font-weight: 600; }
+#utility-body .row .count { text-align: right; color: var(--cyan); font-size: 11px; }
+#utility-body .empty {
+  color: var(--text-dim); font-style: italic;
+  padding: 20px 8px; text-align: center; font-size: 11px;
+}
+
 /* ── Notices ────────────────────────────────────────── */
 #notices { display: flex; flex-direction: column; gap: 6px; }
 .notice { display: grid; grid-template-columns: 16px 90px 1fr; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; }

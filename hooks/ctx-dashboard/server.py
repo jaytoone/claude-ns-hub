@@ -289,6 +289,41 @@ def _recent_events(events, n: int = 50):
     return out
 
 
+# ── P1: Utility rate — was injected context actually used by the assistant? ──
+
+def _compute_utility(events) -> dict:
+    """Aggregate `utility_measured` events over the window.
+
+    Returns {overall, by_block, n_turns} where:
+      overall       = total_referenced / total_items (all blocks combined)
+      by_block.<b>  = {rate, n} per block (g1, g2_docs, g2_prefetch)
+      n_turns       = number of measured assistant turns in the window
+    """
+    utility_events = [e for e in events if e.get("type") == "utility_measured"]
+    total_items = sum(e.get("total_items", 0) for e in utility_events)
+    total_ref = sum(e.get("referenced_items", 0) for e in utility_events)
+    by_block_totals = {}
+    for e in utility_events:
+        for block, counts in (e.get("by_block") or {}).items():
+            d = by_block_totals.setdefault(block, {"total": 0, "referenced": 0})
+            d["total"] += counts.get("total", 0)
+            d["referenced"] += counts.get("referenced", 0)
+    by_block = {}
+    for block, d in by_block_totals.items():
+        if d["total"] > 0:
+            by_block[block] = {
+                "rate": d["referenced"] / d["total"],
+                "total": d["total"],
+                "referenced": d["referenced"],
+            }
+    return {
+        "n_turns": len(utility_events),
+        "overall_rate": (total_ref / total_items) if total_items else None,
+        "total_items": total_items,
+        "by_block": by_block,
+    }
+
+
 # ── Reactive refresh — when new events arrive (user just submitted a
 # prompt), invalidate samples + graph caches so the next tick recomputes
 # with fresh data. Samples/graph recompute is scheduled in the stream
@@ -402,6 +437,7 @@ def _build_snapshot():
         "other": other,
         "recent": _recent_events(events, n=30),
         "samples": SAMPLE_CACHE,
+        "utility": _compute_utility(events),
         "thresholds": {
             "cm_hybrid_min": int(TH["cm_hybrid_pct_min"] * 100),
             "g2_docs_max": int(TH["g2_docs_over_concern"] * 100),

@@ -818,6 +818,47 @@ def main():
         "prompt_len": len(prompt) if prompt else 0,
     })
 
+    # ── P1: record what we injected for utility-rate measurement ─────
+    # Stop hook reads this + the latest assistant turn + substring-matches
+    # each item's distinctive tokens. Not stored when dashboard-internal.
+    if os.environ.get("CTX_DASHBOARD_INTERNAL") != "1":
+        try:
+            injection = {
+                "ts": _time.time(),
+                "prompt_len": len(prompt) if prompt else 0,
+                "items": [],
+            }
+            # Collect distinctive substrings from emitted blocks.
+            # Each item is (block, signature) — signature is a 4-20 char
+            # distinctive substring the assistant's response can echo.
+            for line in lines:
+                s = line.strip()
+                # G1 decisions: "> [YYYY-MM-DD] subject"
+                if s.startswith("> [") and "]" in s:
+                    subj = s.split("]", 1)[1].strip()
+                    # take first 3 meaningful words as signature
+                    tokens = [w for w in subj.split() if len(w) >= 4][:3]
+                    if tokens:
+                        injection["items"].append({"block": "g1", "tokens": tokens})
+                # G2-DOCS entries: "  > filename.md" → filename as signature
+                elif s.startswith("> ") and (".md" in s or s.endswith(".py")):
+                    fname = s.lstrip("> ").strip().split(" §")[0].split()[0]
+                    if fname:
+                        injection["items"].append({"block": "g2_docs", "tokens": [fname]})
+                # G2-PREFETCH: symbol names
+                elif ": " in s and "@" in s and any(k in s for k in ("Function:", "Class:", "Method:", "Module:", "File:")):
+                    try:
+                        name = s.split(":", 1)[1].split("@")[0].strip()
+                        if name and len(name) >= 4:
+                            injection["items"].append({"block": "g2_prefetch", "tokens": [name]})
+                    except Exception:
+                        pass
+            Path(os.path.expanduser("~/.claude/last-injection.json")).write_text(
+                json.dumps(injection)
+            )
+        except Exception:
+            pass
+
 
 if __name__ == "__main__":
     main()

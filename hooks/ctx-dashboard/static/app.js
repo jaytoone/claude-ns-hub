@@ -49,6 +49,42 @@ function renderLatencyBars(hist) {
   }).join("");
 }
 
+function renderUtility(u) {
+  const host = $("utility-body");
+  if (!u || u.n_turns === 0) {
+    host.innerHTML = `<div class="empty">
+      No measurements yet. Complete a turn — CTX will log whether the
+      assistant actually referenced injected context.
+    </div>`;
+    return;
+  }
+  const overall = u.overall_rate;
+  const pct = overall == null ? 0 : Math.round(overall * 100);
+  const cls = pct >= 50 ? "" : (pct >= 25 ? "mid" : "low");
+  const blocks = u.by_block || {};
+  const blockRows = Object.keys(blocks).sort().map(name => {
+    const b = blocks[name];
+    const p = Math.round((b.rate || 0) * 100);
+    const color = p >= 50 ? "green" : (p >= 25 ? "yellow" : "red");
+    const pctFill = Math.max(3, p);
+    return `<div class="row">
+      <div class="name">${esc(name)}</div>
+      <div class="bar"><div class="bar-fill ${color}" style="width:${pctFill}%"></div></div>
+      <div class="count">${p}% (${esc(b.referenced)}/${esc(b.total)})</div>
+    </div>`;
+  }).join("");
+  host.innerHTML = `
+    <div class="overall">
+      <div class="big ${cls}">${pct}%</div>
+      <div>
+        <div>Overall utility</div>
+        <div class="sub">${esc(u.n_turns)} turns measured · ${esc(u.total_items)} items injected</div>
+      </div>
+    </div>
+    ${blockRows}
+  `;
+}
+
 function renderNotices(notices) {
   if (!notices || notices.length === 0) {
     return `<div style="color:var(--text-dim); font-family:var(--mono); font-size:12px;">— none —</div>`;
@@ -346,6 +382,7 @@ function apply(snap) {
   $("health-rows").innerHTML = snap.rows.map(renderHealthRow).join("");
   renderActivity(snap.activity);
   $("latency-bars").innerHTML = renderLatencyBars(snap.latency_hist);
+  renderUtility(snap.utility);
   $("notices").innerHTML = renderNotices(snap.notices);
   $("other").innerHTML = renderOther(snap.other);
   $("events").innerHTML = renderEvents(snap.recent);

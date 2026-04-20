@@ -1,0 +1,278 @@
+{
+  "env": {
+    "PATH": "/home/jayone/google-cloud-sdk/bin:/home/jayone/.local/bin:/home/jayone/bin:/home/jayone/.nvm/versions/node/v22.19.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "BASH_DEFAULT_TIMEOUT_MS": "600000",
+    "BASH_MAX_TIMEOUT_MS": "1800000",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "20000",
+    "DISABLE_COST_WARNINGS": "1",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-7",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(bun *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(.venv/bin/python *)",
+      "Bash(.venv/bin/pip *)",
+      "Bash(pip *)",
+      "Bash(pip3 *)",
+      "Bash(torchrun *)",
+      "Bash(pytest *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(sort *)",
+      "Bash(tee *)",
+      "Bash(xargs *)",
+      "Bash(wc *)",
+      "Bash(du *)",
+      "Bash(tree *)",
+      "Bash(mkdir *)",
+      "Bash(rm *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(chmod *)",
+      "Bash(ln *)",
+      "Bash(date *)",
+      "Bash(which *)",
+      "Bash(env *)",
+      "Bash(test *)",
+      "Bash(curl *)",
+      "Bash(sleep *)",
+      "Bash(pkill *)",
+      "Bash(kill *)",
+      "Bash(lsof *)",
+      "Bash(tmux *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(rsync *)",
+      "Bash(nohup *)",
+      "Bash(source *)",
+      "Bash(exit *)",
+      "Bash(xxd *)",
+      "Bash(openssl *)",
+      "Bash(jq *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(ffmpeg *)",
+      "Bash(ffprobe *)",
+      "Bash(yt-dlp *)",
+      "Bash(railway *)",
+      "Bash(supabase *)",
+      "Bash(psql *)",
+      "Bash(PGPASSWORD=*)",
+      "Bash(YOUTUBE_API_KEY=*)",
+      "Bash(GEMINI_API_KEY=*)",
+      "Bash(PORT=*)",
+      "Bash(NODE_ENV=*)",
+      "Bash(CUDA_VISIBLE_DEVICES=*)",
+      "Bash(bash *)",
+      "Bash(claude *)",
+      "WebFetch",
+      "WebSearch",
+      "mcp__repomix__*",
+      "mcp__playwright-session-*__*",
+      "mcp__claude-flow__*",
+      "Skill(commit)",
+      "Bash(/home/jayone/Project/TSP/.omc/progress.log:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~/Project/*)",
+      "Bash(rm -rf ~/Documents/*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard HEAD~*)",
+      "Bash(sudo *)",
+      "Bash(format *)",
+      "Bash(DROP TABLE *)",
+      "Bash(TRUNCATE TABLE *)"
+    ],
+    "ask": [],
+    "defaultMode": "dontAsk",
+    "additionalDirectories": [
+      "/home/jayone/.claude"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'python3 -c \"import socket,os; s=socket.socket(socket.AF_UNIX); s.settimeout(0.3); s.connect(os.path.expanduser(\\\"~/.local/share/claude-vault/vec-daemon.sock\\\"))\" 2>/dev/null || { rm -f $HOME/.local/share/claude-vault/vec-daemon.sock; nohup python3 $HOME/.local/share/claude-vault/vec-daemon.py > /tmp/vec-daemon.log 2>&1 & }'",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/stop-decision-capture.py"
+          },
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/pre-compact-save.js"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.local/share/claude-vault/claude-vault-incremental.sh",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/chat-memory.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/bm25-memory.py --rich"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/memory-keyword-trigger.py"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/close-popup.sh",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/subagent_tracker.py",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CLAUDE_HOOK_EVENT=SubagentStop python3 $HOME/.claude/hooks/subagent_tracker.py",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq '. + {\"matcher\":\"permission_prompt\"}' | bash $HOME/.claude/hooks/windows-notify.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/stop-decision-capture.py"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/stop-playwright-detect.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/windows-stop.sh",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "echo \"{}\" | bash $HOME/.local/share/claude-vault/claude-vault-incremental.sh",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/utility-rate.py",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/post-write-doc-index.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/g2-fallback.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": []
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "awaySummaryEnabled": false,
+  "autoUpdatesChannel": "latest",
+  "skipDangerousModePermissionPrompt": true,
+  "mcpServers": {}
+}

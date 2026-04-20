@@ -93,6 +93,10 @@ _ALLOWED_KEYS = {
     "decision_captured": {"hook", "category", "pattern_id"},
     # g2-fallback: grep result signal (0 results / test-only / sparse)
     "grep_signal": {"hook", "signal", "result_count"},
+    # P1: utility-rate Stop hook — did assistant reference injected context?
+    # by_block is a nested dict {block: {total, referenced}} — still counts-only,
+    # no content. Sanitizer relaxes primitive guard for this event only.
+    "utility_measured": {"total_items", "referenced_items", "by_block", "response_len"},
 }
 
 
@@ -100,17 +104,33 @@ def _sanitize(event_type: str, payload: dict) -> dict:
     """Strip any key not in the whitelist for this event type.
     Defensive: blocks accidental content leakage if a caller adds unsafe fields."""
     allowed = _ALLOWED_KEYS.get(event_type, set())
+    # utility_measured's by_block is a 1-level nested dict of counts
+    allow_nested_dict_for = {"utility_measured": {"by_block"}}
     out = {}
     for k, v in (payload or {}).items():
         if k not in allowed:
             continue
-        # Additional type guard: reject non-primitive values
-        if not isinstance(v, (str, int, float, bool)) and v is not None:
+        if isinstance(v, (str, int, float, bool)) or v is None:
+            if isinstance(v, str) and len(v) > 80:
+                v = v[:80]
+            out[k] = v
             continue
-        # String length cap (prevents accidental content inclusion)
-        if isinstance(v, str) and len(v) > 80:
-            v = v[:80]
-        out[k] = v
+        # Allow ONE level of nested dict for whitelisted keys (counts only).
+        if (isinstance(v, dict)
+                and k in allow_nested_dict_for.get(event_type, set())):
+            safe_inner = {}
+            for ik, iv in v.items():
+                if not isinstance(ik, str) or len(ik) > 40:
+                    continue
+                if isinstance(iv, dict):
+                    # 2nd level: must be primitive counts
+                    safe_inner[ik] = {
+                        jk: jv for jk, jv in iv.items()
+                        if isinstance(jk, str) and isinstance(jv, (int, float))
+                    }
+                elif isinstance(iv, (int, float)):
+                    safe_inner[ik] = iv
+            out[k] = safe_inner
     return out
 
 
