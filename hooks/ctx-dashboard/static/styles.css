@@ -307,6 +307,16 @@ main {
 }
 .sample .q .prompt { color: var(--text); font-weight: 500; }
 .sample .q .ts { color: var(--text-dim); font-size: 11px; float: right; }
+.sample .q .util {
+  display: inline-block; margin-right: 8px;
+  padding: 1px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+  text-transform: uppercase; border: 1px solid;
+}
+.sample .q .util.ok   { color: var(--green);  border-color: var(--green);  background: rgba(63,185,80,0.08); }
+.sample .q .util.mid  { color: var(--yellow); border-color: var(--yellow); background: rgba(210,153,34,0.08); }
+.sample .q .util.low  { color: var(--red);    border-color: var(--red);    background: rgba(248,81,73,0.06); }
+.sample .q .util.pending { color: var(--text-dim); border-color: var(--panel-border); background: transparent; }
 
 .blocks {
   display: grid;

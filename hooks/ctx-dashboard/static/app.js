@@ -311,20 +311,30 @@ function renderSamples(samples) {
   }
   const ageSec = Math.max(0, Math.round(Date.now()/1000 - samples.computed_at));
   ageEl.textContent = `computed ${ageSec}s ago`;
-  host.innerHTML = samples.prompts.map(p => `
-    <div class="sample">
-      <div class="q">
-        <span class="ts">${esc(fmtTs(p.ts))}</span>
-        <span class="prompt">${esc(p.preview)}</span>
-      </div>
-      <div class="blocks">
-        ${renderCmBlock(p.cm)}
-        ${renderBlock("G1", "decisions", p.g1)}
-        ${renderBlock("G2-DOCS", "BM25 docs", p.g2_docs)}
-        ${renderBlock("G2-PREFETCH", "code graph", p.g2_prefetch)}
-      </div>
-    </div>
-  `).join("");
+  host.innerHTML = samples.prompts.map(p => {
+    let score = "";
+    if (p.utility) {
+      const pct = Math.round(p.utility.rate * 100);
+      const cls = pct >= 50 ? "ok" : (pct >= 25 ? "mid" : "low");
+      score = `<span class="util ${cls}" title="${esc(p.utility.referenced)}/${esc(p.utility.total)} items referenced in Claude's response">utility ${pct}%</span>`;
+    } else if (p.has_response === false) {
+      score = `<span class="util pending" title="No assistant response yet">utility —</span>`;
+    }
+    return `
+      <div class="sample">
+        <div class="q">
+          <span class="ts">${esc(fmtTs(p.ts))}</span>
+          ${score}
+          <span class="prompt">${esc(p.preview)}</span>
+        </div>
+        <div class="blocks">
+          ${renderCmBlock(p.cm)}
+          ${renderBlock("G1", "decisions", p.g1)}
+          ${renderBlock("G2-DOCS", "BM25 docs", p.g2_docs)}
+          ${renderBlock("G2-PREFETCH", "code graph", p.g2_prefetch)}
+        </div>
+      </div>`;
+  }).join("");
 }
 
 function renderEvents(evs) {

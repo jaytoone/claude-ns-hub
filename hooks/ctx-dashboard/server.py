@@ -253,30 +253,116 @@ def _parse_cm(hook_output: str, max_entries: int = 2) -> list:
 
 
 def _recent_user_prompts_with_project(n: int = 3):
-    """Like ctx_report._recent_user_prompts but also returns the session's
-    project column. Needed so each hook invocation can use the prompt's
-    ORIGINAL project cwd (not the dashboard's own cwd, which would make
-    project-scoped CM + BM25 decision queries return empty)."""
+    """Pull recent (user_prompt, next_assistant_response, project) tuples.
+    Response is None if the user prompt has no assistant reply yet (just
+    submitted). Used by samples panel to compute per-prompt utility score."""
     if not _ctx._VAULT_DB.exists():
         return []
     try:
         import sqlite3 as _sql
         c = _sql.connect(f"file:{_ctx._VAULT_DB}?mode=ro", uri=True, timeout=2.0)
         rows = c.execute(f"""
-            SELECT m.timestamp, m.content, s.project
-            FROM messages m
-            JOIN sessions s ON m.session_id = s.session_id
-            WHERE m.role='user'
-              AND length(m.content) BETWEEN 20 AND 400
-              AND m.content NOT LIKE '[tool_%'
-              AND m.content NOT LIKE 'Caveat:%'
-              AND m.content NOT LIKE '<command-%'
-            ORDER BY m.id DESC LIMIT {n}
+            SELECT u.timestamp, u.content, s.project, (
+                SELECT a.content FROM messages a
+                WHERE a.session_id = u.session_id
+                  AND a.id > u.id
+                  AND a.role = 'assistant'
+                  AND length(a.content) >= 100
+                ORDER BY a.id ASC LIMIT 1
+            ) AS reply
+            FROM messages u
+            JOIN sessions s ON u.session_id = s.session_id
+            WHERE u.role='user'
+              AND length(u.content) BETWEEN 20 AND 400
+              AND u.content NOT LIKE '[tool_%'
+              AND u.content NOT LIKE 'Caveat:%'
+              AND u.content NOT LIKE '<command-%'
+            ORDER BY u.id DESC LIMIT {n}
         """).fetchall()
         c.close()
         return rows
     except Exception:
         return []
+
+
+_META_WORDS_UTIL = frozenset([
+    "live-infinite", "live-inf", "omc-live", "iter", "live",
+    "goal_v1", "goal_v2", "goal_v3", "goal",
+    "feat", "fix", "refactor", "perf", "docs", "test", "chore",
+    "success", "section", "update", "add", "remove", "change",
+])
+
+
+def _subject_tokens(text: str, n: int = 5) -> list:
+    """Mirror of bm25-memory._extract_content_tokens — content words only."""
+    out = []
+    for w in text.split():
+        c = w.strip(".,()[]{}:;!?\"'").lower()
+        if len(c) < 4: continue
+        if c in _META_WORDS_UTIL: continue
+        if c.replace("/", "").replace(".", "").replace("-", "").isdigit(): continue
+        out.append(w.strip(".,()[]{}:;!?\"'"))
+    seen = set()
+    uniq = [t for t in out if not (t.lower() in seen or seen.add(t.lower()))]
+    uniq.sort(key=lambda t: -len(t))
+    return uniq[:n]
+
+
+def _score_blocks_against_response(g1: list, g2_docs: list, g2_prefetch: list,
+                                    response: str | None) -> dict | None:
+    """Score per-prompt utility from already-parsed sample blocks against the
+    real response. No dependency on last-injection.json (which is gated off
+    for dashboard-internal hook invocations)."""
+    if not response:
+        return None
+
+    rl = response.lower()
+    by_block = {"g1": [0, 0], "g2_docs": [0, 0], "g2_prefetch": [0, 0]}
+
+    # G1 items look like: "[2026-03-30] subject text here"
+    for it in g1:
+        by_block["g1"][1] += 1
+        # strip leading [date]
+        subj = it.split("]", 1)[1] if it.startswith("[") and "]" in it else it
+        tokens = _subject_tokens(subj, n=5)
+        if any(len(t) >= 4 and t.lower() in rl for t in tokens):
+            by_block["g1"][0] += 1
+
+    # G2-DOCS items are filenames like "20260409-g1-fulleval-sota-comparison.md"
+    for it in g2_docs:
+        by_block["g2_docs"][1] += 1
+        fname = it.split()[0] if it else ""
+        stem = fname.rsplit(".", 1)[0]
+        parts = [p for p in stem.replace("-", " ").replace("_", " ").split()
+                 if len(p) >= 4 and not p.isdigit()]
+        tokens = [fname] + parts
+        if any(len(t) >= 4 and t.lower() in rl for t in tokens):
+            by_block["g2_docs"][0] += 1
+
+    # G2-PREFETCH items: "Function: foo @ path.py" → symbol + path basename
+    for it in g2_prefetch:
+        by_block["g2_prefetch"][1] += 1
+        try:
+            name = it.split(":", 1)[1].split("@")[0].strip() if ":" in it else it
+            path = it.split("@", 1)[1].strip() if "@" in it else ""
+            base = path.rsplit("/", 1)[-1]
+            tokens = [name, base] if name else [base]
+            if any(len(t) >= 4 and t.lower() in rl for t in tokens):
+                by_block["g2_prefetch"][0] += 1
+        except Exception:
+            pass
+
+    total = sum(t for _, t in by_block.values())
+    ref = sum(r for r, _ in by_block.values())
+    if total == 0:
+        return None
+    return {
+        "total": total,
+        "referenced": ref,
+        "rate": ref / total,
+        "by_block": {b: {"referenced": r, "total": t, "rate": r / max(1, t)}
+                     for b, (r, t) in by_block.items() if t > 0},
+    }
 
 
 def _compute_samples(n_prompts: int = 3) -> dict:
@@ -293,15 +379,18 @@ def _compute_samples(n_prompts: int = 3) -> dict:
     This closes the gap between UserPromptSubmit (instant) and vault.db
     write (happens on Stop hook, often 10-60s later)."""
     rows = _recent_user_prompts_with_project(n=n_prompts)
-    # Shape: (ts, content, project)
+    # Shape: (ts, content, project, response)
     prompts = [(r[0], r[1]) for r in rows]
-    # Map timestamp+first-60-chars → cwd, so the realtime prepend also
-    # gets the right cwd (falls back to current project dir or cwd).
+    # Map timestamp+first-60-chars → (cwd, response), so the realtime prepend
+    # also gets the right cwd + we can score utility per prompt.
     cwd_by_key = {}
-    for ts, content, project in rows:
+    response_by_key = {}
+    for ts, content, project, response in rows:
+        key = (ts or "") + (content or "")[:60]
         cwd = _project_to_cwd(project)
         if cwd:
-            cwd_by_key[(ts or "") + (content or "")[:60]] = cwd
+            cwd_by_key[key] = cwd
+        response_by_key[key] = response
 
     try:
         inj_path = Path(os.path.expanduser("~/.claude/last-injection.json"))
@@ -332,18 +421,31 @@ def _compute_samples(n_prompts: int = 3) -> dict:
     default_cwd = _project_dir()   # ~/Project/CTX by default
     for ts, content in prompts:
         preview = content[:120] + ("…" if len(content) > 120 else "")
-        # Look up the original cwd for this prompt (from vault.db project col)
-        cwd = cwd_by_key.get((ts or "") + (content or "")[:60], default_cwd)
+        key = (ts or "") + (content or "")[:60]
+        cwd = cwd_by_key.get(key, default_cwd)
+        response = response_by_key.get(key)
         bm_out = _run_bm25_memory_internal(content, cwd=cwd)
         cm_out = _run_chat_memory(content, cwd=cwd)
+
+        g1_items = _ctx._extract_block(bm_out, "[RECENT DECISIONS]")[:3]
+        g2_doc_items = _ctx._extract_block(bm_out, "[G2-DOCS]")[:3]
+        g2_pre_items = _ctx._extract_block(bm_out, "[G2-PREFETCH]")[:3]
+
+        # Per-prompt utility: score parsed blocks against the real response
+        utility = _score_blocks_against_response(
+            g1_items, g2_doc_items, g2_pre_items, response
+        )
+
         result["prompts"].append({
             "ts": ts,
             "preview": preview,
             "cwd": cwd,
+            "utility": utility,                  # None = no response yet (just submitted)
+            "has_response": bool(response),
             "cm": _parse_cm(cm_out, max_entries=2),
-            "g1": _ctx._extract_block(bm_out, "[RECENT DECISIONS]")[:3],
-            "g2_docs": _ctx._extract_block(bm_out, "[G2-DOCS]")[:3],
-            "g2_prefetch": _ctx._extract_block(bm_out, "[G2-PREFETCH]")[:3],
+            "g1": g1_items,
+            "g2_docs": g2_doc_items,
+            "g2_prefetch": g2_pre_items,
         })
     return result
 
