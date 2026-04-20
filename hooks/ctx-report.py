@@ -424,158 +424,107 @@ def _bar_row(label: str, pct_value: float, threshold: float, raw: str,
 
 
 def _render_rich(args, events, data):
-    """Render the full report using rich library.
-    `data` is a dict produced by _compute_metrics()."""
+    """Render a COMPACT rich report. Target: ~15-18 lines total so Claude Code
+    displays it inline without collapsing. One panel (System Health) does the
+    heavy lifting; everything else is one-line summaries."""
     console = Console(force_terminal=True, color_system="truecolor")
 
-    # ── Header panel
-    header_txt = Text()
-    header_txt.append("CTX Telemetry", style="bold cyan")
-    header_txt.append(f"  since={args.since}  ·  ", style="dim")
-    header_txt.append(f"{len(events)} events", style="bold")
-    header_txt.append(f"  ·  {LOG}", style="dim")
-    console.print(Panel(header_txt, box=box.ROUNDED, border_style="cyan"))
+    # ── Inline header (1 line): title + event count + activity mini-summary
+    days_summary = " · ".join(
+        f"[cyan]{d.split()[1]}[/cyan] {n}" for d, n in
+        sorted(data["daily_counts"].items(), key=lambda kv: kv[0], reverse=True)[:3]
+    )
+    console.print(
+        f"[bold cyan]CTX Telemetry[/bold cyan] "
+        f"[dim]since={args.since} ·[/dim] [bold]{len(events)}[/bold] events "
+        f"[dim]·[/dim] {days_summary}"
+    )
 
-    # Sample size warning
     if len(events) < TH["min_events_for_eval"]:
         console.print(f"[yellow]⚠ Sample too small (<{TH['min_events_for_eval']}). "
-                      f"Verdicts are provisional.[/yellow]\n")
+                      f"Verdicts are provisional.[/yellow]")
 
-    # ── System Health panel — progress bars per metric
+    # ── System Health panel — compact progress bars (only meaningful metrics)
     health_table = Table.grid(padding=(0, 1), expand=False)
-    health_table.add_column(style="bold", width=16)
-    health_table.add_column(width=26)       # progress bar
-    health_table.add_column(width=12, justify="right", style="cyan")
+    health_table.add_column(style="bold", width=14)
+    health_table.add_column(width=20)       # progress bar
+    health_table.add_column(width=11, justify="right", style="cyan")
     health_table.add_column(width=2)        # symbol
     health_table.add_column(style="dim")    # msg
 
-    if data["cm_events"]:
+    def _row(label, ratio, value_str, ok, msg):
+        color = "green" if ok else "yellow"
         health_table.add_row(
-            "CM hybrid",
-            *_bar_row("CM", data["cm_hybrid_pct"], TH["cm_hybrid_pct_min"],
-                      f"{int(data['cm_hybrid_pct']*100)}%")[1:3],
-            "[green]✓[/green]" if data["cm_hybrid_pct"] >= TH["cm_hybrid_pct_min"] else "[yellow]~[/yellow]",
-            "daemon healthy" if data["cm_hybrid_pct"] >= TH["cm_hybrid_pct_min"] else "daemon flaky",
+            label,
+            ProgressBar(total=100, completed=int(min(1.0, ratio) * 100), width=18,
+                        complete_style=color, finished_style=color),
+            value_str,
+            "[green]✓[/green]" if ok else "[yellow]~[/yellow]",
+            msg,
         )
+
+    if data["cm_events"]:
+        ok = data["cm_hybrid_pct"] >= TH["cm_hybrid_pct_min"]
+        _row("CM hybrid", data["cm_hybrid_pct"],
+             f"{int(data['cm_hybrid_pct']*100)}%", ok,
+             "daemon healthy" if ok else "daemon flaky")
 
     if data["bm_invoked"]:
-        # G1 rate (informational — yellow if 100%)
         g1_ok = data["g1_rate"] < TH["g1_fire_max_concern"]
-        health_table.add_row(
-            "G1 fire rate",
-            ProgressBar(total=100, completed=int(data["g1_rate"]*100), width=24,
-                        complete_style="yellow" if not g1_ok else "green",
-                        finished_style="yellow" if not g1_ok else "green"),
-            f"{int(data['g1_rate']*100)}%",
-            "[green]✓[/green]" if g1_ok else "[yellow]~[/yellow]",
-            "selective" if g1_ok else "always fires",
-        )
+        _row("G1 fire rate", data["g1_rate"], f"{int(data['g1_rate']*100)}%",
+             g1_ok, "selective" if g1_ok else "always fires")
 
-        for block_name in ("g2_docs", "g2_prefetch", "g2_grep", "g2_hooks"):
+        # Only show g2_docs + g2_grep (the ones with thresholds); skip prefetch/hooks
+        for block_name, threshold_key, msg_ok, msg_bad in (
+            ("g2_docs", "g2_docs_over_concern", "selective", "over-matching"),
+            ("g2_grep", "g2_grep_over_concern", "graph fresh", "graph stale"),
+        ):
             c = data["block_counts"].get(block_name, 0)
             if c == 0:
                 continue
             rate = c / data["n_inv"]
-            # Thresholds per block
-            if block_name == "g2_docs":
-                ok = rate < TH["g2_docs_over_concern"]
-                msg = "selective" if ok else "over-matching"
-            elif block_name == "g2_grep":
-                ok = rate < TH["g2_grep_over_concern"]
-                msg = "graph fresh" if ok else "graph stale"
-            else:
-                ok = True
-                msg = "ok"
-            color = "green" if ok else "yellow"
-            health_table.add_row(
-                f"{block_name}",
-                ProgressBar(total=100, completed=int(rate*100), width=24,
-                            complete_style=color, finished_style=color),
-                f"{int(rate*100)}% ({c})",
-                "[green]✓[/green]" if ok else "[yellow]~[/yellow]",
-                msg,
-            )
+            ok = rate < TH[threshold_key]
+            _row(block_name, rate, f"{int(rate*100)}% ({c})", ok,
+                 msg_ok if ok else msg_bad)
 
-        # Latency: scale to 500ms max for bar fill
         p95 = data["p95"]
         lat_ok = p95 < TH["bm25_p95_ms_yellow"]
-        lat_ratio = min(1.0, p95 / TH["bm25_p95_ms_yellow"])
-        color = "green" if lat_ok else ("yellow" if p95 < TH["bm25_p95_ms_red"] else "red")
-        health_table.add_row(
-            "Latency p95",
-            ProgressBar(total=100, completed=int(lat_ratio*100), width=24,
-                        complete_style=color, finished_style=color),
-            f"{p95}ms",
-            "[green]✓[/green]" if lat_ok else "[yellow]~[/yellow]",
-            "fast" if lat_ok else "borderline",
-        )
+        _row("Latency p95", p95 / TH["bm25_p95_ms_yellow"],
+             f"{p95}ms", lat_ok, "fast" if lat_ok else "borderline")
 
     g, y, r = data["flags_g"], data["flags_y"], data["flags_r"]
     style, headline = _grade_style(g, y, r)
     console.print(Panel(
         health_table,
         title=f"[bold]System Health[/bold]  [{style}]{headline}[/{style}]",
-        subtitle="[dim]CM · G1 · G2 · latency[/dim]",
-        box=box.ROUNDED, border_style=style,
+        box=box.ROUNDED, border_style=style, padding=(0, 1),
     ))
 
-    # ── Activity histogram panel
-    if data["daily_counts"]:
-        act_table = Table.grid(padding=(0, 1))
-        act_table.add_column(style="cyan", width=12)
-        act_table.add_column(justify="right", style="bold", width=6)
-        act_table.add_column(width=44)
-        max_count = max(data["daily_counts"].values())
-        for day in sorted(data["daily_counts"].keys()):
-            n = data["daily_counts"][day]
-            act_table.add_row(
-                day, str(n),
-                ProgressBar(total=max_count, completed=n, width=42,
-                            complete_style="blue", finished_style="blue"),
-            )
-        console.print(Panel(
-            act_table,
-            title="[bold]Activity[/bold]  [dim](events per day)[/dim]",
-            box=box.ROUNDED, border_style="blue",
-        ))
-
-    # ── Quality Notices panel (informational, rate-based)
+    # ── Quality notices — one-line summary
     if data["quality_notices"]:
-        qn_table = Table.grid(padding=(0, 1))
-        qn_table.add_column(width=2)
-        qn_table.add_column(style="bold yellow", width=12)
-        qn_table.add_column(style="dim")
-        for metric, msg in data["quality_notices"]:
-            qn_table.add_row("[yellow]~[/yellow]", metric, msg)
-        console.print(Panel(
-            qn_table,
-            title="[bold]Quality Notices[/bold]  [dim](rate-based, informational)[/dim]",
-            subtitle="[dim]Verify: --explain <metric>  or  --deep[/dim]",
-            box=box.ROUNDED, border_style="yellow",
-        ))
+        parts = [f"[yellow]~[/yellow] {m}" for m, _ in data["quality_notices"]]
+        console.print(
+            f"[bold yellow]Quality notices:[/bold yellow] {' · '.join(parts)} "
+            f"[dim]· --explain/--deep to verify[/dim]"
+        )
 
-    # ── Misc events
-    misc = []
+    # ── Other signals — one-line summary (only if any)
+    other = []
     if data["cm_warnings"]:
-        misc.append(f"[yellow]⚠[/yellow] CM daemon-down warnings: {data['cm_warnings']}")
+        other.append(f"[yellow]CM daemon-down ×{data['cm_warnings']}[/yellow]")
     if data["decision_hits"]:
-        misc.append(f"Decision-keyword hits: {data['decision_hits']}")
+        other.append(f"decision-keyword ×{data['decision_hits']}")
     if data["grep_signals"]:
-        misc.append(f"Grep-fallback hints: {dict(data['grep_signals'])}")
-    if misc:
-        console.print(Panel(
-            "\n".join(misc),
-            title="[bold]Other signals[/bold]",
-            box=box.ROUNDED, border_style="dim",
-        ))
+        total = sum(data["grep_signals"].values())
+        other.append(f"grep-fallback ×{total}")
+    if other:
+        console.print(f"[dim]Other:[/dim] {' · '.join(other)}")
 
-    # ── Footer: thresholds
     console.print(
-        f"[dim]Thresholds: CM hybrid ≥{int(TH['cm_hybrid_pct_min']*100)}%  │  "
-        f"g2_docs <{int(TH['g2_docs_over_concern']*100)}%  │  "
-        f"g2_grep <{int(TH['g2_grep_over_concern']*100)}%  │  "
-        f"bm25 p95 <{TH['bm25_p95_ms_yellow']}ms  │  "
-        f"min n={TH['min_events_for_eval']}[/dim]"
+        f"[dim]Thresholds: CM ≥{int(TH['cm_hybrid_pct_min']*100)}% │ "
+        f"g2_docs <{int(TH['g2_docs_over_concern']*100)}% │ "
+        f"g2_grep <{int(TH['g2_grep_over_concern']*100)}% │ "
+        f"p95 <{TH['bm25_p95_ms_yellow']}ms[/dim]"
     )
 
 
