@@ -47,7 +47,8 @@
   <section class="panel" id="utility-panel">
     <h2>
       Utility rate
-      <span class="hint">was injected context actually referenced by the response?</span>
+      <span class="hint">share of injected items Claude actually referenced</span>
+      <span class="hint info-tip right" title="Measured on the Stop hook by substring-matching each injected item's distinctive tokens against the assistant's response. Stale events (from before the last tokenizer change) are excluded automatically. Backtest (n=200) baseline: ~38%.">ⓘ&nbsp;how</span>
     </h2>
     <div id="utility-body"></div>
   </section>
@@ -83,6 +84,18 @@
       <button id="refresh-samples" class="btn-small">refresh</button>
       <span id="samples-age" class="hint right"></span>
     </h2>
+    <div class="legend-note">
+      <strong>Per-prompt utility pill:</strong>
+      <span class="util-chip ok">≥50%</span>
+      <span class="util-chip mid">≥25%</span>
+      <span class="util-chip low">&lt;25%</span>
+      <span class="util-chip pending">—</span>
+      <span class="legend-sub">
+        = share of injected items that appeared in Claude's actual response.
+        <b>—</b> means the response hasn't been persisted to vault.db yet (persists on Stop hook, usually ~30s after the reply finishes);
+        refresh once the reply is complete and the score will fill in. CM entries are project-scoped history — they are NOT this prompt's reply.
+      </span>
+    </div>
     <div id="samples"></div>
   </section>
 

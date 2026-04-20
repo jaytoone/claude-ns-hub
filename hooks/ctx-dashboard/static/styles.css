@@ -318,6 +318,40 @@ main {
 .sample .q .util.low  { color: var(--red);    border-color: var(--red);    background: rgba(248,81,73,0.06); }
 .sample .q .util.pending { color: var(--text-dim); border-color: var(--panel-border); background: transparent; }
 
+/* Legend chip (in Function Proof panel note) — matches util pill styling */
+.legend-note {
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.legend-note strong { color: var(--text); }
+.legend-note b { color: var(--text); font-weight: 600; }
+.legend-note .legend-sub { display: block; margin-top: 4px; }
+.util-chip {
+  display: inline-block; margin: 0 3px;
+  padding: 1px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+  border: 1px solid; font-family: var(--mono);
+}
+.util-chip.ok   { color: var(--green);  border-color: var(--green);  background: rgba(63,185,80,0.08); }
+.util-chip.mid  { color: var(--yellow); border-color: var(--yellow); background: rgba(210,153,34,0.08); }
+.util-chip.low  { color: var(--red);    border-color: var(--red);    background: rgba(248,81,73,0.06); }
+.util-chip.pending { color: var(--text-dim); border-color: var(--panel-border); background: transparent; }
+
+.info-tip {
+  cursor: help;
+  color: var(--cyan);
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  font-weight: 500;
+}
+.info-tip:hover { color: var(--text); }
+
 .blocks {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
