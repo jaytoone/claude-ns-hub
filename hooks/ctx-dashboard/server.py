@@ -230,8 +230,40 @@ def _parse_cm(hook_output: str, max_entries: int = 2) -> list:
 
 def _compute_samples(n_prompts: int = 3) -> dict:
     """Pull N recent user prompts from vault.db, invoke real hooks on each,
-    return structured samples for the dashboard."""
+    return structured samples for the dashboard.
+
+    Realtime path: check last-injection.json first. If its ts is newer than
+    vault.db's newest row AND its preview doesn't already appear in the
+    vault.db results, prepend it as a synthetic "just-submitted" prompt.
+    This closes the gap between UserPromptSubmit (instant) and vault.db
+    write (happens on Stop hook, often 10-60s later)."""
     prompts = _ctx._recent_user_prompts(n=n_prompts)
+
+    try:
+        inj_path = Path(os.path.expanduser("~/.claude/last-injection.json"))
+        if inj_path.exists():
+            inj = json.loads(inj_path.read_text())
+            inj_ts = inj.get("ts", 0)
+            inj_preview = inj.get("prompt_preview", "")
+            if inj_preview and inj_ts > 0:
+                # vault.db timestamps are ISO strings; parse newest to unix
+                newest_vault_ts = 0
+                if prompts:
+                    try:
+                        newest_vault_ts = datetime.fromisoformat(
+                            prompts[0][0].replace("Z", "+00:00")
+                        ).timestamp()
+                    except Exception:
+                        newest_vault_ts = 0
+                # Newer than vault.db AND not already in results → prepend
+                if inj_ts > newest_vault_ts and not any(
+                    inj_preview[:60] in (c or "") for _, c in prompts
+                ):
+                    iso = datetime.fromtimestamp(inj_ts, tz=timezone.utc).isoformat()
+                    prompts = [(iso, inj_preview)] + list(prompts[:n_prompts - 1])
+    except Exception:
+        pass
+
     result = {"computed_at": time.time(), "prompts": []}
     for ts, content in prompts:
         preview = content[:120] + ("…" if len(content) > 120 else "")
@@ -526,8 +558,31 @@ def _build_graph(project_dir: str, max_decisions: int = 120,
             "full": fname,
             "tokens": set(_bm.tokenize(content[:2000])),  # sample for speed
         })
-    # 3. Recent prompts
-    prompt_rows = _ctx._recent_user_prompts(n=max_prompts)
+    # 3. Recent prompts — same realtime augmentation as samples: if a newer
+    # prompt is in last-injection.json, prepend it so the green "current"
+    # node reflects the JUST-submitted prompt (not the previous one).
+    prompt_rows = list(_ctx._recent_user_prompts(n=max_prompts))
+    try:
+        inj_path = Path(os.path.expanduser("~/.claude/last-injection.json"))
+        if inj_path.exists():
+            inj = json.loads(inj_path.read_text())
+            inj_ts = inj.get("ts", 0)
+            inj_preview = inj.get("prompt_preview", "")
+            newest_vault_ts = 0
+            if prompt_rows:
+                try:
+                    newest_vault_ts = datetime.fromisoformat(
+                        prompt_rows[0][0].replace("Z", "+00:00")
+                    ).timestamp()
+                except Exception:
+                    pass
+            if (inj_preview and inj_ts > newest_vault_ts
+                and not any(inj_preview[:60] in (c or "") for _, c in prompt_rows)):
+                iso = datetime.fromtimestamp(inj_ts, tz=timezone.utc).isoformat()
+                prompt_rows = [(iso, inj_preview)] + prompt_rows[:max_prompts - 1]
+    except Exception:
+        pass
+
     prompt_nodes = []
     for idx, (ts, content) in enumerate(prompt_rows):
         preview = content[:60].replace("\n", " ")

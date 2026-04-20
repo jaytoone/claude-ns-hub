@@ -823,9 +823,14 @@ def main():
     # each item's distinctive tokens. Not stored when dashboard-internal.
     if os.environ.get("CTX_DASHBOARD_INTERNAL") != "1":
         try:
+            # Preview = first 120 chars, newlines stripped (same privacy surface
+            # as vault.db which already stores full prompts; this just makes the
+            # dashboard see new prompts *before* vault.db incremental fires on Stop).
+            preview = (prompt or "")[:120].replace("\n", " ").replace("\r", " ")
             injection = {
                 "ts": _time.time(),
                 "prompt_len": len(prompt) if prompt else 0,
+                "prompt_preview": preview,
                 "items": [],
             }
             # Collect distinctive substrings from emitted blocks.
