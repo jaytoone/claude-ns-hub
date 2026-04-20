@@ -222,13 +222,20 @@ def _run_bm25_memory(prompt: str) -> str:
 
 def _extract_block(hook_output: str, block_marker: str) -> list:
     """Parse hook stdout JSON and extract items in a given block.
-    block_marker = '[RECENT DECISIONS]' or '[G2-DOCS]' etc.
-    Returns list of item strings (first 60 chars, stripped)."""
+    block_marker = '[RECENT DECISIONS]' / '[G2-DOCS]' / '[G2-PREFETCH]' etc.
+    Returns list of item strings (first 60 chars, stripped).
+
+    Handles two item formats:
+      - `> item` (G1 decisions, G2-DOCS)
+      - `Function: foo @ path.py` (G2-PREFETCH, no leading '>')
+    """
     try:
         payload = json.loads(hook_output)
         ctx = payload.get("hookSpecificOutput", {}).get("additionalContext", "")
     except Exception:
         ctx = hook_output
+    # G2-PREFETCH's "Start with: ..." summary line is not an item — filter it
+    PREFETCH_PREFIXES = ("Function:", "Class:", "Method:", "Module:", "File:")
     items = []
     in_block = False
     for line in ctx.split("\n"):
@@ -241,8 +248,12 @@ def _extract_block(hook_output: str, block_marker: str) -> list:
                 continue
             if stripped.startswith("["):  # next block
                 break
-            if stripped.startswith(">") or stripped.startswith(">"):
+            # Format 1: G1 / G2-DOCS items start with '>'
+            if stripped.startswith(">"):
                 items.append(stripped.lstrip("> ").strip()[:60])
+            # Format 2: G2-PREFETCH items have a symbol-kind prefix
+            elif any(stripped.startswith(p) for p in PREFETCH_PREFIXES):
+                items.append(stripped[:60])
     return items
 
 

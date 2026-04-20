@@ -163,6 +163,17 @@ def _project_to_cwd(project: str) -> str | None:
     return candidate if os.path.isdir(candidate) else None
 
 
+def _hook_env(cwd: str | None) -> dict:
+    """Build env for child hook invocations. bm25-memory reads project_dir
+    from CLAUDE_PROJECT_DIR (fallback os.getcwd) — NOT the input-JSON cwd
+    field. So for the dashboard to route a hook to the right project,
+    we must both set CLAUDE_PROJECT_DIR and pass cwd to Popen."""
+    env = {**_INTERNAL_ENV}
+    if cwd:
+        env["CLAUDE_PROJECT_DIR"] = cwd
+    return env
+
+
 def _run_chat_memory(prompt: str, cwd: str | None = None) -> str:
     if not _CHAT_MEMORY_HOOK.exists():
         return ""
@@ -171,7 +182,8 @@ def _run_chat_memory(prompt: str, cwd: str | None = None) -> str:
             ["python3", str(_CHAT_MEMORY_HOOK)],
             input=json.dumps({"prompt": prompt, "cwd": cwd or os.getcwd()}),
             capture_output=True, text=True, timeout=5,
-            env=_INTERNAL_ENV,
+            env=_hook_env(cwd),
+            cwd=cwd if (cwd and os.path.isdir(cwd)) else None,
         )
         return r.stdout
     except Exception:
@@ -189,7 +201,8 @@ def _run_bm25_memory_internal(prompt: str, cwd: str | None = None) -> str:
             ["python3", str(_ctx._BM25_HOOK), "--rich"],
             input=json.dumps({"prompt": prompt, "cwd": cwd or os.getcwd()}),
             capture_output=True, text=True, timeout=5,
-            env=_INTERNAL_ENV,
+            env=_hook_env(cwd),
+            cwd=cwd if (cwd and os.path.isdir(cwd)) else None,
         )
         return r.stdout
     except Exception:
