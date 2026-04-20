@@ -11,6 +11,9 @@ function esc(s) {
 }
 
 let activityPlot = null;
+let graphNetwork = null;
+let graphNodesSet = null;
+let graphNodeById = {};
 
 function fmtThresholds(th) {
   return `Thresholds: CM ≥${th.cm_hybrid_min}%  |  g2_docs <${th.g2_docs_max}%  |  g2_grep <${th.g2_grep_max}%  |  p95 <${th.p95_max_ms}ms`;
@@ -97,6 +100,125 @@ function renderCmBlock(cm) {
       <div class="name"><span>CM</span><span class="tag">chat memory</span></div>
       <div class="items">${body}</div>
     </div>`;
+}
+
+function renderGraphLegend() {
+  const host = $("graph-legend");
+  if (host.childElementCount > 0) return;  // render once
+  host.innerHTML = `
+    <span class="lg current"><span class="swatch"></span>current prompt</span>
+    <span class="lg decision"><span class="swatch"></span>decision</span>
+    <span class="lg doc"><span class="swatch"></span>doc</span>
+    <span class="lg prompt"><span class="swatch"></span>past prompt</span>
+    <span class="lg recall"><span class="line"></span>retrieval</span>
+    <span class="lg topic"><span class="line"></span>topic (doc↔doc)</span>
+    <span class="lg temporal"><span class="line"></span>temporal (decision↔decision)</span>
+  `;
+}
+
+function nodeStyle(type) {
+  switch (type) {
+    case "current":  return { color: { background: "#3fb950", border: "#56d364" }, size: 22, font: { color: "#fff", size: 14, face: "ui-monospace" }, shape: "dot", borderWidth: 3 };
+    case "decision": return { color: { background: "#58a6ff", border: "#1f6feb" }, size: 10, font: { color: "#7d8590", size: 10 }, shape: "dot" };
+    case "doc":      return { color: { background: "#bc8cff", border: "#8957e5" }, size: 9,  font: { color: "#7d8590", size: 10 }, shape: "dot" };
+    case "prompt":   return { color: { background: "#30363d", border: "#484f58" }, size: 7,  font: { color: "#6e7681", size: 9 },  shape: "dot" };
+    default:         return { color: { background: "#888", border: "#666" }, size: 8, shape: "dot" };
+  }
+}
+
+function edgeStyle(type, weight, isCurrent) {
+  const base = {
+    width: Math.max(0.5, Math.min(3, weight * 0.7)),
+    smooth: { enabled: true, type: "continuous" },
+  };
+  if (type === "recall-d" || type === "recall-w") {
+    return Object.assign(base, {
+      color: { color: isCurrent ? "#3fb950" : "rgba(88,166,255,0.25)",
+               highlight: "#3fb950", opacity: isCurrent ? 1.0 : 0.4 },
+      width: isCurrent ? Math.max(1.5, weight * 0.5) : base.width,
+      dashes: !isCurrent,
+    });
+  }
+  if (type === "topic") {
+    return Object.assign(base, { color: { color: "rgba(188,140,255,0.35)", highlight: "#bc8cff", opacity: 0.5 } });
+  }
+  if (type === "temporal") {
+    return Object.assign(base, { color: { color: "rgba(125,133,144,0.15)", highlight: "#7d8590", opacity: 0.3 }, width: 0.5 });
+  }
+  return base;
+}
+
+function renderGraph(g) {
+  if (!g || !g.nodes) return;
+  renderGraphLegend();
+  const canvas = $("graph-canvas");
+  const visNodes = g.nodes.map(n => {
+    const style = nodeStyle(n.type);
+    graphNodeById[n.id] = n;
+    return Object.assign({
+      id: n.id,
+      label: n.type === "current" ? n.label : "",
+      title: n.full,   // tooltip
+      type: n.type,
+    }, style);
+  });
+  const visEdges = g.edges.map((e, i) => Object.assign(
+    { id: `e${i}`, from: e.from, to: e.to, type: e.type },
+    edgeStyle(e.type, e.weight || 1, !!e.current),
+  ));
+
+  const stats = g.stats || {};
+  $("graph-stats").textContent = `${stats.decisions||0} decisions · ${stats.docs||0} docs · ${stats.prompts||0} prompts · ${stats.edges||0} edges`;
+
+  if (graphNetwork) {
+    graphNetwork.setData({ nodes: visNodes, edges: visEdges });
+    return;
+  }
+
+  const data = {
+    nodes: new vis.DataSet(visNodes),
+    edges: new vis.DataSet(visEdges),
+  };
+  const options = {
+    interaction: { hover: true, tooltipDelay: 100, dragView: true, zoomView: true },
+    physics: {
+      enabled: true,
+      solver: "forceAtlas2Based",
+      forceAtlas2Based: { gravitationalConstant: -40, centralGravity: 0.01, springLength: 100, springConstant: 0.08, damping: 0.5 },
+      stabilization: { iterations: 200, fit: true },
+      maxVelocity: 50,
+    },
+    nodes: { borderWidth: 1, shadow: false },
+    edges: { selectionWidth: 1.5 },
+  };
+
+  graphNetwork = new vis.Network(canvas, data, options);
+
+  graphNetwork.on("click", (params) => {
+    const detail = $("graph-detail");
+    if (params.nodes.length === 0) {
+      detail.classList.add("empty");
+      detail.innerHTML = "";
+      return;
+    }
+    const id = params.nodes[0];
+    const n = graphNodeById[id];
+    if (!n) return;
+    detail.classList.remove("empty");
+    const meta = [];
+    if (n.date) meta.push(`date: ${esc(n.date)}`);
+    if (n.ts)   meta.push(`ts: ${esc(fmtTs(n.ts))}`);
+    detail.innerHTML = `
+      <div class="node-info">
+        <span class="tag ${esc(n.type)}">${esc(n.type)}</span>
+        <span class="full">${esc(n.full)}</span>
+        ${meta.length ? `<div class="meta">${meta.join(" · ")}</div>` : ""}
+      </div>`;
+  });
+}
+
+function refreshGraph() {
+  fetch("/api/graph").then(r => r.json()).then(renderGraph).catch(console.error);
 }
 
 function renderSamples(samples) {
@@ -187,14 +309,21 @@ function apply(snap) {
   $("thresholds").textContent = fmtThresholds(snap.thresholds);
 }
 
-// "refresh" button — POST to /api/samples/refresh to force a recompute now
+// Refresh buttons — samples + graph
 document.addEventListener("click", async (e) => {
-  if (e.target && e.target.id === "refresh-samples") {
+  if (!e.target) return;
+  if (e.target.id === "refresh-samples") {
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = "…";
+    try { await fetch("/api/samples/refresh", { method: "POST" }); }
+    catch (err) { console.error(err); }
+    setTimeout(() => { btn.disabled = false; btn.textContent = "refresh"; }, 2000);
+  } else if (e.target.id === "refresh-graph") {
     const btn = e.target;
     btn.disabled = true; btn.textContent = "…";
     try {
-      await fetch("/api/samples/refresh", { method: "POST" });
-      // SSE will pick up the fresh cache on next tick
+      await fetch("/api/graph/refresh", { method: "POST" });
+      refreshGraph();
     } catch (err) { console.error(err); }
     setTimeout(() => { btn.disabled = false; btn.textContent = "refresh"; }, 2000);
   }
@@ -215,6 +344,9 @@ function connect() {
 // Initial fetch so the page is never blank while waiting for SSE
 fetch("/api/snapshot").then(r => r.json()).then(apply).catch(console.error);
 connect();
+
+// Initial graph load
+refreshGraph();
 
 // Re-render chart on resize
 window.addEventListener("resize", () => {

@@ -170,6 +170,56 @@ main {
 .events .ev .bk { color: var(--text); }
 .events .ev .dur { text-align: right; color: var(--text-dim); }
 
+/* ── Knowledge Graph ───────────────────────────────── */
+#graph-canvas {
+  width: 100%;
+  height: 520px;
+  background: radial-gradient(ellipse at center, #0f1620 0%, #0a0e14 100%);
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  position: relative;
+}
+#graph-legend {
+  display: flex; gap: 16px; margin-bottom: 8px;
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  flex-wrap: wrap;
+}
+#graph-legend .lg { display: flex; align-items: center; gap: 6px; }
+#graph-legend .lg .swatch {
+  width: 10px; height: 10px; border-radius: 50%;
+  box-shadow: 0 0 4px currentColor;
+}
+#graph-legend .lg.decision .swatch { background: #58a6ff; color: #58a6ff; }
+#graph-legend .lg.doc .swatch { background: #bc8cff; color: #bc8cff; }
+#graph-legend .lg.prompt .swatch { background: #7d8590; color: #7d8590; }
+#graph-legend .lg.current .swatch { background: #3fb950; color: #3fb950; box-shadow: 0 0 10px #3fb950; }
+#graph-legend .lg.recall .line { width: 20px; height: 2px; background: #3fb950; }
+#graph-legend .lg.topic .line { width: 20px; height: 2px; background: #bc8cff; opacity: 0.5; }
+#graph-legend .lg.temporal .line { width: 20px; height: 2px; background: #30363d; }
+
+.graph-detail {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  min-height: 32px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.graph-detail.empty::before { content: "Click a node for details"; opacity: 0.5; }
+.graph-detail .node-info .tag {
+  display: inline-block; padding: 1px 6px; border-radius: 3px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; margin-right: 6px;
+}
+.graph-detail .node-info .tag.decision { background: rgba(88,166,255,0.15); color: #58a6ff; }
+.graph-detail .node-info .tag.doc { background: rgba(188,140,255,0.15); color: #bc8cff; }
+.graph-detail .node-info .tag.prompt { background: rgba(125,133,144,0.15); color: #7d8590; }
+.graph-detail .node-info .tag.current { background: rgba(63,185,80,0.15); color: #3fb950; }
+.graph-detail .node-info .full { color: var(--text); }
+.graph-detail .node-info .meta { color: var(--text-dim); margin-top: 4px; font-size: 11px; }
+
 /* ── Samples (function proof) ──────────────────────── */
 .btn-small {
   background: var(--panel);

@@ -19,13 +19,17 @@ from pathlib import Path
 from datetime import datetime, timezone
 from collections import Counter
 
-# Import from sibling ctx-report.py
+# Import from sibling ctx-report.py and bm25-memory.py
 HOOK_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(HOOK_DIR))
 import importlib.util
 _spec = importlib.util.spec_from_file_location("ctx_report", HOOK_DIR / "ctx-report.py")
 _ctx = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_ctx)
+
+_bspec = importlib.util.spec_from_file_location("bm25_memory", HOOK_DIR / "bm25-memory.py")
+_bm = importlib.util.module_from_spec(_bspec)
+_bspec.loader.exec_module(_bm)
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
@@ -362,6 +366,202 @@ def _build_snapshot():
     }
 
 
+# ── Knowledge Graph (Phase 3) ─────────────────────────────────────────
+# Builds a network of decisions/docs/prompts with edges weighted by BM25
+# similarity or temporal co-occurrence. Produces the "Apple patent graph"
+# visual the user asked for — compounding knowledge made visible.
+
+from math import log
+
+def _project_dir() -> str:
+    """Pick a project root for the graph.
+    Priority:
+      1. CLAUDE_PROJECT_DIR env (must be a git repo)
+      2. CTX_DASHBOARD_PROJECT env
+      3. ~/Project/CTX (the active CTX project)
+      4. cwd
+    """
+    for env_key in ("CLAUDE_PROJECT_DIR", "CTX_DASHBOARD_PROJECT"):
+        v = os.environ.get(env_key)
+        if v and (Path(v) / ".git").exists():
+            return v
+    ctx_default = Path(os.path.expanduser("~/Project/CTX"))
+    if (ctx_default / ".git").exists():
+        return str(ctx_default)
+    return os.getcwd()
+
+
+GRAPH_CACHE = {"ts": 0, "data": None, "project_dir": None}
+GRAPH_CACHE_SECONDS = 60
+
+
+def _build_graph(project_dir: str, max_decisions: int = 120,
+                 max_docs: int = 40, max_prompts: int = 15) -> dict:
+    """Build nodes + edges from decisions, docs, and recent prompts.
+
+    Node types (colored in UI):
+      - decision  (teal)     — from git decision corpus
+      - doc       (blue)     — from docs/research + CLAUDE.md + MEMORY.md
+      - prompt    (grey)     — recent user prompts from vault.db
+      - current   (green)    — the most recent prompt (highlighted)
+
+    Edges:
+      - decision ↔ decision: temporal (same day) — keeps clusters tight
+      - doc ↔ doc:           shared keywords above BM25 threshold
+      - prompt → decision/doc: current retrieval cone from bm25_rank on prompt
+    """
+    try:
+        from rank_bm25 import BM25Okapi
+    except ImportError:
+        return {"nodes": [], "edges": [], "error": "rank_bm25 not installed"}
+
+    nodes, edges = [], []
+    id_counter = [0]
+    def nid():
+        id_counter[0] += 1
+        return f"n{id_counter[0]}"
+
+    # 1. Decisions
+    decisions = _bm.get_decision_corpus(project_dir)[:max_decisions]
+    decision_nodes = []
+    for d in decisions:
+        nid_ = nid()
+        decision_nodes.append({
+            "id": nid_, "type": "decision",
+            "label": d["subject"][:40],
+            "full": d["subject"],
+            "date": d.get("date", ""),
+            "tokens": set(_bm.tokenize(d["text"])),
+        })
+    # 2. Docs — units from build_docs_bm25() are "filename\ncontent" strings
+    bm25_docs, units = _bm.build_docs_bm25(project_dir)
+    doc_nodes = []
+    for unit in (units or [])[:max_docs]:
+        fname, _, content = unit.partition("\n")
+        nid_ = nid()
+        doc_nodes.append({
+            "id": nid_, "type": "doc",
+            "label": fname[:40],
+            "full": fname,
+            "tokens": set(_bm.tokenize(content[:2000])),  # sample for speed
+        })
+    # 3. Recent prompts
+    prompt_rows = _ctx._recent_user_prompts(n=max_prompts)
+    prompt_nodes = []
+    for idx, (ts, content) in enumerate(prompt_rows):
+        preview = content[:60].replace("\n", " ")
+        is_current = (idx == 0)
+        nid_ = nid()
+        prompt_nodes.append({
+            "id": nid_,
+            "type": "current" if is_current else "prompt",
+            "label": preview[:30],
+            "full": preview,
+            "ts": ts,
+            "tokens": set(_bm.tokenize(content, drop_stopwords=True)),
+        })
+
+    # Build node list (strip tokens before serialization)
+    for n in decision_nodes + doc_nodes + prompt_nodes:
+        nodes.append({k: v for k, v in n.items() if k != "tokens"})
+
+    # ── Edges ────────────────────────────────────────────────────
+    # A. decision ↔ decision (same day → temporal cluster)
+    from collections import defaultdict
+    by_date = defaultdict(list)
+    for d in decision_nodes:
+        if d["date"]:
+            by_date[d["date"]].append(d["id"])
+    for date, ids in by_date.items():
+        for i in range(len(ids)):
+            for j in range(i + 1, min(i + 4, len(ids))):  # cap 3 per node
+                edges.append({
+                    "from": ids[i], "to": ids[j],
+                    "type": "temporal", "weight": 0.4,
+                })
+
+    # B. doc ↔ doc (shared keywords — Jaccard on token sets)
+    for i in range(len(doc_nodes)):
+        scored = []
+        for j in range(len(doc_nodes)):
+            if i == j:
+                continue
+            a, b = doc_nodes[i]["tokens"], doc_nodes[j]["tokens"]
+            if not a or not b:
+                continue
+            jac = len(a & b) / max(1, len(a | b))
+            if jac >= 0.08:
+                scored.append((jac, j))
+        scored.sort(reverse=True)
+        for jac, j in scored[:2]:  # keep top-2 similar docs per doc
+            if i < j:  # avoid duplicate pairs
+                edges.append({
+                    "from": doc_nodes[i]["id"], "to": doc_nodes[j]["id"],
+                    "type": "topic", "weight": float(jac),
+                })
+
+    # C. prompt → decision/doc (current retrieval cone)
+    if prompt_nodes:
+        # BM25 over decisions for each prompt
+        dec_tokens = [list(d["tokens"]) for d in decision_nodes]
+        doc_tokens = [list(d["tokens"]) for d in doc_nodes]
+        bm25_dec = BM25Okapi(dec_tokens) if dec_tokens else None
+        bm25_doc = BM25Okapi(doc_tokens) if doc_tokens else None
+
+        for p in prompt_nodes:
+            q = list(p["tokens"])
+            if not q:
+                continue
+            # Top 5 decisions
+            if bm25_dec:
+                dscores = bm25_dec.get_scores(q)
+                for i in sorted(range(len(dscores)),
+                                key=lambda i: dscores[i], reverse=True)[:5]:
+                    if dscores[i] >= 0.5:
+                        edges.append({
+                            "from": p["id"], "to": decision_nodes[i]["id"],
+                            "type": "recall-d",
+                            "weight": float(dscores[i]),
+                            "current": p["type"] == "current",
+                        })
+            # Top 5 docs
+            if bm25_doc:
+                dscores = bm25_doc.get_scores(q)
+                for i in sorted(range(len(dscores)),
+                                key=lambda i: dscores[i], reverse=True)[:5]:
+                    if dscores[i] >= 1.0:
+                        edges.append({
+                            "from": p["id"], "to": doc_nodes[i]["id"],
+                            "type": "recall-w",
+                            "weight": float(dscores[i]),
+                            "current": p["type"] == "current",
+                        })
+
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "stats": {
+            "decisions": len(decision_nodes),
+            "docs": len(doc_nodes),
+            "prompts": len(prompt_nodes),
+            "edges": len(edges),
+        },
+    }
+
+
+def _get_graph_cached() -> dict:
+    """Return cached graph or rebuild if stale."""
+    now = time.time()
+    project_dir = _project_dir()
+    if (GRAPH_CACHE["data"] is not None
+            and GRAPH_CACHE["project_dir"] == project_dir
+            and now - GRAPH_CACHE["ts"] < GRAPH_CACHE_SECONDS):
+        return GRAPH_CACHE["data"]
+    data = _build_graph(project_dir)
+    GRAPH_CACHE.update({"ts": now, "data": data, "project_dir": project_dir})
+    return data
+
+
 # ── Routes ────────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
@@ -371,6 +571,21 @@ async def root():
 @app.get("/api/snapshot")
 async def snapshot():
     return JSONResponse(_build_snapshot())
+
+
+@app.get("/api/graph")
+async def graph():
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(None, _get_graph_cached)
+    return JSONResponse(data)
+
+
+@app.post("/api/graph/refresh")
+async def refresh_graph():
+    GRAPH_CACHE["ts"] = 0   # invalidate cache
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(None, _get_graph_cached)
+    return JSONResponse({"ok": True, "stats": data.get("stats", {})})
 
 
 @app.post("/api/samples/refresh")
