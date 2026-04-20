@@ -152,13 +152,24 @@ _CHAT_MEMORY_HOOK = HOOK_DIR / "chat-memory.py"
 _INTERNAL_ENV = {**os.environ, "CTX_DASHBOARD_INTERNAL": "1"}
 
 
-def _run_chat_memory(prompt: str) -> str:
+def _project_to_cwd(project: str) -> str | None:
+    """Reverse cwd_to_project. vault.db stores `-home-jayone-Project-CTX` —
+    convert back to `/home/jayone/Project/CTX` if the path exists.
+    Returns None if the reconstruction doesn't resolve to an existing dir
+    (lossy for paths containing hyphens — rare, acceptable)."""
+    if not project or not project.startswith("-"):
+        return None
+    candidate = project.replace("-", "/")
+    return candidate if os.path.isdir(candidate) else None
+
+
+def _run_chat_memory(prompt: str, cwd: str | None = None) -> str:
     if not _CHAT_MEMORY_HOOK.exists():
         return ""
     try:
         r = _sp.run(
             ["python3", str(_CHAT_MEMORY_HOOK)],
-            input=json.dumps({"prompt": prompt, "cwd": os.getcwd()}),
+            input=json.dumps({"prompt": prompt, "cwd": cwd or os.getcwd()}),
             capture_output=True, text=True, timeout=5,
             env=_INTERNAL_ENV,
         )
@@ -167,16 +178,16 @@ def _run_chat_memory(prompt: str) -> str:
         return ""
 
 
-# Override ctx_report._run_bm25_memory to also pass CTX_DASHBOARD_INTERNAL,
-# so samples computation (which uses this helper) doesn't emit telemetry.
+# Replacement for ctx_report._run_bm25_memory that threads a real project
+# cwd — defaults to the dashboard's cwd (wrong answer) if caller omits.
 _original_run_bm25 = _ctx._run_bm25_memory
-def _run_bm25_memory_internal(prompt: str) -> str:
+def _run_bm25_memory_internal(prompt: str, cwd: str | None = None) -> str:
     if not _ctx._BM25_HOOK.exists():
         return ""
     try:
         r = _sp.run(
             ["python3", str(_ctx._BM25_HOOK), "--rich"],
-            input=json.dumps({"prompt": prompt, "cwd": os.getcwd()}),
+            input=json.dumps({"prompt": prompt, "cwd": cwd or os.getcwd()}),
             capture_output=True, text=True, timeout=5,
             env=_INTERNAL_ENV,
         )
@@ -228,16 +239,56 @@ def _parse_cm(hook_output: str, max_entries: int = 2) -> list:
     return out
 
 
+def _recent_user_prompts_with_project(n: int = 3):
+    """Like ctx_report._recent_user_prompts but also returns the session's
+    project column. Needed so each hook invocation can use the prompt's
+    ORIGINAL project cwd (not the dashboard's own cwd, which would make
+    project-scoped CM + BM25 decision queries return empty)."""
+    if not _ctx._VAULT_DB.exists():
+        return []
+    try:
+        import sqlite3 as _sql
+        c = _sql.connect(f"file:{_ctx._VAULT_DB}?mode=ro", uri=True, timeout=2.0)
+        rows = c.execute(f"""
+            SELECT m.timestamp, m.content, s.project
+            FROM messages m
+            JOIN sessions s ON m.session_id = s.session_id
+            WHERE m.role='user'
+              AND length(m.content) BETWEEN 20 AND 400
+              AND m.content NOT LIKE '[tool_%'
+              AND m.content NOT LIKE 'Caveat:%'
+              AND m.content NOT LIKE '<command-%'
+            ORDER BY m.id DESC LIMIT {n}
+        """).fetchall()
+        c.close()
+        return rows
+    except Exception:
+        return []
+
+
 def _compute_samples(n_prompts: int = 3) -> dict:
     """Pull N recent user prompts from vault.db, invoke real hooks on each,
     return structured samples for the dashboard.
+
+    Each hook is invoked with the prompt's ORIGINAL project cwd (not the
+    dashboard's cwd), so project-scoped CM + in-project G1 decisions
+    actually return results instead of floating "— none —".
 
     Realtime path: check last-injection.json first. If its ts is newer than
     vault.db's newest row AND its preview doesn't already appear in the
     vault.db results, prepend it as a synthetic "just-submitted" prompt.
     This closes the gap between UserPromptSubmit (instant) and vault.db
     write (happens on Stop hook, often 10-60s later)."""
-    prompts = _ctx._recent_user_prompts(n=n_prompts)
+    rows = _recent_user_prompts_with_project(n=n_prompts)
+    # Shape: (ts, content, project)
+    prompts = [(r[0], r[1]) for r in rows]
+    # Map timestamp+first-60-chars → cwd, so the realtime prepend also
+    # gets the right cwd (falls back to current project dir or cwd).
+    cwd_by_key = {}
+    for ts, content, project in rows:
+        cwd = _project_to_cwd(project)
+        if cwd:
+            cwd_by_key[(ts or "") + (content or "")[:60]] = cwd
 
     try:
         inj_path = Path(os.path.expanduser("~/.claude/last-injection.json"))
@@ -265,13 +316,17 @@ def _compute_samples(n_prompts: int = 3) -> dict:
         pass
 
     result = {"computed_at": time.time(), "prompts": []}
+    default_cwd = _project_dir()   # ~/Project/CTX by default
     for ts, content in prompts:
         preview = content[:120] + ("…" if len(content) > 120 else "")
-        bm_out = _ctx._run_bm25_memory(content)
-        cm_out = _run_chat_memory(content)
+        # Look up the original cwd for this prompt (from vault.db project col)
+        cwd = cwd_by_key.get((ts or "") + (content or "")[:60], default_cwd)
+        bm_out = _run_bm25_memory_internal(content, cwd=cwd)
+        cm_out = _run_chat_memory(content, cwd=cwd)
         result["prompts"].append({
             "ts": ts,
             "preview": preview,
+            "cwd": cwd,
             "cm": _parse_cm(cm_out, max_entries=2),
             "g1": _ctx._extract_block(bm_out, "[RECENT DECISIONS]")[:3],
             "g2_docs": _ctx._extract_block(bm_out, "[G2-DOCS]")[:3],
