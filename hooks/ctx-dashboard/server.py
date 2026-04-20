@@ -263,9 +263,28 @@ def _recent_events(events, n: int = 50):
     return out
 
 
+# ── Reactive refresh — when new events arrive (user just submitted a
+# prompt), invalidate samples + graph caches so the next tick recomputes
+# with fresh data. Samples/graph recompute is scheduled in the stream
+# handler (non-blocking, runs in executor).
+_LAST_EVENT_COUNT = {"n": 0}
+_PENDING_REFRESH = {"samples": False, "graph": False}
+
+
+def _maybe_trigger_reactive_refresh():
+    """Called after TAIL.refresh(). If new events arrived, flag caches
+    as needing refresh so the SSE loop can kick off the recompute."""
+    n = len(TAIL.events)
+    if n > _LAST_EVENT_COUNT["n"]:
+        _LAST_EVENT_COUNT["n"] = n
+        _PENDING_REFRESH["samples"] = True
+        _PENDING_REFRESH["graph"] = True
+
+
 # ── Build a full snapshot JSON for the dashboard ──────────────────────
 def _build_snapshot():
     TAIL.refresh()
+    _maybe_trigger_reactive_refresh()
     events = TAIL.events
     if not events:
         return {
@@ -600,10 +619,26 @@ async def refresh_samples():
 @app.get("/stream")
 async def stream():
     async def gen():
+        loop = asyncio.get_event_loop()
         while True:
             try:
                 snap = _build_snapshot()
                 yield f"data: {json.dumps(snap)}\n\n"
+                # Reactive: if new events arrived this tick, kick off
+                # non-blocking samples + graph recompute so the NEXT tick
+                # has fresh data visible to the user.
+                if _PENDING_REFRESH["samples"]:
+                    _PENDING_REFRESH["samples"] = False
+                    async def _refresh_samples():
+                        try:
+                            data = await loop.run_in_executor(None, _compute_samples, 3)
+                            SAMPLE_CACHE.update(data)
+                        except Exception:
+                            pass
+                    asyncio.create_task(_refresh_samples())
+                if _PENDING_REFRESH["graph"]:
+                    _PENDING_REFRESH["graph"] = False
+                    GRAPH_CACHE["ts"] = 0  # invalidate so next /api/graph rebuilds
             except Exception as e:
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
             await asyncio.sleep(2.0)

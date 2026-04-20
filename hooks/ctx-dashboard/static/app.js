@@ -14,6 +14,7 @@ let activityPlot = null;
 let graphNetwork = null;
 let graphNodesSet = null;
 let graphNodeById = {};
+let lastEventCount = 0;   // used to detect new-event arrivals → refresh graph
 
 function fmtThresholds(th) {
   return `Thresholds: CM ≥${th.cm_hybrid_min}%  |  g2_docs <${th.g2_docs_max}%  |  g2_grep <${th.g2_grep_max}%  |  p95 <${th.p95_max_ms}ms`;
@@ -350,6 +351,17 @@ function apply(snap) {
   $("events").innerHTML = renderEvents(snap.recent);
   renderSamples(snap.samples);
   $("thresholds").textContent = fmtThresholds(snap.thresholds);
+
+  // Reactive graph refresh: when total_events grows, a new user prompt/hook
+  // fired — re-fetch the graph so the current-prompt node and its retrieval
+  // cone update in near-realtime (lag ≈ one SSE tick + one graph rebuild).
+  if (snap.total_events > lastEventCount) {
+    lastEventCount = snap.total_events;
+    // Skip the very first call (initial load already triggered refreshGraph())
+    if (lastEventCount > 0 && graphNetwork) {
+      setTimeout(refreshGraph, 400);  // small delay so samples recompute in parallel
+    }
+  }
 }
 
 // Refresh buttons — samples + graph

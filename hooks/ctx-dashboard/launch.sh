@@ -16,6 +16,23 @@ start_server() {
   sleep 1
 }
 
+is_our_server() {
+  # Return 0 if the process listening on $PORT is a ctx-dashboard server.
+  # `ps args` only shows `python3 server.py` when launched via `cd dir && python3 server.py`,
+  # so we also check /proc/$PID/cwd (Linux) which points to the invocation directory.
+  local listen_pid cmd cwd_link
+  listen_pid=$(lsof -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null | head -1)
+  [[ -z "$listen_pid" ]] && return 1
+  cmd=$(ps -p "$listen_pid" -o args= 2>/dev/null)
+  [[ "$cmd" == *"ctx-dashboard/server.py"* ]] && return 0
+  # Fallback: does its cwd live under ctx-dashboard/ AND is it running server.py?
+  cwd_link=$(readlink "/proc/$listen_pid/cwd" 2>/dev/null)
+  if [[ "$cwd_link" == *"/ctx-dashboard"* ]] && [[ "$cmd" == *"server.py"* ]]; then
+    return 0
+  fi
+  return 1
+}
+
 # If a pidfile exists and the process is alive, reuse it
 if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
   EXISTING_PID="$(cat "$PIDFILE")"
@@ -28,9 +45,13 @@ if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     start_server
     echo "CTX Dashboard → http://127.0.0.1:$PORT"
   fi
+elif is_our_server; then
+  # Server is running from a previous session with no pidfile — adopt it
+  EXISTING_PID=$(lsof -iTCP:"$PORT" -sTCP:LISTEN -t 2>/dev/null | head -1)
+  echo "$EXISTING_PID" > "$PIDFILE"
+  echo "CTX Dashboard already running (pid $EXISTING_PID, adopted) → http://127.0.0.1:$PORT"
 else
-  # Check if port is already LISTENING (ignore stray ESTABLISHED connections
-  # from a prior server that has since died)
+  # Check if port is already LISTENING by something that is NOT our server
   if lsof -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
     echo "Port $PORT is in use by another process. Pick a different port: ctx <port>"
     exit 1
