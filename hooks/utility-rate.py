@@ -23,11 +23,18 @@ import os
 import sqlite3
 import sys
 import time
+from datetime import date, datetime
 from pathlib import Path
 
 HOME = Path(os.path.expanduser("~"))
 LAST_INJECT = HOME / ".claude" / "last-injection.json"
 VAULT_DB = HOME / ".local" / "share" / "claude-vault" / "vault.db"
+WOW_STATE = HOME / ".claude" / ".ctx-wow-fired"
+WOW_EVENT_FILE = HOME / ".claude" / ".ctx-wow-event.json"   # latest qualifying event (for dashboard banner)
+
+# Wow-trigger gates
+WOW_UTILITY_MIN = 0.70      # utility_rate ≥ 70%
+WOW_AGE_MIN_DAYS = 14       # at least one referenced item ≥ 14 days old
 
 
 def _log_event(event_type: str, payload: dict):
@@ -84,6 +91,7 @@ def main():
     by_block = {}
     total = 0
     referenced = 0
+    max_referenced_age = 0    # oldest decision date among referenced items (for wow trigger)
     for it in items:
         block = it.get("block", "?")
         tokens = it.get("tokens", [])
@@ -98,6 +106,15 @@ def main():
         if hit:
             referenced += 1
             by_block[block]["referenced"] += 1
+            # Track oldest referenced decision date
+            date_str = it.get("date")
+            if date_str:
+                try:
+                    age_days = (date.today() - datetime.fromisoformat(date_str).date()).days
+                    if age_days > max_referenced_age:
+                        max_referenced_age = age_days
+                except Exception:
+                    pass
 
     _log_event("utility_measured", {
         "total_items": total,
@@ -105,6 +122,51 @@ def main():
         "by_block": by_block,
         "response_len": len(response),
     })
+
+    # ── Wow-trigger: specific-old-recall + high-utility, fired once ever ──
+    if total > 0:
+        rate = referenced / total
+        if (not WOW_STATE.exists()
+                and rate >= WOW_UTILITY_MIN
+                and max_referenced_age >= WOW_AGE_MIN_DAYS):
+            # Terminal toast (stderr is visible in most shells)
+            age_d = max_referenced_age
+            msg_lines = [
+                "",
+                "  ╔══════════════════════════════════════════════════╗",
+                f"  ║  ● CTX recalled a decision from {age_d:3d} days ago   ║",
+                f"  ║    Claude actually used it ({int(rate*100)}% of injections).  ║",
+                "  ║  → see the graph:  ctx                           ║",
+                "  ╚══════════════════════════════════════════════════╝",
+                "",
+            ]
+            print("\n".join(msg_lines), file=sys.stderr)
+
+            wow = {
+                "fired_at": time.time(),
+                "age_days": age_d,
+                "utility_rate": rate,
+            }
+            try:
+                WOW_STATE.write_text(json.dumps(wow))
+                WOW_EVENT_FILE.write_text(json.dumps(wow))
+            except Exception:
+                pass
+            _log_event("wow_fired", {
+                "total_items": total,
+                "referenced_items": referenced,
+                "response_len": len(response),
+            })
+        # Always keep WOW_EVENT_FILE fresh for dashboard banner (latest qualifying event)
+        elif rate >= WOW_UTILITY_MIN and max_referenced_age >= WOW_AGE_MIN_DAYS:
+            try:
+                WOW_EVENT_FILE.write_text(json.dumps({
+                    "fired_at": time.time(),
+                    "age_days": max_referenced_age,
+                    "utility_rate": rate,
+                }))
+            except Exception:
+                pass
 
     # Consume the injection file so we don't double-count it on a second Stop
     try:

@@ -97,6 +97,8 @@ _ALLOWED_KEYS = {
     # by_block is a nested dict {block: {total, referenced}} — still counts-only,
     # no content. Sanitizer relaxes primitive guard for this event only.
     "utility_measured": {"total_items", "referenced_items", "by_block", "response_len"},
+    # Activation-moment trigger (Wow toast): high-utility + old-decision recall
+    "wow_fired": {"total_items", "referenced_items", "response_len"},
 }
 
 

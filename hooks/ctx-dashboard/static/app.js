@@ -440,6 +440,45 @@ connect();
 // Initial graph load
 refreshGraph();
 
+// Wow-banner: show on load if a recent activation event exists, and auto-scroll
+// to the knowledge graph so the user SEES the retrieval cone immediately.
+function checkWow() {
+  const dismissed = localStorage.getItem("ctxWowDismissedAt");
+  fetch("/api/wow").then(r => r.json()).then(w => {
+    if (!w.fired) return;
+    const firedAtMs = (w.fired_at || 0) * 1000;
+    if (dismissed && parseInt(dismissed) >= firedAtMs) return;  // user dismissed this one
+    // Only show for events in the last 24h
+    if ((w.age_hours || 0) > 24) return;
+    const banner = $("wow-banner");
+    banner.style.display = "flex";
+    banner.innerHTML = `
+      <span class="dot"></span>
+      <span class="text">
+        <strong>CTX just recalled a decision from ${esc(w.age_days)} days ago</strong> —
+        Claude used it (${Math.round(w.utility_rate * 100)}% of injected items referenced).
+        <em style="color:var(--text-dim)"> The retrieval cone is visible in the knowledge graph below ↓</em>
+      </span>
+      <button class="dismiss" id="wow-dismiss">dismiss</button>
+    `;
+    // Auto-scroll to the graph panel after 800ms — user sees the banner first, then the reveal
+    setTimeout(() => {
+      const graph = $("graph-panel");
+      if (graph) graph.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 800);
+  }).catch(() => {});
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "wow-dismiss") {
+    const banner = $("wow-banner");
+    banner.style.display = "none";
+    localStorage.setItem("ctxWowDismissedAt", String(Date.now()));
+  }
+});
+
+checkWow();
+
 // Re-render chart on resize
 window.addEventListener("resize", () => {
   if (activityPlot) {

@@ -61,6 +61,34 @@ header {
 .updated { color: var(--text-dim); font-family: var(--mono); font-size: 12px; display: flex; gap: 10px; align-items: center; }
 .window { background: var(--bg); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; }
 
+/* ── Wow banner (activation moment) ────────────────── */
+.wow-banner {
+  padding: 14px 24px;
+  background: linear-gradient(90deg, rgba(63,185,80,0.18), rgba(88,166,255,0.12));
+  border-bottom: 1px solid var(--green);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  display: flex; align-items: center; gap: 14px;
+  animation: wow-glow 3s ease-out;
+}
+.wow-banner .dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 12px var(--green); flex-shrink: 0;
+}
+.wow-banner .text { flex: 1; }
+.wow-banner .text strong { color: var(--green); font-weight: 700; }
+.wow-banner .dismiss {
+  background: transparent; border: 1px solid var(--panel-border);
+  color: var(--text-dim); padding: 4px 10px; border-radius: 4px;
+  font-family: var(--mono); font-size: 11px; cursor: pointer;
+}
+.wow-banner .dismiss:hover { border-color: var(--text); color: var(--text); }
+@keyframes wow-glow {
+  from { background: linear-gradient(90deg, rgba(63,185,80,0.45), rgba(88,166,255,0.25)); }
+  to { background: linear-gradient(90deg, rgba(63,185,80,0.18), rgba(88,166,255,0.12)); }
+}
+
 /* ── Grid ───────────────────────────────────────────── */
 main {
   display: grid;

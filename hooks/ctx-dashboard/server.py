@@ -709,6 +709,22 @@ async def snapshot():
     return JSONResponse(_build_snapshot())
 
 
+@app.get("/api/wow")
+async def wow():
+    """Return latest wow event (if any) for the dashboard activation banner."""
+    path = Path(os.path.expanduser("~/.claude/.ctx-wow-event.json"))
+    if not path.exists():
+        return JSONResponse({"fired": False})
+    try:
+        data = json.loads(path.read_text())
+        age_hours = (time.time() - data.get("fired_at", 0)) / 3600
+        data["fired"] = True
+        data["age_hours"] = age_hours
+        return JSONResponse(data)
+    except Exception:
+        return JSONResponse({"fired": False})
+
+
 @app.get("/api/graph")
 async def graph():
     loop = asyncio.get_event_loop()

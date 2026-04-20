@@ -838,13 +838,18 @@ def main():
             # distinctive substring the assistant's response can echo.
             for line in lines:
                 s = line.strip()
-                # G1 decisions: "> [YYYY-MM-DD] subject"
+                # G1 decisions: "> [YYYY-MM-DD] subject" — capture date for age-based wow trigger
                 if s.startswith("> [") and "]" in s:
-                    subj = s.split("]", 1)[1].strip()
-                    # take first 3 meaningful words as signature
+                    close_idx = s.index("]")
+                    date_str = s[3:close_idx]
+                    subj = s[close_idx + 1:].strip()
                     tokens = [w for w in subj.split() if len(w) >= 4][:3]
                     if tokens:
-                        injection["items"].append({"block": "g1", "tokens": tokens})
+                        item = {"block": "g1", "tokens": tokens}
+                        # Only store YYYY-MM-DD dates (filter malformed)
+                        if len(date_str) == 10 and date_str[4] == "-" and date_str[7] == "-":
+                            item["date"] = date_str
+                        injection["items"].append(item)
                 # G2-DOCS entries: "  > filename.md" → filename as signature
                 elif s.startswith("> ") and (".md" in s or s.endswith(".py")):
                     fname = s.lstrip("> ").strip().split(" §")[0].split()[0]
