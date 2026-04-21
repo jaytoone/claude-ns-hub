@@ -154,35 +154,36 @@ function renderGraphLegend() {
 }
 
 function nodeStyle(type) {
-  // Palette aligned with Claude paper theme; nodes live on dark graph canvas
-  // so they use tinted-lighter colors that pop without neon. Current prompt
-  // uses coral (brand accent).
+  // Paper-canvas palette — deeper saturated colors so nodes pop on cream bg.
+  // Current prompt = Claude coral (brand accent).
+  // Decision = deep navy slate; Doc = deep plum; Prompt = warm grey.
+  // Labels now dark (not light) since they read against paper, not dark.
   switch (type) {
     case "current":  return {
-      color: { background: "#cc785c", border: "#e08562",
-               highlight: { background: "#e08562", border: "#f59e7c" },
-               hover:     { background: "#e08562", border: "#f59e7c" } },
+      color: { background: "#cc785c", border: "#a34b2c",
+               highlight: { background: "#e08562", border: "#b55a3c" },
+               hover:     { background: "#e08562", border: "#b55a3c" } },
       size: 26, font: { color: "#faf9f6", size: 14, face: "ui-monospace" }, shape: "dot", borderWidth: 3,
     };
     case "decision": return {
-      color: { background: "#7aa4c7", border: "#4a7395",
-               highlight: { background: "#9bbbd8", border: "#5e89b0" },
-               hover:     { background: "#9bbbd8", border: "#5e89b0" } },
-      size: 13, font: { color: "#d8d4cc", size: 11 }, shape: "dot", borderWidth: 1.5,
+      color: { background: "#3b6a8a", border: "#25475e",
+               highlight: { background: "#5788a8", border: "#3b6a8a" },
+               hover:     { background: "#5788a8", border: "#3b6a8a" } },
+      size: 13, font: { color: "#1f1c1a", size: 11 }, shape: "dot", borderWidth: 1.5,
     };
     case "doc":      return {
-      color: { background: "#a68cbe", border: "#7a5c8a",
-               highlight: { background: "#c2a8d6", border: "#9072a0" },
-               hover:     { background: "#c2a8d6", border: "#9072a0" } },
-      size: 12, font: { color: "#d8d4cc", size: 11 }, shape: "dot", borderWidth: 1.5,
+      color: { background: "#7a5c8a", border: "#553d63",
+               highlight: { background: "#9778a8", border: "#715286" },
+               hover:     { background: "#9778a8", border: "#715286" } },
+      size: 12, font: { color: "#1f1c1a", size: 11 }, shape: "dot", borderWidth: 1.5,
     };
     case "prompt":   return {
-      color: { background: "#9a9288", border: "#bfb8ae",
-               highlight: { background: "#bfb8ae", border: "#d8d2c6" },
-               hover:     { background: "#bfb8ae", border: "#d8d2c6" } },
-      size: 10, font: { color: "#bfb8ae", size: 10 }, shape: "dot", borderWidth: 1.5,
+      color: { background: "#8a8278", border: "#6d655b",
+               highlight: { background: "#a8a095", border: "#8a8278" },
+               hover:     { background: "#a8a095", border: "#8a8278" } },
+      size: 10, font: { color: "#4a4540", size: 10 }, shape: "dot", borderWidth: 1.5,
     };
-    default: return { color: { background: "#9a9288", border: "#6d655b" }, size: 10, shape: "dot" };
+    default: return { color: { background: "#8a8278", border: "#6d655b" }, size: 10, shape: "dot" };
   }
 }
 
@@ -191,30 +192,33 @@ function edgeStyle(type, weight, isCurrent) {
     width: Math.max(0.6, Math.min(3.2, weight * 0.8)),
     smooth: { enabled: true, type: "continuous" },
   };
-  // Retrieval edges — current prompt uses coral (brand accent); past prompts
-  // keep muted blue/purple. On dark canvas these still pop without neon glow.
+  // Paper-bg edges — deeper saturated tones. Current prompt edges get a
+  // subtle coral glow; past-prompt edges are thinner and more transparent
+  // so the current retrieval cone reads instantly.
   if (type === "recall-d" || type === "recall-w") {
     const isDoc = type === "recall-w";
     return Object.assign(base, {
       color: isCurrent
-        ? { color: "#cc785c", highlight: "#e08562", opacity: 1.0 }
-        : { color: isDoc ? "#a68cbe" : "#7aa4c7", highlight: "#cc785c", opacity: 0.85 },
-      width: isCurrent ? Math.max(2.4, weight * 0.6) : Math.max(1.0, weight * 0.4),
-      shadow: isCurrent ? { enabled: true, color: "#cc785c", size: 8, x: 0, y: 0 } : false,
+        ? { color: "#cc785c", highlight: "#a34b2c", opacity: 0.95 }
+        : { color: isDoc ? "#7a5c8a" : "#3b6a8a", highlight: "#cc785c", opacity: 0.55 },
+      width: isCurrent ? Math.max(2.6, weight * 0.65) : Math.max(0.9, weight * 0.35),
+      shadow: isCurrent ? { enabled: true, color: "rgba(204,120,92,0.35)", size: 6, x: 0, y: 0 } : false,
     });
   }
-  // Topic edges (doc ↔ doc) — cluster indicator, muted plum
+  // Topic edges (doc ↔ doc) — plum threads, low opacity so clusters are
+  // visible but don't dominate the current retrieval cone.
   if (type === "topic") {
     return Object.assign(base, {
-      color: { color: "#a68cbe", highlight: "#c2a8d6", opacity: 0.60 },
-      width: Math.max(0.8, weight * 3.0),
+      color: { color: "#7a5c8a", highlight: "#9778a8", opacity: 0.35 },
+      width: Math.max(0.6, weight * 2.5),
     });
   }
-  // Temporal edges (same-day decisions) — subtle blue threads
+  // Temporal edges (same-day decisions) — very subtle navy threads;
+  // structural glue that shouldn't compete with retrieval edges.
   if (type === "temporal") {
     return Object.assign(base, {
-      color: { color: "#7aa4c7", highlight: "#9bbbd8", opacity: 0.30 },
-      width: 0.8,
+      color: { color: "#3b6a8a", highlight: "#5788a8", opacity: 0.18 },
+      width: 0.7,
     });
   }
   return base;

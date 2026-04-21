@@ -260,10 +260,10 @@ main {
 #graph-canvas {
   width: 100%;
   height: 520px;
-  /* Darker graph canvas — edges (green/coral/purple) need contrast against
-     a dark background. Paper background elsewhere; graph is the one pocket
-     of dark, framed by a warm border. */
-  background: radial-gradient(ellipse at center, #2a2520 0%, var(--graph-bg) 85%);
+  /* Paper-toned canvas matching the rest of the dashboard. Subtle radial
+     gradient draws the eye to the center where the current-prompt node sits.
+     Nodes/edges below use deeper saturated tones for contrast on light bg. */
+  background: radial-gradient(ellipse at center, #ffffff 0%, var(--bg-deep) 85%);
   border-radius: 6px;
   border: 1px solid var(--panel-border);
   position: relative;
@@ -278,15 +278,15 @@ main {
   width: 10px; height: 10px; border-radius: 50%;
   box-shadow: 0 0 4px currentColor;
 }
-/* Graph nodes keep their tinted colors (visible on dark canvas).
-   Swatch colors match node fill colors set in app.js. */
-#graph-legend .lg.decision .swatch { background: #7aa4c7; color: #7aa4c7; }
-#graph-legend .lg.doc      .swatch { background: #a68cbe; color: #a68cbe; }
-#graph-legend .lg.prompt   .swatch { background: #9a9288; color: #9a9288; }
-#graph-legend .lg.current  .swatch { background: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--accent); }
-#graph-legend .lg.recall   .line   { width: 22px; height: 2.5px; background: linear-gradient(90deg, var(--accent), #7aa4c7); }
-#graph-legend .lg.topic    .line   { width: 22px; height: 2px;   background: #a68cbe; opacity: 0.75; }
-#graph-legend .lg.temporal .line   { width: 22px; height: 1.5px; background: #7aa4c7; opacity: 0.4; }
+/* Graph nodes on paper canvas — deeper saturated colors for light-bg contrast.
+   Swatch colors mirror the node fill colors set in app.js. */
+#graph-legend .lg.decision .swatch { background: #3b6a8a; color: #3b6a8a; }
+#graph-legend .lg.doc      .swatch { background: #7a5c8a; color: #7a5c8a; }
+#graph-legend .lg.prompt   .swatch { background: #8a8278; color: #8a8278; }
+#graph-legend .lg.current  .swatch { background: var(--accent); color: var(--accent); box-shadow: 0 0 8px rgba(204,120,92,0.4); }
+#graph-legend .lg.recall   .line   { width: 22px; height: 2.5px; background: linear-gradient(90deg, var(--accent), #3b6a8a); }
+#graph-legend .lg.topic    .line   { width: 22px; height: 2px;   background: #7a5c8a; opacity: 0.65; }
+#graph-legend .lg.temporal .line   { width: 22px; height: 1.5px; background: #3b6a8a; opacity: 0.3; }
 
 .graph-detail {
   margin-top: 12px;
