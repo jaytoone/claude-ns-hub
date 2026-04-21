@@ -359,6 +359,30 @@ main {
 .sample .q .util.pending { color: var(--text-dim); border-color: var(--panel-border); background: transparent; }
 .sample .q .util-ratio { font-weight: 400; opacity: 0.75; letter-spacing: 0; margin-left: 2px; }
 
+.load-more-wrap {
+  margin-top: 16px;
+  display: flex; align-items: center; gap: 14px; justify-content: center;
+}
+.btn-loadmore {
+  background: var(--panel-soft);
+  color: var(--accent-deep);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 8px 22px;
+  font-family: var(--mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-loadmore:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+.btn-loadmore:disabled {
+  opacity: 0.5; cursor: wait;
+}
+
 /* Legend chip (in Function Proof panel note) */
 .legend-note {
   background: var(--panel-soft);

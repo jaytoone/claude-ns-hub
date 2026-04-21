@@ -313,6 +313,35 @@ function refreshGraph() {
   fetch("/api/graph").then(r => r.json()).then(renderGraph).catch(console.error);
 }
 
+function sampleCardHTML(p) {
+  let score = "";
+  if (p.utility) {
+    const pct = Math.round(p.utility.rate * 100);
+    const cls = pct >= 50 ? "ok" : (pct >= 25 ? "mid" : "low");
+    score = `<span class="util ${cls}" title="${esc(p.utility.referenced)} of ${esc(p.utility.total)} injected items were referenced in Claude's response. Filled blocks below show what was surfaced; this pill shows what was actually used.">utility ${pct}% <span class="util-ratio">(${esc(p.utility.referenced)}/${esc(p.utility.total)})</span></span>`;
+  } else if (p.has_response === false) {
+    score = `<span class="util pending" title="Assistant response not yet persisted — score will appear once the reply lands">utility —</span>`;
+  }
+  return `
+    <div class="sample">
+      <div class="q">
+        <span class="ts">${esc(fmtTs(p.ts))}</span>
+        ${score}
+        <span class="prompt">${esc(p.preview)}</span>
+      </div>
+      <div class="blocks">
+        ${renderCmBlock(p.cm)}
+        ${renderBlock("G1", "decisions", p.g1)}
+        ${renderBlock("G2-DOCS", "BM25 docs", p.g2_docs)}
+        ${renderBlock("G2-PREFETCH", "code graph", p.g2_prefetch)}
+      </div>
+    </div>`;
+}
+
+// Track how many additional samples we've already loaded via "Load more"
+let extraOffset = 3;   // first 3 come from SSE snapshot
+let loadedExtras = 0;
+
 function renderSamples(samples) {
   const host = $("samples");
   const ageEl = $("samples-age");
@@ -323,32 +352,11 @@ function renderSamples(samples) {
   }
   const ageSec = Math.max(0, Math.round(Date.now()/1000 - samples.computed_at));
   ageEl.textContent = `computed ${ageSec}s ago`;
-  host.innerHTML = samples.prompts.map(p => {
-    let score = "";
-    if (p.utility) {
-      const pct = Math.round(p.utility.rate * 100);
-      const cls = pct >= 50 ? "ok" : (pct >= 25 ? "mid" : "low");
-      // Always show ratio inline so "0% with filled blocks" makes sense at a glance —
-      // it means CTX surfaced N items but Claude referenced none of them.
-      score = `<span class="util ${cls}" title="${esc(p.utility.referenced)} of ${esc(p.utility.total)} injected items were referenced in Claude's response. Filled blocks below show what was surfaced; this pill shows what was actually used.">utility ${pct}% <span class="util-ratio">(${esc(p.utility.referenced)}/${esc(p.utility.total)})</span></span>`;
-    } else if (p.has_response === false) {
-      score = `<span class="util pending" title="Assistant response not yet persisted — score will appear once the reply lands">utility —</span>`;
-    }
-    return `
-      <div class="sample">
-        <div class="q">
-          <span class="ts">${esc(fmtTs(p.ts))}</span>
-          ${score}
-          <span class="prompt">${esc(p.preview)}</span>
-        </div>
-        <div class="blocks">
-          ${renderCmBlock(p.cm)}
-          ${renderBlock("G1", "decisions", p.g1)}
-          ${renderBlock("G2-DOCS", "BM25 docs", p.g2_docs)}
-          ${renderBlock("G2-PREFETCH", "code graph", p.g2_prefetch)}
-        </div>
-      </div>`;
-  }).join("");
+  // Live section replaces (keeps top-N current); extras stay appended below.
+  const liveHTML = samples.prompts.map(sampleCardHTML).join("");
+  const extraContainer = host.querySelector("#extras");
+  const extraHTML = extraContainer ? extraContainer.outerHTML : `<div id="extras"></div>`;
+  host.innerHTML = liveHTML + extraHTML;
 }
 
 function renderEvents(evs) {
@@ -442,6 +450,39 @@ document.addEventListener("click", async (e) => {
       refreshGraph();
     } catch (err) { console.error(err); }
     setTimeout(() => { btn.disabled = false; btn.textContent = "refresh"; }, 2000);
+  } else if (e.target.id === "load-more-samples") {
+    const btn = e.target;
+    const status = $("load-more-status");
+    btn.disabled = true;
+    btn.textContent = "loading…";
+    status.textContent = "";
+    try {
+      const r = await fetch(`/api/samples?offset=${extraOffset}&limit=10`);
+      const page = await r.json();
+      const extras = $("extras") || (() => {
+        const d = document.createElement("div");
+        d.id = "extras";
+        $("samples").appendChild(d);
+        return d;
+      })();
+      const prompts = page.prompts || [];
+      if (prompts.length === 0) {
+        status.textContent = "no more history";
+        btn.textContent = "Load 10 more";
+        return;
+      }
+      extras.insertAdjacentHTML("beforeend", prompts.map(sampleCardHTML).join(""));
+      extraOffset += prompts.length;
+      loadedExtras += prompts.length;
+      btn.disabled = false;
+      btn.textContent = "Load 10 more";
+      status.textContent = `showing +${loadedExtras} older`;
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      btn.textContent = "Load 10 more";
+      status.textContent = "load failed — retry";
+    }
   }
 });
 

@@ -252,10 +252,10 @@ def _parse_cm(hook_output: str, max_entries: int = 2) -> list:
     return out
 
 
-def _recent_user_prompts_with_project(n: int = 3):
+def _recent_user_prompts_with_project(n: int = 3, offset: int = 0):
     """Pull recent (user_prompt, next_assistant_response, project) tuples.
     Response is None if the user prompt has no assistant reply yet (just
-    submitted). Used by samples panel to compute per-prompt utility score."""
+    submitted). Pagination via offset (for 'Load more' in samples panel)."""
     if not _ctx._VAULT_DB.exists():
         return []
     try:
@@ -277,7 +277,7 @@ def _recent_user_prompts_with_project(n: int = 3):
               AND u.content NOT LIKE '[tool_%'
               AND u.content NOT LIKE 'Caveat:%'
               AND u.content NOT LIKE '<command-%'
-            ORDER BY u.id DESC LIMIT {n}
+            ORDER BY u.id DESC LIMIT {n} OFFSET {offset}
         """).fetchall()
         c.close()
         return rows
@@ -365,7 +365,7 @@ def _score_blocks_against_response(g1: list, g2_docs: list, g2_prefetch: list,
     }
 
 
-def _compute_samples(n_prompts: int = 3) -> dict:
+def _compute_samples(n_prompts: int = 3, offset: int = 0, include_realtime: bool = True) -> dict:
     """Pull N recent user prompts from vault.db, invoke real hooks on each,
     return structured samples for the dashboard.
 
@@ -378,7 +378,7 @@ def _compute_samples(n_prompts: int = 3) -> dict:
     vault.db results, prepend it as a synthetic "just-submitted" prompt.
     This closes the gap between UserPromptSubmit (instant) and vault.db
     write (happens on Stop hook, often 10-60s later)."""
-    rows = _recent_user_prompts_with_project(n=n_prompts)
+    rows = _recent_user_prompts_with_project(n=n_prompts, offset=offset)
     # Shape: (ts, content, project, response)
     prompts = [(r[0], r[1]) for r in rows]
     # Map timestamp+first-60-chars → (cwd, response), so the realtime prepend
@@ -394,7 +394,9 @@ def _compute_samples(n_prompts: int = 3) -> dict:
 
     try:
         inj_path = Path(os.path.expanduser("~/.claude/last-injection.json"))
-        if inj_path.exists():
+        # Realtime prepend only applies to the first page — paginated "Load more"
+        # pages are pure vault.db history with no synthetic entries.
+        if include_realtime and offset == 0 and inj_path.exists():
             inj = json.loads(inj_path.read_text())
             inj_ts = inj.get("ts", 0)
             inj_preview = inj.get("prompt_preview", "")
@@ -916,6 +918,23 @@ async def refresh_graph():
     loop = asyncio.get_event_loop()
     data = await loop.run_in_executor(None, _get_graph_cached)
     return JSONResponse({"ok": True, "stats": data.get("stats", {})})
+
+
+@app.get("/api/samples")
+async def samples_page(offset: int = 3, limit: int = 10):
+    """Paginated samples beyond the live-streamed top 3 (SSE snapshot).
+    Used by the 'Load more' button in Function Proof. Caps limit at 20
+    to keep per-request cost bounded (~10 hook spawns × ~200ms each)."""
+    limit = max(1, min(20, limit))
+    offset = max(0, offset)
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(
+        None, _compute_samples, limit, offset, False  # include_realtime=False
+    )
+    return JSONResponse({
+        "offset": offset, "limit": limit,
+        "prompts": data["prompts"], "computed_at": data["computed_at"],
+    })
 
 
 @app.post("/api/samples/refresh")
