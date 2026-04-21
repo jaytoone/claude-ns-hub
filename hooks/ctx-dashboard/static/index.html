@@ -5,16 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>CTX Dashboard</title>
 <link rel="icon" href="data:," />
-<!-- Claude-inspired serif pairing -->
+<!-- Claude-inspired serif pairing — subset to only weights used (400/500) + display:swap
+     to avoid FOIT (flash of invisible text). text= param further trims to Latin glyphs. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<!-- Critical CSS inline (above-the-fold: palette + header + panel frame).
+     Non-blocking paint before styles.css arrives. -->
+<style>
+:root{--bg:#faf9f6;--bg-deep:#f0ede7;--panel:#fff;--panel-border:#e4dfd5;--panel-soft:#f5f2ec;--text:#1f1c1a;--text-soft:#4a4540;--text-dim:#8a8278;--accent:#cc785c;--accent-deep:#a34b2c;--accent-soft:#f5e6de;--serif:"Fraunces",Georgia,serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text-soft);font:14px/1.55 var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--serif);font-weight:500;letter-spacing:-0.01em}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--panel-border);background:var(--bg);position:relative;z-index:10}
+.brand{display:flex;align-items:baseline;gap:12px}
+.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);align-self:center}
+.title{font-family:var(--serif);font-weight:500;font-size:20px;color:var(--text);letter-spacing:-0.01em}
+.sub{color:var(--text-dim);font-size:13px;font-family:var(--mono)}
+main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max-width:1400px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:6px;padding:18px 22px;box-shadow:0 1px 2px rgba(31,28,26,.03)}
+.panel.wide{grid-column:1/-1}
+.panel h2{margin:0 0 14px;font-family:var(--serif);font-size:17px;font-weight:500;color:var(--text)}
+</style>
 <link rel="stylesheet" href="/static/styles.css" />
 <!-- uPlot for time-series (tiny, ~40KB) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
-<!-- vis-network for knowledge graph (Apple-patent-graph look) -->
-<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+<!-- vis-network (688KB) is lazy-loaded by app.js via IntersectionObserver when
+     the graph panel enters viewport. NOT preloaded — saves ~150KB upfront. -->
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 </head>
 <body>
 <header>

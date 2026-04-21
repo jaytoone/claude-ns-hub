@@ -502,8 +502,29 @@ function connect() {
 fetch("/api/snapshot").then(r => r.json()).then(apply).catch(console.error);
 connect();
 
-// Initial graph load
-refreshGraph();
+// Lazy-load vis-network (688KB) only when graph panel enters viewport.
+// Falls back to immediate load if IntersectionObserver unavailable.
+function loadVisNetworkThenRefresh() {
+  if (typeof vis !== "undefined" && vis.Network) {
+    refreshGraph(); return;
+  }
+  const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js";
+  s.onload = () => refreshGraph();
+  s.onerror = () => console.error("vis-network failed to load");
+  document.head.appendChild(s);
+}
+const graphPanel = $("graph-panel");
+if (graphPanel && "IntersectionObserver" in window) {
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (e.isIntersecting) { loadVisNetworkThenRefresh(); io.disconnect(); break; }
+    }
+  }, { rootMargin: "200px 0px" });   // start loading when panel is 200px away
+  io.observe(graphPanel);
+} else {
+  loadVisNetworkThenRefresh();  // fallback for old browsers
+}
 
 // Wow-banner: show on load if a recent activation event exists, and auto-scroll
 // to the knowledge graph so the user SEES the retrieval cone immediately.
