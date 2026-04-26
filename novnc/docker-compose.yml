@@ -1,0 +1,7 @@
+services:
+  playwright-novnc:
+    image: kuldeepgorasiya/mcp-playwright:latest
+    ports:
+      - "6901:6901"   # noVNC browser viewer — open http://localhost:6901 on Windows
+      - "8831:8831"   # Playwright MCP SSE  — connect Claude Code to http://localhost:8831/sse
+    restart: unless-stopped

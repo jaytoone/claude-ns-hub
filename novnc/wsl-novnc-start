@@ -1,0 +1,29 @@
+#!/bin/bash
+# wsl-novnc-start — start Playwright noVNC container + expose ports to Windows tailnet clients.
+# After this: open http://localhost:6901 in Windows browser to see/control the browser.
+# Claude Code MCP config: add http://localhost:8831/sse as playwright MCP endpoint.
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+if ! command -v docker &>/dev/null; then
+    echo "ERROR: docker not found." >&2
+    echo "  Enable WSL2 integration: Docker Desktop → Settings → Resources → WSL Integration" >&2
+    exit 1
+fi
+
+docker compose up -d
+echo "Playwright noVNC started"
+echo "  Browser view:  http://localhost:6901"
+echo "  MCP SSE:       http://localhost:8831/sse"
+echo ""
+
+EXPOSE="$HOME/.local/bin/wsl-expose"
+if [ -x "$EXPOSE" ]; then
+    "$EXPOSE" 6901
+    "$EXPOSE" 8831
+else
+    echo "wsl-expose not found — Windows clients won't have localhost forwarding."
+    echo "  Run install.sh first, or manually: wsl-expose 6901 && wsl-expose 8831"
+fi

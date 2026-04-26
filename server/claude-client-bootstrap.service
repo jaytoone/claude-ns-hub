@@ -1,0 +1,11 @@
+[Unit]
+Description=Claude Client Bootstrap Server (Windows client onboarding via HTTP 9955)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.claude/hooks/claude-client-bootstrap.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,34 @@
+#!/bin/bash
+# wsl-expose <port> — mirror WSL2's localhost:<port> to every online Windows tailnet client's localhost:<port>
+# After this: any client's browser can access http://localhost:<port> and reach WSL2's dev server.
+#
+# Requires: listener on client with /expose endpoint (client-setup-ps5.ps1 v2+), Task run as admin.
+# Reverse: wsl-unexpose <port>
+set -e
+port="$1"
+if [ -z "$port" ] || ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+    echo "Usage: wsl-expose <port>   (port: 1-65535)" >&2
+    echo "" >&2
+    echo "Example: wsl-expose 3003" >&2
+    echo "  After this, every online Windows client's http://localhost:3003 will reach WSL2's localhost:3003" >&2
+    exit 1
+fi
+
+payload="{\"port\":${port}}"
+count=0; fail=0
+while read -r ip host; do
+    [ -z "$ip" ] && continue
+    if curl -sf -m 3 -X POST "http://${ip}:6789/expose" \
+         -H 'Content-Type: application/json' \
+         --data "$payload" >/dev/null 2>&1; then
+        echo "✓ exposed port $port on $host ($ip)"
+        count=$((count + 1))
+    else
+        echo "✗ skipped $host ($ip) — offline or listener down"
+        fail=$((fail + 1))
+    fi
+done < <(tailscale status --json 2>/dev/null | jq -r '.Peer[] | select(.Online==true and (.OS=="windows")) | .TailscaleIPs[0] + " " + .HostName' 2>/dev/null)
+
+echo ""
+echo "Summary: $count exposed, $fail skipped"
+[ "$count" -eq 0 ] && echo "Reminder: WSL2 dev server must bind 0.0.0.0:${port} (not just 127.0.0.1) for Tailscale IP access" >&2

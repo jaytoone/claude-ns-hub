@@ -1,0 +1,10 @@
+#!/bin/bash
+# wsl-novnc-stop — stop Playwright noVNC container + remove Windows port forwards.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+UNEXPOSE="$HOME/.local/bin/wsl-unexpose"
+[ -x "$UNEXPOSE" ] && "$UNEXPOSE" 6901 && "$UNEXPOSE" 8831
+
+docker compose down
+echo "Playwright noVNC stopped"
