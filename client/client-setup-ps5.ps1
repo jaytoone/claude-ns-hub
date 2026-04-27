@@ -256,7 +256,7 @@ while ($listener.IsListening) {
             try { $port = [int](($body | ConvertFrom-Json).port) } catch {}
             if ($port -gt 0 -and $port -le 65535) {
                 & netsh interface portproxy delete v4tov4 listenaddress=127.0.0.1 listenport=$port 2>$null | Out-Null
-                & netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=$port connectaddress=%%WSL2_TAILSCALE_IP%% connectport=$port 2>$null | Out-Null
+                & netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=$port connectaddress=100.66.30.40 connectport=$port 2>$null | Out-Null
                 $bytes = [Text.Encoding]::UTF8.GetBytes("exposed $port")
             } else {
                 $res.StatusCode = 400
@@ -386,6 +386,40 @@ try {
 } catch {
     Write-Host "  [5/5] Self-test POST FAILED: $_" -ForegroundColor Red
     Write-Host "        Check C:\Users\$env:USERNAME\claude-notify-listener.err for listener errors"
+}
+
+# ------------------------------------------------------------
+# 6. Write SSH config entry for home-wsl
+# ------------------------------------------------------------
+$SshDir    = Join-Path $env:USERPROFILE ".ssh"
+$SshConfig = Join-Path $SshDir "config"
+if (-not (Test-Path $SshDir)) { New-Item -ItemType Directory -Force -Path $SshDir | Out-Null }
+
+$wslEntry = @"
+
+Host home-wsl
+    HostName 100.66.30.40
+    Port 22
+    User jayone
+    IdentityFile ~/.ssh/id_ed25519
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    RemoteForward 6789 127.0.0.1:6789
+"@
+
+$existingConfig = if (Test-Path $SshConfig) { Get-Content $SshConfig -Raw } else { "" }
+if ($existingConfig -match "Host home-wsl") {
+    # Patch HostName inside home-wsl block only (not other hosts)
+    if ($existingConfig -notmatch "(?s)Host home-wsl.*?HostName 100\.66\.30\.40") {
+        $existingConfig = $existingConfig -replace "(?s)(Host home-wsl\s+)HostName\s+[\d.]+", '${1}HostName 100.66.30.40'
+        $existingConfig | Set-Content $SshConfig -NoNewline
+        Write-Host "  [6/6] SSH config: patched home-wsl HostName → 100.66.30.40" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [6/6] SSH config: home-wsl already correct (100.66.30.40)" -ForegroundColor Gray
+    }
+} else {
+    Add-Content $SshConfig $wslEntry
+    Write-Host "  [6/6] SSH config: added home-wsl → 100.66.30.40:22" -ForegroundColor Green
 }
 
 Write-Host ""
