@@ -64,6 +64,37 @@ def is_enabled() -> bool:
     return False
 
 
+def ab_disabled() -> bool:
+    """Return True if CTX hook injection should be skipped (A/B control arm).
+
+    Controlled by CTX_AB_DISABLE=1 env var. When set, UserPromptSubmit hooks
+    emit a lightweight 'ab_skipped' telemetry event and exit without producing
+    any CTX block — simulating a session that never installed CTX.
+
+    This is the *scaffold* for a time-saved A/B test: the operator flips this
+    flag between sessions and the dashboard splits utility metrics by ab_group.
+    """
+    return os.environ.get("CTX_AB_DISABLE") == "1"
+
+
+def ab_group() -> str:
+    """Return the current A/B group tag.
+
+    Priority: explicit CTX_AB_GROUP env var > inferred from CTX_AB_DISABLE.
+    Values: 'control' (CTX off) | 'treatment' (CTX on) | 'ungrouped' (neither set).
+    """
+    g = os.environ.get("CTX_AB_GROUP", "").strip().lower()
+    if g in ("control", "treatment"):
+        return g
+    if os.environ.get("CTX_AB_DISABLE") == "1":
+        return "control"
+    if os.environ.get("CTX_AB_GROUP") or _GATE_FILE.exists():
+        # Gate file implies the operator is running an A/B; default the
+        # treatment arm when no explicit group is set.
+        return "treatment"
+    return "ungrouped"
+
+
 def _maybe_notify_once():
     """Print one-line notice to stderr the first time telemetry fires per user."""
     try:
@@ -96,10 +127,13 @@ _ALLOWED_KEYS = {
     # P1: utility-rate Stop hook — did assistant reference injected context?
     # by_block is a nested dict {block: {total, referenced}} — still counts-only,
     # no content. Sanitizer relaxes primitive guard for this event only.
-    "utility_measured": {"total_items", "referenced_items", "by_block", "response_len",
-                         "hits_by_mode", "semantic_available"},
+    "utility_measured": {"total_items", "referenced_items", "by_block", "by_age", "response_len",
+                         "hits_by_mode", "referenced_by", "tool_params_len", "semantic_available"},
     # Activation-moment trigger (Wow toast): high-utility + old-decision recall
     "wow_fired": {"total_items", "referenced_items", "response_len"},
+    # A/B scaffold: UserPromptSubmit hook skipped injection because CTX_AB_DISABLE=1.
+    # Presence of these events lets the dashboard compute control-arm sample counts.
+    "ab_skipped": {"hook", "reason"},
 }
 
 
@@ -107,8 +141,8 @@ def _sanitize(event_type: str, payload: dict) -> dict:
     """Strip any key not in the whitelist for this event type.
     Defensive: blocks accidental content leakage if a caller adds unsafe fields."""
     allowed = _ALLOWED_KEYS.get(event_type, set())
-    # utility_measured's by_block AND hits_by_mode are 1-level nested dicts of counts
-    allow_nested_dict_for = {"utility_measured": {"by_block", "hits_by_mode"}}
+    # utility_measured's by_block / by_age / hits_by_mode / referenced_by are 1-level nested dicts of counts
+    allow_nested_dict_for = {"utility_measured": {"by_block", "by_age", "hits_by_mode", "referenced_by"}}
     out = {}
     for k, v in (payload or {}).items():
         if k not in allowed:
@@ -148,6 +182,7 @@ def log_event(event_type: str, payload: dict = None) -> None:
             "ts": int(time.time()),
             "schema": _SCHEMA,
             "project": _project_id(),
+            "ab_group": ab_group(),
             "type": event_type,
             **_sanitize(event_type, payload or {}),
         }

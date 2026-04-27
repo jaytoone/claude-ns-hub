@@ -11,7 +11,9 @@ PIDFILE="/tmp/ctx-dashboard.pid"
 LOG="/tmp/ctx-dashboard.log"
 
 start_server() {
-  CTX_DASHBOARD_PORT="$PORT" nohup python3 "$HERE/server.py" > "$LOG" 2>&1 &
+  CTX_DASHBOARD_PORT="$PORT" \
+  CTX_DASHBOARD_HOST="${CTX_DASHBOARD_HOST:-127.0.0.1}" \
+  nohup python3 "$HERE/server.py" > "$LOG" 2>&1 &
   echo $! > "$PIDFILE"
   sleep 1
 }

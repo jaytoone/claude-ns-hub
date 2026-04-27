@@ -39,13 +39,18 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
 <header>
   <div class="brand">
     <span class="dot pulse"></span>
-    <span class="title">CTX Telemetry</span>
+    <span class="title" data-i18n="brand.title">CTX Telemetry</span>
     <span class="sub" id="meta">—</span>
   </div>
   <div class="grade" id="grade">—</div>
   <div class="updated">
     <span id="updated">—</span>
     <span class="window" id="window">7d</span>
+    <button id="lang-toggle" class="lang-toggle" title="Switch language (localStorage persistent)">
+      <span class="lang-seg" data-lang="en">EN</span>
+      <span class="lang-sep">|</span>
+      <span class="lang-seg" data-lang="ko">KO</span>
+    </button>
   </div>
 </header>
 
@@ -53,67 +58,74 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
 
 <main>
   <section class="panel" id="health-panel">
-    <h2>System Health</h2>
+    <h2 data-i18n="panel.health">System Health</h2>
     <div class="rows" id="health-rows"></div>
   </section>
 
   <section class="panel" id="activity-panel">
-    <h2>Activity <span class="hint">events / minute (last 2h)</span></h2>
+    <h2><span data-i18n="panel.activity">Activity</span> <span class="hint" data-i18n="panel.activity.hint">events / minute (last 2h)</span></h2>
     <div id="activity-chart"></div>
   </section>
 
   <section class="panel" id="latency-panel">
-    <h2>Latency distribution <span class="hint">bm25-memory hook</span></h2>
+    <h2><span data-i18n="panel.latency">Latency distribution</span> <span class="hint" data-i18n="panel.latency.hint">bm25-memory hook</span></h2>
     <div class="bars" id="latency-bars"></div>
   </section>
 
   <section class="panel" id="utility-panel">
     <h2>
-      Utility rate
-      <span class="hint">share of injected items Claude actually referenced</span>
-      <span class="hint info-tip right" title="Measured on the Stop hook by substring-matching each injected item's distinctive tokens against the assistant's response. Stale events (from before the last tokenizer change) are excluded automatically. Backtest (n=200) baseline: ~38%.">ⓘ&nbsp;how</span>
+      <span data-i18n="panel.utility">Utility rate</span>
+      <span class="hint" data-i18n="panel.utility.hint">share of injected items Claude actually referenced</span>
+      <span class="hint info-tip right" data-i18n-title="panel.utility.tip" title="Measured on the Stop hook by substring-matching each injected item's distinctive tokens against the assistant's response.">ⓘ&nbsp;<span data-i18n="panel.utility.how">how</span></span>
     </h2>
     <div id="utility-body"></div>
   </section>
 
   <section class="panel" id="notices-panel">
-    <h2>Quality notices <span class="hint">rate-based, informational</span></h2>
+    <h2><span data-i18n="panel.notices">Quality notices</span> <span class="hint" data-i18n="panel.notices.hint">rate-based, informational</span></h2>
     <div id="notices"></div>
   </section>
 
   <section class="panel" id="other-panel">
-    <h2>Other signals</h2>
+    <h2 data-i18n="panel.other">Other signals</h2>
     <div class="pills" id="other"></div>
   </section>
 
   <section class="panel wide" id="graph-panel">
     <h2>
-      Knowledge graph
-      <span class="hint">decisions · docs · prompts — green = current prompt, edges = retrieval + topic + temporal</span>
-      <button id="refresh-graph" class="btn-small">refresh</button>
+      <span data-i18n="panel.graph">Knowledge graph</span>
+      <span class="hint" data-i18n="panel.graph.hint">decisions · docs · prompts — coral = selected prompt, edges = retrieval + topic + temporal</span>
+      <button id="refresh-graph" class="btn-small" data-i18n="btn.refresh">refresh</button>
       <span id="graph-stats" class="hint right"></span>
     </h2>
     <div id="graph-legend"></div>
+    <div class="graph-nav" id="graph-nav" style="display:none">
+      <button id="prompt-prev" class="nav-btn" data-i18n-title="nav.prev" title="Previous prompt (older)">◀</button>
+      <span class="nav-label" id="prompt-nav-label">—</span>
+      <button id="prompt-next" class="nav-btn" data-i18n-title="nav.next" title="Next prompt (newer)">▶</button>
+      <label class="signal-toggle">
+        <input type="checkbox" id="signal-toggle" checked>
+        <span data-i18n="nav.signals">electrical signals</span>
+      </label>
+    </div>
     <div id="graph-canvas"></div>
     <div id="graph-detail" class="graph-detail"></div>
   </section>
 
   <section class="panel wide" id="samples-panel">
     <h2>
-      Function proof — real samples
-      <span class="hint">
-        recent prompts → actual hook outputs (eye-check relevance)
-      </span>
-      <button id="refresh-samples" class="btn-small">refresh</button>
+      <span data-i18n="panel.samples">Function proof — real samples</span>
+      <span class="hint" data-i18n="panel.samples.hint">recent prompts → actual hook outputs (eye-check relevance)</span>
+      <button id="refresh-samples" class="btn-small" data-i18n="btn.refresh">refresh</button>
       <span id="samples-age" class="hint right"></span>
     </h2>
     <div class="legend-note">
-      <strong>Per-prompt utility pill:</strong>
+      <strong data-i18n="samples.legend.head">Per-prompt utility pill:</strong>
       <span class="util-chip ok">≥50%</span>
       <span class="util-chip mid">≥25%</span>
       <span class="util-chip low">&lt;25%</span>
       <span class="util-chip pending">—</span>
-      <span class="legend-sub">
+      <span class="legend-sub" data-i18n-html="samples.legend.body">
         = how much of what CTX <em>surfaced</em> was actually <em>used</em> in Claude's response.
         Blocks below show what CTX surfaced into context. A <b>filled block with 0% utility</b> = CTX injected items
         but Claude didn't reference them — honest signal, not a bug; usually means the prompt was about a different topic than what BM25 matched.
@@ -123,20 +135,20 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
     </div>
     <div id="samples"></div>
     <div class="load-more-wrap">
-      <button id="load-more-samples" class="btn-loadmore">Load 10 more</button>
+      <button id="load-more-samples" class="btn-loadmore" data-i18n="btn.loadmore">Load 10 more</button>
       <span id="load-more-status" class="hint"></span>
     </div>
   </section>
 
   <section class="panel wide" id="events-panel">
-    <h2>Recent events <span class="hint">newest first, last 30</span></h2>
+    <h2><span data-i18n="panel.events">Recent events</span> <span class="hint" data-i18n="panel.events.hint">newest first, last 30</span></h2>
     <div class="events" id="events"></div>
   </section>
 </main>
 
 <footer>
   <span id="thresholds">—</span>
-  <span class="right">connected: <span id="conn-status" class="conn ok">live</span></span>
+  <span class="right"><span data-i18n="footer.connected">connected:</span> <span id="conn-status" class="conn ok" data-i18n="footer.live">live</span></span>
 </footer>
 
 <script src="/static/app.js"></script>

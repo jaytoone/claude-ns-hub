@@ -107,6 +107,7 @@ def query_vault_vector(
     query_emb: list[float],
     project_filters: list[str] | None,
     limit: int,
+    exclude_session_id: str | None = None,
 ) -> list[tuple]:
     """KNN vector search using sqlite-vec. Returns (msg_id, cosine_dist, role, content, ts, project)."""
     if not query_emb or not os.path.exists(VAULT_DB):
@@ -120,6 +121,10 @@ def query_vault_vector(
 
         emb_bytes = bytes(struct.pack(f"{len(query_emb)}f", *query_emb))
         k = limit * 4  # over-fetch for project filter
+        # Current-session exclusion: skip messages from the active session
+        # to avoid retrieving this session's own turns as "past memory".
+        sess_clause = "AND s.session_id != ?" if exclude_session_id else ""
+        sess_params = [exclude_session_id] if exclude_session_id else []
 
         if project_filters:
             placeholders = ",".join("?" * len(project_filters))
@@ -130,27 +135,29 @@ def query_vault_vector(
                 JOIN sessions s ON m.session_id = s.session_id
                 WHERE mv.embedding MATCH ? AND mv.k = ?
                   AND s.project IN ({placeholders})
+                  {sess_clause}
                   AND m.role IN ('user', 'assistant')
                   AND m.content NOT LIKE '[tool_use%'
                   AND m.content NOT LIKE '[tool_result%'
                   AND length(m.content) > 30
                 ORDER BY mv.distance
                 LIMIT ?
-            """, [emb_bytes, k, *project_filters, limit]).fetchall()
+            """, [emb_bytes, k, *project_filters, *sess_params, limit]).fetchall()
         else:
-            rows = conn.execute("""
+            rows = conn.execute(f"""
                 SELECT mv.rowid, mv.distance, m.role, m.content, m.timestamp, s.project
                 FROM messages_vec mv
                 JOIN messages m ON mv.rowid = m.id
                 JOIN sessions s ON m.session_id = s.session_id
                 WHERE mv.embedding MATCH ? AND mv.k = ?
+                  {sess_clause}
                   AND m.role IN ('user', 'assistant')
                   AND m.content NOT LIKE '[tool_use%'
                   AND m.content NOT LIKE '[tool_result%'
                   AND length(m.content) > 30
                 ORDER BY mv.distance
                 LIMIT ?
-            """, [emb_bytes, k, limit]).fetchall()
+            """, [emb_bytes, k, *sess_params, limit]).fetchall()
         conn.close()
         return rows
     except Exception:
@@ -213,10 +220,13 @@ def hybrid_merge(
     return [(s[1], s[2], s[3], s[4]) for s in scored[:max_results]]
 
 
-def query_vault(keywords: str, project_filters: list[str] | None = None) -> list[tuple]:
+def query_vault(keywords: str, project_filters: list[str] | None = None,
+                exclude_session_id: str | None = None) -> list[tuple]:
     """FTS5로 관련 과거 대화 검색. tool_use 메시지 제외.
     project_filters: vault DB project 컬럼값 리스트 (e.g. ['-home-jayone-Project-CTX']).
                     None이면 전체 프로젝트 검색.
+    exclude_session_id: current session's session_id — exclude to avoid retrieving
+                        this session's own turns as "past memory".
     Returns: list of (project, role, content, timestamp)
 
     Adaptive threshold strategy:
@@ -233,6 +243,10 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
     from datetime import datetime, timezone
     today_start = datetime.now(timezone.utc).strftime("%Y-%m-%dT00:00:00")
 
+    # Current-session exclusion clause
+    sess_clause = "AND s.session_id != ?" if exclude_session_id else ""
+    sess_params_tuple = (exclude_session_id,) if exclude_session_id else ()
+
     try:
         conn = sqlite3.connect(f"file:{VAULT_DB}?mode=ro", uri=True, timeout=2.0)
         if project_filters:
@@ -246,6 +260,7 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
                 WHERE messages_fts MATCH ?
                   AND rank < -17
                   AND s.project IN ({ph})
+                  {sess_clause}
                   AND m.role IN ('user', 'assistant')
                   AND m.content NOT LIKE '[tool_use%'
                   AND m.content NOT LIKE '[tool_result%'
@@ -253,7 +268,7 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
                 ORDER BY rank
                 LIMIT ?
                 """,
-                (keywords, *project_filters, fetch_limit),
+                (keywords, *project_filters, *sess_params_tuple, fetch_limit),
             ).fetchall()
             # Same-day supplement: looser threshold for today's messages
             same_day_rows = conn.execute(
@@ -266,6 +281,7 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
                   AND rank < -8
                   AND m.timestamp >= ?
                   AND s.project IN ({ph})
+                  {sess_clause}
                   AND m.role IN ('user', 'assistant')
                   AND m.content NOT LIKE '[tool_use%'
                   AND m.content NOT LIKE '[tool_result%'
@@ -273,17 +289,18 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
                 ORDER BY rank
                 LIMIT ?
                 """,
-                (keywords, today_start, *project_filters, MAX_RESULTS * 2),
+                (keywords, today_start, *project_filters, *sess_params_tuple, MAX_RESULTS * 2),
             ).fetchall()
         else:
             rows = conn.execute(
-                """
+                f"""
                 SELECT s.project, m.role, m.content, m.timestamp
                 FROM messages_fts fts
                 JOIN messages m ON fts.rowid = m.id
                 JOIN sessions s ON m.session_id = s.session_id
                 WHERE messages_fts MATCH ?
                   AND rank < -17
+                  {sess_clause}
                   AND m.role IN ('user', 'assistant')
                   AND m.content NOT LIKE '[tool_use%'
                   AND m.content NOT LIKE '[tool_result%'
@@ -291,11 +308,11 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
                 ORDER BY rank
                 LIMIT ?
                 """,
-                (keywords, fetch_limit),
+                (keywords, *sess_params_tuple, fetch_limit),
             ).fetchall()
             # Same-day supplement
             same_day_rows = conn.execute(
-                """
+                f"""
                 SELECT s.project, m.role, m.content, m.timestamp
                 FROM messages_fts fts
                 JOIN messages m ON fts.rowid = m.id
@@ -303,6 +320,7 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
                 WHERE messages_fts MATCH ?
                   AND rank < -8
                   AND m.timestamp >= ?
+                  {sess_clause}
                   AND m.role IN ('user', 'assistant')
                   AND m.content NOT LIKE '[tool_use%'
                   AND m.content NOT LIKE '[tool_result%'
@@ -310,7 +328,7 @@ def query_vault(keywords: str, project_filters: list[str] | None = None) -> list
                 ORDER BY rank
                 LIMIT ?
                 """,
-                (keywords, today_start, MAX_RESULTS * 2),
+                (keywords, today_start, *sess_params_tuple, MAX_RESULTS * 2),
             ).fetchall()
         conn.close()
         rows = list(rows) + [r for r in same_day_rows if r not in rows]
@@ -349,6 +367,17 @@ def main():
     if not prompt or len(prompt) < 10:
         sys.exit(0)
 
+    # A/B scaffold: control arm skips injection entirely (CTX_AB_DISABLE=1).
+    # Dashboard uses the logged ab_skipped events to count control-arm sessions.
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from _ctx_telemetry import ab_disabled, log_event
+        if ab_disabled():
+            log_event("ab_skipped", {"hook": "chat-memory", "reason": "CTX_AB_DISABLE"})
+            sys.exit(0)
+    except Exception:
+        pass
+
     # Per-project filtering: cwd → project column key
     project_filters: list[str] | None = None
     if SCOPE == "project":
@@ -358,17 +387,22 @@ def main():
             extras = [cwd_to_project(p.strip()) for p in EXTRA_PROJECTS_RAW.split(":") if p.strip()]
             project_filters = [main_project] + extras
 
+    # Current session exclusion: don't retrieve this session's own turns as "past memory"
+    current_session_id = data.get("session_id") or None
+
     keywords = extract_keywords(prompt)
     if not keywords:
         sys.exit(0)
 
-    bm25_results = query_vault(keywords, project_filters=project_filters)
+    bm25_results = query_vault(keywords, project_filters=project_filters,
+                               exclude_session_id=current_session_id)
 
     # Hybrid: try vector search if daemon is running
     import time as _time; _t0 = _time.perf_counter()
     query_emb = get_query_embedding(prompt[:500])
     if query_emb:
-        vec_results = query_vault_vector(query_emb, project_filters, limit=MAX_RESULTS * 4)
+        vec_results = query_vault_vector(query_emb, project_filters, limit=MAX_RESULTS * 4,
+                                         exclude_session_id=current_session_id)
         results = hybrid_merge(bm25_results, vec_results, MAX_RESULTS)
         search_mode = "hybrid"
     else:

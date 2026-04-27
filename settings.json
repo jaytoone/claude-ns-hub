@@ -8,7 +8,9 @@
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-7",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_REMOTE_NOTIFY_URL": "http://localhost:6789/notify",
+    "CLAUDE_REMOTE_NOTIFY_ONLY": "1"
   },
   "permissions": {
     "allow": [
@@ -119,6 +121,11 @@
             "type": "command",
             "command": "bash -c 'python3 -c \"import socket,os; s=socket.socket(socket.AF_UNIX); s.settimeout(0.3); s.connect(os.path.expanduser(\\\"~/.local/share/claude-vault/vec-daemon.sock\\\"))\" 2>/dev/null || { rm -f $HOME/.local/share/claude-vault/vec-daemon.sock; nohup python3 $HOME/.local/share/claude-vault/vec-daemon.py > /tmp/vec-daemon.log 2>&1 & }'",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "/home/jayone/.claude/snippets/pw-cdp-start.sh >/dev/null 2>&1",
+            "async": true
           }
         ]
       }
@@ -148,7 +155,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.claude/hooks/chat-memory.py"
+            "command": "CHAT_MEMORY_SCOPE=global python3 $HOME/.claude/hooks/chat-memory.py"
           },
           {
             "type": "command",
@@ -166,7 +173,6 @@
         ]
       }
     ],
-    "TaskCompleted": [],
     "SubagentStart": [
       {
         "hooks": [
@@ -189,7 +195,6 @@
         ]
       }
     ],
-    "SessionEnd": [],
     "PermissionRequest": [
       {
         "matcher": "",
@@ -201,7 +206,6 @@
         ]
       }
     ],
-    "Notification": [],
     "Stop": [
       {
         "matcher": "",
@@ -252,7 +256,11 @@
         ]
       }
     ],
-    "PreToolUse": []
+    "PreToolUse": [
+      {
+        "hooks": []
+      }
+    ]
   },
   "enabledPlugins": {
     "typescript-lsp@claude-plugins-official": true,
@@ -261,7 +269,8 @@
     "ralph-loop@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
+    "superpowers@claude-plugins-official": true,
+    "claude-mem@thedotmack": false
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -269,10 +278,17 @@
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
       }
+    },
+    "thedotmack": {
+      "source": {
+        "source": "github",
+        "repo": "thedotmack/claude-mem"
+      }
     }
   },
   "awaySummaryEnabled": false,
-  "autoUpdatesChannel": "latest",
+  "autoUpdatesChannel": "stable",
   "skipDangerousModePermissionPrompt": true,
-  "mcpServers": {}
+  "mcpServers": {},
+  "model": "sonnet"
 }

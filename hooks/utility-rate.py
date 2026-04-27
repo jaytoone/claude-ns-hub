@@ -120,23 +120,64 @@ def _log_event(event_type: str, payload: dict):
 
 def _from_transcript(transcript_path: str) -> str:
     """Return concatenation of ALL assistant text blocks emitted since the
-    last user message in Claude Code's transcript .jsonl.
+    last user message. Kept for backward compat with callers that only need text."""
+    text, _ = _from_transcript_with_tools(transcript_path)
+    return text
 
-    Why not just "the last assistant message":
-      A single assistant turn in Claude Code is a sequence of alternating
-      text-block / tool-use / tool-result entries. If we take only the last
-      *text block*, we miss the narrative that appeared BEFORE the final
-      tool call — often the part most relevant for utility scoring.
-      Joining all text since the last user message captures the full
-      response the user actually saw.
 
-    This is the authoritative, race-free source — the transcript is written
-    by Claude Code BEFORE any Stop hook fires, unlike vault.db which is
-    populated asynchronously by claude-vault-incremental.
-    """
+# Tool-use parameter keys whose string values carry meaningful content the
+# assistant "referenced" via action. We flatten these into a single searchable
+# text blob per turn and substring-match CTX-item tokens against it — this
+# catches the case where the assistant reads a file CTX surfaced, or runs a
+# command mentioning a CTX-surfaced symbol, without ever mentioning it in prose.
+_TOOL_USE_STRING_KEYS = {
+    "file_path", "notebook_path", "command", "pattern", "path",
+    "description", "prompt", "query", "url", "old_string", "new_string",
+    "subagent_type",
+}
+
+
+def _extract_tool_params(content: list) -> str:
+    """Pull string values from tool_use blocks in a single assistant message.
+    Returns a concatenation bounded to ~4000 chars to keep semantic-embed
+    budget reasonable downstream. Non-string values (bools, ints) are skipped."""
+    parts: list[str] = []
+    for c in content or []:
+        if not (isinstance(c, dict) and c.get("type") == "tool_use"):
+            continue
+        inp = c.get("input", {}) or {}
+        # Tool name is itself useful context (Grep vs Edit vs Task)
+        name = c.get("name", "")
+        if name:
+            parts.append(name)
+        for k, v in inp.items():
+            if k not in _TOOL_USE_STRING_KEYS:
+                continue
+            if isinstance(v, str):
+                # Truncate long strings (Bash commands with huge pasted output)
+                parts.append(v[:800])
+            elif isinstance(v, list):
+                for item in v:
+                    if isinstance(item, str):
+                        parts.append(item[:400])
+    joined = "\n".join(parts)
+    return joined[:4000]   # cap total tool-params size per turn
+
+
+def _from_transcript_with_tools(transcript_path: str) -> tuple:
+    """Return (text, tool_params) — parallel streams of assistant output.
+
+    - text: all text blocks since last user turn (what the user reads)
+    - tool_params: flattened tool_use inputs since last user turn (what the
+      assistant DID — file reads, edits, bash commands, grep patterns)
+
+    Resets both on each 'user' entry so we only see the current turn.
+    This is the authoritative, race-free source — transcript is written by
+    Claude Code BEFORE any Stop hook fires."""
     if not transcript_path or not os.path.exists(transcript_path):
-        return ""
-    chunks_since_user: list[str] = []
+        return "", ""
+    text_chunks: list[str] = []
+    tool_chunks: list[str] = []
     try:
         with open(transcript_path, encoding="utf-8") as f:
             for line in f:
@@ -146,9 +187,8 @@ def _from_transcript(transcript_path: str) -> str:
                     continue
                 t = d.get("type")
                 if t == "user":
-                    # Reset — we only care about text emitted since the
-                    # most recent user turn (i.e., the current response).
-                    chunks_since_user = []
+                    text_chunks = []
+                    tool_chunks = []
                     continue
                 if t != "assistant":
                     continue
@@ -156,16 +196,21 @@ def _from_transcript(transcript_path: str) -> str:
                 content = msg.get("content", [])
                 if isinstance(content, str):
                     if content.strip():
-                        chunks_since_user.append(content)
+                        text_chunks.append(content)
                 elif isinstance(content, list):
                     for c in content:
-                        if isinstance(c, dict) and c.get("type") == "text":
-                            text = c.get("text", "")
-                            if text and text.strip():
-                                chunks_since_user.append(text)
+                        if not isinstance(c, dict):
+                            continue
+                        if c.get("type") == "text":
+                            txt = c.get("text", "")
+                            if txt and txt.strip():
+                                text_chunks.append(txt)
+                    tp = _extract_tool_params(content)
+                    if tp:
+                        tool_chunks.append(tp)
     except Exception:
         pass
-    return "\n".join(chunks_since_user)
+    return "\n".join(text_chunks), "\n".join(tool_chunks)
 
 
 def _from_vault() -> str:
@@ -220,11 +265,18 @@ def main():
     # claude-vault-incremental both ran async and utility-rate often read
     # vault.db BEFORE incremental finished writing the current turn.
     stop_input = _read_stop_stdin()
-    response = _from_transcript(stop_input.get("transcript_path", "")) or _from_vault()
+    transcript_path = stop_input.get("transcript_path", "")
+    response, tool_params = _from_transcript_with_tools(transcript_path)
     if not response:
+        # Fall back to vault (no tool-param recovery in this path — vault.db
+        # stores text-only content; tool-param matching is transcript-only).
+        response = _from_vault()
+        tool_params = ""
+    if not response and not tool_params:
         return
     # Case-insensitive substring match on distinctive tokens
     response_l = response.lower()
+    tool_params_l = tool_params.lower()
 
     # ── T1: pre-compute response-chunk embeddings (one daemon call per chunk)
     # If vec-daemon is unreachable, we fall back to pure substring match per item.
@@ -240,7 +292,25 @@ def main():
     by_block = {}
     total = 0
     referenced = 0
-    hits_by_mode = {"substring": 0, "semantic": 0, "both": 0}
+    # hits_by_mode tracks HOW each referenced item was matched:
+    #   substring : token literally in response text
+    #   semantic  : item vs response-chunk cosine ≥ threshold
+    #   tool_use  : token literally in a tool_use parameter (file_path, cmd, ...)
+    #   both_text : substring AND semantic both fired (text-only)
+    # An item contributes to exactly one bucket (strongest-wins: both_text > substring > semantic > tool_use)
+    hits_by_mode = {"substring": 0, "semantic": 0, "tool_use": 0, "both_text": 0}
+    # referenced_by = counts from separate views for dashboard split:
+    #   text_only : only text-match (substring or semantic) fired
+    #   tool_only : only tool_use param match fired
+    #   both      : text-match AND tool-match fired
+    referenced_by = {"text_only": 0, "tool_only": 0, "both": 0}
+    # by_age visualizes cross-session memory: are old decisions actually being
+    # recalled, or is utility dominated by fresh items? Bands: 0-7d / 7-30d / 30d+.
+    # Items without a date field (docs/prefetch) go into "no_date".
+    by_age = {"0-7d": {"total": 0, "referenced": 0},
+              "7-30d": {"total": 0, "referenced": 0},
+              "30d+": {"total": 0, "referenced": 0},
+              "no_date": {"total": 0, "referenced": 0}}
     max_referenced_age = 0    # oldest decision date among referenced items (for wow trigger)
 
     for it in items:
@@ -250,7 +320,7 @@ def main():
         by_block[block]["total"] += 1
         total += 1
 
-        # Substring check (fast, catches verbatim echoes)
+        # Substring check against response TEXT (what the user reads)
         sub_hit = any(len(t) >= 4 and t.lower() in response_l for t in tokens)
 
         # Semantic check (catches paraphrase, synonym, cross-language)
@@ -264,32 +334,69 @@ def main():
                                   default=0.0)
                     sem_hit = max_sim >= SEMANTIC_THRESHOLD
 
-        hit = sub_hit or sem_hit
+        # Tool-use check — did the assistant's ACTIONS reference this item?
+        # (Read target, Edit file, Bash command, Grep pattern, Task description)
+        # This closes the blind spot where CTX informed tool choice but never
+        # appeared in textual prose. Substring-only on tool params (embedding
+        # file paths doesn't produce a meaningful cosine signal).
+        tool_hit = (bool(tool_params_l)
+                    and any(len(t) >= 4 and t.lower() in tool_params_l for t in tokens))
+
+        text_hit = sub_hit or sem_hit
+        hit = text_hit or tool_hit
+
+        # Compute age band for EVERY item (referenced or not) so the denominator
+        # is accurate — we need to know "of all 0-7d items injected, how many
+        # got referenced", not just "of referenced items, what age".
+        age_band = "no_date"
+        item_age_days: int | None = None
+        date_str = it.get("date")
+        if date_str:
+            try:
+                item_age_days = (date.today() - datetime.fromisoformat(date_str).date()).days
+                if item_age_days <= 7:
+                    age_band = "0-7d"
+                elif item_age_days <= 30:
+                    age_band = "7-30d"
+                else:
+                    age_band = "30d+"
+            except Exception:
+                pass
+        by_age[age_band]["total"] += 1
+
         if hit:
             referenced += 1
             by_block[block]["referenced"] += 1
+            by_age[age_band]["referenced"] += 1
+            # Mode attribution (strongest-wins text modes, then tool-only)
             if sub_hit and sem_hit:
-                hits_by_mode["both"] += 1
+                hits_by_mode["both_text"] += 1
             elif sub_hit:
                 hits_by_mode["substring"] += 1
-            else:
+            elif sem_hit:
                 hits_by_mode["semantic"] += 1
-            # Track oldest referenced decision date
-            date_str = it.get("date")
-            if date_str:
-                try:
-                    age_days = (date.today() - datetime.fromisoformat(date_str).date()).days
-                    if age_days > max_referenced_age:
-                        max_referenced_age = age_days
-                except Exception:
-                    pass
+            else:
+                hits_by_mode["tool_use"] += 1
+            # Text-vs-tool split (separate dimension — an item can be in both)
+            if text_hit and tool_hit:
+                referenced_by["both"] += 1
+            elif text_hit:
+                referenced_by["text_only"] += 1
+            else:
+                referenced_by["tool_only"] += 1
+            # Track oldest referenced decision date (for wow trigger)
+            if item_age_days is not None and item_age_days > max_referenced_age:
+                max_referenced_age = item_age_days
 
     _log_event("utility_measured", {
         "total_items": total,
         "referenced_items": referenced,
         "by_block": by_block,
+        "by_age": by_age,
         "response_len": len(response),
         "hits_by_mode": hits_by_mode,
+        "referenced_by": referenced_by,
+        "tool_params_len": len(tool_params),
         "semantic_available": semantic_available,
     })
 

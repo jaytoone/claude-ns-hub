@@ -85,6 +85,20 @@ header {
 
 .updated { color: var(--text-dim); font-family: var(--mono); font-size: 12px; display: flex; gap: 10px; align-items: center; }
 .window { background: var(--panel-soft); border: 1px solid var(--panel-border); padding: 2px 8px; border-radius: 4px; color: var(--text-soft); }
+.lang-toggle {
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 4px; padding: 2px 4px; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 4px;
+}
+.lang-toggle:hover { border-color: var(--accent); }
+.lang-toggle .lang-seg {
+  padding: 1px 6px; border-radius: 3px; transition: background 0.15s, color 0.15s;
+}
+.lang-toggle .lang-seg.active {
+  background: var(--accent-soft); color: var(--accent-deep); font-weight: 500;
+}
+.lang-toggle .lang-sep { color: var(--panel-border); }
 
 /* ── Wow banner (activation moment) ────────────────── */
 .wow-banner {
@@ -215,6 +229,92 @@ main {
 }
 #utility-body .row .name { color: var(--text); font-weight: 500; font-family: var(--sans); }
 #utility-body .row .count { text-align: right; color: var(--text-soft); font-size: 11px; }
+/* Response-type stratification — iter 5 A2. Shows utility split by
+   prose / mixed / tool_heavy turns. Answers "where does CTX earn its value?" */
+#utility-body .rtype-split {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--panel-border);
+}
+#utility-body .rtype-head {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+  margin-bottom: 8px;
+}
+#utility-body .rtype-split .row { padding: 3px 0; }
+#utility-body .rtype-split .name {
+  font-family: var(--sans); font-weight: 500; color: var(--text); font-size: 11px;
+}
+
+/* Age-stratified utility — iter 4. Sits above the text-vs-tool split. */
+#utility-body .age-split {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--panel-border);
+}
+#utility-body .age-head {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+  margin-bottom: 8px;
+}
+#utility-body .age-split .row { padding: 3px 0; }
+#utility-body .age-split .name {
+  font-family: var(--sans); font-weight: 500; color: var(--text); font-size: 11px;
+}
+#utility-body .age-split .count .ci,
+#utility-body .row .count .ci {
+  color: var(--text-dim); font-size: 10px; margin-left: 4px;
+}
+#utility-body .ci-small {
+  color: var(--text-dim); font-size: 10px; margin-left: 2px; font-weight: 400;
+}
+#utility-body .overall-ci {
+  color: var(--text-dim); font-size: 10px; font-weight: 400; margin-left: 6px;
+  font-family: var(--mono);
+}
+
+/* Text-vs-tool utility split — iter 3 instrumentation. */
+#utility-body .util-split {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--panel-border);
+}
+#utility-body .util-split-head {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+  margin-bottom: 8px;
+}
+#utility-body .util-split-bar {
+  display: flex; height: 22px; border-radius: 3px; overflow: hidden;
+  border: 1px solid var(--panel-border); margin-bottom: 8px;
+}
+#utility-body .util-seg {
+  font-size: 10px; font-family: var(--mono); color: #fff; line-height: 22px;
+  padding: 0 6px; white-space: nowrap; overflow: hidden; cursor: help;
+  text-align: center; min-width: 0;
+}
+#utility-body .util-seg.text { background: var(--green); }
+#utility-body .util-seg.both { background: var(--accent); }
+#utility-body .util-seg.tool { background: var(--accent-deep); }
+#utility-body .util-split-note {
+  color: var(--text-soft); font-size: 10px; line-height: 1.5;
+  padding: 6px 8px; background: var(--panel-soft); border-radius: 3px;
+}
+#utility-body .util-split-note b { color: var(--accent-deep); }
+
+/* A/B split sub-panel — shown only when CTX_AB_DISABLE has been used at least once. */
+#utility-body .ab-split {
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--panel-border);
+}
+#utility-body .ab-head {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+  margin-bottom: 8px;
+}
+#utility-body .ab-row {
+  display: grid; grid-template-columns: 150px 60px 1fr; gap: 10px; align-items: baseline;
+  padding: 3px 0; font-size: 11px;
+}
+#utility-body .ab-label { color: var(--text); }
+#utility-body .ab-rate { text-align: right; color: var(--accent-deep); font-weight: 500; }
+#utility-body .ab-sub { color: var(--text-dim); font-size: 10px; }
+#utility-body .ab-na { color: var(--text-dim); font-style: italic; cursor: help; }
+#utility-body .ab-delta {
+  margin-top: 8px; padding: 6px 8px; border-radius: 4px;
+  background: var(--panel-soft); color: var(--text-soft); font-size: 10px; line-height: 1.5;
+}
+#utility-body .ab-delta .hint { display: block; margin-top: 2px; color: var(--text-dim); font-size: 10px; }
+
 #utility-body .empty {
   color: var(--text-dim); font-style: italic;
   padding: 20px 8px; text-align: center; font-size: 12px;
@@ -257,6 +357,33 @@ main {
 .events .ev .dur { text-align: right; color: var(--text-dim); }
 
 /* ── Knowledge Graph ───────────────────────────────── */
+/* Prompt navigation — step through past prompts to see retrieval cones */
+.graph-nav {
+  display: flex; align-items: center; gap: 10px; margin: 6px 0 10px;
+  padding: 8px 10px; background: var(--panel-soft);
+  border: 1px solid var(--panel-border); border-radius: 4px;
+  font-family: var(--mono); font-size: 11px;
+}
+.graph-nav .nav-btn {
+  background: var(--panel); border: 1px solid var(--panel-border);
+  color: var(--accent-deep); padding: 4px 10px; border-radius: 3px;
+  cursor: pointer; font-family: var(--mono); font-size: 12px;
+  font-weight: 500;
+}
+.graph-nav .nav-btn:hover {
+  background: var(--accent-soft); border-color: var(--accent);
+}
+.graph-nav .nav-btn:disabled {
+  color: var(--text-dim); cursor: not-allowed; background: transparent;
+}
+.graph-nav .nav-label {
+  color: var(--text); flex: 1; min-width: 200px;
+}
+.graph-nav .signal-toggle {
+  display: flex; align-items: center; gap: 4px; color: var(--text-dim); cursor: pointer;
+}
+.graph-nav .signal-toggle input { cursor: pointer; }
+
 #graph-canvas {
   width: 100%;
   height: 520px;
@@ -282,8 +409,12 @@ main {
    Swatch colors mirror the node fill colors set in app.js. */
 #graph-legend .lg.decision .swatch { background: #3b6a8a; color: #3b6a8a; }
 #graph-legend .lg.doc      .swatch { background: #7a5c8a; color: #7a5c8a; }
+#graph-legend .lg.chatmem  .swatch { background: #2e8b7a; color: #2e8b7a; transform: rotate(45deg); }
+#graph-legend .lg.code     .swatch { background: #6b8c3a; color: #6b8c3a; border-radius: 1px; }
 #graph-legend .lg.prompt   .swatch { background: #8a8278; color: #8a8278; }
 #graph-legend .lg.current  .swatch { background: var(--accent); color: var(--accent); box-shadow: 0 0 8px rgba(204,120,92,0.4); }
+#graph-legend .lg.hot      .swatch { background: #3b6a8a; color: var(--accent); border: 2px solid var(--accent); }
+#graph-legend .lg.dead     .swatch { background: #7a8a9a; color: #7a8a9a; opacity: 0.55; }
 #graph-legend .lg.recall   .line   { width: 22px; height: 2.5px; background: linear-gradient(90deg, var(--accent), #3b6a8a); }
 #graph-legend .lg.topic    .line   { width: 22px; height: 2px;   background: #7a5c8a; opacity: 0.65; }
 #graph-legend .lg.temporal .line   { width: 22px; height: 1.5px; background: #3b6a8a; opacity: 0.3; }
@@ -311,6 +442,62 @@ main {
 .graph-detail .node-info .tag.current  { background: var(--accent-soft); color: var(--accent-deep); }
 .graph-detail .node-info .full { color: var(--text); }
 .graph-detail .node-info .meta { color: var(--text-dim); margin-top: 4px; font-size: 11px; }
+
+/* Node-explain detail pane (iter 7) — 4 sections: WHY / PROMPT / UTILITY / CONTENT */
+.graph-detail .explain-why,
+.graph-detail .explain-prompt,
+.graph-detail .explain-util,
+.graph-detail .explain-content {
+  margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--panel-border);
+}
+.graph-detail .explain-head {
+  font-family: var(--serif); font-size: 12px; font-weight: 500; color: var(--text);
+  margin-bottom: 4px; letter-spacing: 0;
+}
+.graph-detail .explain-body {
+  color: var(--text-soft); font-size: 11px; line-height: 1.5;
+}
+.graph-detail .explain-row {
+  font-size: 11px; padding: 2px 0; color: var(--text-soft);
+}
+.graph-detail .explain-row .label {
+  color: var(--text-dim); min-width: 100px; display: inline-block;
+}
+.match-tok {
+  display: inline-block; padding: 0 4px; border-radius: 3px;
+  background: var(--accent-soft); color: var(--accent-deep);
+  font-weight: 500; margin: 0 2px;
+}
+.graph-detail .prompt-text {
+  padding: 6px 8px; background: var(--panel); border-radius: 3px;
+  border: 1px solid var(--panel-border);
+  font-family: var(--sans); font-style: italic; max-height: 120px; overflow-y: auto;
+}
+.graph-detail .content-preview {
+  padding: 6px 8px; background: var(--panel); border-radius: 3px;
+  border: 1px solid var(--panel-border);
+  max-height: 140px; overflow-y: auto; white-space: pre-wrap;
+}
+.graph-detail .explain-chain {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0;
+  font-size: 11px;
+}
+.graph-detail .chain-step {
+  display: inline-flex; align-items: center;
+}
+.graph-detail .chain-step.chain-prompt .chain-label {
+  color: var(--accent-deep); font-weight: 500;
+}
+.graph-detail .chain-step.chain-target .chain-label {
+  color: var(--text); font-weight: 500;
+  background: var(--accent-soft); padding: 1px 5px; border-radius: 3px;
+}
+.graph-detail .chain-step.chain-mid .chain-label {
+  color: var(--text-soft); padding: 0 4px;
+}
+.graph-detail .chain-arrow {
+  color: var(--text-dim); margin: 0 4px; font-size: 10px;
+}
 
 /* ── Samples (function proof) ──────────────────────── */
 .btn-small {

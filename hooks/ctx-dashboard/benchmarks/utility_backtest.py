@@ -26,7 +26,7 @@ BM25_HOOK = Path(os.path.expanduser("~/.claude/hooks/bm25-memory.py"))
 VEC_SOCK = Path(os.path.expanduser("~/.local/share/claude-vault/vec-daemon.sock"))
 SEMANTIC_THRESHOLD = 0.85   # calibrated: related >= 0.84, unrelated <= 0.78 (e5-small)
 
-N_SAMPLES = 50           # semantic mode adds ~10× latency per pair (embed calls)
+N_SAMPLES = 200          # semantic mode adds ~10× latency per pair (embed calls)
 MODES = ["substring", "hybrid"]    # run T0 baseline + T0+T1 hybrid on each pair
 MIN_PROMPT_LEN = 40
 MAX_PROMPT_LEN = 400

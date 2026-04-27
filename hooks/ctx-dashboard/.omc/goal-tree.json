@@ -1,0 +1,17 @@
+{
+  "root_goal": "Optimize dashboard loading: lazy-load vis-network, subset Google Fonts, inline critical CSS",
+  "original_goal": "take P1/P2 sub-goals from entity-crd and execute",
+  "level": 0,
+  "sub_goals": [
+    {"id": "P1a", "desc": "Lazy-load vis-network only when graph panel visible"},
+    {"id": "P1b", "desc": "Self-host subset fonts (Fraunces 400/500, JetBrains Mono 400) with display:swap"},
+    {"id": "P1c", "desc": "Inline critical CSS for above-the-fold (header + System Health)"}
+  ],
+  "evolution_count": 0,
+  "evolution_history": [],
+  "reward_spec": {
+    "primary_metric": "paint time reduction",
+    "threshold": "first-contentful-paint < 500ms on local"
+  },
+  "history": []
+}
