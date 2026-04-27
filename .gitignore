@@ -1,0 +1,84 @@
+# Secrets & credentials
+.credentials.json
+env/
+keys/
+*.pem
+*.key
+*_key
+id_ed25519
+id_rsa
+authorized_keys
+
+# Runtime state
+.compact-marker
+.ctx-telemetry.*
+.ctx-wow-*
+.git-smart-*
+.memory-update-hint.md
+.memory-save-hint.md
+.memory-context-hint.md
+.work-progress-*.md
+.omc-config.json
+.omc-version.json
+.omc/
+last-injection.json
+stats-cache.json
+history.jsonl
+paste-cache/
+logs/
+cache/
+transcripts/
+sessions/
+shell-snapshots/
+file-history/
+telemetry/
+security_warnings_state_*.json
+
+# Backups & duplicates
+*.bak
+*.backup*
+*.backup
+CLAUDE.md.backup*
+settings.json.bak*
+settings.json.backup*
+settings_*.json
+backup-wsl-*/
+backups/
+
+# Zone identifiers (Windows artifact)
+*:Zone.Identifier
+
+# Python
+__pycache__/
+*.pyc
+*.py.bak
+tools-venv/
+
+# Node
+node_modules/
+
+# Large data
+vault.db
+*.jsonl
+ctx-telemetry.jsonl
+claude-mem/
+memory-graphs/
+
+# IDE
+.obsidian-mcp.env
+ide/
+
+# OMC runtime
+.omc-config.json
+.omc-version.json
+statsig/
+channels/
+agents/
+teams/
+tasks/
+todos/
+workflows/
+plans/
+remote/
+hud/
+claude-flow-mcp-backup.json
