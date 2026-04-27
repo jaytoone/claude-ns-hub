@@ -119,7 +119,7 @@ Add-Type -TypeDefinition `$_cs
 `$form.FormBorderStyle = 'None'
 `$form.BackColor = [System.Drawing.Color]::FromArgb(22,22,35)
 `$form.Width = $SqSz; `$form.Height = $SqSz
-`$form.Opacity = 0.0
+`$form.Opacity = 0.95
 `$form.TopMost = `$true
 `$form.ShowInTaskbar = `$false
 `$form.StartPosition = 'Manual'
@@ -139,7 +139,7 @@ Add-Type -TypeDefinition `$_cs
 `$form.Add_Click({ `$form.Close() })
 `$script:hovering = `$false
 `$form.Add_MouseEnter({ `$script:hovering = `$true; `$form.Opacity = 0.95 })
-`$form.Add_MouseLeave({ `$script:hovering = `$false; `$form.Opacity = 0.0 })
+`$form.Add_MouseLeave({ `$script:hovering = `$false; `$elapsed2 = ([DateTime]::Now - `$startTime).TotalSeconds; `$form.Opacity = if (`$elapsed2 -ge 1800) { 0.40 } else { [Math]::Max(0.40, 0.95 - (0.55 * [Math]::Sqrt(`$elapsed2 / 1800))) } })
 `$lblCtl = New-Object System.Windows.Forms.Label
 `$lblCtl.Text = '$lbl'
 `$lblCtl.ForeColor = [System.Drawing.Color]::FromArgb($color)
@@ -150,7 +150,7 @@ Add-Type -TypeDefinition `$_cs
 `$lblCtl.Cursor = [System.Windows.Forms.Cursors]::Hand
 `$lblCtl.Add_Click({ `$form.Close() })
 `$lblCtl.Add_MouseEnter({ `$script:hovering = `$true; `$form.Opacity = 0.95 })
-`$lblCtl.Add_MouseLeave({ `$script:hovering = `$false; `$form.Opacity = 0.0 })
+`$lblCtl.Add_MouseLeave({ `$script:hovering = `$false; `$elapsed2 = ([DateTime]::Now - `$startTime).TotalSeconds; `$form.Opacity = if (`$elapsed2 -ge 1800) { 0.40 } else { [Math]::Max(0.40, 0.95 - (0.55 * [Math]::Sqrt(`$elapsed2 / 1800))) } })
 `$form.Controls.Add(`$lblCtl)
 try { [System.Media.SystemSounds]::Exclamation.Play() } catch {}
 `$topTimer = New-Object System.Windows.Forms.Timer
@@ -164,8 +164,10 @@ try { [System.Media.SystemSounds]::Exclamation.Play() } catch {}
 `$fadeTimer = New-Object System.Windows.Forms.Timer
 `$fadeTimer.Interval = 1000
 `$fadeTimer.Add_Tick({
+    if (`$script:hovering) { return }
     `$elapsed = ([DateTime]::Now - `$startTime).TotalSeconds
-    if (`$elapsed -ge 1800) { `$form.Close(); `$fadeTimer.Stop() }
+    if (`$elapsed -ge 1800) { `$form.Opacity = 0.40; `$fadeTimer.Stop() }
+    else { `$form.Opacity = 0.95 - (0.55 * [Math]::Sqrt(`$elapsed / 1800)) }
 })
 `$fadeTimer.Start()
 `$form.Add_FormClosed({
