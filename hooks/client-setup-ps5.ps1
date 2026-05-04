@@ -19,6 +19,7 @@ $HomeDir      = $env:USERPROFILE
 $ListenerPath = Join-Path $HomeDir 'claude-notify-listener.ps1'
 $TaskName     = 'ClaudeNotifyListener'
 $ListenPort   = 6789
+$NotifyToken  = "NOTIFY_TOKEN_HERE"
 
 Write-Host "=== Claude Notify — Client Setup (PS5 native) ===" -ForegroundColor Cyan
 Write-Host "User: $env:USERNAME   Host: $env:COMPUTERNAME"
@@ -362,8 +363,8 @@ Write-Host "  [2/5] Task '$TaskName' registered (triggers at logon, auto-restart
 # HttpListener needs wildcard URL ACL to bind non-localhost without admin at runtime
 & netsh http delete urlacl url=http://127.0.0.1:$ListenPort/ 2>$null | Out-Null
 & netsh http delete urlacl url="http://+:$ListenPort/" 2>$null | Out-Null
-& netsh http add urlacl url="http://+:$ListenPort/" user=$env:USERNAME 2>$null | Out-Null
-Write-Host "  [3a/5] URL ACL registered: http://+:$ListenPort/ for $env:USERNAME"
+& netsh http add urlacl url="http://+:$ListenPort/" user="$env:COMPUTERNAME\$env:USERNAME" 2>$null | Out-Null
+Write-Host "  [3a/5] URL ACL registered: http://+:$ListenPort/ for $env:COMPUTERNAME\$env:USERNAME"
 
 # Firewall inbound rule
 $fwName = "Claude Notify $ListenPort"

@@ -33,11 +33,13 @@ if [ -n "${CLAUDE_REMOTE_NOTIFY_URL:-}" ]; then
         (
             payload=$(jq -cn --arg k "$remote_proj_key" '{proj_key:$k}')
             # Tailscale direct: enumerate online Windows peers, POST to each on port 6789
+            _notify_token=$(cat "$HOME/.claude/.notify-secret" 2>/dev/null || echo "")
             tailscale status --json 2>/dev/null | \
                 jq -r '.Peer[] | select(.Online==true and (.OS=="windows")) | .TailscaleIPs[0]' 2>/dev/null | \
                 while read -r ip; do
                     [ -n "$ip" ] && curl -sf -m 2 -X POST "http://${ip}:6789/close" \
                          -H 'Content-Type: application/json' \
+                         -H "X-Notify-Token: ${_notify_token}" \
                          --data "$payload" >/dev/null 2>&1 || true
                 done
         ) </dev/null &

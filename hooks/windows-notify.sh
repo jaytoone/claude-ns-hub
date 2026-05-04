@@ -44,13 +44,27 @@ if [ -n "${CLAUDE_REMOTE_NOTIFY_URL:-}" ]; then
         payload=$(jq -cn --arg t "$title" --arg m "$message" --arg k "notify" \
             '{title:$t,message:$m,kind:$k,sound:true}')
         # Tailscale direct: enumerate online Windows peers, POST to each on port 6789
-        tailscale status --json 2>/dev/null | \
-            jq -r '.Peer[] | select(.Online==true and (.OS=="windows")) | .TailscaleIPs[0]' 2>/dev/null | \
-            while read -r ip; do
-                [ -n "$ip" ] && curl -sf -m 5 -X POST "http://${ip}:6789/notify" \
-                     -H 'Content-Type: application/json' \
-                     --data "$payload" >/dev/null 2>&1 || true
-            done
+        _notify_token=$(cat "$HOME/.claude/.notify-secret" 2>/dev/null || echo "")
+        {
+            tailscale status --json 2>/dev/null | \
+                jq -r '.Peer[] | select(.Online==true and (.OS=="windows")) | .TailscaleIPs[0]' 2>/dev/null
+            # Fallback: static peer list for Windows machines not visible in Tailscale peers
+            grep -v '^#' "$HOME/.claude/.windows-peers" 2>/dev/null | awk '{print $1}'
+        } | sort -u | while read -r ip; do
+            [ -n "$ip" ] && curl -sf -m 5 -X POST "http://${ip}:6789/notify" \
+                 -H 'Content-Type: application/json' \
+                 -H "X-Notify-Token: ${_notify_token}" \
+                 --data "$payload" >/dev/null 2>&1 || true
+        done
+        # Bark (iPhone)
+        _bark_key=$(cat "$HOME/.claude/.bark-key" 2>/dev/null || echo "")
+        if [ -n "$_bark_key" ]; then
+            bark_payload=$(jq -cn --arg k "$_bark_key" --arg t "$title" --arg b "$message" \
+                '{device_key:$k,title:$t,body:$b,sound:"default"}')
+            curl -sf -m 8 -X POST "https://api.day.app/push" \
+                -H 'Content-Type: application/json' \
+                --data "$bark_payload" >/dev/null 2>&1 || true
+        fi
     ) </dev/null &
     disown 2>/dev/null || true
 fi

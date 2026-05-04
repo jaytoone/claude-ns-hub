@@ -8,10 +8,12 @@ if [ -z "$port" ] || ! [[ "$port" =~ ^[0-9]+$ ]]; then
 fi
 
 payload="{\"port\":${port}}"
+notify_token=$(cat "$HOME/.claude/.notify-secret" 2>/dev/null || echo "")
 while read -r ip host; do
     [ -z "$ip" ] && continue
     if curl -sf -m 3 -X POST "http://${ip}:6789/unexpose" \
          -H 'Content-Type: application/json' \
+         -H "X-Notify-Token: ${notify_token}" \
          --data "$payload" >/dev/null 2>&1; then
         echo "✓ unexposed port $port on $host ($ip)"
     else
