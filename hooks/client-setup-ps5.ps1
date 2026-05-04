@@ -34,6 +34,9 @@ $listenerBody = @'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+# Shared secret injected at bootstrap time — validates /clipboard, /expose, /unexpose requests
+$NotifyToken = "NOTIFY_TOKEN_HERE"
+
 $port = 6789
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://+:$port/")
@@ -227,6 +230,11 @@ while ($listener.IsListening) {
         }
 
         if ($req.HttpMethod -eq 'POST' -and $req.Url.AbsolutePath -eq '/clipboard') {
+            if ($req.Headers["X-Notify-Token"] -ne $NotifyToken) {
+                $res.StatusCode = 403
+                $bytes = [Text.Encoding]::UTF8.GetBytes('Forbidden')
+                $res.OutputStream.Write($bytes, 0, $bytes.Length); $res.Close(); continue
+            }
             $reader = New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)
             $body = $reader.ReadToEnd()
             $reader.Dispose()
@@ -255,6 +263,11 @@ while ($listener.IsListening) {
 
         # /expose — dynamic same-URL mirror: client localhost:<port> → WSL2 localhost:<port>
         if ($req.HttpMethod -eq 'POST' -and $req.Url.AbsolutePath -eq '/expose') {
+            if ($req.Headers["X-Notify-Token"] -ne $NotifyToken) {
+                $res.StatusCode = 403
+                $bytes = [Text.Encoding]::UTF8.GetBytes('Forbidden')
+                $res.OutputStream.Write($bytes, 0, $bytes.Length); $res.Close(); continue
+            }
             $reader = New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)
             $body = $reader.ReadToEnd()
             $reader.Dispose()
@@ -262,7 +275,7 @@ while ($listener.IsListening) {
             try { $port = [int](($body | ConvertFrom-Json).port) } catch {}
             if ($port -gt 0 -and $port -le 65535) {
                 & netsh interface portproxy delete v4tov4 listenaddress=127.0.0.1 listenport=$port 2>$null | Out-Null
-                & netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=$port connectaddress=100.66.30.40 connectport=$port 2>$null | Out-Null
+                & netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=$port connectaddress=100.119.82.4 connectport=$port 2>$null | Out-Null
                 $bytes = [Text.Encoding]::UTF8.GetBytes("exposed $port")
             } else {
                 $res.StatusCode = 400
@@ -275,6 +288,11 @@ while ($listener.IsListening) {
 
         # /unexpose — remove mirror for given port
         if ($req.HttpMethod -eq 'POST' -and $req.Url.AbsolutePath -eq '/unexpose') {
+            if ($req.Headers["X-Notify-Token"] -ne $NotifyToken) {
+                $res.StatusCode = 403
+                $bytes = [Text.Encoding]::UTF8.GetBytes('Forbidden')
+                $res.OutputStream.Write($bytes, 0, $bytes.Length); $res.Close(); continue
+            }
             $reader = New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)
             $body = $reader.ReadToEnd()
             $reader.Dispose()
@@ -323,11 +341,12 @@ $action    = New-ScheduledTaskAction -Execute 'powershell.exe' `
 # which means WinForms popups physically cannot render. We trade session-lifetime
 # persistence for UI capability; the 1-min repeat trigger compensates by reviving
 # the task within 60s if it dies mid-session.
-$triggerLogon  = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$localUser     = "$env:COMPUTERNAME\$env:USERNAME"
+$triggerLogon  = New-ScheduledTaskTrigger -AtLogOn -User $localUser
 $triggerRepeat = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
                       -RepetitionInterval (New-TimeSpan -Minutes 1)
 $trigger = @($triggerLogon, $triggerRepeat)
-$principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
+$principal = New-ScheduledTaskPrincipal -UserId $localUser -LogonType Interactive -RunLevel Highest
 $settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
                  -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) `
                  -RestartCount 99 -RestartInterval (New-TimeSpan -Minutes 1) `
@@ -401,13 +420,18 @@ $SshDir    = Join-Path $env:USERPROFILE ".ssh"
 $SshConfig = Join-Path $SshDir "config"
 if (-not (Test-Path $SshDir)) { New-Item -ItemType Directory -Force -Path $SshDir | Out-Null }
 
+$Hostname   = $env:COMPUTERNAME.ToLower()
+$KeyName    = "id_home_wsl_$Hostname"
+$KeyFile    = Join-Path $SshDir $KeyName
+$PubKeyFile = "$KeyFile.pub"
+
 $wslEntry = @"
 
 Host home-wsl
-    HostName 100.66.30.40
+    HostName 100.119.82.4
     Port 22
-    User jayone
-    IdentityFile ~/.ssh/id_ed25519
+    User desk-1
+    IdentityFile ~/.ssh/$KeyName
     ServerAliveInterval 30
     ServerAliveCountMax 3
     RemoteForward 6789 127.0.0.1:6789
@@ -415,17 +439,122 @@ Host home-wsl
 
 $existingConfig = if (Test-Path $SshConfig) { Get-Content $SshConfig -Raw } else { "" }
 if ($existingConfig -match "Host home-wsl") {
-    # Patch HostName inside home-wsl block only (not other hosts)
-    if ($existingConfig -notmatch "(?s)Host home-wsl.*?HostName 100\.66\.30\.40") {
-        $existingConfig = $existingConfig -replace "(?s)(Host home-wsl\s+)HostName\s+[\d.]+", '${1}HostName 100.66.30.40'
-        $existingConfig | Set-Content $SshConfig -NoNewline
-        Write-Host "  [6/6] SSH config: patched home-wsl HostName → 100.66.30.40" -ForegroundColor Yellow
-    } else {
-        Write-Host "  [6/6] SSH config: home-wsl already correct (100.66.30.40)" -ForegroundColor Gray
-    }
+    $existingConfig = $existingConfig -replace "(?s)(Host home-wsl\s+)HostName\s+[\d.]+", '${1}HostName 100.119.82.4'
+    $existingConfig = $existingConfig -replace "(?s)(Host home-wsl(?:.|\n)*?User\s+)\w+", '${1}desk-1'
+    $existingConfig = $existingConfig -replace "(?s)(Host home-wsl(?:.|\n)*?IdentityFile\s+~/.ssh/)\S+", "`${1}$KeyName"
+    $existingConfig | Set-Content $SshConfig -NoNewline
+    Write-Host "  [6/7] SSH config: home-wsl updated (key: $KeyName)" -ForegroundColor Yellow
 } else {
     Add-Content $SshConfig $wslEntry
-    Write-Host "  [6/6] SSH config: added home-wsl → 100.66.30.40:22" -ForegroundColor Green
+    Write-Host "  [6/7] SSH config: added home-wsl → 100.119.82.4 (key: $KeyName)" -ForegroundColor Green
+}
+
+# ------------------------------------------------------------
+# 7. Generate SSH key (if missing) + register with WSL2
+# ------------------------------------------------------------
+if (-not (Test-Path $KeyFile)) {
+    Write-Host "  [7/7] Generating ed25519 key: $KeyName ..." -ForegroundColor Cyan
+    & ssh-keygen -t ed25519 -C $Hostname -f $KeyFile -N '""' 2>&1 | Out-Null
+    Write-Host "  [7/7] Key generated: $KeyFile" -ForegroundColor Green
+} else {
+    Write-Host "  [7/7] Key exists: $KeyFile" -ForegroundColor Gray
+}
+
+if (Test-Path $PubKeyFile) {
+    $pubkey = (Get-Content $PubKeyFile -Raw).Trim()
+    $registered = $false
+    foreach ($attempt in 1..2) {
+        try {
+            $resp = Invoke-WebRequest `
+                -Uri "http://100.119.82.4:9955/register-key" `
+                -Method POST `
+                -Body $pubkey `
+                -ContentType "text/plain" `
+                -Headers @{"X-Notify-Token" = $NotifyToken} `
+                -UseBasicParsing
+            Write-Host "  [7/7] WSL2 authorized_keys: $($resp.Content)" -ForegroundColor Green
+            $registered = $true
+            break
+        } catch {
+            if ($attempt -eq 1) {
+                Write-Host "  [7/7] Register attempt 1 failed, retrying in 3s..." -ForegroundColor Yellow
+                Start-Sleep 3
+            } else {
+                Write-Host "  [7/7] WARN: could not auto-register key after 2 attempts." -ForegroundColor Red
+                Write-Host "        Run manually on WSL2:" -ForegroundColor Yellow
+                Write-Host "        echo '$pubkey' >> ~/.ssh/authorized_keys" -ForegroundColor Yellow
+            }
+        }
+    }
+
+    # Verify the key actually works via SSH regardless of registration method
+    Write-Host "  [7/7] Verifying SSH connectivity to WSL2..." -ForegroundColor Cyan
+    $sshTest = & ssh -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=no `
+        -i $KeyFile "desk-1@100.119.82.4" "echo SSH_OK" 2>&1
+    if ($sshTest -match "SSH_OK") {
+        Write-Host "  [7/7] SSH verification PASSED — home-wsl is ready" -ForegroundColor Green
+    } else {
+        Write-Host "  [7/7] SSH verification FAILED — key not accepted by WSL2" -ForegroundColor Red
+        Write-Host "        Add this key manually on WSL2 then retry:" -ForegroundColor Yellow
+        Write-Host "        echo '$pubkey' >> ~/.ssh/authorized_keys" -ForegroundColor Yellow
+        Write-Host "        ssh -i $KeyFile desk-1@100.119.82.4   # test yourself" -ForegroundColor Yellow
+    }
+}
+
+# ------------------------------------------------------------
+# 8. Enable OpenSSH Server (so WSL2 can SSH back into this PC)
+# ------------------------------------------------------------
+$sshdSvc = Get-Service -Name sshd -ErrorAction SilentlyContinue
+if ($sshdSvc) {
+    if ($sshdSvc.Status -ne 'Running') {
+        Start-Service sshd
+        Set-Service -Name sshd -StartupType Automatic
+        Write-Host "  [8/8] OpenSSH Server: was installed, now started" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [8/8] OpenSSH Server: already running" -ForegroundColor Gray
+    }
+} else {
+    Write-Host "  [8/8] Installing OpenSSH Server ..." -ForegroundColor Cyan
+    $cap = Get-WindowsCapability -Online -Name OpenSSH.Server* | Select-Object -First 1
+    if ($cap -and $cap.State -ne 'Installed') {
+        Add-WindowsCapability -Online -Name $cap.Name | Out-Null
+    }
+    Start-Service sshd
+    Set-Service -Name sshd -StartupType Automatic
+    Write-Host "  [8/8] OpenSSH Server: installed and started" -ForegroundColor Green
+}
+
+# Firewall rule for port 22 (idempotent)
+$fwSsh = Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue
+if (-not $fwSsh) {
+    New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -DisplayName 'OpenSSH Server (sshd)' `
+        -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
+    Write-Host "  [8/8] Firewall: port 22 opened" -ForegroundColor Green
+} else {
+    Write-Host "  [8/8] Firewall: port 22 rule already exists" -ForegroundColor Gray
+}
+
+# ------------------------------------------------------------
+# 9. Register WSL2's public key → this PC's administrators_authorized_keys
+#    (enables WSL2 to SSH back into this Windows machine)
+# ------------------------------------------------------------
+$Wsl2PubKey  = "WSL2_PUBKEY_HERE"
+$AdminKeyFile = "C:\ProgramData\ssh\administrators_authorized_keys"
+
+if (Test-Path $AdminKeyFile) {
+    $existing = Get-Content $AdminKeyFile -Raw -ErrorAction SilentlyContinue
+} else {
+    $existing = ""
+    New-Item -ItemType File -Force -Path $AdminKeyFile | Out-Null
+}
+
+if ($existing -notmatch [regex]::Escape($Wsl2PubKey.Split(" ")[1])) {
+    Add-Content $AdminKeyFile $Wsl2PubKey
+    # Permissions: only SYSTEM + Administrators (required by OpenSSH on Windows)
+    icacls $AdminKeyFile /inheritance:r /grant "SYSTEM:(F)" /grant "Administrators:(F)" 2>$null | Out-Null
+    Write-Host "  [9/9] WSL2 pubkey added to administrators_authorized_keys" -ForegroundColor Green
+} else {
+    Write-Host "  [9/9] WSL2 pubkey already in administrators_authorized_keys" -ForegroundColor Gray
 }
 
 Write-Host ""
