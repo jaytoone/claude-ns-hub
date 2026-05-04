@@ -209,6 +209,11 @@ while ($listener.IsListening) {
         }
 
         if ($req.HttpMethod -eq 'POST' -and $req.Url.AbsolutePath -eq '/notify') {
+            if ($req.Headers["X-Notify-Token"] -ne $NotifyToken) {
+                $res.StatusCode = 403
+                $bytes = [Text.Encoding]::UTF8.GetBytes('Forbidden')
+                $res.OutputStream.Write($bytes, 0, $bytes.Length); $res.Close(); continue
+            }
             $reader = New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)
             $body = $reader.ReadToEnd()
             $reader.Dispose()
@@ -247,6 +252,11 @@ while ($listener.IsListening) {
         }
 
         if ($req.HttpMethod -eq 'POST' -and $req.Url.AbsolutePath -eq '/close') {
+            if ($req.Headers["X-Notify-Token"] -ne $NotifyToken) {
+                $res.StatusCode = 403
+                $bytes = [Text.Encoding]::UTF8.GetBytes('Forbidden')
+                $res.OutputStream.Write($bytes, 0, $bytes.Length); $res.Close(); continue
+            }
             $reader = New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)
             $body = $reader.ReadToEnd()
             $reader.Dispose()
