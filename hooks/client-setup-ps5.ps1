@@ -448,17 +448,12 @@ Host home-wsl
     RemoteForward 6789 127.0.0.1:6789
 "@
 
-$existingConfig = if (Test-Path $SshConfig) { Get-Content $SshConfig -Raw } else { "" }
-if ($existingConfig -match "Host home-wsl") {
-    $existingConfig = $existingConfig -replace "(?s)(Host home-wsl\s+)HostName\s+[\d.]+", '${1}HostName 100.119.82.4'
-    $existingConfig = $existingConfig -replace "(?s)(Host home-wsl(?:.|\n)*?User\s+)\w+", '${1}desk-1'
-    $existingConfig = $existingConfig -replace "(?s)(Host home-wsl(?:.|\n)*?IdentityFile\s+~/.ssh/)\S+", "`${1}$KeyName"
-    $existingConfig | Set-Content $SshConfig -NoNewline
-    Write-Host "  [6/7] SSH config: home-wsl updated (key: $KeyName)" -ForegroundColor Yellow
-} else {
-    Add-Content $SshConfig $wslEntry
-    Write-Host "  [6/7] SSH config: added home-wsl → 100.119.82.4 (key: $KeyName)" -ForegroundColor Green
-}
+$existingConfig = if (Test-Path $SshConfig) { Get-Content $SshConfig -Raw -Encoding UTF8 } else { "" }
+# Remove existing home-wsl block (regex + next Host block or EOF) — prevents stale key corruption
+$existingConfig = ($existingConfig -replace "(?s)\r?\nHost home-wsl\b.*?(?=\r?\nHost |\z)", "").TrimEnd()
+# Always append fresh correct entry
+($existingConfig + $wslEntry) | Set-Content $SshConfig -NoNewline -Encoding UTF8
+Write-Host "  [6/7] SSH config: home-wsl written (key: $KeyName)" -ForegroundColor Green
 
 # ------------------------------------------------------------
 # 7. Generate SSH key (if missing) + register with WSL2
