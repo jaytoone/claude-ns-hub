@@ -354,13 +354,11 @@ $action    = New-ScheduledTaskAction -Execute 'powershell.exe' `
 # the task within 60s if it dies mid-session.
 $localUser     = "$env:COMPUTERNAME\$env:USERNAME"
 $triggerLogon  = New-ScheduledTaskTrigger -AtLogOn -User $localUser
-$triggerRepeat = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
-                      -RepetitionInterval (New-TimeSpan -Minutes 1)
-$trigger = @($triggerLogon, $triggerRepeat)
+$trigger = @($triggerLogon)
 $principal = New-ScheduledTaskPrincipal -UserId $localUser -LogonType Interactive -RunLevel Highest
-$settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-                 -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) `
-                 -RestartCount 99 -RestartInterval (New-TimeSpan -Minutes 1) `
+$settings  = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries `
+                 -StartWhenAvailable:$false -ExecutionTimeLimit ([TimeSpan]::Zero) `
+                 -RestartCount 0 `
                  -MultipleInstances IgnoreNew
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
