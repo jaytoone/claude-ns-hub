@@ -417,7 +417,7 @@ Write-Host "  [4/5] Listener started via Task Scheduler (survives SSH disconnect
 Start-Sleep 1
 try {
     $body = '{"title":"Claude Notify","message":"Setup complete on ' + $env:COMPUTERNAME + '"}'
-    Invoke-RestMethod -Uri "http://127.0.0.1:$ListenPort/notify" -Method Post -Body $body -ContentType 'application/json' | Out-Null
+    Invoke-RestMethod -Uri "http://127.0.0.1:$ListenPort/notify" -Method Post -Body $body -ContentType 'application/json' -Headers @{"X-Notify-Token" = $NotifyToken} | Out-Null
     Write-Host "  [5/5] Self-test POST succeeded — you should see a square popup" -ForegroundColor Green
 } catch {
     Write-Host "  [5/5] Self-test POST FAILED: $_" -ForegroundColor Red
