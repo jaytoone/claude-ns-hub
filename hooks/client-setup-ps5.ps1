@@ -403,11 +403,8 @@ try {
 
 # Clear any stale error log from previous failed starts
 Remove-Item "$env:USERPROFILE\claude-notify-listener.err" -Force -ErrorAction SilentlyContinue
-Start-Sleep 2
 
-Start-ScheduledTask -TaskName $TaskName
-Start-Sleep 2
-Write-Host "  [4/5] Listener started via Task Scheduler (survives SSH disconnect)"
+Write-Host "  [4/5] Listener registered — will start at next logon (Session 1)" -ForegroundColor Yellow
 
 # ------------------------------------------------------------
 # 5. Self-test: POST a local notification
