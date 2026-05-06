@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hub</title>
+<link rel="icon" href="data:," />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf9f6; --bg-deep: #f0ede7; --panel: #fff; --panel-border: #e4dfd5;
+  --panel-soft: #f5f2ec; --text: #1f1c1a; --text-soft: #4a4540; --text-dim: #8a8278;
+  --accent: #cc785c; --accent-deep: #a34b2c; --accent-soft: #f5e6de;
+  --green: #3d8b5e; --green-soft: #e8f5ee;
+  --red: #c0392b; --red-soft: #fdf0ef;
+  --yellow: #b8860b;
+  --serif: "Fraunces", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --nav-h: 50px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text-soft); font: 14px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased; }
+
+/* ── Nav ── */
+nav {
+  height: var(--nav-h); display: flex; align-items: stretch;
+  border-bottom: 1px solid var(--panel-border); background: var(--bg);
+  position: relative; z-index: 10; padding: 0 24px 0 20px;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  padding-right: 24px; border-right: 1px solid var(--panel-border);
+  margin-right: 4px; flex-shrink: 0;
+}
+.brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.brand-name { font-family: var(--serif); font-weight: 500; font-size: 18px; color: var(--text); }
+
+/* ── Tabs ── */
+.tabs { display: flex; align-items: stretch; flex: 1; }
+.tab {
+  display: flex; align-items: center; gap: 9px;
+  padding: 0 18px; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim); font-size: 13px;
+  transition: color 0.12s, border-color 0.12s;
+  user-select: none; white-space: nowrap; position: relative;
+}
+.tab:hover { color: var(--text-soft); }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab-name { font-family: var(--serif); font-size: 15px; font-weight: 500; }
+
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--text-dim); transition: background 0.4s;
+}
+.status-dot.ok    { background: var(--green); }
+.status-dot.fail  { background: var(--red); }
+.status-dot.check { background: var(--yellow); animation: blink 1.2s ease-in-out infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+/* ── Nav right ── */
+.nav-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.open-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-family: var(--mono); color: var(--text-dim);
+  background: none; border: 1px solid var(--panel-border); border-radius: 4px;
+  padding: 4px 10px; cursor: pointer; transition: all 0.12s; line-height: 1;
+}
+.open-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.open-btn svg { opacity: 0.6; }
+.clock { font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  letter-spacing: 0.02em; }
+
+/* ── Pane container ── */
+.content { height: calc(100vh - var(--nav-h)); position: relative; overflow: hidden; }
+.wrap {
+  position: absolute; inset: 0; display: none;
+}
+.wrap.active { display: block; }
+.wrap iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: none; display: block;
+}
+
+/* ── Offline overlay ── */
+.offline-overlay {
+  display: none; position: absolute; inset: 0; z-index: 5;
+  background: var(--bg);
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px;
+}
+.offline-overlay.show { display: flex; }
+.offline-icon { font-size: 32px; margin-bottom: 4px; opacity: 0.3; }
+.offline-title { font-family: var(--serif); font-size: 19px; color: var(--text); font-weight: 500; }
+.offline-hint {
+  font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+  background: var(--bg-deep); padding: 5px 14px; border-radius: 4px;
+  border: 1px solid var(--panel-border);
+}
+.retry-btn {
+  margin-top: 6px; font-size: 12px; font-family: var(--mono);
+  background: none; border: 1px solid var(--panel-border); border-radius: 4px;
+  padding: 5px 16px; cursor: pointer; color: var(--text-soft); transition: all 0.12s;
+}
+.retry-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <span class="brand-name">Hub</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="northstar">
+      <div class="status-dot check" id="dot-northstar"></div>
+      <span class="tab-name">North Star</span>
+    </div>
+    <div class="tab" data-tab="ctx">
+      <div class="status-dot check" id="dot-ctx"></div>
+      <span class="tab-name">CTX</span>
+    </div>
+    <div class="tab" data-tab="corpus">
+      <div class="status-dot check" id="dot-corpus"></div>
+      <span class="tab-name">Corpus</span>
+    </div>
+    <div class="tab" data-tab="market-signals">
+      <div class="status-dot check" id="dot-market-signals"></div>
+      <span class="tab-name">Market</span>
+    </div>
+  </div>
+
+  <div class="nav-right">
+    <button class="open-btn" id="open-standalone">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M1 9L9 1M9 1H4M9 1V6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      open
+    </button>
+    <span class="clock" id="clock">—</span>
+  </div>
+</nav>
+
+<div class="content">
+  <div class="wrap" id="wrap-ctx">
+    <div class="offline-overlay" id="offline-ctx">
+      <div class="offline-icon">◌</div>
+      <div class="offline-title">CTX is offline</div>
+      <div class="offline-hint">ctx</div>
+      <button class="retry-btn" onclick="retryLoad('ctx')">Retry</button>
+    </div>
+    <iframe id="frame-ctx" src="about:blank"></iframe>
+  </div>
+
+  <div class="wrap" id="wrap-corpus">
+    <div class="offline-overlay" id="offline-corpus">
+      <div class="offline-icon">◌</div>
+      <div class="offline-title">Corpus is offline</div>
+      <div class="offline-hint">entity-corpus</div>
+      <button class="retry-btn" onclick="retryLoad('corpus')">Retry</button>
+    </div>
+    <iframe id="frame-corpus" src="about:blank"></iframe>
+  </div>
+
+  <div class="wrap" id="wrap-market-signals">
+    <iframe id="frame-market-signals" src="about:blank"></iframe>
+  </div>
+
+  <div class="wrap active" id="wrap-northstar">
+    <div class="offline-overlay" id="offline-northstar">
+      <div class="offline-icon">◌</div>
+      <div class="offline-title">North Star not found</div>
+      <div class="offline-hint">FromScratch/docs/north-star-dashboard.html</div>
+    </div>
+    <iframe id="frame-northstar" src="about:blank"></iframe>
+  </div>
+</div>
+
+<script>
+const TABS = {
+  ctx:            { standalone: 'http://127.0.0.1:8787', healthUrl: '/health/ctx' },
+  corpus:         { standalone: 'http://127.0.0.1:8989', healthUrl: '/health/corpus' },
+  northstar:      { standalone: '/northstar',             healthUrl: '/health/northstar' },
+  'market-signals': { standalone: '/market-signals',     healthUrl: '/health/market-signals' },
+};
+let activeTab = 'northstar';
+
+// ── Config (resolves CTX to real bound IP) ────────────────────────────────────
+async function initConfig() {
+  try {
+    const cfg = await fetch('/config').then(r => r.json());
+    TABS.ctx.standalone = cfg.ctx_url;
+    document.getElementById('frame-ctx').src    = cfg.ctx_url;
+    document.getElementById('frame-corpus').src = cfg.corpus_url;
+    document.getElementById('frame-northstar').src = cfg.northstar_url;
+    document.getElementById('frame-market-signals').src = cfg.market_signals_url || '/market-signals';
+  } catch (_) {}
+}
+initConfig();
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab =>
+  tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
+
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.wrap').forEach(w =>
+    w.classList.toggle('active', w.id === `wrap-${name}`));
+}
+
+// ── Open standalone ───────────────────────────────────────────────────────────
+document.getElementById('open-standalone').addEventListener('click', () =>
+  window.open(TABS[activeTab].standalone, '_blank'));
+
+// ── Health checks ─────────────────────────────────────────────────────────────
+async function checkHealth(name) {
+  const dot     = document.getElementById(`dot-${name}`);
+  const overlay = document.getElementById(`offline-${name}`);
+  try {
+    const d = await fetch(TABS[name].healthUrl).then(r => r.json());
+    dot.className = 'status-dot ' + (d.ok ? 'ok' : 'fail');
+    if (overlay) overlay.classList.toggle('show', !d.ok);
+  } catch {
+    dot.className = 'status-dot fail';
+    if (overlay) overlay.classList.add('show');
+  }
+}
+
+async function retryLoad(name) {
+  document.getElementById(`offline-${name}`)?.classList.remove('show');
+  const frame = document.getElementById(`frame-${name}`);
+  frame.src = frame.src;
+  await checkHealth(name);
+}
+
+Object.keys(TABS).forEach(checkHealth);
+setInterval(() => Object.keys(TABS).forEach(checkHealth), 8000);
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+const clockEl = document.getElementById('clock');
+const tick = () => clockEl.textContent =
+  new Date().toLocaleTimeString('en-GB', { hour12: false });
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>
