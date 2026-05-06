@@ -63,6 +63,8 @@ const I18N = {
   "panel.graph.hint":       { en: "decisions · docs · prompts — coral = selected prompt, edges = retrieval + topic + temporal", ko: "결정 · 문서 · 프롬프트 — 산호색 = 선택된 프롬프트, 엣지 = 검색 + 토픽 + 시간" },
   "panel.samples":          { en: "Function proof — real samples", ko: "기능 증명 — 실제 샘플" },
   "panel.samples.hint":     { en: "recent prompts → actual hook outputs (eye-check relevance)", ko: "최근 프롬프트 → 실제 후크 출력 (관련성 직접 확인)" },
+  "panel.market":           { en: "Market Signals", ko: "시장 신호" },
+  "panel.market.hint":      { en: "PyPI trend · GitHub pain issues · HN mentions", ko: "PyPI 추세 · GitHub 이슈 · HN 언급" },
   "panel.events":           { en: "Recent events", ko: "최근 이벤트" },
   "panel.events.hint":      { en: "newest first, last 30", ko: "최신순, 최근 30개" },
   // Buttons / nav
@@ -73,6 +75,10 @@ const I18N = {
   "nav.signals":            { en: "electrical signals", ko: "전기 신호" },
   // Samples legend
   "samples.legend.head":    { en: "Per-prompt utility pill:", ko: "프롬프트별 활용률 배지:" },
+  "legend.chip.ok":         { en: "CTX surfaced items Claude actually used", ko: "CTX가 꺼낸 항목 중 Claude가 실제 사용" },
+  "legend.chip.mid":        { en: "partially used", ko: "일부 사용됨" },
+  "legend.chip.low":        { en: "injected but not referenced — honest signal, not a bug", ko: "주입됐지만 미참조 — 정직한 신호, 버그 아님" },
+  "legend.chip.pending":    { en: "reply not yet persisted (Stop hook fires ~30s after turn)", ko: "응답 미저장 — Stop 후크가 ~30초 후 실행됨" },
   "samples.legend.body":    {
     en: "= how much of what CTX <em>surfaced</em> was actually <em>used</em> in Claude's response. Blocks below show what CTX surfaced into context. A <b>filled block with 0% utility</b> = CTX injected items but Claude didn't reference them — honest signal, not a bug; usually means the prompt was about a different topic than what BM25 matched. <b>—</b> = the reply isn't persisted yet (lands on Stop hook ~30s after the turn); score fills in on next refresh. CM entries are project-scoped <em>history</em>, not this prompt's reply.",
     ko: "= CTX가 <em>꺼낸</em> 것 중 Claude 응답에서 <em>실제 사용된</em> 비율. 아래 블록은 CTX가 문맥에 주입한 것을 표시. <b>블록은 채워졌는데 활용률 0%</b> = CTX가 항목을 주입했지만 Claude가 참조하지 않음 — 버그가 아닌 정직한 신호, 보통 BM25가 매칭한 주제와 프롬프트 주제가 다를 때 발생. <b>—</b> = 응답이 아직 저장되지 않음 (Stop 후크가 턴 종료 ~30초 후 실행됨); 다음 새로고침에 점수 채워짐. CM 항목은 이 프롬프트 응답이 아닌 프로젝트 <em>히스토리</em>."
@@ -238,13 +244,23 @@ function fmtThresholds(th) {
   return `Thresholds: CM ≥${th.cm_hybrid_min}%  |  g2_docs <${th.g2_docs_max}%  |  g2_grep <${th.g2_grep_max}%  |  p95 <${th.p95_max_ms}ms`;
 }
 
+// Human-readable labels for health row names (server sends code names)
+const HEALTH_LABELS = {
+  "CM hybrid":    { label: "Chat memory",    desc: "Accuracy of cross-session memory recall (BM25 + vector hybrid)" },
+  "G1 fire rate": { label: "Decision recall", desc: "Share of prompts where past decisions were surfaced" },
+  "g2_docs":      { label: "Docs search",     desc: "Share of prompts where relevant research docs were found" },
+  "g2_grep":      { label: "Code search",     desc: "Share of prompts where codebase was searched" },
+  "Latency p95":  { label: "Latency p95",     desc: "95th-percentile response time of the memory hook" },
+};
+
 function renderHealthRow(r) {
-  const color = r.ok ? "green" : "yellow";
-  const sym = r.ok ? "✓" : "~";
+  const color = r.ok ? "green" : (r.critical ? "red" : "yellow");
+  const sym = r.ok ? "✓" : (r.critical ? "!" : "~");
   const pct = Math.min(100, Math.max(2, Math.round((r.value || 0) * 100)));
+  const meta = HEALTH_LABELS[r.name] || { label: r.name, desc: "" };
   return `
-    <div class="row">
-      <div class="label">${esc(r.name)}</div>
+    <div class="row" title="${esc(meta.desc)}">
+      <div class="label">${esc(meta.label)}</div>
       <div class="bar"><div class="bar-fill ${color}" style="width:${pct}%"></div></div>
       <div class="value">${esc(r.value_str)}</div>
       <div class="sym ${color}">${sym}</div>
@@ -308,6 +324,11 @@ function renderUtility(u) {
     u.total_items || 0,
     { short: true }
   );
+  const BLOCK_LABELS = {
+    g1:          "Decisions",
+    g2_docs:     "Research docs",
+    g2_prefetch: "Code files",
+  };
   const blocks = u.by_block || {};
   const blockRows = Object.keys(blocks).sort().map(name => {
     const b = blocks[name];
@@ -315,8 +336,9 @@ function renderUtility(u) {
     const color = p >= 50 ? "green" : (p >= 25 ? "yellow" : "red");
     const pctFill = Math.max(3, p);
     const ci = fmtRateCI(b.referenced, b.total, { short: true });
+    const displayName = BLOCK_LABELS[name] || name;
     return `<div class="row">
-      <div class="name">${esc(name)}</div>
+      <div class="name">${esc(displayName)}</div>
       <div class="bar"><div class="bar-fill ${color}" style="width:${pctFill}%"></div></div>
       <div class="count">${p}% (${esc(b.referenced)}/${esc(b.total)}) <span class="ci">${ci.halfwidth ? `±${ci.halfwidth}pp` : ""}</span></div>
     </div>`;
@@ -403,7 +425,8 @@ function renderUtility(u) {
         <div class="count">${p}% (${esc(b.referenced)}/${esc(b.total)}) <span class="ci">±${ci.halfwidth}pp · ${esc(b.n_turns)}t</span></div>
       </div>`;
     };
-    const rows = ["prose", "mixed", "tool_heavy"].map(row).filter(Boolean).join("");
+    // Mixed first (highest citation rate = strongest CTX signal), then prose, then tool_heavy
+    const rows = ["mixed", "prose", "tool_heavy"].map(row).filter(Boolean).join("");
     rtypeBlock = `<div class="rtype-split">
       <div class="rtype-head">${esc(t("rtype.head"))} <span class="hint">${esc(t("rtype.hint"))}</span></div>
       ${rows}
@@ -468,14 +491,25 @@ function renderUtility(u) {
     ? `<span class="overall-ci">${esc(t("util.overallCI"))} ±${overallCI.halfwidth}pp</span>`
     : "";
 
+  // Interpretation note: surface the mixed-turn rate up front (strongest CTX signal)
+  let interpretNote = "";
+  const rtMixed = (u.by_response_type || {}).mixed;
+  if (rtMixed && rtMixed.n_turns > 0 && rtMixed.rate != null) {
+    const mixedPct = Math.round(rtMixed.rate * 100);
+    interpretNote = `<div class="util-interp-note" style="margin-top:6px; font-size:0.82em; color:var(--text-dim); font-style:italic">
+      In multi-step turns (tool use), CTX context was cited ${mixedPct}% of the time — vs 0% baseline without CTX.
+    </div>`;
+  }
+
   host.innerHTML = `
     <div class="overall">
       <div class="big ${cls}">${pct}%</div>
       <div>
-        <div>${esc(t("util.overall"))} ${overallCITxt}</div>
+        <div>${esc(t("util.overall"))} ${overallCITxt} <span class="hint" style="font-size:0.8em; color:var(--text-dim)">(vs 0% baseline)</span></div>
         <div class="sub">${esc(u.n_turns)} ${esc(t("util.nturns"))} · ${esc(u.total_items)} ${esc(t("util.items"))}${u.stale_skipped ? ` · ${esc(u.stale_skipped)} ${esc(t("util.stale"))}` : ''}</div>
       </div>
     </div>
+    ${interpretNote}
     ${blockRows}
     ${rtypeBlock}
     ${ageBlock}
@@ -486,7 +520,9 @@ function renderUtility(u) {
 
 function renderNotices(notices) {
   if (!notices || notices.length === 0) {
-    return `<div style="color:var(--text-dim); font-family:var(--mono); font-size:12px;">— none —</div>`;
+    return `<div style="color:#2e7d32; font-family:var(--mono); font-size:12px; display:flex; align-items:center; gap:6px">
+      <span style="font-size:1.1em">✓</span> No quality alerts — all metrics within normal ranges
+    </div>`;
   }
   return notices.map(n => `
     <div class="notice">
@@ -496,9 +532,19 @@ function renderNotices(notices) {
     </div>`).join("");
 }
 
+// Human-readable labels for "other signals" event types
+const OTHER_LABELS = {
+  "CM daemon-down":   "Vector daemon offline",
+  "decision-keyword": "Decision triggers",
+  "grep-fallback":    "Search fallbacks",
+};
+
 function renderOther(other) {
-  if (!other || other.length === 0) return `<span style="color:var(--text-dim); font-size:11px;">— none —</span>`;
-  return other.map(o => `<span class="pill">${esc(o.label)} <span class="count">×${esc(o.count)}</span></span>`).join("");
+  if (!other || other.length === 0) return `<span style="color:var(--text-dim); font-size:12px;">No additional signals this window</span>`;
+  return other.map(o => {
+    const label = OTHER_LABELS[o.label] || o.label;
+    return `<span class="pill" title="${esc(o.label)}">${esc(label)} <span class="count">×${esc(o.count)}</span></span>`;
+  }).join("");
 }
 
 function fmtTs(ts) {
@@ -513,9 +559,21 @@ function fmtTs(ts) {
 
 function renderBlock(name, tag, items, itemClass = "it") {
   const cls = items && items.length ? "" : "empty";
+  // Method dot colors for G1/G2-DOCS items (when item is a {text, retrieval_method} dict)
+  const methodDotColor = { semantic: '#7b1fa2', keyword: '#1565c0', cascade: '#555',
+                           cm_hybrid: '#2e7d32', code_index: '#00695c' };
   const body = items && items.length
-    ? items.map(i => `<div class="${itemClass}" title="${esc(i)}">${esc(i)}</div>`).join("")
-    : `<div class="it">— none —</div>`;
+    ? items.map(i => {
+        // Support both plain strings (g2_prefetch) and {text, retrieval_method} objects (g1, g2_docs)
+        const text = typeof i === 'object' ? (i.text || '') : i;
+        const method = typeof i === 'object' ? i.retrieval_method : null;
+        const dotColor = method && methodDotColor[method];
+        const dot = dotColor
+          ? `<span style="color:${dotColor}; font-size:0.7em; margin-right:2px; flex-shrink:0" title="${method}">●</span>`
+          : '';
+        return `<div class="${itemClass}" title="${esc(text)}" style="display:flex; align-items:flex-start; gap:1px">${dot}<span>${esc(text)}</span></div>`;
+      }).join("")
+    : `<div class="it empty-block">nothing surfaced</div>`;
   return `
     <div class="block ${cls} ${name.toLowerCase()}">
       <div class="name"><span>${esc(name)}</span><span class="tag">${esc(tag)}</span></div>
@@ -530,10 +588,10 @@ function renderCmBlock(cm) {
         <div class="cm-entry">
           <span class="who">${esc(e.role)}@${esc(e.project)}</span><span title="${esc(e.preview)}">${esc(e.preview)}</span>
         </div>`).join("")
-    : `<div class="it">— none —</div>`;
+    : `<div class="it empty-block">nothing surfaced</div>`;
   return `
     <div class="block cm ${cls}">
-      <div class="name"><span>CM</span><span class="tag">chat memory</span></div>
+      <div class="name"><span>Chat history</span><span class="tag">past conversations</span></div>
       <div class="items">${body}</div>
     </div>`;
 }
@@ -871,7 +929,7 @@ function buildContributorsHTML(data, highlightNodeId) {
     yes_text: { label: "CITED", icon: "✓", color: "#2e7d32", bg: "#e8f5e9" },
     yes_tool: { label: "CITED", icon: "✓", color: "#2e7d32", bg: "#e8f5e9" },
     yes_both: { label: "CITED", icon: "✓✓", color: "#1b5e20", bg: "#c8e6c9" },
-    no:       { label: "INJECTED", icon: null, color: "#666", bg: "#f0f0f0" },
+    no:       { label: "PROVIDED", icon: null, color: "#666", bg: "#f0f0f0" },
     pending:  { label: null, icon: null, color: null, bg: null },
     unknown:  { label: null, icon: null, color: null, bg: null },
   };
@@ -1867,9 +1925,9 @@ function sampleCardHTML(p) {
       </div>
       <div class="blocks">
         ${renderCmBlock(p.cm)}
-        ${renderBlock("G1", "decisions", p.g1)}
-        ${renderBlock("G2-DOCS", "BM25 docs", p.g2_docs)}
-        ${renderBlock("G2-PREFETCH", "code graph", p.g2_prefetch)}
+        ${renderBlock("Decisions", "past decisions recalled", p.g1)}
+        ${renderBlock("Research docs", "relevant docs surfaced", p.g2_docs)}
+        ${renderBlock("Code files", "related code found", p.g2_prefetch)}
       </div>
     </div>`;
 }
@@ -2079,11 +2137,16 @@ function checkWow() {
     if ((w.age_hours || 0) > 24) return;
     const banner = $("wow-banner");
     banner.style.display = "flex";
+    // Retrieval method annotation: "found by meaning, not keywords" for semantic rescues
+    const isSemantic = w.retrieval_method === "semantic";
+    const recallVerb = isSemantic
+      ? `<strong>CTX semantically matched a decision from ${esc(w.age_days)} days ago</strong> — found by meaning, not keywords.`
+      : `<strong>CTX keyword-matched a decision from ${esc(w.age_days)} days ago</strong> —`;
+    const usedNote = `Claude used it (${Math.round(w.utility_rate * 100)}% of injected items referenced).`;
     banner.innerHTML = `
       <span class="dot"></span>
       <span class="text">
-        <strong>CTX just recalled a decision from ${esc(w.age_days)} days ago</strong> —
-        Claude used it (${Math.round(w.utility_rate * 100)}% of injected items referenced).
+        ${recallVerb} ${usedNote}
         <em style="color:var(--text-dim)"> The retrieval cone is visible in the knowledge graph below ↓</em>
       </span>
       <button class="dismiss" id="wow-dismiss">dismiss</button>
@@ -2105,6 +2168,151 @@ document.addEventListener("click", (e) => {
 });
 
 checkWow();
+
+// Retrieval method distribution widget (Change 1)
+function fetchAndRenderRetrievalMethodStats() {
+  fetch("/api/retrieval-method-stats").then(r => r.json()).then(data => {
+    const host = $("retrieval-method-body");
+    if (!host) return;
+    const total = data.total || 0;
+    if (total === 0) {
+      host.innerHTML = `<div class="empty" style="color:var(--text-dim); font-size:12px; font-family:var(--mono)">No graph data yet.</div>`;
+      return;
+    }
+    const counts = data.counts || {};
+    // Show keyword, semantic, cascade — skip cm_hybrid/code_index/hybrid/unknown
+    const display = [
+      { key: "keyword",  label: "keyword",   color: "#1565c0", title: "BM25 direct match" },
+      { key: "semantic", label: "semantic",  color: "#7b1fa2", title: "e5-small embedding rescue (BM25 missed)" },
+      { key: "cascade",  label: "cascade",   color: "#555",    title: "BFS propagation via topic/temporal edges" },
+    ];
+    const rows = display.map(({ key, label, color, title }) => {
+      const n = counts[key] || 0;
+      if (n === 0) return "";
+      const pct = Math.round(n / total * 100);
+      const pctFill = Math.max(3, pct);
+      const isRescue = key === "semantic";
+      return `<div class="row" title="${esc(title)}" style="margin-bottom:4px">
+        <div class="name" style="min-width:72px; color:${color}; font-weight:${isRescue ? '700' : '400'}">${esc(label)}</div>
+        <div class="bar" style="flex:1; margin:0 8px">
+          <div class="bar-fill" style="width:${pctFill}%; background:${color}; height:8px; border-radius:4px; opacity:0.75"></div>
+        </div>
+        <div class="count" style="min-width:90px; text-align:right; font-size:0.85em">
+          ${pct}% <span style="color:var(--text-dim)">(${n})</span>${isRescue ? ' <span style="color:#7b1fa2; font-size:0.85em">← rescued</span>' : ''}
+        </div>
+      </div>`;
+    }).filter(Boolean).join("");
+
+    const rescueRate = data.semantic_rescue_rate || 0;
+    const rescueNote = rescueRate > 0
+      ? `<div style="margin-top:8px; font-size:0.82em; color:#7b1fa2; font-weight:600">
+          ${Math.round(rescueRate * 100)}% of retrievals are semantic rescues — found by meaning, not keywords.
+        </div>`
+      : `<div style="margin-top:6px; font-size:0.8em; color:var(--text-dim)">
+          No semantic rescues this window — all retrievals matched directly by keyword.
+        </div>`;
+
+    host.innerHTML = `
+      <div class="rows" style="font-family:var(--mono)">${rows}</div>
+      ${rescueNote}
+      <div style="margin-top:4px; font-size:0.75em; color:var(--text-dim)">${total} recall edges · ${display.filter(d => counts[d.key] > 0).length} of 3 method types active</div>
+    `;
+  }).catch(() => {
+    const host = $("retrieval-method-body");
+    if (host) host.innerHTML = `<span style="color:var(--text-dim); font-size:12px">—</span>`;
+  });
+}
+
+fetchAndRenderRetrievalMethodStats();
+
+// ── Market Signals panel ──────────────────────────────────────────────
+
+function renderMarketSignals(resp) {
+  const host = $("market-signals-body");
+  if (!host) return;
+  const sig = resp.signals || {};
+  const history = resp.history || [];
+  const cachedAt = resp.cached_at ? new Date(resp.cached_at * 1000).toLocaleTimeString() : "—";
+  const age = $("signals-age");
+  if (age) age.textContent = `cached ${cachedAt}`;
+
+  if (sig.error) {
+    host.innerHTML = `<span style="color:var(--text-dim); font-size:12px">signal fetch error: ${esc(sig.error)}</span>`;
+    return;
+  }
+
+  // PyPI block
+  const pypi = sig.pypi || {};
+  const pctSign = (pypi.pct_week >= 0) ? "+" : "";
+  const pctColor = pypi.pct_week > 20 ? "var(--ok)" : pypi.pct_week < -20 ? "var(--warn)" : "var(--text-dim)";
+  const sparkline = history.length > 1
+    ? history.map(h => h.pypi && h.pypi.week != null ? h.pypi.week : 0)
+    : [];
+  const sparkMax = Math.max(...sparkline, 1);
+  const sparkBars = sparkline.map(v => {
+    const h = Math.round((v / sparkMax) * 20);
+    return `<span style="display:inline-block;width:6px;height:${h}px;background:var(--accent);margin-right:1px;vertical-align:bottom" title="${v}/wk"></span>`;
+  }).join("");
+
+  // GitHub issues
+  const gh = (sig.github || []).slice(0, 6);
+  const ghRows = gh.map(i => `
+    <div style="margin:4px 0; font-size:12px; line-height:1.5">
+      <span style="color:${i.state==='open'?'var(--ok)':'var(--text-dim)'}; font-size:11px">[${esc(i.state)}]</span>
+      <a href="${esc(i.url)}" target="_blank" style="color:var(--accent); text-decoration:none">#${i.number}</a>
+      <span style="color:var(--text)"> ${esc((i.title||"").slice(0,72))}</span>
+      <span style="color:var(--text-dim); font-size:11px"> · ${esc(i.created)} · matched: <em>${esc(i.keyword)}</em></span>
+    </div>`).join("") || `<span style="color:var(--text-dim); font-size:12px">no recent matches</span>`;
+
+  // HN
+  const hn = (sig.hn || []).slice(0, 4);
+  const hnRows = hn.map(i => `
+    <div style="margin:4px 0; font-size:12px; line-height:1.5">
+      <span style="color:var(--text-dim); font-size:11px">[${i.points||0}pts]</span>
+      <a href="${esc(i.url)}" target="_blank" style="color:var(--accent); text-decoration:none">${esc((i.title||"").slice(0,72))}</a>
+      <span style="color:var(--text-dim); font-size:11px"> · ${esc(i.created)}</span>
+    </div>`).join("") || `<span style="color:var(--text-dim); font-size:12px">no recent matches</span>`;
+
+  host.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px">
+      <div>
+        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px">PyPI ctx-retriever</div>
+        <div style="display:flex; gap:16px; align-items:flex-end">
+          <div>
+            <div style="font-size:22px; font-weight:600; color:var(--text)">${pypi.week ?? "—"}<span style="font-size:12px; color:var(--text-dim)">/wk</span></div>
+            <div style="font-size:12px; color:${pctColor}">${pctSign}${pypi.pct_week ?? 0}% vs baseline</div>
+            <div style="font-size:11px; color:var(--text-dim)">${pypi.day ?? "—"}/day · ${pypi.month ?? "—"}/mo</div>
+          </div>
+          <div style="align-self:flex-end; padding-bottom:4px">${sparkBars}</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px">Hacker News</div>
+        ${hnRows}
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px">GitHub anthropics/claude-code — pain signals</div>
+      ${ghRows}
+    </div>`;
+}
+
+function fetchMarketSignals(refresh = false) {
+  const host = $("market-signals-body");
+  if (!host) return;
+  host.innerHTML = `<span style="color:var(--text-dim); font-size:12px">loading…</span>`;
+  fetch(`/api/market-signals${refresh ? "?refresh=true" : ""}`)
+    .then(r => r.json())
+    .then(renderMarketSignals)
+    .catch(() => {
+      if (host) host.innerHTML = `<span style="color:var(--text-dim); font-size:12px">—</span>`;
+    });
+}
+
+fetchMarketSignals();
+
+const refreshSignalsBtn = $("refresh-signals");
+if (refreshSignalsBtn) refreshSignalsBtn.addEventListener("click", () => fetchMarketSignals(true));
 
 // Re-render chart on resize
 window.addEventListener("resize", () => {

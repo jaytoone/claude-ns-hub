@@ -433,14 +433,20 @@ def _compute_samples(n_prompts: int = 3, offset: int = 0, include_realtime: bool
         bm_out = _run_bm25_memory_internal(content, cwd=cwd)
         cm_out = _run_chat_memory(content, cwd=cwd)
 
-        g1_items = _ctx._extract_block(bm_out, "[RECENT DECISIONS]")[:3]
-        g2_doc_items = _ctx._extract_block(bm_out, "[G2-DOCS]")[:3]
+        g1_raw = _ctx._extract_block(bm_out, "[RECENT DECISIONS]")[:3]
+        g2_doc_raw = _ctx._extract_block(bm_out, "[G2-DOCS]")[:3]
         g2_pre_items = _ctx._extract_block(bm_out, "[G2-PREFETCH]")[:3]
 
         # Per-prompt utility: score parsed blocks against the real response
+        # (must use raw strings before wrapping as dicts)
         utility = _score_blocks_against_response(
-            g1_items, g2_doc_items, g2_pre_items, response
+            g1_raw, g2_doc_raw, g2_pre_items, response
         )
+
+        # Wrap G1/G2-DOCS items as dicts to carry retrieval_method for the UI
+        # (samples feed is BM25-sourced → all keyword at this stage)
+        g1_items = [{"text": x, "retrieval_method": "keyword"} for x in g1_raw]
+        g2_doc_items = [{"text": x, "retrieval_method": "keyword"} for x in g2_doc_raw]
 
         result["prompts"].append({
             "ts": ts,
@@ -759,11 +765,14 @@ def _build_snapshot():
             })
         p95 = data["p95"]
         lat_ok = p95 < TH["bm25_p95_ms_yellow"]
+        lat_red = p95 >= TH.get("bm25_p95_ms_red", 1000)
+        lat_msg = "fast" if lat_ok else ("critical — over 1s" if lat_red else "borderline")
         rows.append({
             "name": "Latency p95", "value": min(1.0, p95 / TH["bm25_p95_ms_yellow"]),
             "value_str": f"{p95}ms",
             "threshold": TH["bm25_p95_ms_yellow"], "ok": lat_ok,
-            "msg": "fast" if lat_ok else "borderline",
+            "msg": lat_msg,
+            "critical": lat_red,
         })
 
     # Grade from health-critical flags only (info_only rows excluded)
@@ -780,8 +789,28 @@ def _build_snapshot():
     # Quality notices
     notices = [{"metric": m, "msg": msg} for m, msg in data["quality_notices"]]
 
+    # Daemon live status probe
+    def _probe_sock(path: str) -> bool:
+        try:
+            import socket as _sk2
+            s = _sk2.socket(_sk2.AF_UNIX)
+            s.settimeout(0.3)
+            s.connect(path)
+            s.close()
+            return True
+        except Exception:
+            return False
+
+    _vault_dir = _ctx._VAULT_DB.parent
+    _vd_sock = str(_vault_dir / "vec-daemon.sock")
+    _bg_sock = str(_vault_dir / "bge-daemon.sock")
+    vec_up = _probe_sock(_vd_sock)
+    bge_up = _probe_sock(_bg_sock)
+
     # Other signals
     other = []
+    other.append({"label": f"Vector daemon {'online' if vec_up else 'offline'}", "count": 1 if vec_up else 0, "ok": vec_up})
+    other.append({"label": f"BGE reranker {'online' if bge_up else 'offline (opt-in: CTX_BGE_ENABLE=1)'}", "count": 1 if bge_up else 0, "ok": bge_up})
     if data["cm_warnings"]:
         other.append({"label": "CM daemon-down", "count": data["cm_warnings"]})
     if data["decision_hits"]:
@@ -1430,9 +1459,66 @@ async def wow():
         age_hours = (time.time() - data.get("fired_at", 0)) / 3600
         data["fired"] = True
         data["age_hours"] = age_hours
+        # Add retrieval_method by checking most recent graph prompt's top recall edge
+        if "retrieval_method" not in data:
+            try:
+                g = _get_graph_cached()
+                edges = g.get("edges") or []
+                prompt_nodes = [n for n in (g.get("nodes") or []) if n.get("type") == "prompt"]
+                if prompt_nodes:
+                    # Most recent prompt (last in list by convention)
+                    pid = prompt_nodes[-1]["id"]
+                    recall = [e for e in edges
+                              if e.get("type", "").startswith("recall")
+                              and e.get("type") not in ("recall-cm", "recall-pre")
+                              and e.get("from") == pid]
+                    recall.sort(key=lambda e: -(e.get("weight", 0)))
+                    if recall:
+                        bm25 = float(recall[0].get("weight", 0))
+                        data["retrieval_method"] = "keyword" if bm25 > 0.05 else "semantic"
+                    else:
+                        data["retrieval_method"] = "keyword"
+            except Exception:
+                data["retrieval_method"] = "keyword"
         return JSONResponse(data)
     except Exception:
         return JSONResponse({"fired": False})
+
+
+@app.get("/api/retrieval-method-stats")
+async def retrieval_method_stats():
+    """Aggregate retrieval_method counts across all prompts in current graph."""
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(None, _get_graph_cached)
+    edges = data.get("edges") or []
+    nodes_by_id = {n["id"]: n for n in (data.get("nodes") or [])}
+    prompts = [n["id"] for n in (data.get("nodes") or []) if n.get("type") == "prompt"]
+    counts: dict = {"keyword": 0, "semantic": 0, "cascade": 0,
+                    "cm_hybrid": 0, "code_index": 0, "hybrid": 0, "unknown": 0}
+    for pid in prompts:
+        recall_edges = [e for e in edges
+                        if e.get("type", "").startswith("recall") and e.get("from") == pid]
+        for e in recall_edges:
+            ttype = nodes_by_id.get(e.get("to", ""), {}).get("type", "")
+            bm25 = float(e.get("weight", 0))
+            if ttype == "chatmem":
+                method = "cm_hybrid"
+            elif ttype == "code":
+                method = "code_index"
+            elif bm25 > 0.05:
+                method = "keyword"
+            else:
+                method = "semantic"
+            counts[method] = counts.get(method, 0) + 1
+    total = sum(counts.values()) or 1
+    semantic = counts.get("semantic", 0)
+    keyword = counts.get("keyword", 0)
+    return JSONResponse({
+        "counts": counts,
+        "total": total,
+        "semantic_rescue_rate": round(semantic / total, 3),
+        "keyword_rate": round(keyword / total, 3),
+    })
 
 
 @app.get("/api/graph")
@@ -2284,6 +2370,71 @@ async def refresh_samples():
     data = await loop.run_in_executor(None, _compute_samples, 3)
     SAMPLE_CACHE.update(data)
     return JSONResponse({"ok": True, "computed_at": data["computed_at"]})
+
+
+
+# ── Market signals (cached 5 min) ─────────────────────────────────────
+
+_MARKET_SIGNALS_SCRIPT = Path(__file__).parent.parent.parent / "Project" / "CTX" / "scripts" / "market-signals.py"
+_MARKET_SIGNALS_LOG    = Path(__file__).parent.parent.parent / "Project" / "CTX" / "docs" / "research" / "signal-log.jsonl"
+_SIGNALS_CACHE: dict = {"data": None, "ts": 0.0}
+_SIGNALS_TTL = 300  # 5 minutes
+
+
+def _fetch_market_signals() -> dict:
+    """Run market-signals.py --json; returns parsed dict or error stub."""
+    script = _MARKET_SIGNALS_SCRIPT
+    if not script.exists():
+        return {"error": f"script not found: {script}", "ts": time.time()}
+    try:
+        result = _sp.run(
+            ["python3", str(script), "--json"],
+            capture_output=True, text=True, timeout=20,
+            env={**os.environ, "CTX_DASHBOARD_INTERNAL": "1"},
+        )
+        if result.returncode != 0:
+            return {"error": result.stderr[:200], "ts": time.time()}
+        return json.loads(result.stdout)
+    except Exception as exc:
+        return {"error": str(exc), "ts": time.time()}
+
+
+def _load_signal_history(n: int = 8) -> list:
+    """Read last N entries from signal-log.jsonl for trend sparkline."""
+    path = _MARKET_SIGNALS_LOG
+    if not path.exists():
+        return []
+    lines = []
+    try:
+        with path.open() as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        lines.append(json.loads(line))
+                    except Exception:
+                        pass
+    except Exception:
+        return []
+    return lines[-n:]
+
+
+@app.get("/api/market-signals")
+async def market_signals_endpoint(refresh: bool = False):
+    """Market demand signals: PyPI trend, GitHub issues, HN hits. Cached 5 min."""
+    now = time.time()
+    if refresh or _SIGNALS_CACHE["data"] is None or (now - _SIGNALS_CACHE["ts"]) > _SIGNALS_TTL:
+        loop = asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, _fetch_market_signals)
+        _SIGNALS_CACHE["data"] = data
+        _SIGNALS_CACHE["ts"] = now
+    history = _load_signal_history()
+    return JSONResponse({
+        "signals": _SIGNALS_CACHE["data"],
+        "history": history,
+        "cached_at": _SIGNALS_CACHE["ts"],
+        "ttl": _SIGNALS_TTL,
+    })
 
 
 @app.get("/stream")

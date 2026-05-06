@@ -67,6 +67,11 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
     <div id="activity-chart"></div>
   </section>
 
+  <section class="panel" id="retrieval-method-panel">
+    <h2>Retrieval method breakdown <span class="hint">last graph window</span></h2>
+    <div id="retrieval-method-body"><span style="color:var(--text-dim); font-size:12px; font-family:var(--mono)">loading…</span></div>
+  </section>
+
   <section class="panel" id="latency-panel">
     <h2><span data-i18n="panel.latency">Latency distribution</span> <span class="hint" data-i18n="panel.latency.hint">bm25-memory hook</span></h2>
     <div class="bars" id="latency-bars"></div>
@@ -81,14 +86,13 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
     <div id="utility-body"></div>
   </section>
 
-  <section class="panel" id="notices-panel">
+  <section class="panel" id="status-panel">
     <h2><span data-i18n="panel.notices">Quality notices</span> <span class="hint" data-i18n="panel.notices.hint">rate-based, informational</span></h2>
     <div id="notices"></div>
-  </section>
-
-  <section class="panel" id="other-panel">
-    <h2 data-i18n="panel.other">Other signals</h2>
-    <div class="pills" id="other"></div>
+    <div class="status-other">
+      <h2 data-i18n="panel.other" style="margin-top:16px">Other signals</h2>
+      <div class="pills" id="other"></div>
+    </div>
   </section>
 
   <section class="panel wide" id="graph-panel">
@@ -121,23 +125,29 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
     </h2>
     <div class="legend-note">
       <strong data-i18n="samples.legend.head">Per-prompt utility pill:</strong>
-      <span class="util-chip ok">≥50%</span>
-      <span class="util-chip mid">≥25%</span>
-      <span class="util-chip low">&lt;25%</span>
-      <span class="util-chip pending">—</span>
-      <span class="legend-sub" data-i18n-html="samples.legend.body">
-        = how much of what CTX <em>surfaced</em> was actually <em>used</em> in Claude's response.
-        Blocks below show what CTX surfaced into context. A <b>filled block with 0% utility</b> = CTX injected items
-        but Claude didn't reference them — honest signal, not a bug; usually means the prompt was about a different topic than what BM25 matched.
-        <b>—</b> = the reply isn't persisted yet (lands on Stop hook ~30s after the turn); score fills in on next refresh.
-        CM entries are project-scoped <em>history</em>, not this prompt's reply.
-      </span>
+      <div class="legend-rows">
+        <span class="util-chip ok">≥50%</span>  <span data-i18n="legend.chip.ok">CTX surfaced items Claude actually used</span>
+        <span class="util-chip mid">≥25%</span> <span data-i18n="legend.chip.mid">partially used</span>
+        <span class="util-chip low">&lt;25%</span> <span data-i18n="legend.chip.low">injected but not referenced — honest signal, not a bug</span>
+        <span class="util-chip pending">—</span>   <span data-i18n="legend.chip.pending">reply not yet persisted (Stop hook fires ~30s after turn)</span>
+      </div>
+      <span class="legend-sub" data-i18n-html="samples.legend.body"></span>
     </div>
     <div id="samples"></div>
     <div class="load-more-wrap">
       <button id="load-more-samples" class="btn-loadmore" data-i18n="btn.loadmore">Load 10 more</button>
       <span id="load-more-status" class="hint"></span>
     </div>
+  </section>
+
+  <section class="panel wide" id="market-signals-panel">
+    <h2>
+      <span data-i18n="panel.market">Market Signals</span>
+      <span class="hint" data-i18n="panel.market.hint">PyPI trend · GitHub pain issues · HN mentions</span>
+      <button id="refresh-signals" class="btn-small" data-i18n="btn.refresh">refresh</button>
+      <span id="signals-age" class="hint right"></span>
+    </h2>
+    <div id="market-signals-body"></div>
   </section>
 
   <section class="panel wide" id="events-panel">
