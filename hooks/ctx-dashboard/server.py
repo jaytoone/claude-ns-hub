@@ -2375,8 +2375,8 @@ async def refresh_samples():
 
 # ── Market signals (cached 5 min) ─────────────────────────────────────
 
-_MARKET_SIGNALS_SCRIPT = Path(__file__).parent.parent.parent / "Project" / "CTX" / "scripts" / "market-signals.py"
-_MARKET_SIGNALS_LOG    = Path(__file__).parent.parent.parent / "Project" / "CTX" / "docs" / "research" / "signal-log.jsonl"
+_MARKET_SIGNALS_SCRIPT = Path.home() / "Project" / "CTX" / "scripts" / "market-signals.py"
+_MARKET_SIGNALS_LOG    = Path.home() / "Project" / "CTX" / "docs" / "research" / "signal-log.jsonl"
 _SIGNALS_CACHE: dict = {"data": None, "ts": 0.0}
 _SIGNALS_TTL = 300  # 5 minutes
 
