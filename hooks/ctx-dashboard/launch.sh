@@ -10,9 +10,17 @@ HERE="$HOME/.claude/hooks/ctx-dashboard"
 PIDFILE="/tmp/ctx-dashboard.pid"
 LOG="/tmp/ctx-dashboard.log"
 
+_tailscale_ip() {
+  # Prefer the bindable tailscale0 IP (from ip addr); fall back to 127.0.0.1
+  ip addr show tailscale0 2>/dev/null \
+    | awk '/inet / {split($2,a,"/"); print a[1]; exit}' \
+    || echo "127.0.0.1"
+}
+
 start_server() {
+  local _host="${CTX_DASHBOARD_HOST:-$(_tailscale_ip)}"
   CTX_DASHBOARD_PORT="$PORT" \
-  CTX_DASHBOARD_HOST="${CTX_DASHBOARD_HOST:-127.0.0.1}" \
+  CTX_DASHBOARD_HOST="$_host" \
   nohup python3 "$HERE/server.py" > "$LOG" 2>&1 &
   echo $! > "$PIDFILE"
   sleep 1
@@ -63,7 +71,8 @@ else
 fi
 
 # Try to open browser (best-effort, no error if headless)
-URL="http://127.0.0.1:$PORT"
+_BIND_HOST=$(grep "CTX Dashboard →" "$LOG" 2>/dev/null | tail -1 | sed 's|.*http://||;s|:.*||')
+URL="http://${_BIND_HOST:-127.0.0.1}:$PORT"
 WSL_EXPLORER="/mnt/c/Windows/explorer.exe"
 if command -v wslview    >/dev/null 2>&1; then wslview    "$URL" >/dev/null 2>&1 || true
 elif [[ -x "$WSL_EXPLORER" ]];              then "$WSL_EXPLORER" "$URL" >/dev/null 2>&1 || true
