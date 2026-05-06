@@ -63,8 +63,6 @@ const I18N = {
   "panel.graph.hint":       { en: "decisions · docs · prompts — coral = selected prompt, edges = retrieval + topic + temporal", ko: "결정 · 문서 · 프롬프트 — 산호색 = 선택된 프롬프트, 엣지 = 검색 + 토픽 + 시간" },
   "panel.samples":          { en: "Function proof — real samples", ko: "기능 증명 — 실제 샘플" },
   "panel.samples.hint":     { en: "recent prompts → actual hook outputs (eye-check relevance)", ko: "최근 프롬프트 → 실제 후크 출력 (관련성 직접 확인)" },
-  "panel.market":           { en: "Market Signals", ko: "시장 신호" },
-  "panel.market.hint":      { en: "PyPI trend · GitHub pain issues · HN mentions", ko: "PyPI 추세 · GitHub 이슈 · HN 언급" },
   "panel.events":           { en: "Recent events", ko: "최근 이벤트" },
   "panel.events.hint":      { en: "newest first, last 30", ko: "최신순, 최근 30개" },
   // Buttons / nav
@@ -2224,95 +2222,6 @@ function fetchAndRenderRetrievalMethodStats() {
 }
 
 fetchAndRenderRetrievalMethodStats();
-
-// ── Market Signals panel ──────────────────────────────────────────────
-
-function renderMarketSignals(resp) {
-  const host = $("market-signals-body");
-  if (!host) return;
-  const sig = resp.signals || {};
-  const history = resp.history || [];
-  const cachedAt = resp.cached_at ? new Date(resp.cached_at * 1000).toLocaleTimeString() : "—";
-  const age = $("signals-age");
-  if (age) age.textContent = `cached ${cachedAt}`;
-
-  if (sig.error) {
-    host.innerHTML = `<span style="color:var(--text-dim); font-size:12px">signal fetch error: ${esc(sig.error)}</span>`;
-    return;
-  }
-
-  // PyPI block
-  const pypi = sig.pypi || {};
-  const pctSign = (pypi.pct_week >= 0) ? "+" : "";
-  const pctColor = pypi.pct_week > 20 ? "var(--ok)" : pypi.pct_week < -20 ? "var(--warn)" : "var(--text-dim)";
-  const sparkline = history.length > 1
-    ? history.map(h => h.pypi && h.pypi.week != null ? h.pypi.week : 0)
-    : [];
-  const sparkMax = Math.max(...sparkline, 1);
-  const sparkBars = sparkline.map(v => {
-    const h = Math.round((v / sparkMax) * 20);
-    return `<span style="display:inline-block;width:6px;height:${h}px;background:var(--accent);margin-right:1px;vertical-align:bottom" title="${v}/wk"></span>`;
-  }).join("");
-
-  // GitHub issues
-  const gh = (sig.github || []).slice(0, 6);
-  const ghRows = gh.map(i => `
-    <div style="margin:4px 0; font-size:12px; line-height:1.5">
-      <span style="color:${i.state==='open'?'var(--ok)':'var(--text-dim)'}; font-size:11px">[${esc(i.state)}]</span>
-      <a href="${esc(i.url)}" target="_blank" style="color:var(--accent); text-decoration:none">#${i.number}</a>
-      <span style="color:var(--text)"> ${esc((i.title||"").slice(0,72))}</span>
-      <span style="color:var(--text-dim); font-size:11px"> · ${esc(i.created)} · matched: <em>${esc(i.keyword)}</em></span>
-    </div>`).join("") || `<span style="color:var(--text-dim); font-size:12px">no recent matches</span>`;
-
-  // HN
-  const hn = (sig.hn || []).slice(0, 4);
-  const hnRows = hn.map(i => `
-    <div style="margin:4px 0; font-size:12px; line-height:1.5">
-      <span style="color:var(--text-dim); font-size:11px">[${i.points||0}pts]</span>
-      <a href="${esc(i.url)}" target="_blank" style="color:var(--accent); text-decoration:none">${esc((i.title||"").slice(0,72))}</a>
-      <span style="color:var(--text-dim); font-size:11px"> · ${esc(i.created)}</span>
-    </div>`).join("") || `<span style="color:var(--text-dim); font-size:12px">no recent matches</span>`;
-
-  host.innerHTML = `
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px">
-      <div>
-        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px">PyPI ctx-retriever</div>
-        <div style="display:flex; gap:16px; align-items:flex-end">
-          <div>
-            <div style="font-size:22px; font-weight:600; color:var(--text)">${pypi.week ?? "—"}<span style="font-size:12px; color:var(--text-dim)">/wk</span></div>
-            <div style="font-size:12px; color:${pctColor}">${pctSign}${pypi.pct_week ?? 0}% vs baseline</div>
-            <div style="font-size:11px; color:var(--text-dim)">${pypi.day ?? "—"}/day · ${pypi.month ?? "—"}/mo</div>
-          </div>
-          <div style="align-self:flex-end; padding-bottom:4px">${sparkBars}</div>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px">Hacker News</div>
-        ${hnRows}
-      </div>
-    </div>
-    <div>
-      <div style="font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px">GitHub anthropics/claude-code — pain signals</div>
-      ${ghRows}
-    </div>`;
-}
-
-function fetchMarketSignals(refresh = false) {
-  const host = $("market-signals-body");
-  if (!host) return;
-  host.innerHTML = `<span style="color:var(--text-dim); font-size:12px">loading…</span>`;
-  fetch(`/api/market-signals${refresh ? "?refresh=true" : ""}`)
-    .then(r => r.json())
-    .then(renderMarketSignals)
-    .catch(() => {
-      if (host) host.innerHTML = `<span style="color:var(--text-dim); font-size:12px">—</span>`;
-    });
-}
-
-fetchMarketSignals();
-
-const refreshSignalsBtn = $("refresh-signals");
-if (refreshSignalsBtn) refreshSignalsBtn.addEventListener("click", () => fetchMarketSignals(true));
 
 // Re-render chart on resize
 window.addEventListener("resize", () => {
