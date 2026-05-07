@@ -26,6 +26,17 @@
   --status-behind: var(--red);
   --status-on-track: var(--green);
   --status-achieved: var(--accent);
+}
+[data-theme="dark"] {
+  --bg: #181614; --bg-deep: #111009; --panel: #222019; --panel-border: #333028;
+  --panel-soft: #1e1c1a; --text: #e8e0d6; --text-soft: #b0a89e; --text-dim: #6b6358;
+  --accent: #cc785c; --accent-deep: #e8926e; --accent-soft: #2a1e17;
+  --green: #4caf78; --green-soft: #0e2318;
+  --yellow: #d4a017; --yellow-soft: #1e1800;
+  --red: #e05252; --red-soft: #250e0e;
+  --blue: #5b9bd5; --blue-soft: #0d1e30;
+}
+:root {
   --status-paused: var(--text-dim);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,18 +57,71 @@ header {
 .header-left { display: flex; align-items: baseline; gap: 12px; }
 .page-title { font-family: var(--serif); font-size: 18px; font-weight: 500; color: var(--text); white-space: nowrap; }
 .page-sub { font-family: var(--mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; }
-.header-right { display: flex; align-items: center; gap: 10px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
 .refresh-btn {
   background: none; border: 1px solid var(--panel-border); border-radius: 4px;
   padding: 4px 10px; font-size: 11px; font-family: var(--mono); cursor: pointer;
   color: var(--text-dim); transition: all .12s;
 }
 .refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.theme-btn {
+  background: none; border: 1px solid var(--panel-border); border-radius: 4px;
+  padding: 4px 8px; font-size: 13px; cursor: pointer; line-height: 1;
+  color: var(--text-dim); transition: all .12s;
+}
+.theme-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
 .updated-at { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
 
-/* ── Grid ────────────────────────────────────────────────────────────────────── */
-.grid-wrap { padding: 20px 24px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 14px; }
+/* ── Table view ──────────────────────────────────────────────────────────────── */
+.grid-wrap { padding: 0; overflow-x: auto; }
+.ns-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+  background: var(--bg);
+}
+.ns-table thead th {
+  padding: 8px 12px; text-align: left; font-family: var(--mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim);
+  border-bottom: 2px solid var(--panel-border); background: var(--panel-soft);
+  white-space: nowrap; user-select: none;
+}
+.ns-table tbody tr {
+  border-bottom: 1px solid var(--panel-border); cursor: pointer;
+  transition: background .1s;
+}
+.ns-table tbody tr:hover { background: var(--panel-soft); }
+.ns-table tbody tr.active { background: var(--accent-soft); }
+.ns-table tbody tr.active td { border-bottom-color: var(--accent); }
+.ns-table td { padding: 9px 12px; vertical-align: middle; }
+.ns-table tbody tr.dragging { opacity: .4; }
+.ns-table tbody tr.drag-over { box-shadow: 0 -2px 0 var(--accent); }
+
+/* Table column styles */
+.col-num  { width: 32px; color: var(--text-dim); font-family: var(--mono); font-size: 11px; text-align: right; padding-right: 6px; }
+.col-drag { width: 22px; text-align: center; }
+.drag-handle { cursor: grab; color: var(--text-dim); font-size: 14px; line-height: 1; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+.col-name { min-width: 110px; }
+.col-name .row-name { font-family: var(--serif); font-size: 15px; font-weight: 500; color: var(--text); }
+.col-status { width: 80px; }
+.col-metric { min-width: 100px; color: var(--text-soft); font-size: 11px; max-width: 140px; }
+.col-progress { width: 140px; }
+.progress-wrap { display: flex; align-items: center; gap: 6px; }
+.progress-bar { flex: 1; height: 4px; background: var(--panel-border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+.progress-num { font-family: var(--mono); font-size: 10px; color: var(--text-dim); white-space: nowrap; min-width: 28px; }
+.col-gap { width: 90px; font-family: var(--mono); font-size: 11px; white-space: nowrap; }
+.col-step { min-width: 140px; font-size: 11px; color: var(--text-soft); }
+.col-date { width: 58px; font-family: var(--mono); font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+.row-status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+.status-label { font-family: var(--mono); font-size: 10px; display: flex; align-items: center; }
+.status-label.behind   { color: var(--red); }
+.status-label.on-track { color: var(--green); }
+.status-label.achieved { color: var(--accent); }
+.status-label.paused   { color: var(--text-dim); }
+
+@media (max-width: 640px) {
+  .ns-table thead th.hide-mobile, .ns-table td.hide-mobile { display: none; }
+}
 
 /* ── Project card ────────────────────────────────────────────────────────────── */
 .card {
@@ -567,12 +631,28 @@ header {
         <span class="page-sub">project goals</span>
       </div>
       <div class="header-right">
+        <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark mode">◑</button>
         <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
         <span class="updated-at" id="updated-at">—</span>
       </div>
     </header>
     <div class="grid-wrap">
-      <div class="grid" id="grid"></div>
+      <table class="ns-table" id="ns-table">
+        <thead>
+          <tr>
+            <th class="col-num">#</th>
+            <th class="col-drag"></th>
+            <th>Project</th>
+            <th class="col-status">Status</th>
+            <th class="col-metric hide-mobile">Metric</th>
+            <th class="col-progress">Progress</th>
+            <th class="col-gap hide-mobile">Gap</th>
+            <th class="col-step hide-mobile">Active step</th>
+            <th class="col-date">Updated</th>
+          </tr>
+        </thead>
+        <tbody id="grid"></tbody>
+      </table>
     </div>
   </div>
 
@@ -609,7 +689,8 @@ header {
     <div class="dm-terminal" id="dm-terminal">
       <div class="dm-terminal-hdr">
         <div class="dm-terminal-title">claude @ <span id="dm-term-proj">—</span></div>
-        <button class="dm-terminal-back" onclick="killAndNewSession()" title="Kill session and start fresh">↺ new</button>
+        <button class="dm-terminal-back" onclick="killAndNewSession()" title="Kill and restart session">↺ new</button>
+        <button class="dm-terminal-back" style="margin-left:4px;border-color:#c0392b;color:#e05252" onclick="killSession()" title="Kill session permanently">⬛ kill</button>
         <button class="dm-terminal-back" style="margin-left:6px" onclick="closeTerminal()">← back</button>
       </div>
       <div id="dm-xterm"></div>
@@ -634,6 +715,19 @@ header {
 let projects = [];
 let activeIdx = null;
 let ctxTopics = [];
+
+// ── Dark mode ─────────────────────────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('ns-theme');
+  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('ns-theme', isDark ? 'light' : 'dark');
+}
 
 // ── Claude terminal state ─────────────────────────────────────────────────────
 let _term = null, _termWs = null, _termFit = null, _termRo = null;
@@ -800,62 +894,185 @@ function formatGapNum(n) {
   return n % 1 === 0 ? String(n) : n.toFixed(1);
 }
 
-// ── Card HTML ─────────────────────────────────────────────────────────────────
+// ── Table row HTML ────────────────────────────────────────────────────────────
 
-function cardHtml(p, i) {
-  const done  = p.milestones.filter(m => m.done).length;
-  const total = p.milestones.length;
-  const active = i === activeIdx ? 'active' : '';
+function rowHtml(p, i) {
   const statusKey = p.status || 'paused';
+  const pct       = calcPct(p.current, p.target);
+  const pctNum    = Math.round(pct * 100);
+  const color     = statusColor(p.status);
+  const active    = i === activeIdx ? 'active' : '';
 
-  return `<div class="card ${active}" data-idx="${i}">
-    <div class="card-status-bar ${statusKey}"></div>
-    <div class="card-inner">
-      <div class="card-top">
-        <span class="card-name">${esc(p.name)}</span>
-        <span class="card-status-pill ${statusKey}">${STATUS_LABEL[statusKey] || statusKey}</span>
-      </div>
-      <div class="gauge-wrap">
-        <div class="gauge-svg-wrap">${cardGaugeSvg(p)}</div>
-        <div class="gauge-aside">
-          <div class="gauge-metric">${esc(p.metric || '—')}</div>
-          <div class="gauge-numbers">
-            <span class="gauge-current">${esc(p.current || '—')}</span>
-            <span class="gauge-sep">→</span>
-            <span class="gauge-target">${esc(p.target || '—')}</span>
-          </div>
-          ${p.deadline ? `<div class="gauge-deadline">by ${esc(p.deadline)}</div>` : ''}
+  // Gap text
+  let gapText = '—', gapColor = 'var(--text-dim)';
+  if (p.current && p.current !== '—' && p.target && p.target !== '—') {
+    const c = parseNum(p.current), t = parseNum(p.target);
+    if (c !== null && t !== null) {
+      const rem = t - c;
+      const u = p.unit || '';
+      gapText = rem > 0 ? `${formatGapNum(rem)}${u}` : 'done';
+      gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
+    }
+  }
+
+  // Active step
+  const activeMilestone = p.milestones.find(m => !m.done);
+  let stepText = activeMilestone ? activeMilestone.text : '';
+  stepText = stepText.replace(/^Phase\s+\d+\s+v?\d*[a-z]?:\s*/i, '').trim();
+  if (stepText.length > 34) stepText = stepText.slice(0, 32) + '…';
+
+  // Last update date
+  const lastLog = p.log && p.log.length ? p.log[p.log.length - 1] : null;
+  const logDate = lastLog ? (lastLog.date || '').slice(5) : '—';
+
+  // Status dot color
+  const dotColor = statusColor(statusKey);
+
+  return `<tr class="${active}" data-idx="${i}" draggable="true">
+    <td class="col-num">${i + 1}</td>
+    <td class="col-drag"><span class="drag-handle" title="Drag to reorder">⠿</span></td>
+    <td class="col-name"><span class="row-name">${esc(p.name)}</span></td>
+    <td class="col-status">
+      <span class="status-label ${statusKey}">
+        <span class="row-status-dot" style="background:${dotColor}"></span>
+        ${STATUS_LABEL[statusKey] || statusKey}
+      </span>
+    </td>
+    <td class="col-metric hide-mobile" title="${esc(p.metric || '')}">
+      ${esc((p.metric || '—').substring(0, 26))}
+    </td>
+    <td class="col-progress">
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${pctNum}%;background:${color}"></div>
         </div>
+        <span class="progress-num">${pctNum}%</span>
       </div>
-      ${cardMilestonePipeline(p.milestones, statusKey)}
-      ${cardCurrentStep(p)}
-      <div class="card-footer">
-        <span class="ms-summary">${total ? `${done}/${total} milestones` : esc(p.note ? p.note.substring(0, 50) : '')}</span>
-        <span class="card-arrow">→</span>
-      </div>
-    </div>
-  </div>`;
+    </td>
+    <td class="col-gap hide-mobile" style="color:${gapColor}">${esc(gapText)}</td>
+    <td class="col-step hide-mobile">${stepText ? `▶ ${esc(stepText)}` : '<span style="color:var(--text-dim)">—</span>'}</td>
+    <td class="col-date">${esc(logDate)}</td>
+  </tr>`;
 }
 
-// ── Grid render ───────────────────────────────────────────────────────────────
+// ── Table render ──────────────────────────────────────────────────────────────
+
+let _rowOrder = null; // persisted drag-drop order
+
+function getRowOrder() {
+  if (_rowOrder && _rowOrder.length === projects.length) return _rowOrder;
+  try {
+    const saved = JSON.parse(localStorage.getItem('ns-row-order') || 'null');
+    if (saved && saved.length === projects.length) { _rowOrder = saved; return _rowOrder; }
+  } catch(_) {}
+  _rowOrder = projects.map((_, i) => i);
+  return _rowOrder;
+}
+
+function orderedProjects() {
+  return getRowOrder().map(i => projects[i]);
+}
 
 function render() {
   const grid = document.getElementById('grid');
   if (!projects.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+    grid.innerHTML = `<tr><td colspan="9" class="empty-state">
       <div class="empty-title">No projects</div>
-      <div>Add a north-star.md file to ~/.claude/hub/projects/<name>/</div>
-    </div>`;
+      <div>Add a north-star.md to ~/.claude/hub/projects/&lt;name&gt;/</div>
+    </td></tr>`;
     return;
   }
-  grid.innerHTML = projects.map(cardHtml).join('');
-  grid.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('click', () => {
-      const i = +card.dataset.idx;
+  const order = getRowOrder();
+  grid.innerHTML = order.map((origIdx, rowNum) => {
+    const p = projects[origIdx];
+    const displayActive = origIdx === activeIdx ? 'active' : '';
+    // Re-render with display row index but original project index
+    const statusKey = p.status || 'paused';
+    const pct = calcPct(p.current, p.target);
+    const pctNum = Math.round(pct * 100);
+    const color = statusColor(p.status);
+    const dotColor = statusColor(statusKey);
+
+    let gapText = '—', gapColor = 'var(--text-dim)';
+    if (p.current && p.current !== '—' && p.target && p.target !== '—') {
+      const c = parseNum(p.current), t = parseNum(p.target);
+      if (c !== null && t !== null) {
+        const rem = t - c;
+        const u = p.unit || '';
+        gapText = rem > 0 ? `${formatGapNum(rem)}${u}` : 'done';
+        gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
+      }
+    }
+    const activeMilestone = p.milestones.find(m => !m.done);
+    let stepText = activeMilestone ? activeMilestone.text : '';
+    stepText = stepText.replace(/^Phase\s+\d+\s+v?\d*[a-z]?:\s*/i, '').trim();
+    if (stepText.length > 34) stepText = stepText.slice(0, 32) + '…';
+    const lastLog = p.log && p.log.length ? p.log[p.log.length - 1] : null;
+    const logDate = lastLog ? (lastLog.date || '').slice(5) : '—';
+
+    return `<tr class="${displayActive}" data-orig-idx="${origIdx}" draggable="true">
+      <td class="col-num">${rowNum + 1}</td>
+      <td class="col-drag"><span class="drag-handle">⠿</span></td>
+      <td class="col-name"><span class="row-name">${esc(p.name)}</span></td>
+      <td class="col-status"><span class="status-label ${statusKey}">
+        <span class="row-status-dot" style="background:${dotColor}"></span>${STATUS_LABEL[statusKey] || statusKey}
+      </span></td>
+      <td class="col-metric hide-mobile" title="${esc(p.metric || '')}">${esc((p.metric || '—').substring(0, 26))}</td>
+      <td class="col-progress">
+        <div class="progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" style="width:${pctNum}%;background:${color}"></div></div>
+          <span class="progress-num">${pctNum}%</span>
+        </div>
+      </td>
+      <td class="col-gap hide-mobile" style="color:${gapColor}">${esc(gapText)}</td>
+      <td class="col-step hide-mobile">${stepText ? `▶ ${esc(stepText)}` : '<span style="color:var(--text-dim)">—</span>'}</td>
+      <td class="col-date">${esc(logDate)}</td>
+    </tr>`;
+  }).join('');
+
+  // Click to open detail
+  grid.querySelectorAll('tr[data-orig-idx]').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.classList.contains('drag-handle')) return;
+      const i = +row.dataset.origIdx;
       if (activeIdx === i) { closeDetail(); return; }
       activeIdx = i;
       render();
       openDetail(i);
+    });
+  });
+
+  // Drag-drop reorder
+  let dragSrc = null;
+  grid.querySelectorAll('tr[data-orig-idx]').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragSrc = row;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      grid.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      grid.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+      if (row !== dragSrc) row.classList.add('drag-over');
+    });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row) return;
+      // Recompute order: move dragSrc before row
+      const allRows = [...grid.querySelectorAll('tr[data-orig-idx]')];
+      const fromIdx = allRows.indexOf(dragSrc);
+      const toIdx   = allRows.indexOf(row);
+      const order   = getRowOrder();
+      const [moved] = order.splice(fromIdx, 1);
+      order.splice(toIdx, 0, moved);
+      _rowOrder = order;
+      localStorage.setItem('ns-row-order', JSON.stringify(order));
+      render();
     });
   });
 }
@@ -952,6 +1169,14 @@ function closeTerminal() {
   if (_termWs) { _termWs.close(); _termWs = null; }
   document.getElementById('dm-terminal').classList.remove('show');
   document.getElementById('dm-body').style.display = '';
+}
+
+function killSession() {
+  if (_termWs && _termWs.readyState === 1) _termWs.send('\x00kill-session');
+  setTimeout(() => {
+    if (_termWs) { _termWs.close(); _termWs = null; }
+    closeTerminal();
+  }, 300);
 }
 
 function killAndNewSession() {

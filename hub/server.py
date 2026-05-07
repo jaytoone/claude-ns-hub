@@ -736,6 +736,41 @@ _sessions: dict[str, ptyprocess.PtyProcess] = {}
 # Scrollback buffer: proj_id → accumulated PTY output (last 64 KB)
 _buffers: dict[str, list] = {}
 _BUFFER_MAX = 65536
+# Idle tracking: proj_id → timestamp of last WS detach
+_session_idle_since: dict[str, float] = {}
+_SESSION_TTL = 30 * 60  # kill after 30 min idle
+
+
+def _kill_session(proj_id: str) -> None:
+    """Terminate a session and clean up all registries."""
+    proc = _sessions.pop(proj_id, None)
+    _buffers.pop(proj_id, None)
+    _session_idle_since.pop(proj_id, None)
+    if proc:
+        try:
+            proc.terminate(force=True)
+        except Exception:
+            pass
+
+
+@app.on_event("startup")
+async def _start_session_gc():
+    """Background task: reap idle or dead sessions every 60 s."""
+    async def _gc():
+        while True:
+            await asyncio.sleep(60)
+            now = time.time()
+            for proj_id in list(_sessions.keys()):
+                proc = _sessions.get(proj_id)
+                # Remove dead processes
+                if proc and not proc.isalive():
+                    _kill_session(proj_id)
+                    continue
+                # Kill sessions idle longer than TTL
+                idle_since = _session_idle_since.get(proj_id)
+                if idle_since and (now - idle_since) > _SESSION_TTL:
+                    _kill_session(proj_id)
+    asyncio.create_task(_gc())
 
 
 def _spawn_claude(proj_id: str) -> ptyprocess.PtyProcess:
@@ -765,6 +800,7 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
             await websocket.close()
             return
     else:
+        _session_idle_since.pop(proj_id, None)  # no longer idle
         # Replay scrollback buffer so user sees previous output
         if proj_id in _buffers and _buffers[proj_id]:
             replay = "".join(_buffers[proj_id])
@@ -827,13 +863,7 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
                         except Exception:
                             pass
                 elif msg == '\x00kill-session':
-                    # Explicit kill requested from UI — terminate and remove
-                    _sessions.pop(proj_id, None)
-                    _buffers.pop(proj_id, None)
-                    try:
-                        proc.terminate(force=True)
-                    except Exception:
-                        pass
+                    _kill_session(proj_id)
                     await websocket.send_text("\r\n\x1b[31m[Session killed]\x1b[0m\r\n")
                     break
                 else:
@@ -842,7 +872,9 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
                 break  # Detach only — do NOT terminate (session persists)
             except Exception:
                 break
-        # WS closed/detached — leave proc alive in _sessions
+        # WS detached — record idle start time (GC will kill after SESSION_TTL)
+        if proj_id in _sessions:
+            _session_idle_since[proj_id] = time.time()
 
     await asyncio.gather(pty_to_ws(), ws_to_pty())
 
