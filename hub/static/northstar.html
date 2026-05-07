@@ -882,6 +882,11 @@ function openTerminal(projId) {
       fontFamily: '"JetBrains Mono", ui-monospace, monospace',
       fontSize: 13,
       lineHeight: 1.4,
+      scrollback: 3000,
+      fastScrollSensitivity: 8,
+      scrollSensitivity: 3,
+      allowTransparency: false,
+      convertEol: false,
       theme: {
         background: '#1a1916', foreground: '#d4cfc8', cursor: '#cc785c',
         selectionBackground: '#3d3730',
@@ -912,7 +917,17 @@ function openTerminal(projId) {
   _termWs = ws;
 
   _term.onData(data => { if (ws.readyState === 1) ws.send(data); });
-  ws.onmessage = e => _term.write(e.data);
+
+  // Batch incoming chunks into one write per animation frame (reduces repaints)
+  let _wsBatch = '';
+  let _wsRaf = null;
+  ws.onmessage = e => {
+    _wsBatch += e.data;
+    if (!_wsRaf) _wsRaf = requestAnimationFrame(() => {
+      if (_wsBatch) { _term.write(_wsBatch); _wsBatch = ''; }
+      _wsRaf = null;
+    });
+  };
   ws.onopen    = () => { _termFit.fit(); _sendResize(ws); };
   ws.onclose   = () => _term.write('\r\n\x1b[33m[session closed]\x1b[0m\r\n');
   ws.onerror   = () => _term.write('\r\n\x1b[31m[connection error — is hub server running?]\x1b[0m\r\n');

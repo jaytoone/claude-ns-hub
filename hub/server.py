@@ -733,6 +733,9 @@ def _get_project_dir(proj_id: str) -> str | None:
 
 # Persistent session registry: proj_id → PtyProcess (survives WS disconnect)
 _sessions: dict[str, ptyprocess.PtyProcess] = {}
+# Scrollback buffer: proj_id → accumulated PTY output (last 64 KB)
+_buffers: dict[str, list] = {}
+_BUFFER_MAX = 65536
 
 
 def _spawn_claude(proj_id: str) -> ptyprocess.PtyProcess:
@@ -753,6 +756,7 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
     # Reuse existing session if alive, otherwise spawn new
     proc = _sessions.get(proj_id)
     if proc is None or not proc.isalive():
+        _buffers.pop(proj_id, None)  # clear stale buffer
         try:
             proc = _spawn_claude(proj_id)
             _sessions[proj_id] = proc
@@ -761,7 +765,16 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
             await websocket.close()
             return
     else:
-        await websocket.send_text("\r\n\x1b[2m[Reconnected to existing session]\x1b[0m\r\n")
+        # Replay scrollback buffer so user sees previous output
+        if proj_id in _buffers and _buffers[proj_id]:
+            replay = "".join(_buffers[proj_id])
+            await websocket.send_text(replay)
+        await websocket.send_text("\r\n\x1b[2m[— reconnected —]\x1b[0m\r\n")
+        # SIGWINCH → forces claude to redraw its UI
+        try:
+            proc.setwinsize(proc.getwinsize()[0], proc.getwinsize()[1])
+        except Exception:
+            pass
 
     loop = asyncio.get_event_loop()
 
@@ -780,6 +793,7 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
             except EOFError:
                 # PTY closed — process exited
                 _sessions.pop(proj_id, None)
+                _buffers.pop(proj_id, None)
                 try:
                     await websocket.send_text("\r\n\x1b[33m[Session ended]\x1b[0m\r\n")
                 except Exception:
@@ -788,6 +802,12 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
             except Exception:
                 # PTY read error — stop this reader but keep session alive
                 break
+            # Accumulate into scrollback buffer (cap at 64 KB)
+            buf = _buffers.setdefault(proj_id, [])
+            buf.append(data)
+            total = sum(len(c) for c in buf)
+            while total > _BUFFER_MAX and buf:
+                total -= len(buf.pop(0))
             try:
                 await websocket.send_text(data)
             except Exception:
@@ -809,6 +829,7 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
                 elif msg == '\x00kill-session':
                     # Explicit kill requested from UI — terminate and remove
                     _sessions.pop(proj_id, None)
+                    _buffers.pop(proj_id, None)
                     try:
                         proc.terminate(force=True)
                     except Exception:
