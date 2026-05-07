@@ -13,10 +13,11 @@ from pathlib import Path
 
 import yaml as _yaml
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import httpx
+import ptyprocess
 
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
@@ -276,6 +277,53 @@ Return ALL {len(milestones)} milestones. done=true only for DONE status."""
         _write_md_frontmatter(md, data)
 
     return JSONResponse({"ok": True, "milestones": updated})
+
+
+@app.post("/api/northstar/{proj_id}/update-current")
+async def update_current(proj_id: str, request: Request):
+    """Update the current metric value in north-star.md frontmatter."""
+    body = await request.json()
+    current = str(body.get("current", "")).strip()
+    if not current:
+        return JSONResponse({"ok": False, "error": "current value required"})
+
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": f"project {proj_id} not found"})
+
+    data = _parse_md_frontmatter(md)
+    old = data.get("current", "—")
+    if str(old) == current:
+        return JSONResponse({"ok": True, "updated": False, "reason": "no change"})
+
+    data["current"] = current
+    _write_md_frontmatter(md, data)
+    return JSONResponse({"ok": True, "updated": True, "old": str(old), "new": current})
+
+
+@app.post("/api/northstar/{proj_id}/session-log")
+async def session_log(proj_id: str, request: Request):
+    """Append a session summary entry to the project's north-star.md log."""
+    body = await request.json()
+    entry_text = body.get("text", "").strip()
+    entry_date = body.get("date", "")
+    if not entry_text or not entry_date:
+        return JSONResponse({"ok": False, "error": "text and date required"})
+
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": f"project {proj_id} not found"})
+
+    data = _parse_md_frontmatter(md)
+    log = data.get("log", [])
+    # Avoid duplicate entries (same date + same text prefix)
+    prefix = entry_text[:40]
+    if not any(e.get("date") == entry_date and e.get("text","")[:40] == prefix for e in log):
+        log.append({"date": entry_date, "text": entry_text})
+        data["log"] = log
+        _write_md_frontmatter(md, data)
+        return JSONResponse({"ok": True, "appended": True})
+    return JSONResponse({"ok": True, "appended": False, "reason": "duplicate"})
 
 
 @app.get("/api/northstar/{proj_id}/doc")
@@ -654,6 +702,94 @@ async def channel_log_save(request: Request):
         return JSONResponse({"ok": True})
     except Exception as exc:
         return JSONResponse({"ok": False, "error": str(exc)})
+
+
+CELI_CONFIG = Path.home() / ".config/tmux-csk-sessions.conf"
+
+def _get_project_dir(proj_id: str) -> str | None:
+    """Find the project directory from celi config or projects dir."""
+    # 1. Scan celi sessions config
+    if CELI_CONFIG.exists():
+        for line in CELI_CONFIG.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'): continue
+            parts = line.split(':')
+            if len(parts) >= 3:
+                session_name, branch, proj_path = parts[0], parts[1], ':'.join(parts[2:])
+                if proj_id.lower() in session_name.lower() or proj_id.lower() in proj_path.lower():
+                    p = Path(proj_path)
+                    if p.exists(): return str(p)
+    # 2. Common base paths
+    for base in [Path.home() / "Project", Path.home() / "Project/VIDraft"]:
+        p = base / proj_id
+        if p.exists(): return str(p)
+        # Case-insensitive scan
+        if base.exists():
+            for d in base.iterdir():
+                if d.name.lower() == proj_id.lower() and d.is_dir():
+                    return str(d)
+    return None
+
+
+@app.websocket("/ws/session/{proj_id}")
+async def terminal_session(websocket: WebSocket, proj_id: str):
+    """Spawn claude in the project directory, bridge WebSocket ↔ PTY."""
+    await websocket.accept()
+
+    proj_dir = _get_project_dir(proj_id) or str(Path.home())
+    claude_bin = "claude"  # assumes claude is in PATH
+
+    try:
+        proc = ptyprocess.PtyProcessUnicode.spawn(
+            [claude_bin],
+            cwd=proj_dir,
+            dimensions=(30, 120),
+            env={**os.environ, "TERM": "xterm-256color", "COLUMNS": "120", "LINES": "30"},
+        )
+    except Exception as e:
+        await websocket.send_text(f"\r\n[Failed to start claude: {e}]\r\n")
+        await websocket.close()
+        return
+
+    loop = asyncio.get_event_loop()
+
+    async def pty_to_ws():
+        while proc.isalive():
+            try:
+                data = await loop.run_in_executor(None, lambda: proc.read(4096))
+                await websocket.send_text(data)
+            except (EOFError, Exception):
+                break
+        try:
+            await websocket.send_text("\r\n[Session ended]\r\n")
+        except Exception:
+            pass
+
+    async def ws_to_pty():
+        while True:
+            try:
+                msg = await websocket.receive_text()
+                if msg.startswith('\x00resize:'):
+                    # resize: cols,rows
+                    parts = msg[8:].split(',')
+                    if len(parts) == 2:
+                        try:
+                            cols, rows = int(parts[0]), int(parts[1])
+                            proc.setwinsize(rows, cols)
+                        except Exception:
+                            pass
+                else:
+                    proc.write(msg)
+            except WebSocketDisconnect:
+                break
+            except Exception:
+                break
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+
+    await asyncio.gather(pty_to_ws(), ws_to_pty())
 
 
 @app.get("/health/{service}")
