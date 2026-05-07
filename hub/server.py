@@ -766,18 +766,33 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
     loop = asyncio.get_event_loop()
 
     async def pty_to_ws():
-        while proc.isalive():
+        while True:
+            if not proc.isalive():
+                # Process died naturally — clean up registry
+                _sessions.pop(proj_id, None)
+                try:
+                    await websocket.send_text("\r\n\x1b[33m[Session ended]\x1b[0m\r\n")
+                except Exception:
+                    pass
+                break
             try:
                 data = await loop.run_in_executor(None, lambda: proc.read(4096))
-                await websocket.send_text(data)
-            except (EOFError, Exception):
+            except EOFError:
+                # PTY closed — process exited
+                _sessions.pop(proj_id, None)
+                try:
+                    await websocket.send_text("\r\n\x1b[33m[Session ended]\x1b[0m\r\n")
+                except Exception:
+                    pass
                 break
-        # Process died — remove from registry
-        _sessions.pop(proj_id, None)
-        try:
-            await websocket.send_text("\r\n\x1b[33m[Session ended]\x1b[0m\r\n")
-        except Exception:
-            pass
+            except Exception:
+                # PTY read error — stop this reader but keep session alive
+                break
+            try:
+                await websocket.send_text(data)
+            except Exception:
+                # WS send failed (client disconnected) — stop forwarding, keep proc alive
+                break
 
     async def ws_to_pty():
         while True:
