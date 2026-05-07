@@ -1,0 +1,1509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>North Star</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<style>
+:root {
+  --bg: #faf9f6; --bg-deep: #f0ede7; --panel: #fff; --panel-border: #e4dfd5;
+  --panel-soft: #f5f2ec; --text: #1f1c1a; --text-soft: #4a4540; --text-dim: #8a8278;
+  --accent: #cc785c; --accent-deep: #a34b2c; --accent-soft: #f5e6de;
+  --green: #3d8b5e; --green-soft: #e8f5ee;
+  --yellow: #b8860b; --yellow-soft: #fef9e7;
+  --red: #c0392b; --red-soft: #fdf0ef;
+  --blue: #2c6fad; --blue-soft: #e8f0fb;
+  --serif: "Fraunces", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --drawer-w: 420px;
+  --status-behind: var(--red);
+  --status-on-track: var(--green);
+  --status-achieved: var(--accent);
+  --status-paused: var(--text-dim);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); overflow: hidden; }
+body { font: 14px/1.55 var(--sans); color: var(--text-soft); -webkit-font-smoothing: antialiased; }
+
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+.layout { display: block; height: 100vh; overflow-y: auto; }
+.main-area { width: 100%; }
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; border-bottom: 1px solid var(--panel-border);
+  background: var(--bg); position: sticky; top: 0; z-index: 10;
+  white-space: nowrap; min-height: 48px;
+}
+.header-left { display: flex; align-items: baseline; gap: 12px; }
+.page-title { font-family: var(--serif); font-size: 18px; font-weight: 500; color: var(--text); white-space: nowrap; }
+.page-sub { font-family: var(--mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.refresh-btn {
+  background: none; border: 1px solid var(--panel-border); border-radius: 4px;
+  padding: 4px 10px; font-size: 11px; font-family: var(--mono); cursor: pointer;
+  color: var(--text-dim); transition: all .12s;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.updated-at { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+
+/* ── Grid ────────────────────────────────────────────────────────────────────── */
+.grid-wrap { padding: 20px 24px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 14px; }
+
+/* ── Project card ────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px;
+  cursor: pointer; transition: box-shadow .12s, border-color .12s; overflow: hidden;
+}
+.card:hover { box-shadow: 0 3px 12px rgba(31,28,26,.08); }
+.card.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Status bar at top of card */
+.card-status-bar { height: 3px; width: 100%; }
+.card-status-bar.behind   { background: var(--red); }
+.card-status-bar.on-track { background: var(--green); }
+.card-status-bar.achieved { background: var(--accent); }
+.card-status-bar.paused   { background: var(--text-dim); }
+
+.card-inner { padding: 16px 18px 14px; }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.card-name { font-family: var(--serif); font-size: 17px; font-weight: 500; color: var(--text); }
+.card-status-pill { font-size: 10px; font-family: var(--mono); padding: 2px 8px;
+  border-radius: 8px; font-weight: 500; }
+.card-status-pill.behind   { background: var(--red-soft);    color: var(--red); }
+.card-status-pill.on-track { background: var(--green-soft);  color: var(--green); }
+.card-status-pill.achieved { background: var(--accent-soft); color: var(--accent-deep); }
+.card-status-pill.paused   { background: var(--bg-deep);     color: var(--text-dim); border: 1px solid var(--panel-border); }
+
+/* Gauge */
+.gauge-wrap { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
+.gauge-svg-wrap { flex-shrink: 0; }
+.gauge-svg { display: block; }
+.gauge-track { fill: none; stroke: var(--bg-deep); stroke-width: 9; stroke-linecap: round; }
+.gauge-fill  { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray .6s ease; }
+.gauge-center-text { font-family: var(--serif); }
+.gauge-value { font-size: 13px; font-weight: 500; fill: var(--text); }
+.gauge-label { font-size: 7px; fill: var(--text-dim); font-family: var(--mono); }
+
+.gauge-aside { flex: 1; }
+.gauge-metric { font-size: 12px; color: var(--text-soft); line-height: 1.4; margin-bottom: 8px; }
+.gauge-numbers { display: flex; align-items: baseline; gap: 5px; }
+.gauge-current { font-family: var(--mono); font-size: 20px; color: var(--text); font-weight: 400; }
+.gauge-sep { color: var(--text-dim); font-size: 13px; }
+.gauge-target { font-family: var(--mono); font-size: 13px; color: var(--text-dim); }
+.gauge-deadline { font-size: 10px; color: var(--text-dim); font-family: var(--mono); margin-top: 5px; }
+
+/* Milestone pipeline */
+.ms-pipeline { display: flex; align-items: center; gap: 0; margin-bottom: 12px; overflow: hidden; }
+.ms-node { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ms-dot-wrap { display: flex; align-items: center; }
+.ms-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--panel-border); background: var(--bg);
+}
+.ms-dot.done    { background: var(--green);  border-color: var(--green); }
+.ms-dot.active  { background: var(--accent); border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft); }
+.ms-dot.pending { background: var(--bg-deep); border-color: var(--panel-border); }
+.ms-line { flex: 1; height: 2px; min-width: 8px; max-width: 28px;
+  background: var(--panel-border); margin: 0 2px; margin-bottom: 14px; }
+.ms-line.done { background: var(--green); }
+.ms-text { font-size: 9px; font-family: var(--mono); color: var(--text-dim);
+  max-width: 60px; text-align: center; line-height: 1.3; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.ms-text.done { color: var(--green); }
+.ms-text.active { color: var(--accent); font-weight: 500; }
+
+/* ── Current step strip on card ── */
+.card-current-step {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 6px 0 4px; padding: 5px 8px;
+  background: var(--bg-deep); border-radius: 4px;
+  border-left: 2px solid var(--accent);
+  gap: 6px; min-width: 0; overflow: hidden;
+}
+.cs-main { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; overflow: hidden; }
+.cs-gap {
+  font-size: 11px; font-family: var(--mono); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cs-step {
+  font-size: 10px; font-family: var(--mono); color: var(--text-dim);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cs-date {
+  font-size: 10px; font-family: var(--mono); color: var(--text-dim);
+  flex-shrink: 0; white-space: nowrap;
+}
+
+.card-footer { display: flex; align-items: center; justify-content: space-between; }
+.ms-summary { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
+.card-arrow { font-size: 12px; color: var(--text-dim); }
+.card:hover .card-arrow, .card.active .card-arrow { color: var(--accent); }
+
+/* ── Responsive — mobile/tablet ────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Keep html/body overflow:hidden — .main-area is the scroll container (matches desktop pattern) */
+  .layout { flex-direction: column; height: 100vh; }
+  .main-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
+  }
+
+  /* Grid: single column on mobile */
+  .grid { grid-template-columns: 1fr; }
+  .grid-wrap { padding: 12px 14px; }
+
+  /* Card: compact */
+  .card-inner { padding: 13px 14px 12px; }
+
+  /* Drawer: bottom sheet overlay on mobile */
+  .drawer-area {
+    position: fixed !important;
+    bottom: 0; left: 0; right: 0;
+    width: 100% !important;
+    height: 0;
+    border-left: none !important;
+    border-top: 2px solid var(--panel-border);
+    z-index: 50;
+  }
+  .drawer-area.open { height: 78vh; }
+  .drawer { width: 100%; border-radius: 12px 12px 0 0; }
+  .drawer-header { border-radius: 12px 12px 0 0; padding: 14px 16px; }
+  .drawer-scroll { padding: 14px 16px; }
+
+  /* Add drag handle indicator on drawer */
+  .drawer-header::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px; border-radius: 2px;
+    background: var(--panel-border); margin: 0 auto 10px;
+  }
+
+  /* Gauge: full width stacked */
+  .gauge-wrap { flex-direction: column; align-items: center; gap: 8px; }
+  .gauge-aside { width: 100%; text-align: center; }
+  .gauge-numbers { justify-content: center; }
+  .gauge-deadline { text-align: center; }
+
+  /* Card status pill: smaller */
+  .card-status-pill { font-size: 9px; padding: 2px 6px; }
+
+  /* Card name: slightly smaller */
+  .card-name { font-size: 15px; }
+
+  /* D-gauge numbers: shrink */
+  .d-current { font-size: 26px; }
+  .d-target  { font-size: 15px; }
+
+  /* Milestone pipeline: shrink dots/lines */
+  .ms-dot { width: 8px; height: 8px; }
+  .ms-line { min-width: 6px; max-width: 16px; }
+  .ms-text { font-size: 8px; max-width: 50px; }
+
+  header { padding: 10px 14px; min-height: 44px; }
+  .page-title { font-size: 16px; }
+  .page-sub { display: none; }
+  .updated-at { display: none; }
+}
+
+/* Drawer backdrop — tap outside to close on mobile */
+.drawer-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 49;
+  background: rgba(31,28,26,.15);
+  /* NO backdrop-filter — causes black screen bug in iframe on Windows Chrome */
+}
+.drawer-backdrop.show { display: block; }
+
+/* Desktop: backdrop only needed on mobile (drawer is inline on desktop) */
+@media (min-width: 641px) {
+  .drawer-backdrop { display: none !important; }
+}
+
+@media (max-width: 380px) {
+  .grid-wrap { padding: 10px; }
+  .drawer-area.open { height: 85vh; }
+}
+
+/* Desktop: ensure drawer doesn't overflow viewport */
+@media (min-width: 641px) {
+  .drawer-area.open { max-width: var(--drawer-w); }
+}
+
+/* ── Terminal panel inside detail modal ──────────────────────────────────────── */
+.dm-terminal {
+  display: none; flex-direction: column; flex: 1; overflow: hidden;
+  background: #1a1916; border-radius: 0 0 10px 10px;
+}
+.dm-terminal.show { display: flex; }
+.dm-terminal-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+  background: #252220; border-bottom: 1px solid #333; flex-shrink: 0;
+}
+.dm-terminal-title {
+  flex: 1; font-family: var(--mono); font-size: 11px; color: #aaa;
+}
+.dm-terminal-title span { color: #cc785c; }
+.dm-terminal-back {
+  background: none; border: 1px solid #444; cursor: pointer; border-radius: 4px;
+  color: #888; font-family: var(--mono); font-size: 10px; padding: 2px 8px;
+  transition: color .1s, border-color .1s;
+}
+.dm-terminal-back:hover { color: #ccc; border-color: #666; }
+#dm-xterm { flex: 1; overflow: hidden; padding: 2px 4px; }
+#dm-xterm .xterm { height: 100%; }
+#dm-xterm .xterm-screen { height: 100%; }
+
+/* ── Detail Overlay (centered modal — replaces side drawer) ──────────────────── */
+.detail-overlay {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(31,28,26,.3); align-items: center; justify-content: center;
+  padding: 16px;
+}
+.detail-overlay.show { display: flex; }
+
+.detail-modal {
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 10px; width: 100%; max-width: 880px; max-height: 90vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(31,28,26,.18);
+}
+
+/* Header */
+.dm-header {
+  display: flex; align-items: center; gap: 12px; padding: 16px 22px;
+  border-bottom: 1px solid var(--panel-border); flex-shrink: 0;
+  background: var(--panel-soft);
+}
+.dm-title { font-family: var(--serif); font-size: 20px; font-weight: 500; color: var(--text); flex: 1; }
+.dm-status-pill { font-size: 10px; font-family: var(--mono); padding: 3px 9px; border-radius: 8px; flex-shrink: 0; }
+.dm-status-pill.behind   { background: var(--red-soft);    color: var(--red); }
+.dm-status-pill.on-track { background: var(--green-soft);  color: var(--green); }
+.dm-status-pill.achieved { background: var(--accent-soft); color: var(--accent-deep); }
+.dm-status-pill.paused   { background: var(--bg-deep);     color: var(--text-dim); border: 1px solid var(--panel-border); }
+.dm-close { background: none; border: none; cursor: pointer; font-size: 20px;
+  color: var(--text-dim); line-height: 1; padding: 0 2px; transition: color .1s; flex-shrink: 0; }
+.dm-close:hover { color: var(--accent); }
+
+/* Body — 2 columns */
+.dm-body {
+  display: grid; grid-template-columns: 58% 42%; flex: 1; overflow: hidden;
+}
+.dm-left  { overflow-y: auto; padding: 20px 22px; border-right: 1px solid var(--panel-border); -webkit-overflow-scrolling: touch; }
+.dm-right { overflow-y: auto; padding: 20px 20px; background: var(--bg); -webkit-overflow-scrolling: touch; }
+
+/* ── Goal hierarchy layers ── */
+.dm-layer {
+  position: relative; margin-bottom: 8px;
+}
+/* Vertical connector between layers */
+.dm-layer::after {
+  content: ''; position: absolute; left: 11px; bottom: -8px; width: 2px; height: 8px;
+  background: var(--panel-border);
+}
+.dm-layer:last-child::after { display: none; }
+
+.dm-layer-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.dm-layer-icon {
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; border: 2px solid;
+}
+.dm-layer-icon.ns    { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
+.dm-layer-icon.okr   { background: var(--blue-soft, #e8f0fb); border-color: var(--blue, #2c6fad); color: var(--blue, #2c6fad); }
+.dm-layer-icon.ms    { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.dm-layer-title {
+  font-size: 10px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: .09em; color: var(--text-dim); font-weight: 600;
+}
+.dm-layer-count { font-size: 10px; font-family: var(--mono); color: var(--text-dim); margin-left: auto; }
+.dm-sync-btn {
+  font-size: 10px; font-family: var(--mono); background: none;
+  border: 1px solid var(--panel-border); border-radius: 3px;
+  padding: 2px 7px; cursor: pointer; color: var(--text-dim);
+  transition: all .12s; margin-left: 6px; flex-shrink: 0;
+}
+.dm-sync-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+.dm-sync-btn.loading { opacity: .5; pointer-events: none; }
+
+/* NS gauge section */
+.dm-gauge-wrap { display: flex; justify-content: center; margin: 4px 0 6px; }
+.dm-ns-meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0; }
+.dm-current { font-family: var(--serif); font-size: 28px; font-weight: 400; color: var(--text); }
+.dm-sep { color: var(--text-dim); font-size: 16px; }
+.dm-target { font-family: var(--mono); font-size: 15px; color: var(--text-dim); }
+.dm-metric-name { font-size: 13px; color: var(--text-soft); text-align: center; margin-bottom: 4px; }
+.dm-deadline { text-align: center; font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-top: 4px; }
+
+/* OKR items */
+.dm-okr-list { display: flex; flex-direction: column; gap: 5px; }
+.dm-okr-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 10px; background: var(--bg-deep); border-radius: 4px;
+  border-left: 3px solid var(--blue, #2c6fad);
+}
+.dm-okr-key { font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--blue, #2c6fad); flex-shrink: 0; margin-top: 1px; }
+.dm-okr-text { font-size: 12px; color: var(--text-soft); line-height: 1.4; }
+
+/* Milestone items */
+.dm-ms-list { display: flex; flex-direction: column; }
+.dm-ms-item { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--panel-border); }
+.dm-ms-item:last-child { border-bottom: none; }
+.dm-ms-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: 2px; }
+.dm-ms-dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--panel-border); background: var(--bg); flex-shrink: 0; }
+.dm-ms-dot.done   { background: var(--green);  border-color: var(--green); }
+.dm-ms-dot.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.dm-ms-line { flex: 1; width: 2px; background: var(--panel-border); margin: 3px 4.5px 0; min-height: 12px; }
+.dm-ms-line.done { background: var(--green); }
+.dm-ms-text { font-size: 12px; color: var(--text-soft); line-height: 1.4; flex: 1; }
+.dm-ms-text.done   { color: var(--text-dim); text-decoration: line-through; }
+.dm-ms-text.active { color: var(--text); font-weight: 500; }
+
+/* ── Right column (current work + actions) ── */
+.dm-section { margin-bottom: 18px; }
+.dm-section-label {
+  font-size: 10px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: .09em; color: var(--text-dim); margin-bottom: 8px; display: flex;
+  align-items: center; gap: 6px;
+}
+.dm-section-label .live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  animation: blink 2s ease-in-out infinite; flex-shrink: 0;
+}
+
+/* CTX activity strip */
+.ctx-strip { display: flex; flex-direction: column; gap: 3px; }
+.ctx-item { display: flex; align-items: center; gap: 7px; font-size: 11px;
+  font-family: var(--mono); color: var(--text-dim); padding: 2px 0; }
+.ctx-heat { width: 24px; height: 3px; border-radius: 1px; background: var(--bg-deep); flex-shrink: 0; }
+.ctx-heat-fill { height: 100%; border-radius: 1px; background: var(--accent); }
+.ctx-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Inline alignment result */
+.align-inline {
+  background: var(--bg-deep); border: 1px solid var(--panel-border);
+  border-radius: 5px; padding: 10px 12px;
+}
+.align-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.align-badge { font-size: 10px; font-family: var(--mono); font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+.align-badge.ADVANCING { background: var(--green-soft);  color: var(--green); }
+.align-badge.NEUTRAL   { background: var(--yellow-soft); color: var(--yellow); }
+.align-badge.DIVERGENT { background: var(--red-soft);    color: var(--red); }
+.align-score-num { font-family: var(--mono); font-size: 18px; color: var(--text); }
+.align-score-sub { font-size: 10px; color: var(--text-dim); }
+.align-summary { font-size: 12px; color: var(--text-soft); margin-bottom: 6px; line-height: 1.5; }
+.align-redirect-box { background: var(--green-soft); border-left: 3px solid var(--green);
+  padding: 6px 9px; border-radius: 0 4px 4px 0; }
+.align-redirect-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: .07em; color: var(--green); margin-bottom: 2px; }
+.align-redirect-text { font-size: 11px; color: var(--text-soft); line-height: 1.5; }
+.align-gap-box { background: var(--yellow-soft); border-left: 3px solid var(--yellow);
+  padding: 6px 9px; border-radius: 0 4px 4px 0; margin-bottom: 5px; }
+.align-gap-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: .07em; color: var(--yellow); margin-bottom: 2px; }
+.align-gap-text { font-size: 11px; color: var(--text-soft); }
+.align-loading { font-size: 11px; color: var(--text-dim); font-family: var(--mono);
+  display: flex; align-items: center; gap: 6px; }
+
+/* Action buttons */
+.dm-action-row { display: flex; flex-direction: column; gap: 6px; }
+.dm-btn {
+  width: 100%; padding: 8px 12px; border-radius: 5px; font-size: 11px;
+  font-family: var(--mono); cursor: pointer; transition: all .12s;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  border: 1px solid var(--panel-border); background: var(--bg-deep); color: var(--text-soft);
+}
+.dm-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.dm-btn.loading { opacity: .5; pointer-events: none; }
+.dm-btn-refresh { border-color: var(--green); color: var(--green); background: var(--green-soft); }
+.dm-btn-refresh:hover { opacity: .85; }
+
+/* Doc note */
+.dm-note { font-size: 12px; color: var(--text-soft); line-height: 1.6;
+  background: var(--bg-deep); border-radius: 4px; padding: 8px 10px; }
+
+/* Stale warning */
+.stale-warn { background: var(--yellow-soft); border: 1px solid rgba(184,134,11,.2);
+  border-radius: 4px; padding: 8px 10px; font-size: 12px; color: var(--yellow);
+  font-family: var(--mono); margin-bottom: 12px; }
+
+/* Eval results */
+.eval-result { margin-top: 8px; }
+.eval-overall { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.eval-verdict { font-size: 10px; font-family: var(--mono); font-weight: 600; padding: 2px 8px; border-radius: 3px; }
+.eval-verdict.STRONG   { background: var(--green-soft);  color: var(--green); }
+.eval-verdict.MODERATE { background: var(--yellow-soft); color: var(--yellow); }
+.eval-verdict.WEAK     { background: var(--red-soft);    color: var(--red); }
+.eval-lens { margin-bottom: 5px; border: 1px solid var(--panel-border); border-radius: 4px;
+  padding: 7px 9px; cursor: pointer; }
+.eval-lens:hover { background: var(--panel-soft); }
+.eval-lens-head { display: flex; align-items: center; gap: 6px; }
+.eval-lens-icon { font-size: 10px; color: var(--text-dim); }
+.eval-lens-name { font-size: 10px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text); flex: 1; }
+.eval-badge { font-size: 9px; font-family: var(--mono); padding: 1px 5px; border-radius: 3px; }
+.eval-badge.PASS { background: var(--green-soft); color: var(--green); }
+.eval-badge.WARN { background: var(--yellow-soft); color: var(--yellow); }
+.eval-badge.FAIL { background: var(--red-soft);   color: var(--red); }
+.eval-summary { font-size: 11px; color: var(--text-soft); margin-top: 3px; }
+.eval-detail  { font-size: 11px; color: var(--text-dim); margin-top: 3px; display: none; line-height: 1.5; }
+.eval-lens.open .eval-detail { display: block; }
+.eval-action { margin-top: 6px; background: var(--accent-soft); border: 1px solid rgba(204,120,92,.2);
+  border-radius: 4px; padding: 7px 9px; }
+.eval-action-label { font-size: 9px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: .07em; color: var(--accent-deep); margin-bottom: 2px; }
+.eval-action-text { font-size: 11px; color: var(--text-soft); }
+
+/* Doc spec link */
+.d-doc-btn {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 8px 12px; background: var(--bg-deep); border: 1px solid var(--panel-border);
+  border-radius: 5px; font-size: 12px; font-family: var(--mono); cursor: pointer;
+  color: var(--text-soft); transition: all .12s; text-align: left;
+}
+.d-doc-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.d-doc-path { font-size: 10px; color: var(--text-dim); margin-top: 3px; font-family: var(--mono); }
+
+/* ── Mobile: single-column, full-screen ── */
+@media (max-width: 640px) {
+  .detail-overlay { padding: 0; align-items: flex-end; }
+  .detail-modal { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 92vh; }
+  .dm-body { grid-template-columns: 1fr; }
+  .dm-left { border-right: none; border-bottom: 1px solid var(--panel-border); }
+  .dm-right { background: var(--panel); }
+  .dm-header::before {
+    content: ''; display: block; width: 36px; height: 4px; border-radius: 2px;
+    background: var(--panel-border); margin: 0 auto 8px; position: absolute;
+    top: 8px; left: 50%; transform: translateX(-50%);
+  }
+  .dm-header { padding-top: 20px; position: relative; flex-wrap: wrap; }
+}
+
+/* Doc viewer overlay */
+.doc-overlay { display: none; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+  background: rgba(31,28,26,.3); z-index: 200; align-items: center; justify-content: center; }
+.doc-overlay.show { display: flex; }
+.doc-modal { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 8px;
+  padding: 22px 24px; max-width: 680px; width: 92%; max-height: 85vh; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(31,28,26,.18); }
+
+/* Doc modal: full-screen on mobile */
+@media (max-width: 640px) {
+  .doc-overlay { align-items: flex-start; }
+  .doc-modal {
+    width: 100vw !important; height: 100% !important;
+    max-width: 100vw !important; max-height: 100% !important;
+    border-radius: 0 !important; margin: 0 !important;
+    padding: 16px; box-sizing: border-box;
+    overflow-x: hidden !important;
+  }
+  .doc-modal-body {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+  }
+  /* All content in modal stays within bounds */
+  .doc-modal * { max-width: 100%; box-sizing: border-box; }
+}
+.doc-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.doc-modal-title { font-family: var(--serif); font-size: 16px; font-weight: 500; color: var(--text); }
+.doc-modal-close { background: none; border: none; cursor: pointer; font-size: 18px;
+  color: var(--text-dim); line-height: 1; }
+.doc-modal-path {
+  font-size: 10px; color: var(--text-dim); font-family: var(--mono);
+  margin-bottom: 14px; word-break: break-all; overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.doc-modal-body {
+  overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.65;
+  color: var(--text-soft); font-family: var(--sans);
+  word-break: break-word; overflow-wrap: break-word;
+  -webkit-overflow-scrolling: touch;
+}
+.doc-h1 { font-family: var(--serif); font-size: 18px; font-weight: 500;
+  color: var(--text); margin: 0 0 14px; letter-spacing: -0.01em; line-height: 1.3; }
+.doc-h2 { font-family: var(--serif); font-size: 15px; font-weight: 500;
+  color: var(--text); margin: 16px 0 5px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--panel-border); }
+.doc-h3 { font-size: 11px; font-family: var(--mono); text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-dim); margin: 12px 0 4px; }
+.doc-gap  { height: 8px; }
+.doc-li   { padding-left: 12px; position: relative; margin: 3px 0; }
+.doc-li::before { content: '—'; position: absolute; left: 0; color: var(--text-dim); font-size: 10px; top: 2px; }
+.doc-code {
+  background: var(--bg-deep); padding: 1px 5px; border-radius: 3px;
+  font-family: var(--mono); font-size: 11px; color: var(--text);
+  word-break: break-word; overflow-wrap: break-word;
+  display: inline-block; max-width: 100%;
+}
+.doc-modal-body strong { color: var(--text); font-weight: 500; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+.empty-title { font-family: var(--serif); font-size: 18px; color: var(--text); margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Main area ── -->
+  <div class="main-area">
+    <header>
+      <div class="header-left">
+        <span class="page-title">North Star</span>
+        <span class="page-sub">project goals</span>
+      </div>
+      <div class="header-right">
+        <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
+        <span class="updated-at" id="updated-at">—</span>
+      </div>
+    </header>
+    <div class="grid-wrap">
+      <div class="grid" id="grid"></div>
+    </div>
+  </div>
+
+
+</div>
+
+<!-- ── Detail overlay (centered modal) ── -->
+<div class="detail-overlay" id="detail-overlay">
+  <div class="detail-modal" id="detail-modal">
+
+    <!-- Header -->
+    <div class="dm-header">
+      <span class="dm-title" id="dm-title">—</span>
+      <span class="dm-status-pill" id="dm-status-pill"></span>
+      <button class="dm-close" onclick="closeDetail()">×</button>
+    </div>
+
+    <!-- Body: left = hierarchy, right = work + actions -->
+    <div class="dm-body" id="dm-body">
+
+      <!-- Left: Goal hierarchy -->
+      <div class="dm-left" id="dm-left">
+        <div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>
+      </div>
+
+      <!-- Right: Current work + actions -->
+      <div class="dm-right" id="dm-right">
+        <div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>
+      </div>
+
+    </div>
+
+    <!-- Terminal panel (replaces dm-body when open) -->
+    <div class="dm-terminal" id="dm-terminal">
+      <div class="dm-terminal-hdr">
+        <div class="dm-terminal-title">claude @ <span id="dm-term-proj">—</span></div>
+        <button class="dm-terminal-back" onclick="closeTerminal()">← back</button>
+      </div>
+      <div id="dm-xterm"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Doc viewer overlay -->
+<div class="doc-overlay" id="doc-overlay">
+  <div class="doc-modal">
+    <div class="doc-modal-header">
+      <span class="doc-modal-title" id="doc-title">—</span>
+      <button class="doc-modal-close" onclick="closeDoc()">×</button>
+    </div>
+    <div class="doc-modal-path" id="doc-path">—</div>
+    <div class="doc-modal-body" id="doc-body"></div>
+  </div>
+</div>
+
+<script>
+let projects = [];
+let activeIdx = null;
+let ctxTopics = [];
+
+// ── Claude terminal state ─────────────────────────────────────────────────────
+let _term = null, _termWs = null, _termFit = null, _termRo = null;
+
+const STATUS_LABEL = { 'on-track': 'on track', 'behind': 'behind', 'achieved': 'achieved', 'paused': 'paused' };
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+async function loadData() {
+  try {
+    const [projRes, ctxRes] = await Promise.all([
+      fetch('/api/northstar'),
+      fetch('/api/ctx-pulse').catch(() => ({ json: () => ({ ok: false, topics: [] }) })),
+    ]);
+    projects = await projRes.json();
+    const ctxData = await ctxRes.json();
+    ctxTopics = ctxData.ok ? (ctxData.topics || []) : [];
+
+    projects.forEach(p => {
+      p.milestones = p.milestones || [];
+      p.log        = p.log        || [];
+      p.deadline   = p.deadline   || '';
+    });
+
+    render();
+    document.getElementById('updated-at').textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+
+    if (activeIdx !== null && projects[activeIdx]) {
+      openDetail(activeIdx);
+    }
+  } catch(e) {
+    console.error('loadData failed', e);
+  }
+}
+
+// ── Gauge math ────────────────────────────────────────────────────────────────
+
+function parseNum(s) {
+  if (!s || s === '—' || s === '-') return null;
+  const n = parseFloat(String(s).replace(/[^0-9.]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function calcPct(current, target) {
+  const c = parseNum(current), t = parseNum(target);
+  if (!t || c === null) return 0;
+  return Math.min(1, c / t);
+}
+
+function gaugePath(pct, cx, cy, r) {
+  if (pct <= 0) return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx - r + 0.01} ${cy}`;
+  const p = Math.min(pct, 0.9995);
+  const angle = Math.PI * (1 - p);
+  const x = cx + r * Math.cos(angle);
+  const y = cy - r * Math.sin(angle);
+  const large = p > 0.5 ? 1 : 0;
+  return `M ${cx - r} ${cy} A ${r} ${r} 0 ${large} 1 ${x.toFixed(2)} ${y.toFixed(2)}`;
+}
+
+function statusColor(status) {
+  return { 'behind': 'var(--red)', 'on-track': 'var(--green)', 'achieved': 'var(--accent)', 'paused': 'var(--text-dim)' }[status] || 'var(--text-dim)';
+}
+
+// ── Card gauge SVG ────────────────────────────────────────────────────────────
+
+function cardGaugeSvg(p) {
+  const pct = calcPct(p.current, p.target);
+  const cx = 52, cy = 52, r = 42;
+  const bgPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+  const fgPath = gaugePath(pct, cx, cy, r);
+  const color  = statusColor(p.status);
+  const label  = `${Math.round(pct * 100)}%`;
+
+  return `<svg class="gauge-svg" width="104" height="60" viewBox="0 0 104 60">
+    <path class="gauge-track" d="${bgPath}" />
+    <path class="gauge-fill" d="${fgPath}" stroke="${color}" />
+    <text x="${cx}" y="${cy - 10}" text-anchor="middle" class="gauge-center-text">
+      <tspan class="gauge-value" fill="${color}">${label}</tspan>
+    </text>
+    <text x="${cx}" y="${cy - 2}" text-anchor="middle">
+      <tspan class="gauge-label">of target</tspan>
+    </text>
+  </svg>`;
+}
+
+// ── Milestone pipeline (card) ─────────────────────────────────────────────────
+
+function cardMilestonePipeline(milestones, status) {
+  if (!milestones.length) return '';
+  const done = milestones.filter(m => m.done).length;
+  const MAX_SHOW = 6;
+  const shown = milestones.slice(0, MAX_SHOW);
+  const color = statusColor(status);
+
+  // Determine active (first not-done)
+  const activeI = milestones.findIndex(m => !m.done);
+
+  const nodes = shown.map((m, i) => {
+    const isDone   = m.done;
+    const isActive = i === activeI;
+    const dotClass = isDone ? 'done' : (isActive ? 'active' : 'pending');
+    const textClass = isDone ? 'done' : (isActive ? 'active' : '');
+    const lineClass = isDone ? 'done' : '';
+    const label = (m.text || '').split(':')[0].replace(/Phase\s*/i, 'Ph').substring(0, 8);
+    const connector = i < shown.length - 1
+      ? `<div class="ms-line ${lineClass}"></div>` : '';
+    return `<div class="ms-node">
+      <div class="ms-dot-wrap">
+        <div class="ms-dot ${dotClass}"></div>
+      </div>
+      <div class="ms-text ${textClass}">${esc(label)}</div>
+    </div>${connector}`;
+  }).join('');
+
+  return `<div class="ms-pipeline">${nodes}</div>`;
+}
+
+// ── Card current-step strip ──────────────────────────────────────────────────
+
+function cardCurrentStep(p) {
+  const activeMilestone = p.milestones.find(m => !m.done);
+  const lastLog = p.log && p.log.length ? p.log[p.log.length - 1] : null;
+
+  // Gap line: shows current state relative to goal
+  const pct = calcPct(p.current, p.target);
+  const gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
+
+  // Gap description — what's between now and goal
+  let gapText = '';
+  if (p.current && p.current !== '—' && p.target && p.target !== '—') {
+    const c = parseNum(p.current), t = parseNum(p.target);
+    if (c !== null && t !== null && t > 0) {
+      const remaining = t - c;
+      const unit = p.unit || '';
+      if (remaining > 0) {
+        gapText = `${formatGapNum(remaining)}${unit} to go`;
+      } else {
+        gapText = 'goal reached';
+      }
+    }
+  }
+
+  // Active step label
+  let stepText = activeMilestone ? activeMilestone.text : '';
+  stepText = stepText.replace(/^Phase\s+\d+\s+v?\d*[a-z]?:\s*/i, '').trim();
+  if (stepText.length > 36) stepText = stepText.slice(0, 34) + '…';
+
+  const logDate = lastLog ? lastLog.date?.slice(5) : '';
+
+  if (!activeMilestone && !lastLog && !gapText) return '';
+
+  return `<div class="card-current-step">
+    <div class="cs-main">
+      ${gapText ? `<span class="cs-gap" style="color:${gapColor}">${esc(gapText)}</span>` : ''}
+      ${activeMilestone ? `<span class="cs-step">▶ ${esc(stepText)}</span>` : ''}
+    </div>
+    ${lastLog ? `<span class="cs-date">${esc(logDate)}</span>` : ''}
+  </div>`;
+}
+
+function formatGapNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n % 1 === 0 ? String(n) : n.toFixed(1);
+}
+
+// ── Card HTML ─────────────────────────────────────────────────────────────────
+
+function cardHtml(p, i) {
+  const done  = p.milestones.filter(m => m.done).length;
+  const total = p.milestones.length;
+  const active = i === activeIdx ? 'active' : '';
+  const statusKey = p.status || 'paused';
+
+  return `<div class="card ${active}" data-idx="${i}">
+    <div class="card-status-bar ${statusKey}"></div>
+    <div class="card-inner">
+      <div class="card-top">
+        <span class="card-name">${esc(p.name)}</span>
+        <span class="card-status-pill ${statusKey}">${STATUS_LABEL[statusKey] || statusKey}</span>
+      </div>
+      <div class="gauge-wrap">
+        <div class="gauge-svg-wrap">${cardGaugeSvg(p)}</div>
+        <div class="gauge-aside">
+          <div class="gauge-metric">${esc(p.metric || '—')}</div>
+          <div class="gauge-numbers">
+            <span class="gauge-current">${esc(p.current || '—')}</span>
+            <span class="gauge-sep">→</span>
+            <span class="gauge-target">${esc(p.target || '—')}</span>
+          </div>
+          ${p.deadline ? `<div class="gauge-deadline">by ${esc(p.deadline)}</div>` : ''}
+        </div>
+      </div>
+      ${cardMilestonePipeline(p.milestones, statusKey)}
+      ${cardCurrentStep(p)}
+      <div class="card-footer">
+        <span class="ms-summary">${total ? `${done}/${total} milestones` : esc(p.note ? p.note.substring(0, 50) : '')}</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Grid render ───────────────────────────────────────────────────────────────
+
+function render() {
+  const grid = document.getElementById('grid');
+  if (!projects.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-title">No projects</div>
+      <div>Add a north-star.md file to ~/.claude/hub/projects/<name>/</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = projects.map(cardHtml).join('');
+  grid.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      const i = +card.dataset.idx;
+      if (activeIdx === i) { closeDetail(); return; }
+      activeIdx = i;
+      render();
+      openDetail(i);
+    });
+  });
+}
+
+// ── Detail modal (centered overlay) ──────────────────────────────────────────
+
+function closeDetail() {
+  closeTerminal();
+  activeIdx = null;
+  document.getElementById('detail-overlay').classList.remove('show');
+  render();
+}
+
+function openTerminal(projId) {
+  document.getElementById('dm-body').style.display = 'none';
+  const panel = document.getElementById('dm-terminal');
+  panel.classList.add('show');
+  document.getElementById('dm-term-proj').textContent = projId;
+
+  // Init xterm once
+  if (!_term) {
+    _term = new Terminal({
+      cursorBlink: true,
+      fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+      fontSize: 13,
+      lineHeight: 1.4,
+      theme: {
+        background: '#1a1916', foreground: '#d4cfc8', cursor: '#cc785c',
+        selectionBackground: '#3d3730',
+        black: '#1a1916',       brightBlack:   '#666260',
+        red: '#c0392b',         brightRed:     '#e74c3c',
+        green: '#3d8b5e',       brightGreen:   '#27ae60',
+        yellow: '#b8860b',      brightYellow:  '#f0c040',
+        blue: '#2c6fad',        brightBlue:    '#5dade2',
+        magenta: '#8e44ad',     brightMagenta: '#a569bd',
+        cyan: '#17a589',        brightCyan:    '#1abc9c',
+        white: '#d4cfc8',       brightWhite:   '#faf9f6',
+      },
+    });
+    _termFit = new FitAddon.FitAddon();
+    _term.loadAddon(_termFit);
+    _term.open(document.getElementById('dm-xterm'));
+  } else {
+    _term.clear();
+  }
+
+  // Small delay so the container has its final size before fit
+  setTimeout(() => { _termFit.fit(); }, 60);
+
+  // WebSocket
+  if (_termWs) { _termWs.close(); _termWs = null; }
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${proto}//${location.host}/ws/session/${encodeURIComponent(projId)}`);
+  _termWs = ws;
+
+  _term.onData(data => { if (ws.readyState === 1) ws.send(data); });
+  ws.onmessage = e => _term.write(e.data);
+  ws.onopen    = () => { _termFit.fit(); _sendResize(ws); };
+  ws.onclose   = () => _term.write('\r\n\x1b[33m[session closed]\x1b[0m\r\n');
+  ws.onerror   = () => _term.write('\r\n\x1b[31m[connection error — is hub server running?]\x1b[0m\r\n');
+
+  // Resize observer
+  if (_termRo) _termRo.disconnect();
+  _termRo = new ResizeObserver(() => {
+    _termFit?.fit();
+    if (ws.readyState === 1) _sendResize(ws);
+  });
+  _termRo.observe(document.getElementById('dm-xterm'));
+}
+
+function _sendResize(ws) {
+  if (!_term || ws.readyState !== 1) return;
+  ws.send(`\x00resize:${_term.cols},${_term.rows}`);
+}
+
+function closeTerminal() {
+  if (_termRo) { _termRo.disconnect(); _termRo = null; }
+  if (_termWs) { _termWs.close(); _termWs = null; }
+  document.getElementById('dm-terminal').classList.remove('show');
+  document.getElementById('dm-body').style.display = '';
+}
+
+async function openDetail(idx) {
+  activeIdx = idx;
+  const p = projects[idx];
+  const overlay = document.getElementById('detail-overlay');
+  overlay.classList.add('show');
+  document.getElementById('dm-title').textContent = p.name;
+  const pill = document.getElementById('dm-status-pill');
+  pill.textContent = STATUS_LABEL[p.status] || p.status;
+  pill.className = `dm-status-pill ${p.status || 'paused'}`;
+
+  // Render left (hierarchy) immediately, then async fill right
+  renderHierarchy(p);
+  document.getElementById('dm-right').innerHTML =
+    '<div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>';
+
+  // Fetch OKRs + CTX + doc in parallel
+  const [okrData, ctxData, docData] = await Promise.all([
+    fetch(`/api/northstar/${esc(p.id)}/okrs`).then(r=>r.json()).catch(()=>({ok:false,okrs:[]})),
+    fetch('/api/ctx-pulse').then(r=>r.json()).catch(()=>({ok:false,topics:[]})),
+    fetch(`/api/northstar/${esc(p.id)}/doc`).then(r=>r.json()).catch(()=>({ok:false})),
+  ]);
+
+  if (ctxData.ok) ctxTopics = ctxData.topics || [];
+
+  // Update OKR section in left column
+  const okrSection = document.getElementById('dm-okr-section');
+  if (okrSection) {
+    const okrs = okrData.okrs || [];
+    const title = okrData.section || 'OKRs';
+    okrSection.innerHTML = `
+      <div class="dm-layer">
+        <div class="dm-layer-head">
+          <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
+          <span class="dm-layer-title">${esc(title)}</span>
+          <span class="dm-layer-count">${okrs.length} KRs</span>
+        </div>
+        <div class="dm-okr-list">${okrs.length ? okrs.map(kr => {
+          const m = kr.match(/^(K\d+):\s*(.+)/);
+          return `<div class="dm-okr-item">
+            <span class="dm-okr-key">${m ? esc(m[1]) : '·'}</span>
+            <span class="dm-okr-text">${m ? esc(m[2]) : esc(kr)}</span>
+          </div>`;
+        }).join('') : '<div style="font-size:12px;color:var(--text-dim)">No OKRs defined in spec doc</div>'}</div>
+      </div>`;
+  }
+
+  // Render right column
+  renderRight(p, ctxData.topics || [], docData);
+
+  // Alignment is manual — user clicks ↻ Refresh to run
+}
+
+function renderHierarchy(p) {
+  const pct = calcPct(p.current, p.target);
+  const color = statusColor(p.status);
+  const cx = 100, cy = 95, r = 80;
+  const bgPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
+  const fgPath = gaugePath(pct, cx, cy, r);
+  const activeMs = p.milestones.findIndex(m => !m.done);
+
+  const msHtml = p.milestones.map((m, i) => {
+    const isDone = m.done, isActive = i === activeMs;
+    const dotCls = isDone ? 'done' : (isActive ? 'active' : '');
+    const txtCls = isDone ? 'done' : (isActive ? 'active' : '');
+    const lineCls = isDone ? 'done' : '';
+    const hasLine = i < p.milestones.length - 1;
+    return `<div class="dm-ms-item">
+      <div class="dm-ms-col">
+        <div class="dm-ms-dot ${dotCls}"></div>
+        ${hasLine ? `<div class="dm-ms-line ${lineCls}"></div>` : ''}
+      </div>
+      <div class="dm-ms-text ${txtCls}">${esc(m.text)}</div>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--text-dim)">No milestones</div>';
+
+  const doneCount = p.milestones.filter(m=>m.done).length;
+
+  document.getElementById('dm-left').innerHTML = `
+    ${p.stale ? `<div class="stale-warn">⚠ Metrics stale (&gt;14 days) — update north-star.md</div>` : ''}
+
+    <!-- Layer 1: North Star -->
+    <div class="dm-layer">
+      <div class="dm-layer-head">
+        <div class="dm-layer-icon ns" title="North Star metric">☆</div>
+        <span class="dm-layer-title">North Star</span>
+      </div>
+      <div class="dm-metric-name">${esc(p.metric || '—')}</div>
+      <div class="dm-gauge-wrap">
+        <svg width="200" height="110" viewBox="0 0 200 110">
+          <path class="gauge-track" d="${bgPath}" stroke-width="11"/>
+          <path class="gauge-fill" d="${fgPath}" stroke="${color}" stroke-width="11" fill="none" stroke-linecap="round"/>
+          <text x="${cx}" y="${cy-18}" text-anchor="middle"
+            font-family="Fraunces,Georgia,serif" font-size="20" font-weight="400" fill="${color}">${Math.round(pct*100)}%</text>
+          <text x="${cx}" y="${cy-4}" text-anchor="middle"
+            font-family="JetBrains Mono,monospace" font-size="8" fill="var(--text-dim)">of target</text>
+        </svg>
+      </div>
+      <div class="dm-ns-meta">
+        <span class="dm-current" style="color:${color}">${esc(p.current||'—')}</span>
+        <span class="dm-sep">→</span>
+        <span class="dm-target">${esc(p.target||'—')}</span>
+      </div>
+      ${p.deadline ? `<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>` : ''}
+    </div>
+
+    <!-- Layer 2: OKRs (populated async) -->
+    <div id="dm-okr-section">
+      <div class="dm-layer">
+        <div class="dm-layer-head">
+          <div class="dm-layer-icon okr">K</div>
+          <span class="dm-layer-title">OKRs</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Layer 3: Milestones -->
+    <div class="dm-layer">
+      <div class="dm-layer-head">
+        <div class="dm-layer-icon ms" title="Milestones">◎</div>
+        <span class="dm-layer-title">Milestones</span>
+        <span class="dm-layer-count">${doneCount}/${p.milestones.length}</span>
+        <button class="dm-sync-btn" id="dm-sync-btn" onclick="syncMilestones()" title="Auto-detect from CTX work history">
+          ↻ Sync
+        </button>
+      </div>
+      <div id="dm-ms-list" class="dm-ms-list">${msHtml}</div>
+      <div id="dm-sync-status" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-top:6px"></div>
+    </div>
+  `;
+}
+
+function renderRight(p, topics, docData) {
+  const topicsHtml = topics.slice(0, 7).map(t =>
+    `<div class="ctx-item">
+      <div class="ctx-heat"><div class="ctx-heat-fill" style="width:${Math.round(t.heat*100)}%"></div></div>
+      <span class="ctx-label">[${esc(t.type)}] ${esc(t.label)}</span>
+    </div>`
+  ).join('') || `<div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">CTX offline or no activity</div>`;
+
+  document.getElementById('dm-right').innerHTML = `
+
+    <!-- Current work from CTX -->
+    <div class="dm-section">
+      <div class="dm-section-label">
+        <span class="live-dot"></span>
+        Current work (CTX)
+      </div>
+      <div class="ctx-strip">${topicsHtml}</div>
+    </div>
+
+    <!-- Alignment (auto-loading) -->
+    <div class="dm-section">
+      <div class="dm-section-label">Alignment</div>
+      <div id="dm-align-result">
+        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">Click ↻ to check alignment</div>
+      </div>
+      <button class="dm-btn dm-btn-refresh" id="dm-pulse-btn" onclick="refreshAlignment()" style="margin-top:8px">
+        ↻ Refresh
+      </button>
+    </div>
+
+    <!-- Actions -->
+    <div class="dm-section">
+      <div class="dm-section-label">Actions</div>
+      <div class="dm-action-row">
+        ${docData?.ok
+          ? `<button class="dm-btn" onclick="openDoc('${esc(p.id)}', '${esc(docData.path)}')">◈ View spec doc</button>`
+          : `<button class="dm-btn" style="opacity:.4;pointer-events:none">◈ No spec doc</button>`}
+        <button class="dm-btn" id="dm-eval-btn" onclick="runEval()">◈ Expert eval</button>
+      </div>
+      <div id="eval-result"></div>
+      <button class="dm-btn" style="margin-top:10px;width:100%;background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)" onclick="openTerminal('${esc(p.id)}')">▶ Open Claude session</button>
+    </div>
+
+    ${p.note ? `<div class="dm-section">
+      <div class="dm-section-label">Context</div>
+      <div class="dm-note">${esc(p.note)}</div>
+    </div>` : ''}
+  `;
+}
+
+async function autoRunAlignment(p, topics) {
+  if (!topics.length) {
+    document.getElementById('dm-align-result').innerHTML =
+      '<div style="font-size:11px;color:var(--text-dim)">No CTX activity — start Claude Code to track work</div>';
+    return;
+  }
+  try {
+    const r = await fetch('/api/northstar/align', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project: p, topics }),
+    });
+    const align = await r.json();
+    if (align.error) throw new Error(align.error);
+    renderAlignResult(align);
+  } catch(e) {
+    const el = document.getElementById('dm-align-result');
+    if (el) el.innerHTML = `<div style="font-size:11px;color:var(--text-dim)">Alignment check unavailable</div>`;
+  }
+}
+
+function renderAlignResult(align) {
+  const el = document.getElementById('dm-align-result');
+  if (!el) return;
+  const sc = align.score >= 70 ? 'var(--green)' : align.score >= 40 ? 'var(--yellow)' : 'var(--red)';
+  el.innerHTML = `
+    <div class="align-inline">
+      <div class="align-row">
+        <span class="align-badge ${align.alignment}">${align.alignment}</span>
+        <span class="align-score-num" style="color:${sc}">${align.score}</span>
+        <span class="align-score-sub">/ 100</span>
+      </div>
+      <div class="align-summary">${esc(align.summary||'')}</div>
+      ${align.gap ? `<div class="align-gap-box">
+        <div class="align-gap-label">Gap</div>
+        <div class="align-gap-text">${esc(align.gap)}</div>
+      </div>` : ''}
+      ${align.redirect ? `<div class="align-redirect-box">
+        <div class="align-redirect-label">Redirect to</div>
+        <div class="align-redirect-text">${esc(align.redirect)}</div>
+      </div>` : ''}
+    </div>`;
+}
+
+async function refreshAlignment() {
+  if (activeIdx === null) return;
+  const btn = document.getElementById('dm-pulse-btn');
+  if (btn) { btn.textContent = '◌ Checking…'; btn.disabled = true; }
+  const el = document.getElementById('dm-align-result');
+  if (el) el.innerHTML = '<div class="align-loading"><span style="animation:blink 1s infinite">◌</span> Fetching…</div>';
+  try {
+    const pulse = await fetch('/api/ctx-pulse').then(r=>r.json());
+    if (!pulse.ok) throw new Error('CTX offline');
+    ctxTopics = pulse.topics || [];
+    // Refresh CTX strip
+    const strip = document.querySelector('.ctx-strip');
+    if (strip) strip.innerHTML = ctxTopics.slice(0,7).map(t =>
+      `<div class="ctx-item"><div class="ctx-heat"><div class="ctx-heat-fill" style="width:${Math.round(t.heat*100)}%"></div></div><span class="ctx-label">[${esc(t.type)}] ${esc(t.label)}</span></div>`
+    ).join('');
+    await autoRunAlignment(projects[activeIdx], ctxTopics);
+  } catch(e) {
+    if (el) el.innerHTML = `<div style="font-size:11px;color:var(--red)">${esc(e.message)}</div>`;
+  } finally {
+    if (btn) { btn.textContent = '↻ Refresh'; btn.disabled = false; }
+  }
+}
+
+async function renderDrawer_DEPRECATED() {
+  // REMOVED — replaced by openDetail() + renderHierarchy() + renderRight()
+  if (activeIdx === null) return;
+  const p = projects[activeIdx];
+
+  const scroll = document.getElementById('drawer-scroll');
+  scroll.innerHTML = '<div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>';
+
+  // Fetch spec doc
+  const docData = await fetch(`/api/northstar/${esc(p.id)}/doc`).then(r => r.json()).catch(() => ({ ok: false }));
+
+  const pct = calcPct(p.current, p.target);
+  const color = statusColor(p.status);
+  const statusKey = p.status || 'paused';
+
+  // Large drawer gauge
+  const cx = 110, cy = 105, r = 90;
+  const bgPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+  const fgPath = gaugePath(pct, cx, cy, r);
+
+  // Milestone list
+  const activeMs = p.milestones.findIndex(m => !m.done);
+  const msHtml = p.milestones.map((m, i) => {
+    const isDone   = m.done;
+    const isActive = i === activeMs;
+    const dotClass = isDone ? 'done' : (isActive ? 'active' : '');
+    const textClass = isDone ? 'done' : (isActive ? 'active' : '');
+    const lineClass = isDone ? 'done' : '';
+    const hasLine = i < p.milestones.length - 1;
+    return `<div class="d-ms-item">
+      <div class="d-ms-indicator">
+        <div class="d-ms-dot ${dotClass}"></div>
+        ${hasLine ? `<div class="d-ms-vline ${lineClass}"></div>` : ''}
+      </div>
+      <div class="d-ms-content">
+        <div class="d-ms-text ${textClass}">${esc(m.text)}</div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--text-dim)">No milestones defined</div>';
+
+  // CTX activity strip
+  const topicsHtml = ctxTopics.slice(0, 6).map(t =>
+    `<div class="ctx-item">
+      <div class="ctx-heat"><div class="ctx-heat-fill" style="width:${Math.round(t.heat * 100)}%"></div></div>
+      <span class="ctx-label">[${esc(t.type)}] ${esc(t.label)}</span>
+    </div>`
+  ).join('') || '<div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">CTX offline or no activity</div>';
+
+  // Stale warning
+  const staleHtml = p.stale
+    ? `<div class="stale-warn">⚠ Current metrics stale (&gt;14 days) — update north-star.md before alignment check</div>`
+    : '';
+
+  scroll.innerHTML = `
+
+    ${staleHtml}
+
+    <!-- Large gauge -->
+    <div>
+      <div class="d-label">Progress</div>
+      <div class="d-gauge-wrap">
+        <svg width="220" height="118" viewBox="0 0 220 118">
+          <path class="gauge-track" d="${bgPath}" stroke-width="12"/>
+          <path class="gauge-fill" d="${fgPath}" stroke="${color}" stroke-width="12"
+            fill="none" stroke-linecap="round"/>
+          <text x="${cx}" y="${cy - 20}" text-anchor="middle"
+            font-family="Fraunces,Georgia,serif" font-size="22" font-weight="400" fill="${color}">
+            ${Math.round(pct * 100)}%
+          </text>
+          <text x="${cx}" y="${cy - 5}" text-anchor="middle"
+            font-family="JetBrains Mono,monospace" font-size="9" fill="var(--text-dim)">
+            of target
+          </text>
+        </svg>
+      </div>
+      <div class="d-gauge-numbers">
+        <span class="d-current" style="color:${color}">${esc(p.current || '—')}</span>
+        <span class="d-sep">→</span>
+        <span class="d-target">${esc(p.target || '—')}</span>
+      </div>
+      ${p.deadline ? `<div style="text-align:center;font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-top:6px">deadline: ${esc(p.deadline)}</div>` : ''}
+    </div>
+
+    <!-- Status -->
+    <div>
+      <div class="d-label">Status</div>
+      <div class="d-status-row">
+        ${['on-track','behind','achieved','paused'].map(s =>
+          `<span class="d-status-chip ${s} ${s === statusKey ? 'active' : ''}">${STATUS_LABEL[s]}</span>`
+        ).join('')}
+      </div>
+    </div>
+
+    <!-- Note -->
+    ${p.note ? `<div>
+      <div class="d-label">Context</div>
+      <div class="d-note">${esc(p.note)}</div>
+    </div>` : ''}
+
+    <!-- Milestones -->
+    <div>
+      <div class="d-label">Milestones — ${p.milestones.filter(m=>m.done).length}/${p.milestones.length}</div>
+      <div class="d-ms-list">${msHtml}</div>
+    </div>
+
+    <!-- Spec doc -->
+    <div>
+      <div class="d-label">Spec document</div>
+      ${docData.ok
+        ? `<button class="d-doc-btn" onclick="openDoc('${esc(p.id)}','${esc(docData.path)}')">
+            <span class="d-doc-icon">◈</span>
+            <span>north-star.md</span>
+          </button>
+          <div class="d-doc-path">${esc(docData.path)}</div>`
+        : `<div style="font-size:12px;color:var(--text-dim);font-family:var(--mono)">no spec doc found — create ${esc(p.id)}/north-star.md</div>`
+      }
+    </div>
+
+    <!-- CTX activity -->
+    <div>
+      <div class="d-label">Recent work (CTX)</div>
+      <div class="ctx-strip">${topicsHtml}</div>
+    </div>
+
+    <!-- Alignment pulse -->
+    <div>
+      <div class="d-label">Alignment Pulse</div>
+      <button class="d-action-btn pulse-btn" id="pulse-btn" onclick="runPulse()">
+        <span id="pulse-btn-text">◉ Check work alignment</span>
+      </button>
+      <div id="pulse-result"></div>
+    </div>
+
+    <!-- Expert eval -->
+    <div>
+      <div class="d-label">Expert Evaluation</div>
+      <button class="d-action-btn" id="eval-btn" onclick="runEval()">
+        <span id="eval-btn-text">◈ Evaluate north star</span>
+      </button>
+      <div id="eval-result"></div>
+    </div>
+
+  `;
+}
+
+// ── Doc viewer ────────────────────────────────────────────────────────────────
+
+function openDoc(projId, path) {
+  fetch(`/api/northstar/${projId}/doc`).then(r => r.json()).then(d => {
+    if (!d.ok) return;
+    document.getElementById('doc-title').textContent = 'north-star.md';
+    // Show short path on mobile (projects/{name}/north-star.md)
+    const shortPath = d.path.replace(/.*\/(projects\/.+)/, '$1') || d.path;
+    document.getElementById('doc-path').textContent = shortPath;
+    // Simple markdown rendering
+    const body = d.body
+      // Headings first — must use div to avoid p/block nesting issues
+      .replace(/^# (.+)$/mg,   '<div class="doc-h1">$1</div>')
+      .replace(/^## (.+)$/mg,  '<div class="doc-h2">$1</div>')
+      .replace(/^### (.+)$/mg, '<div class="doc-h3">$1</div>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^- (.+)$/mg,   '<div class="doc-li">$1</div>')
+      .replace(/`([^`]+)`/g, '<code class="doc-code">$1</code>')
+      .replace(/\n\n/g, '<div class="doc-gap"></div>')
+      .replace(/\n/g, ' ');
+    document.getElementById('doc-body').innerHTML = body;
+    document.getElementById('doc-overlay').classList.add('show');
+  });
+}
+function closeDoc() {
+  const overlay = document.getElementById('doc-overlay');
+  overlay.classList.remove('show');
+  overlay.style.right = '0';
+}
+
+// ── Milestone sync (CTX-based auto-detection) ────────────────────────────────
+
+async function syncMilestones() {
+  if (activeIdx === null) return;
+  const p = projects[activeIdx];
+  const btn = document.getElementById('dm-sync-btn');
+  const status = document.getElementById('dm-sync-status');
+  if (btn) { btn.classList.add('loading'); btn.textContent = '◌ Syncing…'; }
+  if (status) status.textContent = 'Analyzing CTX work history…';
+
+  try {
+    // Get fresh CTX topics
+    const ctxR = await fetch('/api/ctx-pulse');
+    const ctxData = ctxR.ok ? await ctxR.json() : { ok: false, topics: [] };
+
+    const r = await fetch(`/api/northstar/${esc(p.id)}/sync-milestones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        milestones: p.milestones,
+        ctx_topics: ctxData.topics || [],
+        log: p.log || [],
+      }),
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || 'sync failed');
+
+    // Update local project data
+    projects[activeIdx].milestones = data.milestones.map((m, i) => ({
+      ...p.milestones[i],
+      done: m.done,
+    }));
+
+    // Re-render milestone list
+    const activeMs = projects[activeIdx].milestones.findIndex(ms => !ms.done);
+    const msHtml = data.milestones.map((m, i) => {
+      const isDone = m.done;
+      const isActive = i === activeMs;
+      const dotCls = isDone ? 'done' : (isActive ? 'active' : '');
+      const txtCls = isDone ? 'done' : (isActive ? 'active' : '');
+      const lineCls = isDone ? 'done' : '';
+      const hasLine = i < data.milestones.length - 1;
+      const reasonHtml = m.reason ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px">${esc(m.reason)}</div>` : '';
+      const statusTag = m.status === 'IN_PROGRESS'
+        ? `<span style="font-size:9px;font-family:var(--mono);background:var(--accent-soft);color:var(--accent-deep);padding:1px 5px;border-radius:3px;margin-left:6px">active</span>` : '';
+      return `<div class="dm-ms-item">
+        <div class="dm-ms-col">
+          <div class="dm-ms-dot ${dotCls}"></div>
+          ${hasLine ? `<div class="dm-ms-line ${lineCls}"></div>` : ''}
+        </div>
+        <div style="flex:1">
+          <div class="dm-ms-text ${txtCls}">${esc(m.text)}${statusTag}</div>
+          ${reasonHtml}
+        </div>
+      </div>`;
+    }).join('');
+
+    const msList = document.getElementById('dm-ms-list');
+    if (msList) msList.innerHTML = msHtml;
+
+    const doneCount = data.milestones.filter(m => m.done).length;
+    document.getElementById('dm-sync-btn').closest('.dm-layer-head').querySelector('.dm-layer-count').textContent =
+      `${doneCount}/${data.milestones.length}`;
+
+    if (status) status.textContent = `✓ Synced ${new Date().toLocaleTimeString('en-GB', {hour12:false})}`;
+
+    // Refresh cards too
+    render();
+
+  } catch(e) {
+    if (status) status.textContent = `Error: ${esc(e.message)}`;
+  } finally {
+    if (btn) { btn.classList.remove('loading'); btn.textContent = '↻ Sync'; }
+  }
+}
+
+// (runPulse removed — alignment now auto-runs via autoRunAlignment() on modal open)
+
+// ── Expert Eval ───────────────────────────────────────────────────────────────
+
+async function runEval() {
+  if (activeIdx === null) return;
+  const btn = document.getElementById('dm-eval-btn');
+  const out = document.getElementById('eval-result');
+  if (btn) { btn.classList.add('loading'); btn.textContent = '◌ Evaluating…'; }
+  const txt = null; // no separate text span in new design
+  out.innerHTML = '';
+  try {
+    const r = await fetch('/api/northstar/eval', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project: projects[activeIdx] }),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    const lensesHtml = (data.lenses || []).map(l => `
+      <div class="eval-lens" onclick="this.classList.toggle('open')">
+        <div class="eval-lens-head">
+          <span class="eval-lens-icon">${esc(l.icon)}</span>
+          <span class="eval-lens-name">${esc(l.name)}</span>
+          <span class="eval-badge ${l.verdict}">${l.verdict}</span>
+        </div>
+        <div class="eval-summary">${esc(l.summary)}</div>
+        <div class="eval-detail">${esc(l.detail)}</div>
+      </div>`).join('');
+    out.innerHTML = `<div class="eval-result">
+      <div class="eval-overall">
+        <span style="font-size:11px;font-family:var(--mono);color:var(--text-dim)">Overall</span>
+        <span class="eval-verdict ${data.verdict}">${data.verdict}</span>
+      </div>
+      ${lensesHtml}
+      ${data.top_action ? `<div class="eval-action">
+        <div class="eval-action-label">Top Action</div>
+        <div class="eval-action-text">${esc(data.top_action)}</div>
+      </div>` : ''}
+    </div>`;
+  } catch(e) {
+    out.innerHTML = `<div style="font-size:12px;color:var(--red);margin-top:8px">Error: ${esc(e.message)}</div>`;
+  } finally {
+    if (btn) { btn.classList.remove('loading'); btn.textContent = '◈ Expert eval'; }
+  }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Keyboard & overlay close ──────────────────────────────────────────────────
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDetail(); closeDoc(); }
+});
+document.getElementById('detail-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeDetail();
+});
+document.getElementById('doc-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeDoc();
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+
+loadData();
+setInterval(loadData, 30000);  // refresh every 30s (no SSE needed — static files)
+</script>
+</body>
+</html>
