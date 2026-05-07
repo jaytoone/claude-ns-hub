@@ -205,6 +205,79 @@ async def northstar_okrs(proj_id: str):
     return JSONResponse({"ok": True, "okrs": items, "section": title})
 
 
+@app.post("/api/northstar/{proj_id}/sync-milestones")
+async def sync_milestones(proj_id: str, request: Request):
+    """Auto-detect milestone completion from CTX graph + project log using Claude."""
+    body = await request.json()
+    milestones = body.get("milestones", [])
+    ctx_topics  = body.get("ctx_topics", [])   # hot nodes from CTX
+    log_entries = body.get("log", [])           # project progress log
+
+    if not milestones:
+        return JSONResponse({"ok": False, "error": "no milestones provided"})
+
+    ms_text = "\n".join(f"{i+1}. [{('DONE' if m.get('done') else 'pending')}] {m.get('text','')}"
+                        for i, m in enumerate(milestones))
+    ctx_text = "\n".join(f"  [{t.get('type','?')}] {t.get('label','')} (heat={t.get('heat',0)})"
+                         for t in ctx_topics[:15]) or "  (no CTX activity)"
+    log_text = "\n".join(f"  {l.get('date','')} — {l.get('text','')}"
+                         for l in log_entries[-10:]) or "  (no log entries)"
+
+    prompt = f"""You are analyzing a project's milestone completion status based on actual work evidence.
+
+PROJECT: {proj_id}
+
+MILESTONES (current state):
+{ms_text}
+
+RECENT WORK (CTX memory — git decisions, hot nodes):
+{ctx_text}
+
+PROGRESS LOG:
+{log_text}
+
+For each milestone, determine: is it DONE, IN_PROGRESS, or PENDING based on the evidence?
+Rules:
+- DONE: clear evidence it was completed (log entry, git commit, or explicit mention)
+- IN_PROGRESS: work is actively happening on it but not finished
+- PENDING: no evidence of work started
+
+Respond in this exact JSON (no markdown):
+[{{"text": "...", "done": true/false, "status": "DONE|IN_PROGRESS|PENDING", "reason": "1 short sentence"}}]
+
+Return ALL {len(milestones)} milestones. done=true only for DONE status."""
+
+    result = await asyncio.get_event_loop().run_in_executor(
+        None,
+        lambda: subprocess.run(
+            ["claude", "-p", "--model", "claude-haiku-4-5-20251001", prompt],
+            capture_output=True, text=True, timeout=120
+        )
+    )
+    if result.returncode != 0:
+        return JSONResponse({"ok": False, "error": result.stderr[:200] or "claude CLI failed"}, status_code=500)
+
+    raw = result.stdout.strip()
+    if raw.startswith("```"):
+        raw = "\n".join(raw.split("\n")[1:])
+    if raw.endswith("```"):
+        raw = "\n".join(raw.split("\n")[:-1])
+
+    updated = json.loads(raw.strip())
+
+    # Write back to north-star.md
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if md.exists():
+        data = _parse_md_frontmatter(md)
+        # Merge updated done states back
+        for i, ms in enumerate(updated):
+            if i < len(data.get("milestones", [])):
+                data["milestones"][i]["done"] = ms.get("done", False)
+        _write_md_frontmatter(md, data)
+
+    return JSONResponse({"ok": True, "milestones": updated})
+
+
 @app.get("/api/northstar/{proj_id}/doc")
 async def northstar_doc(proj_id: str):
     """Return the full markdown body of a project's north-star.md."""
@@ -213,29 +286,6 @@ async def northstar_doc(proj_id: str):
         data = _parse_md_frontmatter(md)
         return JSONResponse({"ok": True, "body": data.get("_body", ""), "path": str(md)})
     return JSONResponse({"ok": False, "body": "", "path": ""})
-
-
-# ── Market Signals (stub) ─────────────────────────────────────────────────────
-
-@app.get("/market-signals")
-async def market_signals_page():
-    return HTMLResponse("""<!doctype html><html><head>
-<meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#faf9f6;--text:#1f1c1a;--text-dim:#8a8278;--panel-border:#e4dfd5;
-  --serif:"Fraunces",Georgia,serif;--mono:"JetBrains Mono",monospace;}
-body{background:var(--bg);display:flex;align-items:center;justify-content:center;
-  min-height:100vh;margin:0;font-family:var(--serif);}
-.box{text-align:center;padding:40px;}
-.title{font-size:22px;font-weight:500;color:var(--text);margin-bottom:10px;}
-.sub{font-size:13px;color:var(--text-dim);font-family:var(--mono);}
-</style></head><body>
-<div class="box">
-  <div class="title">Market Signals</div>
-  <div class="sub">coming soon — trend monitoring, competitor signals, demand indicators</div>
-</div>
-</body></html>""")
 
 
 @app.get("/api/ctx-pulse")
