@@ -641,7 +641,6 @@ header {
         <span class="page-sub">project goals</span>
       </div>
       <div class="header-right">
-        <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark mode">◑</button>
         <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
         <span class="updated-at" id="updated-at">—</span>
       </div>
@@ -728,18 +727,16 @@ let projects = [];
 let activeIdx = null;
 let ctxTopics = [];
 
-// ── Dark mode ─────────────────────────────────────────────────────────────────
+// ── Dark mode — reads hub-theme from localStorage + listens for postMessage ───
 (function() {
-  const saved = localStorage.getItem('ns-theme');
-  if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+  const s = localStorage.getItem('hub-theme');
+  if (s === 'dark' || (!s && matchMedia('(prefers-color-scheme: dark)').matches))
     document.documentElement.setAttribute('data-theme', 'dark');
-  }
 })();
-function toggleTheme() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  localStorage.setItem('ns-theme', isDark ? 'light' : 'dark');
-}
+window.addEventListener('message', e => {
+  if (e.data?.type === 'hub-theme')
+    document.documentElement.setAttribute('data-theme', e.data.value);
+});
 
 // ── Claude terminal state ─────────────────────────────────────────────────────
 let _term = null, _termWs = null, _termFit = null, _termRo = null;
@@ -973,6 +970,13 @@ function rowHtml(p, i) {
 let _rowOrder = null; // persisted drag-drop order
 let _sessionStatus = {}; // proj_id → "active"|"idle:N"|"none"
 
+async function _openWithTerminal(origIdx, projId) {
+  activeIdx = origIdx;
+  render();
+  await openDetail(origIdx);
+  openTerminal(projId);
+}
+
 async function refreshSessionStatus() {
   try {
     const r = await fetch('/api/northstar/sessions');
@@ -1054,7 +1058,7 @@ function render() {
       <td class="col-status"><span class="status-label ${statusKey}">
         <span class="row-status-dot" style="background:${dotColor}"></span>${STATUS_LABEL[statusKey] || statusKey}
       </span></td>
-      <td class="col-sess hide-mobile">${sessCell(p.id || p.name)}</td>
+      <td class="col-sess hide-mobile" title="Click to open terminal" style="cursor:pointer" onclick="event.stopPropagation();_openWithTerminal(${origIdx},'${esc(p.id||p.name)}')">${sessCell(p.id || p.name)}</td>
       <td class="col-metric hide-mobile" title="${esc(p.metric || '')}">${esc((p.metric || '—').substring(0, 26))}</td>
       <td class="col-progress">
         <div class="progress-wrap">

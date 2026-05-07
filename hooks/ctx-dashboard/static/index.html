@@ -51,10 +51,12 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
       <span class="lang-sep">|</span>
       <span class="lang-seg" data-lang="ko">KO</span>
     </button>
-    <button id="theme-toggle" onclick="(function(){const d=document.documentElement,dk=d.getAttribute('data-theme')==='dark';d.setAttribute('data-theme',dk?'light':'dark');localStorage.setItem('hub-theme',dk?'light':'dark');})()" title="Toggle dark mode" style="background:none;border:1px solid var(--panel-border);border-radius:4px;padding:2px 7px;font-size:13px;cursor:pointer;color:var(--text-dim);margin-left:6px">◑</button>
   </div>
 </header>
-<script>(function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();</script>
+<script>
+(function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();
+window.addEventListener('message',e=>{if(e.data?.type==='hub-theme')document.documentElement.setAttribute('data-theme',e.data.value)});
+</script>
 
 <div id="wow-banner" class="wow-banner" style="display:none"></div>
 
