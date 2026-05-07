@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Market Signals</title>
+<title>CTX Channel Manager</title>
 <link rel="icon" href="data:," />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
@@ -24,6 +24,34 @@ body { background: var(--bg); color: var(--text-soft); font: 14px/1.6 var(--sans
 h1 { font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--text);
   margin-bottom: 4px; }
 .subtitle { font-size: 12px; color: var(--text-dim); margin-bottom: 24px; }
+
+/* ── Channel grid ── */
+.ch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px; margin-bottom: 24px; }
+.ch-card { background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 14px 16px; }
+.ch-card.highlight { border-color: var(--accent); background: var(--accent-soft); }
+.ch-name { font-family: var(--serif); font-size: 13px; font-weight: 500;
+  color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.ch-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+.ch-dot.ok { background: var(--green); }
+.ch-dot.warn { background: var(--yellow); }
+.ch-dot.err { background: var(--red); }
+.ch-metric { font-family: var(--mono); font-size: 18px; font-weight: 600;
+  color: var(--text); line-height: 1; }
+.ch-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.ch-secondary { font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
+.ch-link { font-family: var(--mono); font-size: 10px; color: var(--accent);
+  text-decoration: none; margin-top: 6px; display: block; }
+.ch-link:hover { text-decoration: underline; }
+
+/* ── Section headers ── */
+.section-head { font-family: var(--serif); font-size: 16px; font-weight: 500;
+  color: var(--text); margin: 28px 0 14px; display: flex; align-items: center; gap: 10px; }
+.section-head .count { font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+  background: var(--bg-deep); border: 1px solid var(--panel-border);
+  padding: 2px 7px; border-radius: 3px; }
 
 .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .btn { font-family: var(--mono); font-size: 11px; background: none;
@@ -85,15 +113,20 @@ a:hover { text-decoration: underline; }
 </head>
 <body>
 
-<h1>Market Signals</h1>
-<p class="subtitle">PyPI download trend · GitHub pain issues · Hacker News mentions</p>
+<h1>CTX Channel Manager</h1>
+<p class="subtitle">Live reactions across distribution channels · market demand signals</p>
 
 <div class="toolbar">
-  <button class="btn" id="btn-refresh">refresh</button>
+  <button class="btn" id="btn-refresh-ch">refresh channels</button>
+  <button class="btn" id="btn-refresh">refresh signals</button>
   <button class="btn" id="btn-save">save snapshot</button>
   <span class="cache-note" id="cache-note">—</span>
 </div>
 
+<div class="section-head">Distribution Channels <span class="count" id="ch-count">—</span></div>
+<div class="ch-grid" id="ch-grid"><div class="loading">loading…</div></div>
+
+<div class="section-head">Market Demand Signals</div>
 <div class="grid" id="grid">
   <div class="card" id="card-pypi">
     <div class="card-title">PyPI <span class="card-badge">ctx-retriever</span></div>
@@ -206,6 +239,80 @@ document.getElementById("btn-save").addEventListener("click", async () => {
   setTimeout(() => { btn.textContent = "save snapshot"; btn.disabled = false; }, 2000);
 });
 
+// ── Channel Manager ─────────────────────────────────────────────────────────
+
+function renderChannels(channels) {
+  const grid = document.getElementById("ch-grid");
+  const countEl = document.getElementById("ch-count");
+  if (!channels || !channels.length) {
+    grid.innerHTML = `<span class="loading">no data</span>`; return;
+  }
+  countEl.textContent = `${channels.length} channels`;
+
+  grid.innerHTML = channels.map(ch => {
+    const hasErr = !!ch.error;
+    const dot = hasErr ? "err" : ch.type === "manual" ? "warn" : "ok";
+
+    let metric = "—", label = "", secondary = "";
+
+    if (ch.id === "github") {
+      metric = ch.stars ?? "—";
+      label = "stars";
+      secondary = `<span>${ch.forks ?? 0} forks</span><span>${ch.issues ?? 0} issues</span>`;
+    } else if (ch.id === "hn") {
+      metric = ch.points ?? "—";
+      label = "points";
+      secondary = `<span>${ch.comments ?? 0} comments</span>`;
+    } else if (ch.id === "geeknews") {
+      metric = ch.points ?? "—";
+      label = "points";
+      secondary = `<span>${ch.comments ?? 0} comments</span>`;
+    } else if (ch.id === "devto") {
+      metric = ch.reactions ?? "—";
+      label = "reactions";
+      secondary = `<span>${ch.comments ?? 0} comments</span>${ch.reads ? `<span>${ch.reads} reads</span>` : ""}`;
+    } else if (ch.id === "pypi") {
+      metric = ch.week ?? "—";
+      label = "/wk";
+      secondary = `<span>${ch.day ?? 0}/day</span><span>${ch.month ?? 0}/mo</span>`;
+    } else if (ch.id === "linkedin") {
+      metric = "manual";
+      label = "check required";
+    }
+
+    const isHighlight = ch.id === "github" && (ch.stars || 0) > 0;
+    return `
+      <div class="ch-card${isHighlight ? " highlight" : ""}">
+        <div class="ch-name">
+          <div class="ch-dot ${dot}"></div>
+          ${esc(ch.name)}
+        </div>
+        ${hasErr
+          ? `<div class="ch-label" style="color:var(--red)">${esc(ch.error)}</div>`
+          : `<div class="ch-metric">${esc(String(metric))}</div>
+             <div class="ch-label">${esc(label)}</div>
+             ${secondary ? `<div class="ch-secondary">${secondary}</div>` : ""}`
+        }
+        <a class="ch-link" href="${esc(ch.url)}" target="_blank">${esc(ch.url.replace("https://","").slice(0,30))}…</a>
+      </div>`;
+  }).join("");
+}
+
+async function loadChannels(forceRefresh = false) {
+  document.getElementById("btn-refresh-ch").disabled = true;
+  const url = forceRefresh ? "/api/channel-status?refresh=true" : "/api/channel-status";
+  try {
+    const d = await fetch(url).then(r => r.json());
+    renderChannels(d.channels || []);
+  } catch(e) {
+    document.getElementById("ch-grid").innerHTML = `<span class="loading">fetch error</span>`;
+  }
+  document.getElementById("btn-refresh-ch").disabled = false;
+}
+
+document.getElementById("btn-refresh-ch").addEventListener("click", () => loadChannels(true));
+
+loadChannels();
 load();
 </script>
 </body>

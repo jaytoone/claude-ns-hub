@@ -8,7 +8,10 @@ import json
 import os
 import re
 import subprocess
+import time
 from pathlib import Path
+
+import yaml as _yaml
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
@@ -86,7 +89,75 @@ async def config():
     })
 
 
-# ── North Star — built-in multi-project manager ───────────────────────────────
+# ── North Star — file-backed multi-project manager ───────────────────────────
+
+def _parse_md_frontmatter(path: Path) -> dict:
+    """Extract YAML frontmatter from a markdown file."""
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---"):
+        return {}
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return {}
+    try:
+        data = _yaml.safe_load(parts[1]) or {}
+        data["_body"] = parts[2].strip()
+        return data
+    except Exception:
+        return {}
+
+
+def _write_md_frontmatter(path: Path, data: dict):
+    """Write YAML frontmatter back to a markdown file, preserving body."""
+    body = data.pop("_body", "")
+    # Strip internal-only fields
+    data.pop("file_path", None)
+    # Re-encode milestones/log as proper YAML types
+    text = "---\n" + _yaml.dump(data, allow_unicode=True, default_flow_style=False) + "---\n\n" + body
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def _load_projects() -> list:
+    """Load all projects from projects/*/north-star.md, fallback to northstar.json."""
+    projects = []
+    if PROJECTS_DIR.exists():
+        for proj_dir in sorted(PROJECTS_DIR.iterdir()):
+            md = proj_dir / "north-star.md"
+            if md.exists():
+                data = _parse_md_frontmatter(md)
+                if data.get("name"):
+                    data["id"] = proj_dir.name  # preserve case to match folder
+                    data["file_path"] = str(md)
+                    data.setdefault("milestones", [])
+                    data.setdefault("log", [])
+                    data.setdefault("deadline", "")
+                    data.setdefault("links", "")
+                    # Compute staleness
+                    mtime = md.stat().st_mtime
+                    data["last_updated"] = mtime
+                    data["stale"] = (time.time() - mtime) > (14 * 86400)
+                    projects.append(data)
+    if not projects and NORTHSTAR_DATA.exists():
+        # Legacy fallback
+        projects = json.loads(NORTHSTAR_DATA.read_text())
+    return projects
+
+
+def _save_project(proj_id: str, data: dict):
+    """Save project data back to its north-star.md file."""
+    proj_dir = PROJECTS_DIR / proj_id
+    md = proj_dir / "north-star.md"
+    if md.exists():
+        existing = _parse_md_frontmatter(md)
+        body = existing.get("_body", "")
+        data["_body"] = body
+        _write_md_frontmatter(md, data)
+    else:
+        # New project — create file
+        data["_body"] = f"# {data.get('name', proj_id)} — North Star\n\n## Strategy\n\n## OKRs\n"
+        _write_md_frontmatter(md, data)
+
 
 @app.get("/northstar")
 async def northstar_page():
@@ -95,16 +166,76 @@ async def northstar_page():
 
 @app.get("/api/northstar")
 async def northstar_get():
-    if NORTHSTAR_DATA.exists():
-        return JSONResponse(json.loads(NORTHSTAR_DATA.read_text()))
-    return JSONResponse([])
+    projects = _load_projects()
+    # Strip internal fields before returning
+    clean = [{k: v for k, v in p.items() if k != "_body"} for p in projects]
+    return JSONResponse(clean)
 
 
 @app.post("/api/northstar")
 async def northstar_save(request: Request):
     data = await request.json()
-    NORTHSTAR_DATA.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+    if isinstance(data, list):
+        # Bulk save — write each project to its file
+        for p in data:
+            proj_id = p.get("id", p.get("name", "").lower().replace(" ", "-"))
+            if proj_id:
+                _save_project(proj_id, {k: v for k, v in p.items() if k not in ("stale","last_updated","file_path")})
+        # Also keep legacy JSON in sync
+        NORTHSTAR_DATA.write_text(json.dumps(data, ensure_ascii=False, indent=2))
     return JSONResponse({"ok": True})
+
+
+@app.get("/api/northstar/{proj_id}/okrs")
+async def northstar_okrs(proj_id: str):
+    """Extract OKRs from north-star.md body."""
+    import re as _re
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "okrs": [], "section": ""})
+    data = _parse_md_frontmatter(md)
+    body = data.get("_body", "")
+    # Find OKR section
+    m = _re.search(r"^##\s*OKR[^\n]*\n((?:[-*]\s+.+\n?)+)", body, _re.MULTILINE)
+    if not m:
+        return JSONResponse({"ok": True, "okrs": [], "section": ""})
+    section_title = _re.search(r"^##\s*(OKR[^\n]*)", body, _re.MULTILINE)
+    title = section_title.group(1).strip() if section_title else "OKRs"
+    items = [line.lstrip("-* ").strip() for line in m.group(1).splitlines() if line.strip()]
+    return JSONResponse({"ok": True, "okrs": items, "section": title})
+
+
+@app.get("/api/northstar/{proj_id}/doc")
+async def northstar_doc(proj_id: str):
+    """Return the full markdown body of a project's north-star.md."""
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if md.exists():
+        data = _parse_md_frontmatter(md)
+        return JSONResponse({"ok": True, "body": data.get("_body", ""), "path": str(md)})
+    return JSONResponse({"ok": False, "body": "", "path": ""})
+
+
+# ── Market Signals (stub) ─────────────────────────────────────────────────────
+
+@app.get("/market-signals")
+async def market_signals_page():
+    return HTMLResponse("""<!doctype html><html><head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf9f6;--text:#1f1c1a;--text-dim:#8a8278;--panel-border:#e4dfd5;
+  --serif:"Fraunces",Georgia,serif;--mono:"JetBrains Mono",monospace;}
+body{background:var(--bg);display:flex;align-items:center;justify-content:center;
+  min-height:100vh;margin:0;font-family:var(--serif);}
+.box{text-align:center;padding:40px;}
+.title{font-size:22px;font-weight:500;color:var(--text);margin-bottom:10px;}
+.sub{font-size:13px;color:var(--text-dim);font-family:var(--mono);}
+</style></head><body>
+<div class="box">
+  <div class="title">Market Signals</div>
+  <div class="sub">coming soon — trend monitoring, competitor signals, demand indicators</div>
+</div>
+</body></html>""")
 
 
 @app.get("/api/ctx-pulse")
@@ -305,6 +436,171 @@ async def market_signals_save():
     try:
         with _MARKET_SIGNALS_LOG.open("a") as f:
             f.write(_json.dumps(data) + "\n")
+        return JSONResponse({"ok": True})
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)})
+
+
+
+# ── Channel Manager — live reaction scraper ──────────────────────────────────
+
+_CHANNEL_LOG = Path.home() / "Project" / "CTX" / "docs" / "marketing" / "channel_reactions_log.md"
+_POSTS_DRAFT  = Path.home() / "Project" / "CTX" / "docs" / "marketing" / "20260502-channel-posts-draft.md"
+_CH_CACHE: dict = {"data": None, "ts": 0.0}
+_CH_TTL = 180  # 3 min (channels don't change faster)
+
+CHANNELS = [
+    {
+        "id": "github",
+        "name": "GitHub",
+        "url": "https://github.com/jaytoone/CTX",
+        "api": "https://api.github.com/repos/jaytoone/CTX",
+        "type": "github_api",
+    },
+    {
+        "id": "geeknews",
+        "name": "GeekNews",
+        "url": "https://news.hada.io/topic?id=29124",
+        "api": "https://news.hada.io/topic?id=29124",
+        "type": "html_scrape",
+    },
+    {
+        "id": "hn",
+        "name": "Hacker News",
+        "url": "https://news.ycombinator.com/item?id=48017090",
+        "api": "https://hn.algolia.com/api/v1/items/48017090",
+        "type": "hn_api",
+    },
+    {
+        "id": "devto",
+        "name": "Dev.to",
+        "url": "https://dev.to/jaewon_jang_d63fddcf69ac2/ctx-i-gave-claude-code-a-memory-that-actually-works-45id",
+        "api": "https://dev.to/api/articles/2597891",
+        "type": "devto_api",
+    },
+    {
+        "id": "linkedin",
+        "name": "LinkedIn",
+        "url": "https://linkedin.com/feed/",
+        "api": None,
+        "type": "manual",
+    },
+    {
+        "id": "pypi",
+        "name": "PyPI",
+        "url": "https://pypi.org/project/ctx-retriever/",
+        "api": "https://pypistats.org/api/packages/ctx-retriever/recent",
+        "type": "pypi_api",
+    },
+]
+
+
+def _fetch_channel(ch: dict) -> dict:
+    result = {"id": ch["id"], "name": ch["name"], "url": ch["url"], "type": ch["type"]}
+    if ch["type"] == "manual":
+        result["note"] = "manual check required"
+        return result
+    import urllib.request as _ur
+    try:
+        req = _ur.Request(ch["api"], headers={"User-Agent": "ctx-channel-monitor/1.0"})
+        with _ur.urlopen(req, timeout=6) as r:
+            raw = json.loads(r.read())
+        if ch["type"] == "github_api":
+            result["stars"]    = raw.get("stargazers_count", 0)
+            result["forks"]    = raw.get("forks_count", 0)
+            result["issues"]   = raw.get("open_issues_count", 0)
+            result["watchers"] = raw.get("watchers_count", 0)
+        elif ch["type"] == "hn_api":
+            result["points"]   = raw.get("points") or 0
+            result["comments"] = len(raw.get("children") or [])
+        elif ch["type"] == "devto_api":
+            result["reactions"] = raw.get("public_reactions_count", 0)
+            result["comments"]  = raw.get("comments_count", 0)
+            result["reads"]     = raw.get("page_views_count", 0)
+        elif ch["type"] == "pypi_api":
+            d = raw.get("data", {})
+            result["day"]   = d.get("last_day", 0)
+            result["week"]  = d.get("last_week", 0)
+            result["month"] = d.get("last_month", 0)
+    except Exception as exc:
+        err = str(exc)
+        if "429" in err:
+            result["note"] = "rate limited — retry later"
+        else:
+            result["error"] = err[:80]
+
+    # HTML scrape fallback for channels that don't return JSON
+    if ch["type"] == "html_scrape":
+        result.pop("error", None)
+        try:
+            import re as _re
+            import urllib.request as _urllib_req
+            req = _urllib_req.Request(
+                ch["api"], headers={"User-Agent": "ctx-channel-monitor/1.0"}
+            )
+            with _urllib_req.urlopen(req, timeout=6) as r:
+                html = r.read().decode("utf-8", errors="replace")
+            # GeekNews: point count in <span class="score"> or similar
+            m = _re.search(r'class="[^"]*point[^"]*"[^>]*>\s*(\d+)', html)
+            if not m:
+                m = _re.search(r'(\d+)\s*포인트|(\d+)\s*point', html, _re.I)
+            result["points"] = int(m.group(1) or m.group(2)) if m else 0
+            # Comments: count <li class="comment or similar
+            result["comments"] = len(_re.findall(r'class="[^"]*comment', html))
+        except Exception as exc2:
+            result["error"] = str(exc2)[:80]
+    return result
+
+
+def _fetch_all_channels() -> list:
+    results = []
+    for ch in CHANNELS:
+        results.append(_fetch_channel(ch))
+    return results
+
+
+def _load_posts_draft() -> str:
+    if _POSTS_DRAFT.exists():
+        return _POSTS_DRAFT.read_text()[:8000]
+    return ""
+
+
+@app.get("/api/channel-status")
+async def channel_status(refresh: bool = False):
+    """Live reaction metrics across all CTX distribution channels."""
+    import time
+    now = time.time()
+    if refresh or _CH_CACHE["data"] is None or (now - _CH_CACHE["ts"]) > _CH_TTL:
+        loop = asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, _fetch_all_channels)
+        _CH_CACHE["data"] = data
+        _CH_CACHE["ts"] = now
+    return JSONResponse({
+        "channels":  _CH_CACHE["data"],
+        "cached_at": _CH_CACHE["ts"],
+        "ttl":       _CH_TTL,
+    })
+
+
+@app.get("/api/channel-posts")
+async def channel_posts():
+    """Return post drafts markdown."""
+    loop = asyncio.get_event_loop()
+    content = await loop.run_in_executor(None, _load_posts_draft)
+    return JSONResponse({"content": content})
+
+
+@app.post("/api/channel-log")
+async def channel_log_save(request: Request):
+    """Append a manual reaction update to channel_reactions_log.md."""
+    body = await request.json()
+    entry = f"\n\n## Manual Update — {body.get('date', 'unknown')}\n"
+    for k, v in body.items():
+        if k != "date":
+            entry += f"- **{k}**: {v}\n"
+    try:
+        with _CHANNEL_LOG.open("a") as f:
+            f.write(entry)
         return JSONResponse({"ok": True})
     except Exception as exc:
         return JSONResponse({"ok": False, "error": str(exc)})
