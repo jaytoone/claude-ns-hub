@@ -609,7 +609,8 @@ header {
     <div class="dm-terminal" id="dm-terminal">
       <div class="dm-terminal-hdr">
         <div class="dm-terminal-title">claude @ <span id="dm-term-proj">—</span></div>
-        <button class="dm-terminal-back" onclick="closeTerminal()">← back</button>
+        <button class="dm-terminal-back" onclick="killAndNewSession()" title="Kill session and start fresh">↺ new</button>
+        <button class="dm-terminal-back" style="margin-left:6px" onclick="closeTerminal()">← back</button>
       </div>
       <div id="dm-xterm"></div>
     </div>
@@ -932,9 +933,24 @@ function _sendResize(ws) {
 
 function closeTerminal() {
   if (_termRo) { _termRo.disconnect(); _termRo = null; }
+  // Detach WS without killing — session persists server-side for reconnect
   if (_termWs) { _termWs.close(); _termWs = null; }
   document.getElementById('dm-terminal').classList.remove('show');
   document.getElementById('dm-body').style.display = '';
+}
+
+function killAndNewSession() {
+  const projId = document.getElementById('dm-term-proj').textContent;
+  // Send kill signal before closing
+  if (_termWs && _termWs.readyState === 1) {
+    _termWs.send('\x00kill-session');
+  }
+  // Brief delay to let server ack, then reopen fresh
+  setTimeout(() => {
+    if (_termWs) { _termWs.close(); _termWs = null; }
+    if (_term) _term.clear();
+    openTerminal(projId);
+  }, 300);
 }
 
 async function openDetail(idx) {

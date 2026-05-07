@@ -731,25 +731,37 @@ def _get_project_dir(proj_id: str) -> str | None:
     return None
 
 
+# Persistent session registry: proj_id → PtyProcess (survives WS disconnect)
+_sessions: dict[str, ptyprocess.PtyProcess] = {}
+
+
+def _spawn_claude(proj_id: str) -> ptyprocess.PtyProcess:
+    proj_dir = _get_project_dir(proj_id) or str(Path.home())
+    return ptyprocess.PtyProcessUnicode.spawn(
+        ["claude"],
+        cwd=proj_dir,
+        dimensions=(30, 120),
+        env={**os.environ, "TERM": "xterm-256color", "COLUMNS": "120", "LINES": "30"},
+    )
+
+
 @app.websocket("/ws/session/{proj_id}")
 async def terminal_session(websocket: WebSocket, proj_id: str):
-    """Spawn claude in the project directory, bridge WebSocket ↔ PTY."""
+    """Bridge WebSocket ↔ persistent PTY. Reuses existing session on reconnect."""
     await websocket.accept()
 
-    proj_dir = _get_project_dir(proj_id) or str(Path.home())
-    claude_bin = "claude"  # assumes claude is in PATH
-
-    try:
-        proc = ptyprocess.PtyProcessUnicode.spawn(
-            [claude_bin],
-            cwd=proj_dir,
-            dimensions=(30, 120),
-            env={**os.environ, "TERM": "xterm-256color", "COLUMNS": "120", "LINES": "30"},
-        )
-    except Exception as e:
-        await websocket.send_text(f"\r\n[Failed to start claude: {e}]\r\n")
-        await websocket.close()
-        return
+    # Reuse existing session if alive, otherwise spawn new
+    proc = _sessions.get(proj_id)
+    if proc is None or not proc.isalive():
+        try:
+            proc = _spawn_claude(proj_id)
+            _sessions[proj_id] = proc
+        except Exception as e:
+            await websocket.send_text(f"\r\n[Failed to start claude: {e}]\r\n")
+            await websocket.close()
+            return
+    else:
+        await websocket.send_text("\r\n\x1b[2m[Reconnected to existing session]\x1b[0m\r\n")
 
     loop = asyncio.get_event_loop()
 
@@ -760,8 +772,10 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
                 await websocket.send_text(data)
             except (EOFError, Exception):
                 break
+        # Process died — remove from registry
+        _sessions.pop(proj_id, None)
         try:
-            await websocket.send_text("\r\n[Session ended]\r\n")
+            await websocket.send_text("\r\n\x1b[33m[Session ended]\x1b[0m\r\n")
         except Exception:
             pass
 
@@ -770,7 +784,6 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
             try:
                 msg = await websocket.receive_text()
                 if msg.startswith('\x00resize:'):
-                    # resize: cols,rows
                     parts = msg[8:].split(',')
                     if len(parts) == 2:
                         try:
@@ -778,16 +791,22 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
                             proc.setwinsize(rows, cols)
                         except Exception:
                             pass
+                elif msg == '\x00kill-session':
+                    # Explicit kill requested from UI — terminate and remove
+                    _sessions.pop(proj_id, None)
+                    try:
+                        proc.terminate(force=True)
+                    except Exception:
+                        pass
+                    await websocket.send_text("\r\n\x1b[31m[Session killed]\x1b[0m\r\n")
+                    break
                 else:
                     proc.write(msg)
             except WebSocketDisconnect:
-                break
+                break  # Detach only — do NOT terminate (session persists)
             except Exception:
                 break
-        try:
-            proc.terminate()
-        except Exception:
-            pass
+        # WS closed/detached — leave proc alive in _sessions
 
     await asyncio.gather(pty_to_ws(), ws_to_pty())
 
