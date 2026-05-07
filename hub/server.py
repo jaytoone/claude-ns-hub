@@ -738,7 +738,7 @@ _sessions: dict[str, ptyprocess.PtyProcess] = {}
 def _spawn_claude(proj_id: str) -> ptyprocess.PtyProcess:
     proj_dir = _get_project_dir(proj_id) or str(Path.home())
     return ptyprocess.PtyProcessUnicode.spawn(
-        ["claude"],
+        ["claude", "--dangerously-skip-permissions", "--continue"],
         cwd=proj_dir,
         dimensions=(30, 120),
         env={**os.environ, "TERM": "xterm-256color", "COLUMNS": "120", "LINES": "30"},
