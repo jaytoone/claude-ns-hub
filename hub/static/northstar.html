@@ -112,21 +112,13 @@ header {
 .ns-node-bottom { display: flex; justify-content: space-between; }
 .ns-node-gap { font-family: var(--mono); font-size: 9px; }
 .ns-node-date { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
-/* ── Parent group column ── */
-.ns-group {
-  display: flex; flex-direction: column; gap: 6px;
-  flex-shrink: 0;
+/* SVG connection lines overlay */
+#ns-svg-lines {
+  position: absolute; top: 0; left: 0; pointer-events: none;
+  overflow: visible; z-index: 1;
 }
-.ns-group-label {
-  font-family: var(--mono); font-size: 9px; color: var(--text-dim);
-  text-transform: uppercase; letter-spacing: .06em;
-  padding: 3px 8px; background: var(--panel-soft);
-  border: 1px solid var(--panel-border); border-radius: 4px;
-  text-align: center; white-space: nowrap;
-}
-.ns-group-nodes { display: flex; flex-direction: column; gap: 6px; }
-/* Orphan column (no parent) */
-.ns-group-orphan { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+/* Each node is its own column — no group wrapper */
+.ns-group-orphan, .ns-group-nodes-col { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
 @media (max-width: 640px) {
   .ns-lane-label { width: 48px; font-size: 8px; }
   .ns-node { width: 130px; }
@@ -774,7 +766,8 @@ header {
       </div>
     </header>
     <div class="grid-wrap">
-      <div class="ns-swimlane" id="ns-swimlane">
+      <div class="ns-swimlane" id="ns-swimlane" style="position:relative">
+        <svg id="ns-svg-lines"></svg>
         <div class="ns-lane" id="lane-0">
           <div class="ns-lane-label">Strategic</div>
           <div class="ns-lane-nodes" id="lane-nodes-0"></div>
@@ -1363,22 +1356,13 @@ function render() {
       }
     });
 
-    // Each orphan and each parent-group becomes its own vertical column
-    let html = '';
-    // Orphan column (nodes with no cross-lane parent) — each orphan is its own column
-    orphans.forEach(({p, i}) => {
-      html += `<div class="ns-group-orphan">${nodeCard(p, i)}</div>`;
-    });
-    // Parent group columns
-    Object.entries(parentGroups).forEach(([parId, children]) => {
-      const parProj = projects.find(x => (x.id||x.name) === parId);
-      const parName = parProj?.name || parId;
-      html += `<div class="ns-group">
-        <div class="ns-group-label">${esc(parName)}</div>
-        <div class="ns-group-nodes">${children.map(({p,i}) => nodeCard(p,i)).join('')}</div>
-      </div>`;
-    });
-    el.innerHTML = html;
+    // Every node is its own independent column — connections shown via SVG lines
+    const allInLane = [...orphans];
+    Object.values(parentGroups).forEach(children => allInLane.push(...children));
+    // Sort by position (orphans first, then grouped children near their parent's x position)
+    el.innerHTML = allInLane.map(({p, i}) =>
+      `<div class="ns-group-orphan">${nodeCard(p, i)}</div>`
+    ).join('');
   });
 
   // Click → open detail (or finish connect if in connect mode)
@@ -1454,8 +1438,12 @@ function render() {
       p.layer = l;
       _dragSrc = null; _dragIdx = null;
       render();
+      requestAnimationFrame(() => drawParentLines());
     });
   });
+
+  // Draw parent→child connection lines after DOM settles
+  requestAnimationFrame(() => drawParentLines());
 }
 
 // Inline rename in swimlane
@@ -1509,7 +1497,37 @@ function showInlineInput(placeholder, initial, onConfirm) {
 // Compat stubs (called from context menu)
 function fitGraph() {}
 function resetLayout() { render(); }
-function drawConnections() {}
+function drawConnections() { requestAnimationFrame(() => drawParentLines()); }
+
+function drawParentLines() {
+  const svg = document.getElementById('ns-svg-lines');
+  const swimlane = document.getElementById('ns-swimlane');
+  if (!svg || !swimlane) return;
+  const swimRect = swimlane.getBoundingClientRect();
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lineColor = dark ? 'rgba(200,190,180,0.35)' : 'rgba(100,90,80,0.25)';
+
+  const paths = [];
+  projects.forEach(p => {
+    if (!p.parent) return;
+    const pid = p.id || p.name;
+    const childEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(pid)}"]`);
+    const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(p.parent)}"]`);
+    if (!childEl || !parentEl) return;
+    const cR = childEl.getBoundingClientRect();
+    const pR = parentEl.getBoundingClientRect();
+    const x1 = pR.left + pR.width / 2 - swimRect.left;
+    const y1 = pR.bottom - swimRect.top + 2;
+    const x2 = cR.left + cR.width / 2 - swimRect.left;
+    const y2 = cR.top - swimRect.top - 2;
+    const mid = (y1 + y2) / 2;
+    paths.push(`<path d="M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}"
+      stroke="${lineColor}" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>`);
+  });
+  svg.setAttribute('width', swimlane.offsetWidth);
+  svg.setAttribute('height', swimlane.offsetHeight);
+  svg.innerHTML = paths.join('');
+}
 
 // ── Add project modal ─────────────────────────────────────────────────────────
 function showAddProject() {
