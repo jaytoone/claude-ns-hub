@@ -89,6 +89,8 @@ header {
   border-radius: 0 8px 8px 0; transition: border-color .1s, background .1s;
 }
 .ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
+.ns-node.drop-before { border-left: 2px solid var(--accent); }
+.ns-node.drop-after  { border-right: 2px solid var(--accent); }
 /* ── Project node card ── */
 .ns-node {
   width: 154px; background: var(--panel); border: 1px solid var(--panel-border);
@@ -1406,7 +1408,7 @@ function render() {
     });
   });
 
-  // Drag between lanes
+  // Drag: reorder within lane + move between lanes
   let _dragSrc = null, _dragIdx = null;
   document.querySelectorAll('.ns-node').forEach(node => {
     node.addEventListener('dragstart', e => {
@@ -1417,8 +1419,61 @@ function render() {
     node.addEventListener('dragend', () => {
       node.classList.remove('dragging');
       document.querySelectorAll('.ns-lane-nodes').forEach(l => l.classList.remove('drag-over'));
+      document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
+    });
+
+    // Reorder within same lane: highlight insert position
+    node.addEventListener('dragover', e => {
+      if (_dragIdx == null || +node.dataset.idx === _dragIdx) return;
+      const pSrc = projects[_dragIdx];
+      const pTgt = projects[+node.dataset.idx];
+      if (!pSrc || !pTgt) return;
+      if ((parseInt(pSrc.layer)||0) !== (parseInt(pTgt.layer)||0)) return; // different lane → handled by lane drop
+      e.preventDefault(); e.stopPropagation();
+      document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
+      const rect = node.getBoundingClientRect();
+      const insertBefore = e.clientX < rect.left + rect.width / 2;
+      node.classList.add(insertBefore ? 'drop-before' : 'drop-after');
+    });
+
+    node.addEventListener('drop', async e => {
+      if (_dragIdx == null || +node.dataset.idx === _dragIdx) return;
+      const pSrc = projects[_dragIdx];
+      const pTgt = projects[+node.dataset.idx];
+      if (!pSrc || !pTgt) return;
+      if ((parseInt(pSrc.layer)||0) !== (parseInt(pTgt.layer)||0)) return;
+      e.preventDefault(); e.stopPropagation();
+      document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
+
+      // Compute new position_x order within lane
+      const layer = parseInt(pSrc.layer)||0;
+      const inLane = projects
+        .map((p, i) => ({p, i}))
+        .filter(({p}) => (parseInt(p.layer)||0) === layer)
+        .sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
+      const rect = node.getBoundingClientRect();
+      const insertBefore = e.clientX < rect.left + rect.width / 2;
+      const tgtPos = pTgt.position_x || 0;
+      // Remove src, insert at target position
+      const without = inLane.filter(({p}) => (p.id||p.name) !== (pSrc.id||pSrc.name));
+      const tgtIdx = without.findIndex(({p}) => (p.id||p.name) === (pTgt.id||pTgt.name));
+      const insertAt = insertBefore ? tgtIdx : tgtIdx + 1;
+      without.splice(insertAt, 0, {p: pSrc, i: _dragIdx});
+      // Assign new position_x values and save
+      const saves = without.map(({p}, newPos) => {
+        if ((p.position_x||0) === newPos) return null;
+        p.position_x = newPos;
+        return fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({position_x: newPos}),
+        });
+      }).filter(Boolean);
+      await Promise.all(saves);
+      _dragSrc = null; _dragIdx = null;
+      render();
     });
   });
+
   [0,1].forEach(l => {
     const laneEl = document.getElementById(`lane-nodes-${l}`);
     if (!laneEl) return;
@@ -1433,12 +1488,13 @@ function render() {
       laneEl.classList.remove('drag-over');
       if (_dragIdx == null) return;
       const p = projects[_dragIdx];
-      if (!p || (parseInt(p.layer)||0) === l) return;
+      if (!p || (parseInt(p.layer)||0) === l) return;  // same lane handled by node drop
+      const newPos = projects.filter(x => (parseInt(x.layer)||0) === l).length;
       await fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
         method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({layer: l}),
+        body: JSON.stringify({layer: l, position_x: newPos}),
       });
-      p.layer = l;
+      p.layer = l; p.position_x = newPos;
       _dragSrc = null; _dragIdx = null;
       render();
       requestAnimationFrame(() => drawParentLines());
