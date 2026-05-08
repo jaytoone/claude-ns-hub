@@ -1009,6 +1009,46 @@ async def delete_milestone(proj_id: str, mid: str):
     return JSONResponse({"ok": True, "removed": before - len(proj["milestones"])})
 
 
+@app.post("/api/northstar/create")
+async def create_project(request: Request):
+    """Create a new project node with a minimal north-star.md."""
+    data = await request.json()
+    name = (data.get("name") or "").strip()
+    repo_path = (data.get("repo_path") or "").strip() or None
+    if not name:
+        return JSONResponse({"ok": False, "error": "name required"}, status_code=400)
+    # Use name as folder ID (sanitize)
+    import re as _re_
+    folder_id = _re_.sub(r"[^\w\-]", "_", name)
+    proj_dir = PROJECTS_DIR / folder_id
+    proj_dir.mkdir(parents=True, exist_ok=True)
+    md = proj_dir / "north-star.md"
+    if md.exists():
+        return JSONResponse({"ok": False, "error": "project already exists"}, status_code=409)
+    body = f"# {name} — North Star\n\n## Why this metric\n\n## Strategy\n\n## OKRs\n"
+    frontmatter = {
+        "name": name, "metric": "—", "current": "—", "target": "—",
+        "status": "paused", "deadline": "", "note": "",
+        "milestones": [], "log": [], "connections": [],
+        "layer": 0, "x": None, "y": None,
+    }
+    if repo_path:
+        frontmatter["repo_path"] = repo_path
+    text = "---\n" + _yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False) + "---\n\n" + body
+    md.write_text(text, encoding="utf-8")
+    return JSONResponse({"ok": True, "id": folder_id})
+
+
+@app.delete("/api/northstar/{proj_id}")
+async def delete_project(proj_id: str):
+    """Delete a project node (removes north-star.md)."""
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
+    md.unlink()
+    return JSONResponse({"ok": True})
+
+
 @app.post("/api/northstar/{proj_id}/connect")
 async def add_connection(proj_id: str, request: Request):
     """Add a connection edge between two projects (bidirectional)."""
@@ -1065,7 +1105,7 @@ async def update_layout(proj_id: str, request: Request):
     if not md.exists():
         return JSONResponse({"ok": False}, status_code=404)
     proj = _parse_md_frontmatter(md)
-    for k in ("layer", "parent", "position_x"):
+    for k in ("layer", "parent", "position_x", "x", "y", "repo_path"):
         if k in data:
             proj[k] = data[k]
     _save_project(proj_id, proj)

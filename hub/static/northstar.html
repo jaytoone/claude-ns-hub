@@ -96,10 +96,55 @@ header {
 .ns-graph-btn {
   background: var(--panel); border: 1px solid var(--panel-border); border-radius: 6px;
   padding: 5px 12px; font-family: var(--mono); font-size: 11px; cursor: pointer;
-  color: var(--text-dim); transition: all .12s;
+  color: var(--text-dim); transition: all .12s; white-space: nowrap;
 }
 .ns-graph-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .ns-graph-btn.active { border-color: var(--accent); color: var(--accent-deep); background: var(--accent-soft); }
+
+/* Right-click context menu */
+.ns-ctx-menu {
+  position: fixed; z-index: 1000; display: none;
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(31,28,26,.15);
+  overflow: hidden; min-width: 160px;
+}
+.ns-ctx-menu.show { display: block; }
+.ns-ctx-item {
+  padding: 8px 14px; font-family: var(--mono); font-size: 11px;
+  color: var(--text-soft); cursor: pointer; white-space: nowrap;
+  transition: background .08s;
+}
+.ns-ctx-item:hover { background: var(--panel-soft); color: var(--text); }
+.ns-ctx-item.danger { color: var(--red); }
+.ns-ctx-item.danger:hover { background: var(--red-soft); }
+.ns-ctx-sep { height: 1px; background: var(--panel-border); margin: 2px 0; }
+
+/* Add project modal */
+.ns-add-modal {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(31,28,26,.3); align-items: center; justify-content: center;
+}
+.ns-add-modal.show { display: flex; }
+.ns-add-card {
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 10px; padding: 24px 28px; width: 380px;
+  box-shadow: 0 16px 48px rgba(31,28,26,.18);
+}
+.ns-add-title { font-family: var(--serif); font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 16px; }
+.ns-add-field { margin-bottom: 12px; }
+.ns-add-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing:.06em; color: var(--text-dim); display: block; margin-bottom: 4px; }
+.ns-add-input {
+  width: 100%; box-sizing: border-box; padding: 8px 10px;
+  background: var(--bg-deep); border: 1px solid var(--panel-border); border-radius: 6px;
+  font-family: var(--mono); font-size: 12px; color: var(--text); outline: none;
+  transition: border-color .12s;
+}
+.ns-add-input:focus { border-color: var(--accent); }
+.ns-add-hint { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+.ns-add-btns { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+.ns-add-cancel { background: none; border: 1px solid var(--panel-border); border-radius: 6px; padding: 6px 14px; font-family: var(--mono); font-size: 11px; cursor: pointer; color: var(--text-dim); }
+.ns-add-submit { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 6px; padding: 6px 14px; font-family: var(--mono); font-size: 11px; cursor: pointer; color: var(--accent-deep); }
+.ns-add-submit:hover { background: var(--accent); color: #fff; }
 
 /* Table column styles */
 .col-num  { width: 32px; color: var(--text-dim); font-family: var(--mono); font-size: 11px; text-align: right; padding-right: 6px; }
@@ -692,6 +737,7 @@ header {
         <span class="page-sub">project goals</span>
       </div>
       <div class="header-right">
+        <button class="refresh-btn" onclick="showAddProject()" style="background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)">+ node</button>
         <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
         <span class="updated-at" id="updated-at">—</span>
       </div>
@@ -699,9 +745,38 @@ header {
     <div class="grid-wrap" style="position:relative">
       <div id="ns-graph-canvas"></div>
       <div class="ns-graph-toolbar">
-        <button class="ns-graph-btn" id="btn-connect-mode" onclick="toggleConnectMode()" title="Draw connection between projects">⟷ Connect</button>
-        <button class="ns-graph-btn" onclick="fitGraph()" title="Fit all nodes in view">⊡ Fit</button>
-        <button class="ns-graph-btn" onclick="resetLayout()" title="Re-run force layout">↺ Layout</button>
+        <button class="ns-graph-btn" onclick="fitGraph()">⊡ Fit</button>
+        <button class="ns-graph-btn" onclick="resetLayout()">↺ Layout</button>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);padding:0 4px">Right-click node for actions</span>
+      </div>
+    </div>
+
+    <!-- Right-click context menu -->
+    <div class="ns-ctx-menu" id="ns-ctx-menu">
+      <div class="ns-ctx-item" id="ctx-connect">⟷ Connect from here</div>
+      <div class="ns-ctx-item" id="ctx-rename">✎ Rename</div>
+      <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
+      <div class="ns-ctx-sep"></div>
+      <div class="ns-ctx-item danger" id="ctx-delete">✕ Remove node</div>
+    </div>
+
+    <!-- Add project modal -->
+    <div class="ns-add-modal" id="ns-add-modal" onclick="if(event.target===this)hideAddProject()">
+      <div class="ns-add-card">
+        <div class="ns-add-title">Add project node</div>
+        <div class="ns-add-field">
+          <label class="ns-add-label">Project name</label>
+          <input class="ns-add-input" id="add-proj-name" placeholder="e.g. MyProject" />
+        </div>
+        <div class="ns-add-field">
+          <label class="ns-add-label">Directory path (optional)</label>
+          <input class="ns-add-input" id="add-proj-path" placeholder="/home/desk-1/Project/MyProject" />
+          <div class="ns-add-hint">Claude sessions in this dir will auto-link to this node</div>
+        </div>
+        <div class="ns-add-btns">
+          <button class="ns-add-cancel" onclick="hideAddProject()">Cancel</button>
+          <button class="ns-add-submit" onclick="submitAddProject()">Add node</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1314,10 +1389,16 @@ function render() {
         const nodeId = params.nodes[0];
         const idx = projects.findIndex(p => (p.id||p.name) === nodeId);
         if (idx < 0) return;
-        const newName = prompt('Rename project:', projects[idx].name);
-        if (newName && newName.trim() !== projects[idx].name) {
-          commitRenameById(nodeId, newName.trim());
-        }
+        const newName = prompt('Rename:', projects[idx].name);
+        if (newName && newName.trim() !== projects[idx].name) commitRenameById(nodeId, newName.trim());
+      }
+    });
+
+    // Right-click → context menu
+    _network.on('oncontext', params => {
+      params.event.preventDefault();
+      if (params.nodes.length === 1) {
+        showCtxMenu(params.event.clientX, params.event.clientY, params.nodes[0]);
       }
     });
 
@@ -1360,50 +1441,108 @@ function savePositions() {
   });
 }
 
-function toggleConnectMode() {
-  _connectMode = !_connectMode;
-  const btn = document.getElementById('btn-connect-mode');
-  if (_connectMode) {
-    btn.classList.add('active');
-    btn.textContent = '✕ Cancel connect';
-    _network.setOptions({ manipulation: {
-      enabled: true,
-      addEdge: async (data, callback) => {
-        if (data.from === data.to) { callback(null); return; }
-        const fromProj = projects.find(p => (p.id||p.name) === data.from);
-        const toProj   = projects.find(p => (p.id||p.name) === data.to);
-        if (!fromProj || !toProj) { callback(null); return; }
-        // Save connection
-        await fetch(`/api/northstar/${encodeURIComponent(data.from)}/connect`, {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ target: data.to }),
-        });
-        // Update local data
-        fromProj.connections = [...(fromProj.connections||[]), data.to];
-        toProj.connections   = [...(toProj.connections||[]), data.from];
-        callback(data);
-        toggleConnectMode(); // exit mode after drawing
-      },
-      deleteEdge: async (data, callback) => {
-        for (const edgeId of data.edges) {
-          const [a, b] = edgeId.split('|');
-          if (a && b) {
-            await fetch(`/api/northstar/${encodeURIComponent(a)}/connect/${encodeURIComponent(b)}`, { method: 'DELETE' });
-            const pa = projects.find(p => (p.id||p.name) === a);
-            const pb = projects.find(p => (p.id||p.name) === b);
-            if (pa) pa.connections = (pa.connections||[]).filter(c => c !== b);
-            if (pb) pb.connections = (pb.connections||[]).filter(c => c !== a);
-          }
-        }
-        callback(data);
-      },
-    }});
-  } else {
-    btn.classList.remove('active');
-    btn.textContent = '⟷ Connect';
-    _network.setOptions({ manipulation: { enabled: false } });
-  }
+// ── Context menu ──────────────────────────────────────────────────────────────
+let _ctxNodeId = null;
+let _connectingFrom = null;
+
+function hideCtxMenu() {
+  document.getElementById('ns-ctx-menu').classList.remove('show');
+  _ctxNodeId = null;
 }
+
+function showCtxMenu(x, y, nodeId) {
+  _ctxNodeId = nodeId;
+  const menu = document.getElementById('ns-ctx-menu');
+  menu.style.left = `${Math.min(x, window.innerWidth - 180)}px`;
+  menu.style.top  = `${Math.min(y, window.innerHeight - 160)}px`;
+  menu.classList.add('show');
+}
+
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtxMenu(); _connectingFrom = null; _network?.setOptions({manipulation:{enabled:false}}); } });
+
+// Context menu actions
+document.getElementById('ctx-connect').onclick = () => {
+  if (!_ctxNodeId || !_network) return;
+  _connectingFrom = _ctxNodeId;
+  hideCtxMenu();
+  // Enable addEdge from this specific node
+  _network.setOptions({ manipulation: {
+    enabled: true,
+    addEdge: async (data, callback) => {
+      if (data.from === data.to) { callback(null); _network.setOptions({manipulation:{enabled:false}}); return; }
+      await fetch(`/api/northstar/${encodeURIComponent(data.from)}/connect`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ target: data.to }),
+      });
+      const fp = projects.find(p => (p.id||p.name) === data.from);
+      const tp = projects.find(p => (p.id||p.name) === data.to);
+      if (fp) fp.connections = [...new Set([...(fp.connections||[]), data.to])];
+      if (tp) tp.connections = [...new Set([...(tp.connections||[]), data.from])];
+      callback(data);
+      _network.setOptions({manipulation:{enabled:false}});
+    },
+  }});
+  // Auto-select the source node to start drawing from it
+  _network.selectNodes([_ctxNodeId]);
+};
+
+document.getElementById('ctx-rename').onclick = () => {
+  if (!_ctxNodeId) return;
+  hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === _ctxNodeId);
+  const cur = p?.name || _ctxNodeId;
+  const newName = prompt('Rename project:', cur);
+  if (newName && newName.trim() !== cur) commitRenameById(_ctxNodeId, newName.trim());
+};
+
+document.getElementById('ctx-setpath').onclick = () => {
+  if (!_ctxNodeId) return;
+  hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === _ctxNodeId);
+  const cur = p?.repo_path || '';
+  const newPath = prompt('Set directory path for this project:', cur);
+  if (newPath !== null) {
+    fetch(`/api/northstar/${encodeURIComponent(_ctxNodeId)}/layout`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({repo_path: newPath.trim()}),
+    });
+    if (p) p.repo_path = newPath.trim();
+  }
+};
+
+document.getElementById('ctx-delete').onclick = async () => {
+  if (!_ctxNodeId) return;
+  const p = projects.find(x => (x.id||x.name) === _ctxNodeId);
+  const name = p?.name || _ctxNodeId;
+  if (!confirm(`Remove "${name}" from the graph?\n(This deletes ~/.claude/hub/projects/${_ctxNodeId}/north-star.md)`)) return;
+  hideCtxMenu();
+  await fetch(`/api/northstar/${encodeURIComponent(_ctxNodeId)}`, { method: 'DELETE' });
+  await loadData();
+};
+
+// ── Add project modal ─────────────────────────────────────────────────────────
+function showAddProject() {
+  document.getElementById('add-proj-name').value = '';
+  document.getElementById('add-proj-path').value = '';
+  document.getElementById('ns-add-modal').classList.add('show');
+  setTimeout(() => document.getElementById('add-proj-name').focus(), 100);
+}
+function hideAddProject() { document.getElementById('ns-add-modal').classList.remove('show'); }
+
+async function submitAddProject() {
+  const name = document.getElementById('add-proj-name').value.trim();
+  const path = document.getElementById('add-proj-path').value.trim();
+  if (!name) { document.getElementById('add-proj-name').focus(); return; }
+  hideAddProject();
+  await fetch('/api/northstar/create', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ name, repo_path: path || null }),
+  });
+  await loadData();
+}
+
+function toggleConnectMode() {} // kept for compat — use right-click instead
 
 function fitGraph() { _network?.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } }); }
 
