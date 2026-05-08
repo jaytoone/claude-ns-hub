@@ -768,6 +768,7 @@ header {
         <span class="page-sub">project goals</span>
       </div>
       <div class="header-right">
+        <button class="refresh-btn" id="align-btn" onclick="cycleAlign()" title="Card alignment">⇐⇒</button>
         <button class="refresh-btn" onclick="showAddProject()" style="background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)">+ node</button>
         <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
         <span class="updated-at" id="updated-at">—</span>
@@ -1499,7 +1500,8 @@ function render() {
     });
   });
 
-  // Draw parent→child connection lines after DOM settles
+  // Apply card alignment + draw connection lines
+  applyAlign();
   requestAnimationFrame(() => drawParentLines());
 }
 
@@ -1603,6 +1605,34 @@ function drawParentLines() {
       render();
     });
   });
+}
+
+// ── Card alignment ───────────────────────────────────────────────────────────
+const ALIGN_OPTIONS = [
+  { key: 'left',    justify: 'flex-start',    icon: '⇤',   label: 'Left' },
+  { key: 'center',  justify: 'center',         icon: '⇔',   label: 'Center' },
+  { key: 'right',   justify: 'flex-end',       icon: '⇥',   label: 'Right' },
+  { key: 'spread',  justify: 'space-between',  icon: '⇹',   label: 'Spread' },
+];
+
+function getAlign() { return localStorage.getItem('ns-card-align') || 'left'; }
+
+function applyAlign() {
+  const key = getAlign();
+  const opt = ALIGN_OPTIONS.find(o => o.key === key) || ALIGN_OPTIONS[0];
+  document.querySelectorAll('.ns-lane-nodes').forEach(el => {
+    el.style.justifyContent = opt.justify;
+  });
+  const btn = document.getElementById('align-btn');
+  if (btn) btn.textContent = opt.icon;
+}
+
+function cycleAlign() {
+  const cur = getAlign();
+  const idx = ALIGN_OPTIONS.findIndex(o => o.key === cur);
+  const next = ALIGN_OPTIONS[(idx + 1) % ALIGN_OPTIONS.length];
+  localStorage.setItem('ns-card-align', next.key);
+  applyAlign();
 }
 
 // ── Lane label management ─────────────────────────────────────────────────────
