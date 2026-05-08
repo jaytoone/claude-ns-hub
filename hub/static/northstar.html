@@ -1363,9 +1363,11 @@ function renderMilestoneCreator(projId, milestones) {
                 style="border:1.5px solid ${c.done?'var(--green)':'var(--panel-border)'};
                 background:${c.done?'var(--green)':'var(--panel)'};color:${c.done?'#fff':'var(--text-dim)'}"
               >${c.done?'✓':'○'}</button>
-              <div class="nt-text ${c.done?'':''}  " style="font-size:11.5px;${c.done?'color:var(--text-dim);text-decoration:line-through;':''}"
+              <div class="nt-text" style="font-size:11.5px;${c.done?'color:var(--text-dim);text-decoration:line-through;':''}"
                 contenteditable="true"
+                data-ms-id="${esc(c.id)}"
                 onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
+                onkeydown="handleMsTab(event,'${esc(projId)}','${esc(c.id)}')"
                 onclick="event.stopPropagation()"
               >${esc(c.text)}</div>
               <span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}">${c.claude_ack?'◈':'○'}</span>
@@ -1385,7 +1387,9 @@ function renderMilestoneCreator(projId, milestones) {
             >${m.done?'✓':'○'}</button>
             <div class="nt-text" style="font-weight:${state==='active'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
+              data-ms-id="${esc(m.id)}"
               onclick="event.stopPropagation()"
+              onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
               onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
             >${esc(m.text)}</div>
             <div class="nt-meta">
@@ -1400,6 +1404,49 @@ function renderMilestoneCreator(projId, milestones) {
   </div>`;
 
   el.innerHTML = progressBar + toggleHtml;
+}
+
+// Tab = indent (L0→L1 under previous), Shift+Tab = unindent (L1→L0)
+async function handleMsTab(e, projId, mid) {
+  if (e.key !== 'Tab') return;
+  e.preventDefault();
+  const milestones = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`)
+    .then(r => r.json()).then(d => d.milestones || []);
+  const m = milestones.find(x => x.id === mid);
+  if (!m) return;
+
+  const curLayer = parseInt(m.layer) || 0;
+
+  if (!e.shiftKey && curLayer === 0) {
+    // Indent: find the previous L0 milestone as parent
+    const l0 = milestones.filter(x => (parseInt(x.layer)||0) === 0);
+    const idx = l0.findIndex(x => x.id === mid);
+    if (idx <= 0) return; // no previous L0 to be child of
+    const newParent = l0[idx - 1].id;
+    await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ layer: 1, parent_id: newParent }),
+    });
+    // Expand the parent so child is visible
+    const key = `ms-expand-${projId}`;
+    let exp = {};
+    try { exp = JSON.parse(localStorage.getItem(key) || '{}'); } catch(_) {}
+    exp[newParent] = true;
+    localStorage.setItem(key, JSON.stringify(exp));
+  } else if (e.shiftKey && curLayer === 1) {
+    // Unindent: move back to L0
+    await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ layer: 0, parent_id: null }),
+    });
+  } else { return; }
+
+  await loadMilestones(projId);
+  // Refocus on the same item after re-render
+  setTimeout(() => {
+    const el = document.querySelector(`[data-ms-id="${CSS.escape(mid)}"]`);
+    if (el) { el.focus(); const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); window.getSelection().removeAllRanges(); window.getSelection().addRange(r); }
+  }, 50);
 }
 
 function toggleMsExpand(projId, mid) {
