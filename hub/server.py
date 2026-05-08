@@ -174,6 +174,10 @@ def _load_projects() -> list:
                     data["log"] = norm_log
                     data.setdefault("deadline", "")
                     data.setdefault("links", "")
+                    # Swimlane layout fields
+                    data.setdefault("layer", 0)
+                    data.setdefault("parent", None)
+                    data.setdefault("position_x", 0)
                     # Compute staleness
                     mtime = md.stat().st_mtime
                     data["last_updated"] = mtime
@@ -999,6 +1003,36 @@ async def delete_milestone(proj_id: str, mid: str):
                           and m.get("parent_id") != mid]
     _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "removed": before - len(proj["milestones"])})
+
+
+@app.patch("/api/northstar/{proj_id}/rename")
+async def rename_project(proj_id: str, request: Request):
+    data = await request.json()
+    new_name = data.get("name", "").strip()
+    if not new_name:
+        return JSONResponse({"ok": False, "error": "name required"}, status_code=400)
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    proj["name"] = new_name
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True, "name": new_name})
+
+
+@app.patch("/api/northstar/{proj_id}/layout")
+async def update_layout(proj_id: str, request: Request):
+    """Update swimlane layout fields: layer, parent, position_x."""
+    data = await request.json()
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    for k in ("layer", "parent", "position_x"):
+        if k in data:
+            proj[k] = data[k]
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True})
 
 
 @app.get("/api/northstar/{proj_id}/memo")

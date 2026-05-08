@@ -73,28 +73,57 @@ header {
 .theme-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
 .updated-at { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
 
-/* ── Table view ──────────────────────────────────────────────────────────────── */
-.grid-wrap { padding: 0; overflow-x: auto; }
-.ns-table {
-  width: 100%; border-collapse: collapse; font-size: 13px;
-  background: var(--bg);
+/* ── Swimlane layout ────────────────────────────────────────────────────────── */
+.grid-wrap { padding: 12px 16px; overflow: auto; position: relative; }
+.ns-swimlane { position: relative; min-height: 200px; }
+.ns-conn-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+
+.ns-lane { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.ns-lane-label {
+  width: 72px; flex-shrink: 0; font-family: var(--mono); font-size: 9px;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim);
+  padding-top: 20px; padding-right: 8px; text-align: right;
 }
-.ns-table thead th {
-  padding: 8px 12px; text-align: left; font-family: var(--mono); font-size: 10px;
-  text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim);
-  border-bottom: 2px solid var(--panel-border); background: var(--panel-soft);
-  white-space: nowrap; user-select: none;
+.ns-lane-nodes {
+  flex: 1; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;
+  min-height: 84px; padding: 8px 10px;
+  border-left: 2px solid var(--panel-border);
+  background: var(--panel-soft); border-radius: 0 8px 8px 0;
+  transition: border-color .12s, background .12s;
 }
-.ns-table tbody tr {
-  border-bottom: 1px solid var(--panel-border); cursor: pointer;
-  transition: background .1s;
+.ns-lane-nodes.drag-over {
+  border-left-color: var(--accent); background: var(--accent-soft);
 }
-.ns-table tbody tr:hover { background: var(--panel-soft); }
-.ns-table tbody tr.active { background: var(--accent-soft); }
-.ns-table tbody tr.active td { border-bottom-color: var(--accent); }
-.ns-table td { padding: 9px 12px; vertical-align: middle; }
-.ns-table tbody tr.dragging { opacity: .4; }
-.ns-table tbody tr.drag-over { box-shadow: 0 -2px 0 var(--accent); }
+
+/* ── Project node card ────────────────────────────────────────────────────────── */
+.ns-node {
+  width: 154px; box-sizing: border-box;
+  background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 8px 10px; cursor: pointer;
+  transition: box-shadow .12s, border-color .12s;
+  user-select: none; flex-shrink: 0; position: relative;
+}
+.ns-node:hover { box-shadow: 0 2px 10px rgba(31,28,26,.10); }
+.ns-node.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.ns-node.dragging { opacity: .35; }
+
+.ns-node-top { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+.ns-node-sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ns-node-name {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  outline: none; border-radius: 2px;
+}
+.ns-node-name:focus { background: var(--bg-deep); padding: 0 2px; text-overflow: clip; }
+.ns-node-sess-dot { font-size: 9px; font-family: var(--mono); color: var(--text-dim); flex-shrink: 0; }
+.ns-node-sess-dot.live { color: var(--green); }
+
+.ns-node-bar-wrap { height: 3px; background: var(--panel-border); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
+.ns-node-bar { height: 100%; border-radius: 2px; transition: width .3s; }
+
+.ns-node-bottom { display: flex; justify-content: space-between; align-items: center; }
+.ns-node-gap { font-family: var(--mono); font-size: 9px; }
+.ns-node-date { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
 
 /* Table column styles */
 .col-num  { width: 32px; color: var(--text-dim); font-family: var(--mono); font-size: 11px; text-align: right; padding-right: 6px; }
@@ -131,21 +160,10 @@ header {
 .status-label.paused   { color: var(--text-dim); }
 
 @media (max-width: 640px) {
-  .ns-table thead th.hide-mobile, .ns-table td.hide-mobile { display: none; }
-  /* Fit remaining cols into mobile viewport without horizontal scroll */
-  .grid-wrap { overflow-x: hidden; }
-  .ns-table { table-layout: fixed; width: 100%; min-width: 0; }
-  .col-num  { width: 24px; padding: 8px 3px 8px 8px; }
-  .col-drag { width: 18px; padding: 8px 2px; }
-  .col-name { min-width: 0; width: auto; }
-  .col-status { width: 68px; }
-  .col-progress { width: 100px; }
-  .col-date { width: 44px; }
-  .progress-num { display: none; }  /* hide % label, keep bar */
-  .ns-table td, .ns-table thead th { padding: 8px 5px; }
-  .col-name .row-name { font-size: 13px; }
-  .status-label { font-size: 9px; }
-  .row-status-dot { width: 6px; height: 6px; margin-right: 3px; }
+  .grid-wrap { padding: 8px 10px; }
+  .ns-lane-label { width: 50px; font-size: 8px; }
+  .ns-node { width: 130px; }
+  .ns-node-name { font-size: 12px; }
 }
 
 /* ── Milestone Creator ────────────────────────────────────────────────────── */
@@ -703,24 +721,21 @@ header {
       </div>
     </header>
     <div class="grid-wrap">
-      <table class="ns-table" id="ns-table">
-        <thead>
-          <tr>
-            <th class="col-num">#</th>
-            <th class="col-drag"></th>
-            <th class="col-cat hide-mobile">Category</th>
-            <th>Project</th>
-            <th class="col-status">Status</th>
-            <th class="col-sess hide-mobile">Session</th>
-            <th class="col-metric hide-mobile">Metric</th>
-            <th class="col-progress">Progress</th>
-            <th class="col-gap hide-mobile">Gap</th>
-            <th class="col-step hide-mobile">Active step</th>
-            <th class="col-date">Updated</th>
-          </tr>
-        </thead>
-        <tbody id="grid"></tbody>
-      </table>
+      <div class="ns-swimlane" id="ns-swimlane">
+        <svg class="ns-conn-svg" id="ns-conn-svg"></svg>
+        <div class="ns-lane" id="lane-0">
+          <div class="ns-lane-label">Strategic</div>
+          <div class="ns-lane-nodes" id="lane-nodes-0"></div>
+        </div>
+        <div class="ns-lane" id="lane-1">
+          <div class="ns-lane-label">Domain</div>
+          <div class="ns-lane-nodes" id="lane-nodes-1"></div>
+        </div>
+        <div class="ns-lane" id="lane-2">
+          <div class="ns-lane-label">Execution</div>
+          <div class="ns-lane-nodes" id="lane-nodes-2"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1022,9 +1037,8 @@ function rowHtml(p, i) {
   </tr>`;
 }
 
-// ── Table render ──────────────────────────────────────────────────────────────
+// ── Swimlane render ───────────────────────────────────────────────────────────
 
-let _rowOrder = null; // persisted drag-drop order
 let _sessionStatus = {}; // proj_id → "active"|"idle:N"|"none"
 
 // ── Milestone Creator ─────────────────────────────────────────────────────────
@@ -1163,6 +1177,8 @@ async function _openWithTerminal(origIdx, projId) {
   openTerminal(projId);
 }
 
+// (getRowOrder / orderedProjects removed — swimlane renders by layer, not row order)
+
 async function refreshSessionStatus() {
   try {
     const r = await fetch('/api/northstar/sessions');
@@ -1182,129 +1198,178 @@ function sessCell(projId) {
   return `<span class="sess-dot sess-none"><span class="sess-indicator"></span>—</span>`;
 }
 
-function getRowOrder() {
-  if (_rowOrder && _rowOrder.length === projects.length) return _rowOrder;
-  try {
-    const saved = JSON.parse(localStorage.getItem('ns-row-order') || 'null');
-    if (saved && saved.length === projects.length) { _rowOrder = saved; return _rowOrder; }
-  } catch(_) {}
-  _rowOrder = projects.map((_, i) => i);
-  return _rowOrder;
-}
-
-function orderedProjects() {
-  return getRowOrder().map(i => projects[i]);
+function nodeHtml(p, idx) {
+  const pct = Math.round(calcPct(p.current, p.target) * 100);
+  const color = statusColor(p.status);
+  const dotColor = statusColor(p.status || 'paused');
+  const lastLog = p.log?.length ? p.log[p.log.length - 1] : null;
+  const logDate = lastLog ? (lastLog.date || '').slice(5) : '—';
+  let gapText = '', gapColor = 'var(--text-dim)';
+  if (p.current && p.current !== '—' && p.target && p.target !== '—') {
+    const c = parseNum(p.current), t = parseNum(p.target);
+    if (c !== null && t !== null) {
+      const rem = t - c;
+      gapText = rem > 0 ? `${formatGapNum(rem)}${p.unit||''}` : 'done';
+      gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
+    }
+  }
+  const sKey = _sessionStatus[p.id || p.name];
+  const sessClass = sKey === 'active' ? 'live' : '';
+  const sessDot = sKey === 'active' ? '●' : sKey?.startsWith('idle') ? '○' : '·';
+  const active = idx === activeIdx ? 'active' : '';
+  return `<div class="ns-node ${active}" data-proj-idx="${idx}" data-proj-id="${esc(p.id||p.name)}" data-layer="${p.layer||0}" draggable="true">
+    <div class="ns-node-top">
+      <span class="ns-node-sdot" style="background:${dotColor}"></span>
+      <span class="ns-node-name" contenteditable="false"
+        ondblclick="startRename(this,'${esc(p.id||p.name)}')"
+        onblur="commitRename(this,'${esc(p.id||p.name)}')"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+        >${esc(p.name)}</span>
+      <span class="ns-node-sess-dot ${sessClass}" title="Click for terminal"
+        onclick="event.stopPropagation();_openWithTerminal(${idx},'${esc(p.id||p.name)}')">${sessDot}</span>
+    </div>
+    <div class="ns-node-bar-wrap">
+      <div class="ns-node-bar" style="width:${pct}%;background:${color}"></div>
+    </div>
+    <div class="ns-node-bottom">
+      <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText || `${pct}%`)}</span>
+      <span class="ns-node-date">${esc(logDate)}</span>
+    </div>
+  </div>`;
 }
 
 function render() {
-  const grid = document.getElementById('grid');
   if (!projects.length) {
-    grid.innerHTML = `<tr><td colspan="9" class="empty-state">
-      <div class="empty-title">No projects</div>
-      <div>Add a north-star.md to ~/.claude/hub/projects/&lt;name&gt;/</div>
-    </td></tr>`;
+    document.getElementById('lane-nodes-0').innerHTML =
+      `<div class="empty-state"><div class="empty-title">No projects</div><div>Add north-star.md to ~/.claude/hub/projects/</div></div>`;
+    [1,2].forEach(l => { document.getElementById(`lane-nodes-${l}`).innerHTML = ''; });
     return;
   }
-  const order = getRowOrder();
-  grid.innerHTML = order.map((origIdx, rowNum) => {
-    const p = projects[origIdx];
-    const displayActive = origIdx === activeIdx ? 'active' : '';
-    // Re-render with display row index but original project index
-    const statusKey = p.status || 'paused';
-    const pct = calcPct(p.current, p.target);
-    const pctNum = Math.round(pct * 100);
-    const color = statusColor(p.status);
-    const dotColor = statusColor(statusKey);
 
-    let gapText = '—', gapColor = 'var(--text-dim)';
-    if (p.current && p.current !== '—' && p.target && p.target !== '—') {
-      const c = parseNum(p.current), t = parseNum(p.target);
-      if (c !== null && t !== null) {
-        const rem = t - c;
-        const u = p.unit || '';
-        gapText = rem > 0 ? `${formatGapNum(rem)}${u}` : 'done';
-        gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
-      }
-    }
-    const activeMilestone = p.milestones.find(m => typeof m === 'object' ? !m.done : true);
-    let stepText = activeMilestone
-      ? (typeof activeMilestone === 'string' ? activeMilestone : (activeMilestone.text || ''))
-      : '';
-    stepText = (stepText || '').replace(/^Phase\s+\d+\s+v?\d*[a-z]?:\s*/i, '').trim();
-    if (stepText.length > 34) stepText = stepText.slice(0, 32) + '…';
-    const lastLog = p.log && p.log.length ? p.log[p.log.length - 1] : null;
-    const logDate = lastLog ? (lastLog.date || '').slice(5) : '—';
+  // Group by layer (0/1/2)
+  const lanes = {0: [], 1: [], 2: []};
+  projects.forEach((p, i) => {
+    const layer = Math.min(2, Math.max(0, parseInt(p.layer) || 0));
+    lanes[layer].push({p, i});
+  });
+  // Sort within lane by position_x
+  [0,1,2].forEach(l => lanes[l].sort((a,b) => (a.p.position_x||0) - (b.p.position_x||0)));
 
-    const cat = p.category || '';
-    const catHtml = cat ? `<span class="cat-pill">${esc(cat)}</span>` : '<span style="color:var(--text-dim)">—</span>';
+  [0,1,2].forEach(l => {
+    const el = document.getElementById(`lane-nodes-${l}`);
+    if (!lanes[l].length) { el.innerHTML = ''; return; }
+    el.innerHTML = lanes[l].map(({p, i}) => nodeHtml(p, i)).join('');
+  });
 
-    return `<tr class="${displayActive}" data-orig-idx="${origIdx}" draggable="true">
-      <td class="col-num">${rowNum + 1}</td>
-      <td class="col-drag"><span class="drag-handle">⠿</span></td>
-      <td class="col-cat hide-mobile">${catHtml}</td>
-      <td class="col-name"><span class="row-name">${esc(p.name)}</span></td>
-      <td class="col-status"><span class="status-label ${statusKey}">
-        <span class="row-status-dot" style="background:${dotColor}"></span>${STATUS_LABEL[statusKey] || statusKey}
-      </span></td>
-      <td class="col-sess hide-mobile" title="Click to open terminal" style="cursor:pointer" onclick="event.stopPropagation();_openWithTerminal(${origIdx},'${esc(p.id||p.name)}')">${sessCell(p.id || p.name)}</td>
-      <td class="col-metric hide-mobile" title="${esc(p.metric || '')}">${esc((p.metric || '—').substring(0, 26))}</td>
-      <td class="col-progress">
-        <div class="progress-wrap">
-          <div class="progress-bar"><div class="progress-fill" style="width:${pctNum}%;background:${color}"></div></div>
-          <span class="progress-num">${pctNum}%</span>
-        </div>
-      </td>
-      <td class="col-gap hide-mobile" style="color:${gapColor}">${esc(gapText)}</td>
-      <td class="col-step hide-mobile">${stepText ? `▶ ${esc(stepText)}` : '<span style="color:var(--text-dim)">—</span>'}</td>
-      <td class="col-date">${esc(logDate)}</td>
-    </tr>`;
-  }).join('');
-
-  // Click to open detail
-  grid.querySelectorAll('tr[data-orig-idx]').forEach(row => {
-    row.addEventListener('click', e => {
-      if (e.target.classList.contains('drag-handle')) return;
-      const i = +row.dataset.origIdx;
-      if (activeIdx === i) { closeDetail(); return; }
-      activeIdx = i;
+  // Wire up click → detail
+  document.querySelectorAll('.ns-node').forEach(node => {
+    node.addEventListener('click', e => {
+      if (e.target.classList.contains('ns-node-name') && node.querySelector('.ns-node-name').getAttribute('contenteditable') === 'true') return;
+      if (e.target.classList.contains('ns-node-sess-dot')) return;
+      const idx = +node.dataset.projIdx;
+      if (activeIdx === idx) { closeDetail(); return; }
+      activeIdx = idx;
       render();
-      openDetail(i);
+      openDetail(idx);
     });
   });
 
-  // Drag-drop reorder
-  let dragSrc = null;
-  grid.querySelectorAll('tr[data-orig-idx]').forEach(row => {
-    row.addEventListener('dragstart', e => {
-      dragSrc = row;
-      row.classList.add('dragging');
+  // Wire up drag (within lane + cross-lane)
+  let _dragNode = null, _dragIdx = null, _dragLayer = null;
+  document.querySelectorAll('.ns-node').forEach(node => {
+    node.addEventListener('dragstart', e => {
+      _dragNode = node;
+      _dragIdx = +node.dataset.projIdx;
+      _dragLayer = +node.dataset.layer;
+      node.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
     });
-    row.addEventListener('dragend', () => {
-      row.classList.remove('dragging');
-      grid.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
-    });
-    row.addEventListener('dragover', e => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      grid.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
-      if (row !== dragSrc) row.classList.add('drag-over');
-    });
-    row.addEventListener('drop', e => {
-      e.preventDefault();
-      if (!dragSrc || dragSrc === row) return;
-      // Recompute order: move dragSrc before row
-      const allRows = [...grid.querySelectorAll('tr[data-orig-idx]')];
-      const fromIdx = allRows.indexOf(dragSrc);
-      const toIdx   = allRows.indexOf(row);
-      const order   = getRowOrder();
-      const [moved] = order.splice(fromIdx, 1);
-      order.splice(toIdx, 0, moved);
-      _rowOrder = order;
-      localStorage.setItem('ns-row-order', JSON.stringify(order));
-      render();
+    node.addEventListener('dragend', () => {
+      node.classList.remove('dragging');
+      document.querySelectorAll('.ns-lane-nodes').forEach(l => l.classList.remove('drag-over'));
     });
   });
+
+  [0,1,2].forEach(l => {
+    const laneEl = document.getElementById(`lane-nodes-${l}`);
+    laneEl.addEventListener('dragover', e => {
+      e.preventDefault();
+      document.querySelectorAll('.ns-lane-nodes').forEach(x => x.classList.remove('drag-over'));
+      laneEl.classList.add('drag-over');
+    });
+    laneEl.addEventListener('dragleave', () => laneEl.classList.remove('drag-over'));
+    laneEl.addEventListener('drop', async e => {
+      e.preventDefault();
+      laneEl.classList.remove('drag-over');
+      if (_dragIdx === null) return;
+      const p = projects[_dragIdx];
+      if (!p) return;
+      // Count nodes in this lane (for position_x)
+      const nodesInLane = lanes[l].filter(x => x.i !== _dragIdx).length;
+      await fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({layer: l, position_x: nodesInLane}),
+      });
+      // Update local data immediately
+      p.layer = l; p.position_x = nodesInLane;
+      _dragNode = null; _dragIdx = null;
+      render();
+      drawConnections();
+    });
+  });
+
+  drawConnections();
+}
+
+function drawConnections() {
+  const svg = document.getElementById('ns-conn-svg');
+  if (!svg) return;
+  const swimlane = document.getElementById('ns-swimlane');
+  const containerRect = swimlane.getBoundingClientRect();
+
+  const paths = [];
+  projects.forEach((p, i) => {
+    if (!p.parent) return;
+    const parentIdx = projects.findIndex(x => (x.id||x.name) === p.parent);
+    if (parentIdx < 0) return;
+    const childEl = document.querySelector(`.ns-node[data-proj-idx="${i}"]`);
+    const parentEl = document.querySelector(`.ns-node[data-proj-idx="${parentIdx}"]`);
+    if (!childEl || !parentEl) return;
+    const cR = childEl.getBoundingClientRect();
+    const pR = parentEl.getBoundingClientRect();
+    const x1 = pR.left + pR.width / 2 - containerRect.left;
+    const y1 = pR.bottom - containerRect.top;
+    const x2 = cR.left + cR.width / 2 - containerRect.left;
+    const y2 = cR.top - containerRect.top;
+    const mid = (y1 + y2) / 2;
+    paths.push(`<path d="M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}"
+      stroke="var(--panel-border)" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>`);
+  });
+  svg.innerHTML = paths.join('');
+}
+
+// ── Inline rename ─────────────────────────────────────────────────────────────
+function startRename(el, projId) {
+  el.setAttribute('contenteditable', 'true');
+  el.focus();
+  // Select all text
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+}
+
+async function commitRename(el, projId) {
+  el.setAttribute('contenteditable', 'false');
+  const newName = el.textContent.trim();
+  if (!newName) { el.textContent = projId; return; }
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/rename`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name: newName}),
+  });
+  // Update local data
+  const p = projects.find(x => (x.id||x.name) === projId);
+  if (p) p.name = newName;
 }
 
 // ── Detail modal (centered overlay) ──────────────────────────────────────────
