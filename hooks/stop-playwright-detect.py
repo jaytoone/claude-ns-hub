@@ -248,7 +248,14 @@ def run_ui_check(url: str) -> list[dict]:
     results = []
     try:
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
+            browser = pw.chromium.launch(
+                headless=True,
+                args=[
+                    '--no-sandbox', '--disable-setuid-sandbox',
+                    '--disable-gpu', '--headless=new',
+                    '--disable-dev-shm-usage',
+                ]
+            )
             page = browser.new_page()
             errors: list[str] = []
             page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)

@@ -77,7 +77,10 @@ def run_playwright_checks(base: str, screenshot: bool = False) -> list[dict]:
     results = []
     try:
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
+            browser = pw.chromium.launch(
+                headless=True,
+                args=['--no-sandbox','--disable-setuid-sandbox','--disable-gpu','--headless=new','--disable-dev-shm-usage'],
+            )
             ctx = browser.new_context(viewport={"width": 1280, "height": 900})
             page = ctx.new_page()
 
