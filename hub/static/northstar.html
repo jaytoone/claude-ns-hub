@@ -1375,14 +1375,21 @@ function render() {
       if (_linkingChild && _linkingChild !== node.dataset.pid) {
         const childPid = _linkingChild;
         const parentPid = node.dataset.pid;
+        const childP  = projects.find(x => (x.id||x.name) === childPid);
+        const parentP = projects.find(x => (x.id||x.name) === parentPid);
+        // Block same-layer linking
+        if (childP && parentP && (parseInt(childP.layer)||0) === (parseInt(parentP.layer)||0)) {
+          const banner = document.getElementById('ns-link-banner');
+          if (banner) { banner.textContent = 'Same lane — move to a different lane first'; setTimeout(cancelLink, 1800); }
+          return;
+        }
         cancelLink();
-        const p = projects.find(x => (x.id||x.name) === childPid);
-        if (p) {
+        if (childP) {
           await fetch(`/api/northstar/${encodeURIComponent(childPid)}/layout`, {
             method:'PATCH', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({parent: parentPid}),
           });
-          p.parent = parentPid;
+          childP.parent = parentPid;
           render();
         }
         return;
@@ -1521,12 +1528,31 @@ function drawParentLines() {
     const x2 = cR.left + cR.width / 2 - swimRect.left;
     const y2 = cR.top - swimRect.top - 2;
     const mid = (y1 + y2) / 2;
-    paths.push(`<path d="M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}"
-      stroke="${lineColor}" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>`);
+    const d = `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`;
+    // Visible dashed line
+    paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>`);
+    // Invisible wide hit area for click-to-remove
+    paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${pid}" style="cursor:pointer"/>`);
   });
   svg.setAttribute('width', swimlane.offsetWidth);
   svg.setAttribute('height', swimlane.offsetHeight);
   svg.innerHTML = paths.join('');
+
+  // Click hit area → remove parent link
+  svg.querySelectorAll('.ns-line-hit').forEach(el => {
+    el.addEventListener('click', async e => {
+      e.stopPropagation();
+      const childPid = el.dataset.child;
+      const p = projects.find(x => (x.id||x.name) === childPid);
+      if (!p) return;
+      await fetch(`/api/northstar/${encodeURIComponent(childPid)}/layout`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({parent: null}),
+      });
+      p.parent = null;
+      render();
+    });
+  });
 }
 
 // ── Add project modal ─────────────────────────────────────────────────────────
