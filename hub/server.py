@@ -180,6 +180,7 @@ def _load_projects() -> list:
                     data.setdefault("position_x", 0)
                     data.setdefault("x", None)
                     data.setdefault("y", None)
+                    data.setdefault("stage", "unassigned")  # lifecycle stage
                     if not isinstance(data.get("connections"), list):
                         data["connections"] = []
                     # Compute staleness
@@ -1105,7 +1106,7 @@ async def update_layout(proj_id: str, request: Request):
     if not md.exists():
         return JSONResponse({"ok": False}, status_code=404)
     proj = _parse_md_frontmatter(md)
-    for k in ("layer", "parent", "position_x", "x", "y", "repo_path"):
+    for k in ("layer", "parent", "position_x", "x", "y", "repo_path", "stage"):
         if k in data:
             proj[k] = data[k]
     _save_project(proj_id, proj)

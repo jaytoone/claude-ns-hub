@@ -110,10 +110,31 @@ header {
 .ns-node {
   width: 154px; background: var(--panel); border: 1px solid var(--panel-border);
   border-radius: 8px; padding: 8px 10px; cursor: pointer; user-select: none;
-  transition: box-shadow .12s, border-color .12s; flex-shrink: 0;
+  transition: box-shadow .12s, border-color .12s, background .12s; flex-shrink: 0;
+  position: relative;
 }
 .ns-node:hover { box-shadow: 0 2px 10px rgba(31,28,26,.10); }
 .ns-node.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+/* Stage variants */
+.ns-node.stage-assigned    { border: 2px solid var(--blue); }
+.ns-node.stage-focused     { border: 2px solid var(--accent); background: var(--accent-soft); animation: focus-pulse 2s ease-in-out infinite; }
+.ns-node.stage-commercialized { border: 2px solid var(--green); background: var(--green-soft); }
+@keyframes focus-pulse { 0%,100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px rgba(204,120,92,.2); } }
+/* Stage badge (top-left, absolute) */
+.ns-stage-badge {
+  position: absolute; top: -1px; left: -1px;
+  font-family: var(--mono); font-size: 8px; font-weight: 600; letter-spacing: .04em;
+  padding: 1px 5px; border-radius: 8px 0 4px 0;
+}
+.ns-stage-badge.focused       { background: var(--accent); color: #fff; }
+.ns-stage-badge.commercialized { background: var(--green);  color: #fff; }
+/* Terminal button in card footer */
+.ns-node-term {
+  font-family: var(--mono); font-size: 9px; color: var(--text-dim); cursor: pointer;
+  padding: 0 3px; border-radius: 3px; transition: background .1s, color .1s;
+  flex-shrink: 0;
+}
+.ns-node-term:hover { background: var(--accent-soft); color: var(--accent-deep); }
 .ns-node-top { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
 .ns-node-sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .ns-node-name {
@@ -815,11 +836,20 @@ header {
       <!-- Node actions (shown when right-clicking a node) -->
       <div id="ctx-node-items">
         <div class="ns-ctx-item" id="ctx-rename">✎ Rename</div>
+        <div class="ns-ctx-item" id="ctx-stage">◈ Set stage</div>
         <div class="ns-ctx-item" id="ctx-link-parent">⊂ Link to parent (click parent)</div>
         <div class="ns-ctx-item" id="ctx-unlink-parent">⊄ Disconnect parent link</div>
         <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
         <div class="ns-ctx-sep"></div>
         <div class="ns-ctx-item danger" id="ctx-delete">✕ Remove node</div>
+      </div>
+      <!-- Stage submenu -->
+      <div id="ctx-stage-items" style="display:none">
+        <div class="ns-ctx-item" onclick="setStage('unassigned')">○ Unassigned</div>
+        <div class="ns-ctx-item" onclick="setStage('assigned')" style="color:var(--blue)">◉ Assigned</div>
+        <div class="ns-ctx-item" onclick="setStage('focused')" style="color:var(--accent)">● Focused</div>
+        <div class="ns-ctx-item" onclick="setStage('commercialized')" style="color:var(--green)">✓ Commercialized</div>
+        <div class="ns-ctx-item" onclick="document.getElementById('ctx-stage-items').style.display='none';document.getElementById('ctx-node-items').style.display=''">← Back</div>
       </div>
     </div>
 
@@ -1323,8 +1353,13 @@ function nodeCard(p, idx) {
   const sessDot = sKey === 'active' ? '●' : '·';
   const sessClass = sKey === 'active' ? 'live' : '';
   const active = idx === activeIdx ? 'active' : '';
+  const stage = p.stage || 'unassigned';
+  const stageClass = stage !== 'unassigned' ? `stage-${stage}` : '';
+  const stageBadge = (stage === 'focused' || stage === 'commercialized')
+    ? `<span class="ns-stage-badge ${stage}">${stage === 'focused' ? 'FOCUS' : 'LIVE'}</span>` : '';
   const pid = esc(p.id||p.name);
-  return `<div class="ns-node ${active}" data-idx="${idx}" data-pid="${pid}" draggable="true">
+  return `<div class="ns-node ${active} ${stageClass}" data-idx="${idx}" data-pid="${pid}" draggable="true">
+    ${stageBadge}
     <div class="ns-node-top">
       <span class="ns-node-sdot" style="background:${dotColor}"></span>
       <span class="ns-node-name" ondblclick="renameNode(this,'${pid}')"
@@ -1337,6 +1372,8 @@ function nodeCard(p, idx) {
     <div class="ns-node-bottom">
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
       <span class="ns-node-date">${esc(logDate)}</span>
+      <span class="ns-node-term" title="Open Claude session"
+        onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_</span>
     </div>
   </div>`;
 }
@@ -1360,8 +1397,12 @@ function render() {
     if (!el) return;
     if (!lanes[l].length) { el.innerHTML = ''; return; }
 
-    // Sort by position_x — authoritative display order
-    lanes[l].sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
+    // Sort: focused first, then by position_x
+    const STAGE_ORDER = {focused:0, assigned:1, commercialized:2, unassigned:3};
+    lanes[l].sort((a, b) => {
+      const sd = (STAGE_ORDER[a.p.stage||'unassigned']||3) - (STAGE_ORDER[b.p.stage||'unassigned']||3);
+      return sd !== 0 ? sd : (a.p.position_x||0) - (b.p.position_x||0);
+    });
 
     el.innerHTML = lanes[l].map(({p, i}) =>
       `<div class="ns-group-orphan">${nodeCard(p, i)}</div>`
@@ -1742,6 +1783,27 @@ function cancelLink() {
   _linkingChild = null;
   const b = document.getElementById('ns-link-banner');
   if (b) b.style.display = 'none';
+}
+
+document.getElementById('ctx-stage').onclick = () => {
+  // Show stage submenu
+  document.getElementById('ctx-node-items').style.display = 'none';
+  document.getElementById('ctx-stage-items').style.display = '';
+};
+
+async function setStage(stageName) {
+  document.getElementById('ctx-stage-items').style.display = 'none';
+  document.getElementById('ctx-node-items').style.display = '';
+  hideCtxMenu();
+  const pid = _ctxNodeId; if (!pid) return;
+  const p = projects.find(x => (x.id||x.name) === pid);
+  if (!p) return;
+  await fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({stage: stageName}),
+  });
+  p.stage = stageName;
+  render();
 }
 
 document.getElementById('ctx-link-parent').onclick = () => {
