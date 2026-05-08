@@ -74,22 +74,40 @@ def jaccard_similarity(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
+# Commit prefixes/words that strongly signal task completion
+_DONE_SIGNALS = {
+    'feat', 'fix', 'done', 'complete', 'completed', 'finish', 'finished',
+    'ship', 'shipped', 'implement', 'implemented', 'add', 'added',
+    'close', 'closed', 'resolve', 'resolved', 'pass', 'passed',
+    'success', '✓', 'achieve', 'achieve', 'deploy', 'deployed',
+}
+
+
+def _commit_implies_done(commit_text: str) -> bool:
+    """Return True if the commit message implies a task was completed."""
+    tokens = set(re.sub(r'[^\w✓]', ' ', commit_text.lower()).split())
+    return bool(tokens & _DONE_SIGNALS)
+
+
 def try_ack_milestones(proj_id: str, commits: list[str]) -> int:
-    """Check unacked milestones against commit text; write claude_ack if match >= 0.55."""
+    """Check milestones against commit text.
+    - claude_ack written when match >= 0.55
+    - done=True also set when match >= 0.65 AND commit implies completion
+    """
     import urllib.request
     now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M")
     acked = 0
     try:
-        # Fetch unacked milestones
         req = urllib.request.Request(f"{HUB_API}/api/northstar/{proj_id}/milestones")
         with urllib.request.urlopen(req, timeout=3) as resp:
             data = json.loads(resp.read())
-        milestones = [m for m in data.get("milestones", []) if not m.get("claude_ack")]
+        # Process all undone milestones (acked or not — re-check for auto-done)
+        milestones = [m for m in data.get("milestones", []) if not m.get("done")]
         if not milestones:
             return 0
 
-        # Combine commit text for matching
         corpus = " ".join(commits)
+        commits_imply_done = _commit_implies_done(corpus)
 
         for m in milestones:
             mid = m.get("id", "")
@@ -97,18 +115,30 @@ def try_ack_milestones(proj_id: str, commits: list[str]) -> int:
             if not mid or not text:
                 continue
             score = jaccard_similarity(text, corpus)
-            if score >= 0.55:
-                # Write claude_ack timestamp
-                payload = json.dumps({"claude_ack": now_iso}).encode()
-                patch_req = urllib.request.Request(
-                    f"{HUB_API}/api/northstar/{proj_id}/milestones/{mid}",
-                    data=payload,
-                    headers={"Content-Type": "application/json"},
-                    method="PATCH",
-                )
-                with urllib.request.urlopen(patch_req, timeout=3) as r:
-                    json.loads(r.read())
-                acked += 1
+            if score < 0.55:
+                continue
+
+            # Build patch payload
+            patch = {}
+            if not m.get("claude_ack"):
+                patch["claude_ack"] = now_iso
+            # Auto-mark done if strong match + commit signals completion
+            if score >= 0.65 and commits_imply_done:
+                patch["done"] = True
+
+            if not patch:
+                continue
+
+            payload = json.dumps(patch).encode()
+            patch_req = urllib.request.Request(
+                f"{HUB_API}/api/northstar/{proj_id}/milestones/{mid}",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="PATCH",
+            )
+            with urllib.request.urlopen(patch_req, timeout=3) as r:
+                json.loads(r.read())
+            acked += 1
     except Exception:
         pass
     return acked
