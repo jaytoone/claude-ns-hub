@@ -54,9 +54,12 @@ main{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;padding:20px 24px;max
   </div>
 </header>
 <script>
-// Cross-origin (port 8787): can't read hub's localStorage. Theme pushed via postMessage.
-if (matchMedia('(prefers-color-scheme:dark)').matches)
-  document.documentElement.setAttribute('data-theme','dark');
+// Theme priority: ?theme= URL param (from hub) > system pref > light
+(function(){
+  const p = new URLSearchParams(location.search).get('theme');
+  const s = p === 'dark' || (!p && matchMedia('(prefers-color-scheme:dark)').matches) ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', s);
+})();
 window.addEventListener('message', e => {
   if (e.data?.type === 'hub-theme')
     document.documentElement.setAttribute('data-theme', e.data.value);

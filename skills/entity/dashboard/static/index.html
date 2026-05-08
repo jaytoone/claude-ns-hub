@@ -204,10 +204,12 @@ main { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; fle
 <body>
 
 <script>
-// Cross-origin: can't read hub's localStorage. Theme arrives via postMessage from parent.
-// Fallback: respect system preference until parent pushes the theme.
-if (matchMedia('(prefers-color-scheme:dark)').matches)
-  document.documentElement.setAttribute('data-theme','dark');
+// Theme priority: ?theme= URL param (from hub) > system pref > light
+(function(){
+  const p = new URLSearchParams(location.search).get('theme');
+  const s = p === 'dark' || (!p && matchMedia('(prefers-color-scheme:dark)').matches) ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', s);
+})();
 window.addEventListener('message', e => {
   if (e.data?.type === 'hub-theme')
     document.documentElement.setAttribute('data-theme', e.data.value);
