@@ -131,7 +131,34 @@ header {
 
 @media (max-width: 640px) {
   .ns-table thead th.hide-mobile, .ns-table td.hide-mobile { display: none; }
+  /* Fit remaining cols into mobile viewport without horizontal scroll */
+  .grid-wrap { overflow-x: hidden; }
+  .ns-table { table-layout: fixed; width: 100%; min-width: 0; }
+  .col-num  { width: 24px; padding: 8px 3px 8px 8px; }
+  .col-drag { width: 18px; padding: 8px 2px; }
+  .col-name { min-width: 0; width: auto; }
+  .col-status { width: 68px; }
+  .col-progress { width: 100px; }
+  .col-date { width: 44px; }
+  .progress-num { display: none; }  /* hide % label, keep bar */
+  .ns-table td, .ns-table thead th { padding: 8px 5px; }
+  .col-name .row-name { font-size: 13px; }
+  .status-label { font-size: 9px; }
+  .row-status-dot { width: 6px; height: 6px; margin-right: 3px; }
 }
+
+/* Memo textarea */
+.dm-memo {
+  width: 100%; min-height: 110px; max-height: 280px;
+  background: var(--bg-deep); border: 1px solid var(--panel-border);
+  border-radius: 6px; padding: 10px 12px; resize: vertical;
+  font-size: 12px; font-family: var(--mono); color: var(--text);
+  line-height: 1.6; transition: border-color .15s;
+  -webkit-overflow-scrolling: touch;
+}
+.dm-memo:focus { outline: none; border-color: var(--accent); }
+.dm-memo::placeholder { color: var(--text-dim); }
+.dm-memo-save-status { font-size: 10px; color: var(--text-dim); font-family: var(--mono); margin-left: 6px; }
 
 /* ── Project card ────────────────────────────────────────────────────────────── */
 .card {
@@ -970,6 +997,29 @@ function rowHtml(p, i) {
 let _rowOrder = null; // persisted drag-drop order
 let _sessionStatus = {}; // proj_id → "active"|"idle:N"|"none"
 
+// ── Memo save (debounced) ─────────────────────────────────────────────────────
+let _memoTimer = null;
+function schedMemoSave(projId) {
+  const status = document.getElementById('dm-memo-status');
+  if (status) status.textContent = 'editing…';
+  clearTimeout(_memoTimer);
+  _memoTimer = setTimeout(() => saveMemo(projId), 1200);
+}
+async function saveMemo(projId) {
+  const el = document.getElementById('dm-memo');
+  const status = document.getElementById('dm-memo-status');
+  if (!el) return;
+  try {
+    await fetch(`/api/northstar/${encodeURIComponent(projId)}/memo`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({content: el.value}),
+    });
+    if (status) { status.textContent = 'saved'; setTimeout(() => { if(status) status.textContent=''; }, 1800); }
+  } catch(_) {
+    if (status) status.textContent = 'error';
+  }
+}
+
 async function _openWithTerminal(origIdx, projId) {
   activeIdx = origIdx;
   render();
@@ -1251,10 +1301,11 @@ async function openDetail(idx) {
     '<div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>';
 
   // Fetch OKRs + CTX + doc in parallel
-  const [okrData, ctxData, docData] = await Promise.all([
+  const [okrData, ctxData, docData, memoData] = await Promise.all([
     fetch(`/api/northstar/${esc(p.id)}/okrs`).then(r=>r.json()).catch(()=>({ok:false,okrs:[]})),
     fetch('/api/ctx-pulse').then(r=>r.json()).catch(()=>({ok:false,topics:[]})),
     fetch(`/api/northstar/${esc(p.id)}/doc`).then(r=>r.json()).catch(()=>({ok:false})),
+    fetch(`/api/northstar/${esc(p.id)}/memo`).then(r=>r.json()).catch(()=>({ok:false,content:''})),
   ]);
 
   if (ctxData.ok) ctxTopics = ctxData.topics || [];
@@ -1282,7 +1333,7 @@ async function openDetail(idx) {
   }
 
   // Render right column
-  renderRight(p, ctxData.topics || [], docData);
+  renderRight(p, ctxData.topics || [], docData, memoData?.content || '');
 
   // Alignment is manual — user clicks ↻ Refresh to run
 }
@@ -1367,7 +1418,7 @@ function renderHierarchy(p) {
   `;
 }
 
-function renderRight(p, topics, docData) {
+function renderRight(p, topics, docData, memoContent = '') {
   const topicsHtml = topics.slice(0, 7).map(t =>
     `<div class="ctx-item">
       <div class="ctx-heat"><div class="ctx-heat-fill" style="width:${Math.round(t.heat*100)}%"></div></div>
@@ -1414,6 +1465,17 @@ function renderRight(p, topics, docData) {
       <div class="dm-section-label">Context</div>
       <div class="dm-note">${esc(p.note)}</div>
     </div>` : ''}
+
+    <!-- Memo -->
+    <div class="dm-section">
+      <div class="dm-section-label">
+        Memo
+        <span class="dm-memo-save-status" id="dm-memo-status"></span>
+      </div>
+      <textarea class="dm-memo" id="dm-memo"
+        placeholder="Notes, decisions, context for Claude…"
+        oninput="schedMemoSave('${esc(p.id)}')">${esc(memoContent)}</textarea>
+    </div>
   `;
 }
 

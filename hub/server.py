@@ -879,6 +879,23 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
     await asyncio.gather(pty_to_ws(), ws_to_pty())
 
 
+@app.get("/api/northstar/{proj_id}/memo")
+async def get_memo(proj_id: str):
+    memo_path = PROJECTS_DIR / proj_id / "memo.md"
+    content = memo_path.read_text(encoding="utf-8") if memo_path.exists() else ""
+    return JSONResponse({"ok": True, "content": content})
+
+
+@app.post("/api/northstar/{proj_id}/memo")
+async def save_memo(proj_id: str, request: Request):
+    data = await request.json()
+    content = data.get("content", "")
+    memo_path = PROJECTS_DIR / proj_id / "memo.md"
+    memo_path.parent.mkdir(parents=True, exist_ok=True)
+    memo_path.write_text(content, encoding="utf-8")
+    return JSONResponse({"ok": True})
+
+
 @app.get("/api/northstar/sessions")
 async def ns_sessions():
     """Return terminal session status for all projects."""
