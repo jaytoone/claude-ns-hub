@@ -1403,14 +1403,22 @@ function render() {
       activeIdx = i; render(); openDetail(i);
     });
     // Right-click context menu
+    // Desktop: right-click
     node.addEventListener('contextmenu', e => {
       e.preventDefault();
-      _ctxNodeId = node.dataset.pid;
-      const menu = document.getElementById('ns-ctx-menu');
-      menu.style.left = `${Math.min(e.clientX, window.innerWidth-180)}px`;
-      menu.style.top  = `${Math.min(e.clientY, window.innerHeight-160)}px`;
-      menu.classList.add('show');
+      showNodeCtxMenu(node.dataset.pid, e.clientX, e.clientY);
     });
+
+    // Mobile: long-press (600ms) = right-click
+    let _longPressTimer = null;
+    node.addEventListener('touchstart', e => {
+      _longPressTimer = setTimeout(() => {
+        const touch = e.touches[0];
+        showNodeCtxMenu(node.dataset.pid, touch.clientX, touch.clientY);
+      }, 600);
+    }, { passive: true });
+    node.addEventListener('touchend',   () => clearTimeout(_longPressTimer));
+    node.addEventListener('touchmove',  () => clearTimeout(_longPressTimer));
   });
 
   // Drag: reorder within lane + move between lanes
@@ -1706,6 +1714,14 @@ async function submitAddProject() {
 
 // ── Context menu ──────────────────────────────────────────────────────────────
 let _ctxNodeId = null;
+
+function showNodeCtxMenu(pid, x, y) {
+  _ctxNodeId = pid;
+  const menu = document.getElementById('ns-ctx-menu');
+  menu.style.left = `${Math.min(x, window.innerWidth - 180)}px`;
+  menu.style.top  = `${Math.min(y, window.innerHeight - 160)}px`;
+  menu.classList.add('show');
+}
 
 function hideCtxMenu() {
   document.getElementById('ns-ctx-menu').classList.remove('show');
