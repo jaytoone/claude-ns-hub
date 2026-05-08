@@ -918,8 +918,8 @@ header {
 </div>
 
 <!-- Floating draggable terminal -->
-<div id="ns-terminal-float" style="display:none;position:fixed;bottom:24px;right:24px;z-index:300;
-  width:520px;height:340px;background:#1a1916;border:1px solid #333;border-radius:10px;
+<div id="ns-terminal-float" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;
+  width:min(760px,92vw);height:min(500px,72vh);background:#1a1916;border:1px solid #333;border-radius:10px;
   box-shadow:0 12px 40px rgba(0,0,0,.45);display:none;flex-direction:column;overflow:hidden;
   resize:both;">
   <div id="ns-terminal-drag-hdr" style="display:flex;align-items:center;gap:8px;padding:7px 12px;
@@ -2203,6 +2203,7 @@ function minimizeTerminal() {
       const r = float.getBoundingClientRect();
       dx = e.clientX - r.left; dy = e.clientY - r.top;
       float.style.right = 'auto'; float.style.bottom = 'auto';
+      float.style.transform = 'none'; float.style.left = r.left + 'px'; float.style.top = r.top + 'px';
       e.preventDefault();
     });
     document.addEventListener('mousemove', e => {
