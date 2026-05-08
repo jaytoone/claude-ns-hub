@@ -1789,11 +1789,21 @@ function fitGraph() {}
 function resetLayout() { render(); }
 function drawConnections() { requestAnimationFrame(() => drawParentLines()); }
 
+// Get element's position relative to a specific ancestor (ignores scroll/viewport drift)
+function offsetRelTo(el, ancestor) {
+  let x = 0, y = 0, cur = el;
+  while (cur && cur !== ancestor) {
+    x += cur.offsetLeft;
+    y += cur.offsetTop;
+    cur = cur.offsetParent;
+  }
+  return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+}
+
 function drawParentLines() {
   const svg = document.getElementById('ns-svg-lines');
   const swimlane = document.getElementById('ns-swimlane');
   if (!svg || !swimlane) return;
-  const swimRect = swimlane.getBoundingClientRect();
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   const lineColor = dark ? 'rgba(200,190,180,0.35)' : 'rgba(100,90,80,0.25)';
 
@@ -1804,12 +1814,13 @@ function drawParentLines() {
     const childEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(pid)}"]`);
     const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(p.parent)}"]`);
     if (!childEl || !parentEl) return;
-    const cR = childEl.getBoundingClientRect();
-    const pR = parentEl.getBoundingClientRect();
-    const x1 = pR.left + pR.width / 2 - swimRect.left;
-    const y1 = pR.bottom - swimRect.top + 2;
-    const x2 = cR.left + cR.width / 2 - swimRect.left;
-    const y2 = cR.top - swimRect.top - 2;
+    // Use offset-based positioning (stable across scroll/viewport changes)
+    const cO = offsetRelTo(childEl, swimlane);
+    const pO = offsetRelTo(parentEl, swimlane);
+    const x1 = pO.x + pO.w / 2;
+    const y1 = pO.y + pO.h + 2;
+    const x2 = cO.x + cO.w / 2;
+    const y2 = cO.y - 2;
     const mid = (y1 + y2) / 2;
     const d = `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`;
     // Visible dashed line
@@ -1817,8 +1828,8 @@ function drawParentLines() {
     // Invisible wide hit area for click-to-remove
     paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${pid}" style="cursor:pointer"/>`);
   });
-  svg.setAttribute('width', swimlane.offsetWidth);
-  svg.setAttribute('height', swimlane.offsetHeight);
+  svg.setAttribute('width', swimlane.scrollWidth);
+  svg.setAttribute('height', swimlane.scrollHeight);
   svg.innerHTML = paths.join('');
 
   // Click hit area → remove parent link
