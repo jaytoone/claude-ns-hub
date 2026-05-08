@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>North Star</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
@@ -73,57 +74,32 @@ header {
 .theme-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
 .updated-at { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
 
-/* ── Swimlane layout ────────────────────────────────────────────────────────── */
-.grid-wrap { padding: 12px 16px; overflow: auto; position: relative; }
-.ns-swimlane { position: relative; min-height: 200px; }
-.ns-conn-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-
-.ns-lane { display: flex; align-items: flex-start; margin-bottom: 10px; }
-.ns-lane-label {
-  width: 72px; flex-shrink: 0; font-family: var(--mono); font-size: 9px;
-  text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim);
-  padding-top: 20px; padding-right: 8px; text-align: right;
+/* ── Node graph canvas ──────────────────────────────────────────────────────── */
+.grid-wrap { padding: 0; overflow: hidden; position: relative; }
+#ns-graph-canvas {
+  width: 100%; height: calc(100vh - 120px);
+  background: var(--bg);
 }
-.ns-lane-nodes {
-  flex: 1; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;
-  min-height: 84px; padding: 8px 10px;
-  border-left: 2px solid var(--panel-border);
-  background: var(--panel-soft); border-radius: 0 8px 8px 0;
-  transition: border-color .12s, background .12s;
-}
-.ns-lane-nodes.drag-over {
-  border-left-color: var(--accent); background: var(--accent-soft);
-}
+[data-theme="dark"] #ns-graph-canvas { background: #181614; }
 
-/* ── Project node card ────────────────────────────────────────────────────────── */
-.ns-node {
-  width: 154px; box-sizing: border-box;
-  background: var(--panel); border: 1px solid var(--panel-border);
-  border-radius: 8px; padding: 8px 10px; cursor: pointer;
-  transition: box-shadow .12s, border-color .12s;
-  user-select: none; flex-shrink: 0; position: relative;
+/* vis.js manipulation toolbar override */
+.vis-manipulation { background: var(--panel-soft) !important; border-bottom: 1px solid var(--panel-border) !important; font-family: var(--mono) !important; font-size: 11px !important; }
+.vis-button { color: var(--text-dim) !important; border-color: var(--panel-border) !important; }
+.vis-button:hover { color: var(--accent) !important; border-color: var(--accent) !important; }
+.vis-button.vis-connect { background: var(--accent-soft) !important; }
+
+/* Graph toolbar at bottom */
+.ns-graph-toolbar {
+  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 10;
 }
-.ns-node:hover { box-shadow: 0 2px 10px rgba(31,28,26,.10); }
-.ns-node.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-.ns-node.dragging { opacity: .35; }
-
-.ns-node-top { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
-.ns-node-sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.ns-node-name {
-  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
-  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  outline: none; border-radius: 2px;
+.ns-graph-btn {
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 6px;
+  padding: 5px 12px; font-family: var(--mono); font-size: 11px; cursor: pointer;
+  color: var(--text-dim); transition: all .12s;
 }
-.ns-node-name:focus { background: var(--bg-deep); padding: 0 2px; text-overflow: clip; }
-.ns-node-sess-dot { font-size: 9px; font-family: var(--mono); color: var(--text-dim); flex-shrink: 0; }
-.ns-node-sess-dot.live { color: var(--green); }
-
-.ns-node-bar-wrap { height: 3px; background: var(--panel-border); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
-.ns-node-bar { height: 100%; border-radius: 2px; transition: width .3s; }
-
-.ns-node-bottom { display: flex; justify-content: space-between; align-items: center; }
-.ns-node-gap { font-family: var(--mono); font-size: 9px; }
-.ns-node-date { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+.ns-graph-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.ns-graph-btn.active { border-color: var(--accent); color: var(--accent-deep); background: var(--accent-soft); }
 
 /* Table column styles */
 .col-num  { width: 32px; color: var(--text-dim); font-family: var(--mono); font-size: 11px; text-align: right; padding-right: 6px; }
@@ -720,21 +696,12 @@ header {
         <span class="updated-at" id="updated-at">—</span>
       </div>
     </header>
-    <div class="grid-wrap">
-      <div class="ns-swimlane" id="ns-swimlane">
-        <svg class="ns-conn-svg" id="ns-conn-svg"></svg>
-        <div class="ns-lane" id="lane-0">
-          <div class="ns-lane-label">Strategic</div>
-          <div class="ns-lane-nodes" id="lane-nodes-0"></div>
-        </div>
-        <div class="ns-lane" id="lane-1">
-          <div class="ns-lane-label">Domain</div>
-          <div class="ns-lane-nodes" id="lane-nodes-1"></div>
-        </div>
-        <div class="ns-lane" id="lane-2">
-          <div class="ns-lane-label">Execution</div>
-          <div class="ns-lane-nodes" id="lane-nodes-2"></div>
-        </div>
+    <div class="grid-wrap" style="position:relative">
+      <div id="ns-graph-canvas"></div>
+      <div class="ns-graph-toolbar">
+        <button class="ns-graph-btn" id="btn-connect-mode" onclick="toggleConnectMode()" title="Draw connection between projects">⟷ Connect</button>
+        <button class="ns-graph-btn" onclick="fitGraph()" title="Fit all nodes in view">⊡ Fit</button>
+        <button class="ns-graph-btn" onclick="resetLayout()" title="Re-run force layout">↺ Layout</button>
       </div>
     </div>
   </div>
@@ -1177,8 +1144,6 @@ async function _openWithTerminal(origIdx, projId) {
   openTerminal(projId);
 }
 
-// (getRowOrder / orderedProjects removed — swimlane renders by layer, not row order)
-
 async function refreshSessionStatus() {
   try {
     const r = await fetch('/api/northstar/sessions');
@@ -1197,6 +1162,297 @@ function sessCell(projId) {
   }
   return `<span class="sess-dot sess-none"><span class="sess-indicator"></span>—</span>`;
 }
+
+// ── Node graph (vis-network) ──────────────────────────────────────────────────
+
+let _network = null;
+let _visNodes = null;
+let _visEdges = null;
+let _connectMode = false;
+let _posDebounce = null;
+
+function nodeColor(status) {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const map = {
+    'on-track': { bg: dark ? '#0e2318' : '#e8f5ee', border: '#3d8b5e', font: dark ? '#4caf78' : '#2d6b44' },
+    'behind':   { bg: dark ? '#250e0e' : '#fdf0ef', border: '#c0392b', font: dark ? '#e05252' : '#922b21' },
+    'achieved': { bg: dark ? '#2a1e17' : '#f5e6de', border: '#cc785c', font: dark ? '#e8926e' : '#a34b2c' },
+    'paused':   { bg: dark ? '#1e1c1a' : '#f5f2ec', border: '#8a8278', font: dark ? '#b0a89e' : '#5a5450' },
+  };
+  return map[status] || map['paused'];
+}
+
+function buildVisData() {
+  const visNodes = [], visEdges = [], seenEdges = new Set();
+  projects.forEach((p, i) => {
+    const pct = Math.round(calcPct(p.current, p.target) * 100);
+    const col = nodeColor(p.status || 'paused');
+    let gapText = `${pct}%`;
+    if (p.current && p.current !== '—' && p.target && p.target !== '—') {
+      const c = parseNum(p.current), t = parseNum(p.target);
+      if (c !== null && t !== null) {
+        const rem = t - c;
+        gapText = rem > 0 ? `${formatGapNum(rem)}${p.unit||''}` : 'done';
+      }
+    }
+    const lastLog = p.log?.length ? p.log[p.log.length-1] : null;
+    const dateStr = lastLog ? (lastLog.date||'').slice(5) : '';
+    const sessDot = _sessionStatus[p.id||p.name] === 'active' ? '● ' : '';
+    const label = `${sessDot}${p.name}\n${gapText}${dateStr ? '  '+dateStr : ''}`;
+
+    const node = {
+      id: p.id || p.name,
+      label,
+      color: { background: col.bg, border: col.border,
+               highlight: { background: col.bg, border: '#cc785c' },
+               hover: { background: col.bg, border: '#cc785c' } },
+      font: { color: col.font, size: 12, face: '"JetBrains Mono", ui-monospace, monospace',
+              multi: false },
+      shape: 'box',
+      borderWidth: p.status === 'on-track' ? 2 : 1.5,
+      borderWidthSelected: 3,
+      margin: { top: 7, right: 10, bottom: 7, left: 10 },
+      shadow: { enabled: false },
+      _idx: i,
+    };
+    if (p.x != null && p.y != null) {
+      node.x = p.x; node.y = p.y; node.fixed = { x: false, y: false };
+    }
+    if (i === activeIdx) {
+      node.borderWidth = 3;
+      node.color.border = '#cc785c';
+      node.shadow = { enabled: true, color: 'rgba(204,120,92,0.3)', size: 8, x: 0, y: 0 };
+    }
+    visNodes.push(node);
+    // Build edges from connections field
+    (p.connections || []).forEach(targetId => {
+      const edgeKey = [p.id||p.name, targetId].sort().join('|');
+      if (!seenEdges.has(edgeKey)) {
+        seenEdges.add(edgeKey);
+        visEdges.push({
+          id: edgeKey,
+          from: p.id || p.name,
+          to: targetId,
+          color: { color: '#c4bdb5', highlight: '#cc785c', hover: '#cc785c', opacity: 0.7 },
+          width: 1.5, selectionWidth: 2.5,
+          smooth: { type: 'curvedCW', roundness: 0.15 },
+          arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+        });
+      }
+    });
+    // Also draw parent link if set
+    if (p.parent && p.parent !== (p.id||p.name)) {
+      const edgeKey = [p.id||p.name, p.parent].sort().join('|');
+      if (!seenEdges.has(edgeKey)) {
+        seenEdges.add(edgeKey);
+        visEdges.push({
+          id: edgeKey,
+          from: p.parent, to: p.id||p.name,
+          dashes: [5, 3],
+          color: { color: '#c4bdb5', opacity: 0.5 },
+          width: 1, arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+        });
+      }
+    }
+  });
+  return { visNodes, visEdges };
+}
+
+function render() {
+  if (!projects.length) return;
+  const { visNodes, visEdges } = buildVisData();
+
+  if (!_network) {
+    // Initial render — create network
+    _visNodes = new vis.DataSet(visNodes);
+    _visEdges = new vis.DataSet(visEdges);
+    const container = document.getElementById('ns-graph-canvas');
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    _network = new vis.Network(container, { nodes: _visNodes, edges: _visEdges }, {
+      physics: {
+        enabled: true,
+        forceAtlas2Based: {
+          gravitationalConstant: -60, centralGravity: 0.01,
+          springLength: 160, springConstant: 0.08, damping: 0.4,
+        },
+        solver: 'forceAtlas2Based',
+        stabilization: { enabled: true, iterations: 150, updateInterval: 50 },
+      },
+      interaction: {
+        hover: true, tooltipDelay: 300,
+        dragNodes: true, dragView: true, zoomView: true,
+        multiselect: false,
+      },
+      manipulation: { enabled: false },
+      edges: { smooth: { type: 'curvedCW', roundness: 0.15 } },
+    });
+
+    // Save positions after stabilization
+    _network.on('stabilizationIterationsDone', () => {
+      _network.setOptions({ physics: { enabled: false } });
+      savePositions();
+    });
+
+    // Node click → detail
+    _network.on('click', params => {
+      if (params.nodes.length === 1) {
+        const nodeId = params.nodes[0];
+        const idx = projects.findIndex(p => (p.id||p.name) === nodeId);
+        if (idx < 0) return;
+        if (activeIdx === idx) { closeDetail(); return; }
+        activeIdx = idx;
+        render();        // update highlight
+        openDetail(idx);
+      } else if (params.nodes.length === 0 && params.edges.length === 0) {
+        if (activeIdx !== null) { closeDetail(); }
+      }
+    });
+
+    // Double-click → rename
+    _network.on('doubleClick', params => {
+      if (params.nodes.length === 1) {
+        const nodeId = params.nodes[0];
+        const idx = projects.findIndex(p => (p.id||p.name) === nodeId);
+        if (idx < 0) return;
+        const newName = prompt('Rename project:', projects[idx].name);
+        if (newName && newName.trim() !== projects[idx].name) {
+          commitRenameById(nodeId, newName.trim());
+        }
+      }
+    });
+
+    // Save position after manual drag
+    _network.on('dragEnd', params => {
+      if (params.nodes.length) {
+        clearTimeout(_posDebounce);
+        _posDebounce = setTimeout(savePositions, 800);
+      }
+    });
+
+  } else {
+    // Subsequent renders — update data
+    _visNodes.update(visNodes);
+    _visEdges.update(visEdges);
+    // Add new edges (e.g., after reconnect)
+    const existingIds = new Set(_visEdges.getIds());
+    visEdges.forEach(e => { if (!existingIds.has(e.id)) _visEdges.add(e); });
+    // Remove deleted edges
+    const newIds = new Set(visEdges.map(e => e.id));
+    _visEdges.getIds().forEach(id => { if (!newIds.has(id)) _visEdges.remove(id); });
+  }
+}
+
+function savePositions() {
+  if (!_network) return;
+  const positions = _network.getPositions();
+  projects.forEach(p => {
+    const pid = p.id || p.name;
+    if (positions[pid]) {
+      const { x, y } = positions[pid];
+      if (Math.abs((p.x||0) - x) > 2 || Math.abs((p.y||0) - y) > 2) {
+        p.x = Math.round(x); p.y = Math.round(y);
+        fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
+          method: 'PATCH', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ x: p.x, y: p.y }),
+        }).catch(() => {});
+      }
+    }
+  });
+}
+
+function toggleConnectMode() {
+  _connectMode = !_connectMode;
+  const btn = document.getElementById('btn-connect-mode');
+  if (_connectMode) {
+    btn.classList.add('active');
+    btn.textContent = '✕ Cancel connect';
+    _network.setOptions({ manipulation: {
+      enabled: true,
+      addEdge: async (data, callback) => {
+        if (data.from === data.to) { callback(null); return; }
+        const fromProj = projects.find(p => (p.id||p.name) === data.from);
+        const toProj   = projects.find(p => (p.id||p.name) === data.to);
+        if (!fromProj || !toProj) { callback(null); return; }
+        // Save connection
+        await fetch(`/api/northstar/${encodeURIComponent(data.from)}/connect`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ target: data.to }),
+        });
+        // Update local data
+        fromProj.connections = [...(fromProj.connections||[]), data.to];
+        toProj.connections   = [...(toProj.connections||[]), data.from];
+        callback(data);
+        toggleConnectMode(); // exit mode after drawing
+      },
+      deleteEdge: async (data, callback) => {
+        for (const edgeId of data.edges) {
+          const [a, b] = edgeId.split('|');
+          if (a && b) {
+            await fetch(`/api/northstar/${encodeURIComponent(a)}/connect/${encodeURIComponent(b)}`, { method: 'DELETE' });
+            const pa = projects.find(p => (p.id||p.name) === a);
+            const pb = projects.find(p => (p.id||p.name) === b);
+            if (pa) pa.connections = (pa.connections||[]).filter(c => c !== b);
+            if (pb) pb.connections = (pb.connections||[]).filter(c => c !== a);
+          }
+        }
+        callback(data);
+      },
+    }});
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '⟷ Connect';
+    _network.setOptions({ manipulation: { enabled: false } });
+  }
+}
+
+function fitGraph() { _network?.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } }); }
+
+function resetLayout() {
+  if (!_network) return;
+  _network.setOptions({ physics: { enabled: true } });
+  setTimeout(() => {
+    _network.stabilize(150);
+    _network.once('stabilizationIterationsDone', () => {
+      _network.setOptions({ physics: { enabled: false } });
+      savePositions();
+    });
+  }, 50);
+}
+
+// ── Inline rename ─────────────────────────────────────────────────────────────
+function startRename(el, projId) {
+  el.setAttribute('contenteditable', 'true');
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+}
+
+async function commitRenameById(projId, newName) {
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/rename`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name: newName}),
+  });
+  const p = projects.find(x => (x.id||x.name) === projId);
+  if (p) { p.name = newName; render(); }
+}
+
+async function commitRename(el, projId) {
+  el.setAttribute('contenteditable', 'false');
+  const newName = el.textContent.trim();
+  if (!newName) { el.textContent = projId; return; }
+  await commitRenameById(projId, newName);
+}
+
+// Redraw on theme change
+window.addEventListener('message', e => {
+  if (e.data?.type === 'hub-theme' && _network) {
+    setTimeout(() => render(), 50); // let CSS vars update first
+  }
+});
+
+function drawConnections() {} // no-op — vis-network handles connections
 
 function nodeHtml(p, idx) {
   const pct = Math.round(calcPct(p.current, p.target) * 100);
@@ -1238,88 +1494,7 @@ function nodeHtml(p, idx) {
   </div>`;
 }
 
-function render() {
-  if (!projects.length) {
-    document.getElementById('lane-nodes-0').innerHTML =
-      `<div class="empty-state"><div class="empty-title">No projects</div><div>Add north-star.md to ~/.claude/hub/projects/</div></div>`;
-    [1,2].forEach(l => { document.getElementById(`lane-nodes-${l}`).innerHTML = ''; });
-    return;
-  }
-
-  // Group by layer (0/1/2)
-  const lanes = {0: [], 1: [], 2: []};
-  projects.forEach((p, i) => {
-    const layer = Math.min(2, Math.max(0, parseInt(p.layer) || 0));
-    lanes[layer].push({p, i});
-  });
-  // Sort within lane by position_x
-  [0,1,2].forEach(l => lanes[l].sort((a,b) => (a.p.position_x||0) - (b.p.position_x||0)));
-
-  [0,1,2].forEach(l => {
-    const el = document.getElementById(`lane-nodes-${l}`);
-    if (!lanes[l].length) { el.innerHTML = ''; return; }
-    el.innerHTML = lanes[l].map(({p, i}) => nodeHtml(p, i)).join('');
-  });
-
-  // Wire up click → detail
-  document.querySelectorAll('.ns-node').forEach(node => {
-    node.addEventListener('click', e => {
-      if (e.target.classList.contains('ns-node-name') && node.querySelector('.ns-node-name').getAttribute('contenteditable') === 'true') return;
-      if (e.target.classList.contains('ns-node-sess-dot')) return;
-      const idx = +node.dataset.projIdx;
-      if (activeIdx === idx) { closeDetail(); return; }
-      activeIdx = idx;
-      render();
-      openDetail(idx);
-    });
-  });
-
-  // Wire up drag (within lane + cross-lane)
-  let _dragNode = null, _dragIdx = null, _dragLayer = null;
-  document.querySelectorAll('.ns-node').forEach(node => {
-    node.addEventListener('dragstart', e => {
-      _dragNode = node;
-      _dragIdx = +node.dataset.projIdx;
-      _dragLayer = +node.dataset.layer;
-      node.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    node.addEventListener('dragend', () => {
-      node.classList.remove('dragging');
-      document.querySelectorAll('.ns-lane-nodes').forEach(l => l.classList.remove('drag-over'));
-    });
-  });
-
-  [0,1,2].forEach(l => {
-    const laneEl = document.getElementById(`lane-nodes-${l}`);
-    laneEl.addEventListener('dragover', e => {
-      e.preventDefault();
-      document.querySelectorAll('.ns-lane-nodes').forEach(x => x.classList.remove('drag-over'));
-      laneEl.classList.add('drag-over');
-    });
-    laneEl.addEventListener('dragleave', () => laneEl.classList.remove('drag-over'));
-    laneEl.addEventListener('drop', async e => {
-      e.preventDefault();
-      laneEl.classList.remove('drag-over');
-      if (_dragIdx === null) return;
-      const p = projects[_dragIdx];
-      if (!p) return;
-      // Count nodes in this lane (for position_x)
-      const nodesInLane = lanes[l].filter(x => x.i !== _dragIdx).length;
-      await fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
-        method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({layer: l, position_x: nodesInLane}),
-      });
-      // Update local data immediately
-      p.layer = l; p.position_x = nodesInLane;
-      _dragNode = null; _dragIdx = null;
-      render();
-      drawConnections();
-    });
-  });
-
-  drawConnections();
-}
+// (old swimlane render removed — vis-network render() above handles rendering)
 
 function drawConnections() {
   const svg = document.getElementById('ns-conn-svg');

@@ -174,10 +174,14 @@ def _load_projects() -> list:
                     data["log"] = norm_log
                     data.setdefault("deadline", "")
                     data.setdefault("links", "")
-                    # Swimlane layout fields
+                    # Graph layout fields
                     data.setdefault("layer", 0)
                     data.setdefault("parent", None)
                     data.setdefault("position_x", 0)
+                    data.setdefault("x", None)
+                    data.setdefault("y", None)
+                    if not isinstance(data.get("connections"), list):
+                        data["connections"] = []
                     # Compute staleness
                     mtime = md.stat().st_mtime
                     data["last_updated"] = mtime
@@ -1003,6 +1007,39 @@ async def delete_milestone(proj_id: str, mid: str):
                           and m.get("parent_id") != mid]
     _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "removed": before - len(proj["milestones"])})
+
+
+@app.post("/api/northstar/{proj_id}/connect")
+async def add_connection(proj_id: str, request: Request):
+    """Add a connection edge between two projects (bidirectional)."""
+    data = await request.json()
+    target_id = data.get("target", "").strip()
+    if not target_id or target_id == proj_id:
+        return JSONResponse({"ok": False, "error": "invalid target"}, status_code=400)
+    for pid, tid in [(proj_id, target_id), (target_id, proj_id)]:
+        md = PROJECTS_DIR / pid / "north-star.md"
+        if not md.exists(): continue
+        proj = _parse_md_frontmatter(md)
+        conns = proj.get("connections") or []
+        if not isinstance(conns, list): conns = []
+        if tid not in conns:
+            conns.append(tid)
+        proj["connections"] = conns
+        _save_project(pid, proj)
+    return JSONResponse({"ok": True})
+
+
+@app.delete("/api/northstar/{proj_id}/connect/{target_id}")
+async def remove_connection(proj_id: str, target_id: str):
+    """Remove a connection edge between two projects."""
+    for pid, tid in [(proj_id, target_id), (target_id, proj_id)]:
+        md = PROJECTS_DIR / pid / "north-star.md"
+        if not md.exists(): continue
+        proj = _parse_md_frontmatter(md)
+        conns = [c for c in (proj.get("connections") or []) if c != tid]
+        proj["connections"] = conns
+        _save_project(pid, proj)
+    return JSONResponse({"ok": True})
 
 
 @app.patch("/api/northstar/{proj_id}/rename")
