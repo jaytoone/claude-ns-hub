@@ -759,6 +759,12 @@ header {
                color:var(--text);outline:none;width:160px;box-shadow:0 4px 12px rgba(31,28,26,.18)"/>
     </div>
 
+    <!-- Connect mode banner -->
+    <div id="ns-connect-banner" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);
+      background:var(--accent-soft);border:1px solid var(--accent);border-radius:6px;
+      padding:6px 16px;font-family:var(--mono);font-size:11px;color:var(--accent-deep);
+      z-index:20;white-space:nowrap;pointer-events:none"></div>
+
     <!-- Right-click context menu -->
     <div class="ns-ctx-menu" id="ns-ctx-menu">
       <div class="ns-ctx-item" id="ctx-connect">⟷ Connect from here</div>
@@ -1376,17 +1382,19 @@ function render() {
       savePositions();
     });
 
-    // Node click → detail
+    // Node click → detail (or finish connect if in connect mode)
     _network.on('click', params => {
       if (params.nodes.length === 1) {
         const nodeId = params.nodes[0];
+        if (_connectingFrom) { finishConnect(nodeId); return; }  // connect mode
         const idx = projects.findIndex(p => (p.id||p.name) === nodeId);
         if (idx < 0) return;
         if (activeIdx === idx) { closeDetail(); return; }
         activeIdx = idx;
-        render();        // update highlight
+        render();
         openDetail(idx);
       } else if (params.nodes.length === 0 && params.edges.length === 0) {
+        if (_connectingFrom) { cancelConnect(); return; }
         if (activeIdx !== null) { closeDetail(); }
       }
     });
@@ -1461,33 +1469,48 @@ function showCtxMenu(x, y, nodeId) {
 }
 
 document.addEventListener('click', hideCtxMenu);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtxMenu(); _connectingFrom = null; _network?.setOptions({manipulation:{enabled:false}}); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtxMenu(); cancelConnect(); } });
 
 // Context menu actions
 document.getElementById('ctx-connect').onclick = () => {
   if (!_ctxNodeId || !_network) return;
-  _connectingFrom = _ctxNodeId;
+  const fromId = _ctxNodeId;
   hideCtxMenu();
-  // Enable addEdge from this specific node
-  _network.setOptions({ manipulation: {
-    enabled: true,
-    addEdge: async (data, callback) => {
-      if (data.from === data.to) { callback(null); _network.setOptions({manipulation:{enabled:false}}); return; }
-      await fetch(`/api/northstar/${encodeURIComponent(data.from)}/connect`, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ target: data.to }),
-      });
-      const fp = projects.find(p => (p.id||p.name) === data.from);
-      const tp = projects.find(p => (p.id||p.name) === data.to);
-      if (fp) fp.connections = [...new Set([...(fp.connections||[]), data.to])];
-      if (tp) tp.connections = [...new Set([...(tp.connections||[]), data.from])];
-      callback(data);
-      _network.setOptions({manipulation:{enabled:false}});
-    },
-  }});
-  // Auto-select the source node to start drawing from it
-  _network.selectNodes([_ctxNodeId]);
+  startConnectMode(fromId);
 };
+
+function startConnectMode(fromId) {
+  _connectingFrom = fromId;
+  // Visual: highlight the source node + show banner
+  _network.selectNodes([fromId]);
+  const banner = document.getElementById('ns-connect-banner');
+  const fromName = (projects.find(p => (p.id||p.name) === fromId) || {}).name || fromId;
+  banner.textContent = `Connecting from "${fromName}" — click target node  (Esc to cancel)`;
+  banner.style.display = 'block';
+  document.getElementById('ns-graph-canvas').style.cursor = 'crosshair';
+}
+
+async function finishConnect(toId) {
+  if (!_connectingFrom || _connectingFrom === toId) { cancelConnect(); return; }
+  const fromId = _connectingFrom;
+  cancelConnect();
+  await fetch(`/api/northstar/${encodeURIComponent(fromId)}/connect`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ target: toId }),
+  });
+  const fp = projects.find(p => (p.id||p.name) === fromId);
+  const tp = projects.find(p => (p.id||p.name) === toId);
+  if (fp) fp.connections = [...new Set([...(fp.connections||[]), toId])];
+  if (tp) tp.connections = [...new Set([...(tp.connections||[]), fromId])];
+  render();
+}
+
+function cancelConnect() {
+  _connectingFrom = null;
+  document.getElementById('ns-connect-banner').style.display = 'none';
+  document.getElementById('ns-graph-canvas').style.cursor = '';
+  _network?.unselectAll();
+}
 
 document.getElementById('ctx-rename').onclick = () => {
   if (!_ctxNodeId) return;
