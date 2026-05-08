@@ -112,6 +112,18 @@ header {
 .ns-node-bottom { display: flex; justify-content: space-between; }
 .ns-node-gap { font-family: var(--mono); font-size: 9px; }
 .ns-node-date { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+/* ── Parent group cluster ── */
+.ns-group {
+  display: inline-flex; flex-direction: column; gap: 6px;
+  background: var(--panel-soft); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 6px 8px; flex-shrink: 0;
+}
+.ns-group-label {
+  font-family: var(--mono); font-size: 9px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: .06em; padding: 0 2px 2px;
+  border-bottom: 1px solid var(--panel-border); margin-bottom: 2px;
+}
+.ns-group-nodes { display: flex; flex-wrap: wrap; gap: 6px; }
 @media (max-width: 640px) {
   .ns-lane-label { width: 48px; font-size: 8px; }
   .ns-node { width: 130px; }
@@ -1333,17 +1345,58 @@ function render() {
   [0,1,2].forEach(l => {
     const el = document.getElementById(`lane-nodes-${l}`);
     if (!el) return;
-    el.innerHTML = lanes[l].length
-      ? lanes[l].map(({p,i}) => nodeCard(p,i)).join('')
-      : '';
+    if (!lanes[l].length) { el.innerHTML = ''; return; }
+
+    // Group by parent: orphans shown directly, children grouped under parent label
+    const parentGroups = {};   // parentId → [{p,i}]
+    const orphans = [];
+    lanes[l].forEach(({p, i}) => {
+      const par = p.parent || null;
+      // Only group if parent exists and is in a DIFFERENT (higher) lane
+      const parentProj = par ? projects.find(x => (x.id||x.name) === par) : null;
+      const parentLayer = parentProj ? (parseInt(parentProj.layer)||0) : -1;
+      if (parentProj && parentLayer < l) {
+        if (!parentGroups[par]) parentGroups[par] = [];
+        parentGroups[par].push({p, i});
+      } else {
+        orphans.push({p, i});
+      }
+    });
+
+    // Render orphans directly + grouped children
+    let html = orphans.map(({p,i}) => nodeCard(p,i)).join('');
+    Object.entries(parentGroups).forEach(([parId, children]) => {
+      const parProj = projects.find(x => (x.id||x.name) === parId);
+      const parName = parProj?.name || parId;
+      html += `<div class="ns-group">
+        <div class="ns-group-label">${esc(parName)}</div>
+        <div class="ns-group-nodes">${children.map(({p,i}) => nodeCard(p,i)).join('')}</div>
+      </div>`;
+    });
+    el.innerHTML = html;
   });
 
-  // Click → open detail
+  // Click → open detail (or finish connect if in connect mode)
   document.querySelectorAll('.ns-node').forEach(node => {
-    node.addEventListener('click', e => {
+    node.addEventListener('click', async e => {
       const name = node.querySelector('.ns-node-name');
       if (name && name.getAttribute('contenteditable') === 'true') return;
       if (e.target.classList.contains('ns-node-sess')) return;
+      const pid = node.dataset.pid;
+      if (_connectingFrom && _connectingFrom !== pid) {
+        // Connect mode: create edge
+        await fetch(`/api/northstar/${encodeURIComponent(_connectingFrom)}/connect`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ target: pid }),
+        });
+        const fp = projects.find(p => (p.id||p.name) === _connectingFrom);
+        const tp = projects.find(p => (p.id||p.name) === pid);
+        if (fp) fp.connections = [...new Set([...(fp.connections||[]), pid])];
+        if (tp) tp.connections = [...new Set([...(tp.connections||[]), _connectingFrom])];
+        _connectingFrom = null;
+        render(); return;
+      }
+      _connectingFrom = null;
       const i = +node.dataset.idx;
       if (activeIdx === i) { closeDetail(); return; }
       activeIdx = i; render(); openDetail(i);
@@ -1428,6 +1481,81 @@ async function saveNodeName(el, projId) {
 function fitGraph() {}
 function resetLayout() { render(); }
 function drawConnections() {}
+
+// ── Add project modal ─────────────────────────────────────────────────────────
+function showAddProject() {
+  document.getElementById('add-proj-name').value = '';
+  document.getElementById('add-proj-path').value = '';
+  document.getElementById('ns-add-modal').classList.add('show');
+  setTimeout(() => document.getElementById('add-proj-name').focus(), 100);
+}
+function hideAddProject() { document.getElementById('ns-add-modal').classList.remove('show'); }
+async function submitAddProject() {
+  const name = document.getElementById('add-proj-name').value.trim();
+  const path = document.getElementById('add-proj-path').value.trim();
+  if (!name) { document.getElementById('add-proj-name').focus(); return; }
+  hideAddProject();
+  await fetch('/api/northstar/create', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name, repo_path: path || null }),
+  });
+  await loadData();
+}
+
+// ── Context menu ──────────────────────────────────────────────────────────────
+let _ctxNodeId = null, _ctxEdgeId = null, _connectingFrom = null;
+
+function hideCtxMenu() {
+  document.getElementById('ns-ctx-menu').classList.remove('show');
+  _ctxNodeId = null; _ctxEdgeId = null;
+}
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtxMenu(); _connectingFrom = null; } });
+
+document.getElementById('ctx-connect').onclick = () => {
+  if (!_ctxNodeId) return;
+  _connectingFrom = _ctxNodeId; hideCtxMenu();
+};
+document.getElementById('ctx-rename').onclick = () => {
+  if (!_ctxNodeId) return; hideCtxMenu();
+  const el = document.querySelector(`.ns-node[data-pid="${CSS.escape(_ctxNodeId)}"] .ns-node-name`);
+  if (el) renameNode(el, _ctxNodeId);
+};
+document.getElementById('ctx-setpath').onclick = () => {
+  if (!_ctxNodeId) return; hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === _ctxNodeId);
+  showInlineInput('Directory path:', p?.repo_path||'', async val => {
+    await fetch(`/api/northstar/${encodeURIComponent(_ctxNodeId)}/layout`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({repo_path: val.trim()}),
+    });
+    if (p) p.repo_path = val.trim();
+  });
+};
+document.getElementById('ctx-delete').onclick = async () => {
+  if (!_ctxNodeId) return;
+  const nodeId = _ctxNodeId; hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === nodeId);
+  showInlineInput(`Type "${p?.name||nodeId}" to confirm:`, '', async val => {
+    if (val.trim() === (p?.name||nodeId)) {
+      await fetch(`/api/northstar/${encodeURIComponent(nodeId)}`, { method:'DELETE' });
+      await loadData();
+    }
+  });
+};
+document.getElementById('ctx-remove-edge').onclick = async () => {
+  if (!_ctxEdgeId) return; hideCtxMenu();
+  const [a, b] = _ctxEdgeId.split('|');
+  if (a && b) {
+    await fetch(`/api/northstar/${encodeURIComponent(a)}/connect/${encodeURIComponent(b)}`, { method:'DELETE' });
+    const pa = projects.find(p => (p.id||p.name) === a);
+    const pb = projects.find(p => (p.id||p.name) === b);
+    if (pa) pa.connections = (pa.connections||[]).filter(c => c !== b);
+    if (pb) pb.connections = (pb.connections||[]).filter(c => c !== a);
+    render();
+  }
+};
+
 // ── Inline rename ─────────────────────────────────────────────────────────────
 function startRename(el, projId) {
   el.setAttribute('contenteditable', 'true');

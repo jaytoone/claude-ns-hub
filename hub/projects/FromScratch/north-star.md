@@ -1,13 +1,16 @@
 ---
-category: 'Research'
+category: Research
+connections:
+- FRWP
 current: 90%
 deadline: '2026-06-30'
 id: FromScratch
+layer: 0
 links: ''
 log:
 - date: '2026-05-08'
-  text: 'Phase 3 v5 DONE: 90% two-pass (18/20, +5pp over baseline). Root cause fixed: all
-    2384 original traces were corrupted garbage. New clean traces (119) from darwin36b
+  text: 'Phase 3 v5 DONE: 90% two-pass (18/20, +5pp over baseline). Root cause fixed:
+    all 2384 original traces were corrupted garbage. New clean traces (119) from darwin36b
     direct inference. Phase 4 chem/bio trace gen running (33 traces so far).'
 - date: '2026-05-07'
   text: Phase 3 v4 DONE (800 steps, darwin36b base, think-tags, LoRA r=32). Greedy
@@ -35,15 +38,18 @@ log:
 metric: GPQA Diamond single-model score
 milestones:
 - done: true
-  text: 'Phase 1: Clean trace gen — 119 traces (fixed corruption: all traces were garbage)'
+  text: 'Phase 1: Clean trace gen — 119 traces (fixed corruption: all traces were
+    garbage)'
 - done: true
   text: 'Phase 2: darwin36b direct base — 85% two-pass (17/20) confirmed'
 - done: true
   text: 'Phase 3 v5: LoRA KD (clean think-format traces) → 90% two-pass (18/20) +5pp'
 - done: false
-  text: 'Phase 4: Chemistry/Biology domain injection — trace gen running (~33 traces so far)'
+  text: 'Phase 4: Chemistry/Biology domain injection — trace gen running (~33 traces
+    so far)'
 - done: false
-  text: 'Full 198Q eval: two-pass on v5 step_200 → get reliable ±3% score (currently 90% from 20Q proxy)'
+  text: 'Full 198Q eval: two-pass on v5 step_200 → get reliable ±3% score (currently
+    90% from 20Q proxy)'
 - done: false
   text: 'Phase 5: GRPO on-policy if needed (+2-3pp)'
 - done: false
@@ -51,9 +57,12 @@ milestones:
 name: FromScratch
 note: OR-Ensemble distillation → darwin36b v2 plan (FFN-only selective merge + LoRA
   KD)
+position_x: 2
 status: on-track
 target: 93.9%
 unit: '%'
+x: 13
+y: -130
 ---
 
 # FromScratch — North Star

@@ -1,8 +1,9 @@
 ---
-category: 'Content'
+category: Content
 current: '0'
 deadline: '2026-12-31'
 id: MOAT
+layer: 0
 links: ''
 log: []
 metric: YouTube subscriber count
@@ -17,9 +18,12 @@ milestones:
   text: Reach 1,000 subscribers
 name: MOAT
 note: AI tech channel — Korean audience, Shorts + longform strategy
+position_x: 4
 status: behind
 target: 1,000
 unit: subscribers
+x: 485
+y: 0
 ---
 
 # MOAT — North Star
