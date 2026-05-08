@@ -1274,6 +1274,11 @@ function renderMilestoneCreator(projId, milestones) {
   const el = document.getElementById('dm-ms-creator');
   if (!el) return;
 
+  // Track which L0 items are expanded (localStorage)
+  const expandKey = `ms-expand-${projId}`;
+  let expanded = {};
+  try { expanded = JSON.parse(localStorage.getItem(expandKey) || '{}'); } catch(_) {}
+
   const l0 = milestones.filter(m => (m.layer || 0) === 0);
   const l1 = milestones.filter(m => (m.layer || 0) === 1);
   const doneTotal = milestones.filter(m => m.done).length;
@@ -1299,86 +1304,88 @@ function renderMilestoneCreator(projId, milestones) {
     </div>
   </div>`;
 
-  // Tree layout: L0 stones top row, L1 children spread below each parent
-  // Each L0 gets a column; its L1 children are shown below it
-  const treeCols = l0.map(m => {
-    const children = l1.filter(c => c.parent_id === m.id);
-    const childDone = children.filter(c => c.done).length;
-    const state = m.done ? 'done' : (childDone > 0 && childDone < children.length ? 'active' : (childDone === children.length && children.length > 0 ? 'done' : 'pending'));
-    return { m, children, childDone, state };
-  });
+  // Numbered toggle list (Notion-style: ▶/▼ + number + text + meta)
+  // expandKey stored in localStorage per project
+  // Numbered toggle list
+  const toggleHtml = `<div style="font-size:12px">
+    ${l0.map((m, idx) => {
+      const children = l1.filter(c => c.parent_id === m.id);
+      const childDone = children.filter(c => c.done).length;
+      const state = m.done ? 'done' : (childDone > 0 && childDone < children.length ? 'active' : 'pending');
+      const stateColor = {done:'var(--green)',active:'var(--accent)',pending:'var(--text-dim)'}[state];
+      const isOpen = !!expanded[m.id];
+      const num = idx + 1;
+      const ackIcon = m.claude_ack
+        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--green)">◈</span>`
+        : `<span style="font-family:var(--mono);font-size:9px;color:var(--yellow)">○</span>`;
 
-  const stoneColors = { done:'var(--green)', active:'var(--accent)', pending:'var(--text-dim)' };
-  const stoneBg = { done:'var(--green)', active:'var(--accent-soft)', pending:'var(--panel)' };
-  const stoneFg = { done:'#fff', active:'var(--accent-deep)', pending:'var(--text-dim)' };
+      const subHtml = isOpen && children.length ? `
+        <div style="margin-left:22px;border-left:2px solid var(--panel-border);padding-left:10px">
+          ${children.map((c, ci) => {
+            const cAck = c.claude_ack
+              ? `<span style="font-family:var(--mono);font-size:9px;color:var(--green)">◈</span>`
+              : `<span style="font-family:var(--mono);font-size:9px;color:var(--yellow)">○</span>`;
+            return `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0;border-bottom:1px solid var(--panel-border)">
+              <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);flex-shrink:0;margin-top:1px">${num}.${ci+1}</span>
+              <button onclick="toggleMs('${esc(projId)}','${esc(c.id)}')"
+                style="width:16px;height:16px;border-radius:50%;border:1.5px solid ${c.done?'var(--green)':'var(--panel-border)'};
+                background:${c.done?'var(--green)':'var(--panel)'};color:${c.done?'#fff':'var(--text-dim)'};
+                font-size:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px"
+              >${c.done?'✓':'○'}</button>
+              <div style="flex:1;color:${c.done?'var(--text-dim)':'var(--text-soft)'};${c.done?'text-decoration:line-through;':''}
+                cursor:text;line-height:1.4;overflow-wrap:anywhere"
+                contenteditable="true"
+                onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
+              >${esc(c.text)}</div>
+              ${cAck}
+              <button class="ms-del" onclick="deleteMs('${esc(projId)}','${esc(c.id)}')" style="font-size:10px">✕</button>
+            </div>`;
+          }).join('')}
+          <button class="ms-add-sub" style="margin-top:4px"
+            onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub-milestone</button>
+        </div>` : '';
 
-  const treeHtml = `<div style="overflow-x:auto;overflow-y:visible;padding-bottom:8px">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px">
-      ${treeCols.map(({m, children, childDone, state}) => `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0;min-width:80px;max-width:110px">
-          <!-- L0 stone -->
-          <div style="display:flex;flex-direction:column;align-items:center">
-            <button onclick="toggleMs('${esc(projId)}','${esc(m.id)}')"
-              title="${esc(m.text)}"
-              style="width:52px;height:34px;border-radius:50% 42% 50% 42%;
-                border:2px solid ${stoneColors[state]};
-                background:${stoneBg[state]};color:${stoneFg[state]};
-                font-size:10px;font-family:var(--mono);cursor:pointer;
-                transition:all .15s;${state==='active'?'animation:stone-pulse 2s ease-in-out infinite;':''}
-                display:flex;align-items:center;justify-content:center;
-                ${m.done?'text-decoration:line-through;':''}"
-            >${m.done?'✓':(state==='active'?'◉':'○')}</button>
-            <div style="font-size:10px;text-align:center;margin-top:4px;line-height:1.3;
-              color:${m.done?'var(--text-dim)':'var(--text)'};
-              ${m.done?'text-decoration:line-through;':''}
-              max-width:100px;word-break:break-word;cursor:text"
-              contenteditable="true"
-              onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-            >${esc(m.text)}</div>
-            <div style="display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;justify-content:center">
-              <span style="font-size:8px;font-family:var(--mono);padding:0 4px;border-radius:6px;
-                border:1px solid ${stoneColors[state]};color:${stoneColors[state]}">${{done:'done',active:'wip',pending:'todo'}[state]}</span>
-              ${m.claude_ack
-                ? `<span style="font-size:8px;font-family:var(--mono);color:var(--green)">◈</span>`
-                : `<span style="font-size:8px;font-family:var(--mono);color:var(--yellow)">○</span>`}
-            </div>
+      return `<div style="border-bottom:1px solid var(--panel-border)">
+        <div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;cursor:pointer"
+          onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);flex-shrink:0;width:16px;text-align:right;margin-top:1px"
+          >${num}.</span>
+          <span style="font-family:var(--mono);font-size:10px;color:${stateColor};flex-shrink:0;margin-top:1px"
+          >${children.length ? (isOpen?'▼':'▶') : '·'}</span>
+          <button onclick="event.stopPropagation();toggleMs('${esc(projId)}','${esc(m.id)}')"
+            style="width:18px;height:18px;border-radius:50%;border:2px solid ${stateColor};
+            background:${m.done?stateColor:'var(--panel)'};color:${m.done?'#fff':stateColor};
+            font-size:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:0"
+          >${m.done?'✓':'○'}</button>
+          <div style="flex:1;font-weight:${state==='active'?'500':'400'};
+            color:${m.done?'var(--text-dim)':'var(--text)'};
+            ${m.done?'text-decoration:line-through;':''}
+            line-height:1.4;overflow-wrap:anywhere"
+            contenteditable="true"
+            onclick="event.stopPropagation()"
+            onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
+          >${esc(m.text)}</div>
+          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
+            ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
+            ${ackIcon}
+            <button class="ms-del" onclick="event.stopPropagation();deleteMs('${esc(projId)}','${esc(m.id)}')" style="font-size:10px">✕</button>
           </div>
-          ${children.length ? `
-          <!-- connector -->
-          <div style="width:2px;height:14px;background:var(--panel-border);margin:0 auto"></div>
-          <!-- L1 children row -->
-          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
-            ${children.map(c => {
-              const cs = c.done ? 'done' : 'pending';
-              return `<div style="display:flex;flex-direction:column;align-items:center">
-                <button onclick="toggleMs('${esc(projId)}','${esc(c.id)}')"
-                  title="${esc(c.text)}"
-                  style="width:36px;height:24px;border-radius:50% 42% 50% 42%;
-                    border:1.5px solid ${stoneColors[cs]};
-                    background:${stoneBg[cs]};color:${stoneFg[cs]};
-                    font-size:9px;cursor:pointer;transition:all .12s;
-                    display:flex;align-items:center;justify-content:center"
-                >${c.done?'✓':'○'}</button>
-                <div style="font-size:9px;text-align:center;margin-top:2px;line-height:1.2;
-                  color:${c.done?'var(--text-dim)':'var(--text-soft)'};
-                  ${c.done?'text-decoration:line-through;':''}
-                  max-width:70px;word-break:break-word;cursor:text"
-                  contenteditable="true"
-                  onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
-                >${esc(c.text)}</div>
-              </div>`;
-            }).join('')}
-            <button class="ms-add-sub" style="align-self:flex-start;margin-top:4px"
-              onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+</button>
-          </div>` : `
-          <button class="ms-add-sub" style="margin-top:6px"
-            onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub</button>`}
         </div>
-      `).join('')}
-    </div>
+        ${subHtml}
+      </div>`;
+    }).join('')}
   </div>`;
 
-  el.innerHTML = progressBar + treeHtml;
+  el.innerHTML = progressBar + toggleHtml;
+}
+
+function toggleMsExpand(projId, mid) {
+  const key = `ms-expand-${projId}`;
+  let exp = {};
+  try { exp = JSON.parse(localStorage.getItem(key) || '{}'); } catch(_) {}
+  exp[mid] = !exp[mid];
+  localStorage.setItem(key, JSON.stringify(exp));
+  loadMilestones(projId);
 }
 
 async function toggleMs(projId, mid) {
@@ -2461,18 +2468,19 @@ function renderHierarchy(p) {
       </div>
     </div>
 
-    <!-- Layer 3: Milestones -->
+    <!-- Layer 3: Milestones — numbered toggle (primary, editable) -->
     <div class="dm-layer">
       <div class="dm-layer-head">
         <div class="dm-layer-icon ms" title="Milestones">◎</div>
         <span class="dm-layer-title">Milestones</span>
-        <span class="dm-layer-count">${doneCount}/${p.milestones.length}</span>
-        <button class="dm-sync-btn" id="dm-sync-btn" onclick="syncMilestones()" title="Auto-detect from CTX work history">
-          ↻ Sync
-        </button>
+        <span class="dm-layer-count" id="dm-ms-ack-badge"></span>
+        <button class="dm-sync-btn" id="dm-sync-btn" onclick="syncMilestones()" title="Sync from CTX">↻</button>
       </div>
-      <div id="dm-ms-list" class="dm-ms-list">${msHtml}</div>
-      <div id="dm-sync-status" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-top:6px"></div>
+      <div id="dm-ms-save-status" style="font-size:10px;color:var(--text-dim);font-family:var(--mono)"></div>
+      <div id="dm-ms-creator" style="font-size:12px;font-family:var(--mono);color:var(--text-dim)">Loading…</div>
+      <div style="margin-top:8px">
+        <button class="dm-btn" style="font-size:11px" onclick="addMilestone('${esc(p.id)}', 0, null)">+ milestone</button>
+      </div>
     </div>
   `;
 }
@@ -2485,58 +2493,36 @@ function renderRight(p, topics, docData) {
     </div>`
   ).join('') || `<div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">CTX offline or no activity</div>`;
 
+  // Right panel: CTX activity + quick actions only (milestones moved to left panel)
   document.getElementById('dm-right').innerHTML = `
 
     <!-- Current work from CTX -->
     <div class="dm-section">
       <div class="dm-section-label">
         <span class="live-dot"></span>
-        Current work (CTX)
+        Live work (CTX)
       </div>
       <div class="ctx-strip">${topicsHtml}</div>
     </div>
 
-    <!-- Alignment (auto-loading) -->
-    <div class="dm-section">
-      <div class="dm-section-label">Alignment</div>
-      <div id="dm-align-result">
-        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">Click ↻ to check alignment</div>
-      </div>
-      <button class="dm-btn dm-btn-refresh" id="dm-pulse-btn" onclick="refreshAlignment()" style="margin-top:8px">
-        ↻ Refresh
-      </button>
-    </div>
-
-    <!-- Actions -->
+    <!-- Quick actions -->
     <div class="dm-section">
       <div class="dm-section-label">Actions</div>
+      <button class="dm-btn" style="width:100%;background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);margin-bottom:8px" onclick="openTerminal('${esc(p.id)}')">▶ Open Claude session</button>
       <div class="dm-action-row">
         ${docData?.ok
-          ? `<button class="dm-btn" onclick="openDoc('${esc(p.id)}', '${esc(docData.path)}')">◈ View spec doc</button>`
-          : `<button class="dm-btn" style="opacity:.4;pointer-events:none">◈ No spec doc</button>`}
-        <button class="dm-btn" id="dm-eval-btn" onclick="runEval()">◈ Expert eval</button>
+          ? `<button class="dm-btn" onclick="openDoc('${esc(p.id)}', '${esc(docData.path)}')">◈ Spec doc</button>`
+          : `<button class="dm-btn" style="opacity:.4;pointer-events:none">◈ No spec</button>`}
+        <button class="dm-btn dm-btn-refresh" onclick="refreshAlignment()" title="Check alignment with current work">↻ Align</button>
       </div>
+      <div id="dm-align-result" style="margin-top:8px"></div>
       <div id="eval-result"></div>
-      <button class="dm-btn" style="margin-top:10px;width:100%;background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)" onclick="openTerminal('${esc(p.id)}')">▶ Open Claude session</button>
     </div>
 
     ${p.note ? `<div class="dm-section">
-      <div class="dm-section-label">Context</div>
+      <div class="dm-section-label">Note</div>
       <div class="dm-note">${esc(p.note)}</div>
     </div>` : ''}
-
-    <!-- Milestone Creator -->
-    <div class="dm-section" id="dm-ms-creator-section">
-      <div class="dm-section-label">
-        Milestones
-        <span id="dm-ms-ack-badge" style="font-size:10px;color:var(--green);font-family:var(--mono);margin-left:8px"></span>
-        <span id="dm-ms-save-status" style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-left:4px"></span>
-      </div>
-      <div id="dm-ms-creator" style="font-size:12px;font-family:var(--mono);color:var(--text-dim)">Loading…</div>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button class="dm-btn" style="font-size:11px" onclick="addMilestone('${esc(p.id)}', 0, null)">+ milestone</button>
-      </div>
-    </div>
   `;
 }
 
