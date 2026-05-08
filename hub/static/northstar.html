@@ -913,18 +913,26 @@ header {
 
     </div>
 
-    <!-- Terminal panel (replaces dm-body when open) -->
-    <div class="dm-terminal" id="dm-terminal">
-      <div class="dm-terminal-hdr">
-        <div class="dm-terminal-title">claude @ <span id="dm-term-proj">—</span></div>
-        <button class="dm-terminal-back" onclick="killAndNewSession()" title="Kill and restart session">↺ new</button>
-        <button class="dm-terminal-back" style="margin-left:4px;border-color:#c0392b;color:#e05252" onclick="killSession()" title="Kill session permanently">⬛ kill</button>
-        <button class="dm-terminal-back" style="margin-left:6px" onclick="closeTerminal()">← back</button>
-      </div>
-      <div id="dm-xterm"></div>
-    </div>
 
   </div>
+</div>
+
+<!-- Floating draggable terminal -->
+<div id="ns-terminal-float" style="display:none;position:fixed;bottom:24px;right:24px;z-index:300;
+  width:520px;height:340px;background:#1a1916;border:1px solid #333;border-radius:10px;
+  box-shadow:0 12px 40px rgba(0,0,0,.45);display:none;flex-direction:column;overflow:hidden;
+  resize:both;">
+  <div id="ns-terminal-drag-hdr" style="display:flex;align-items:center;gap:8px;padding:7px 12px;
+    background:#252220;border-bottom:1px solid #333;cursor:move;user-select:none;flex-shrink:0">
+    <div style="flex:1;font-family:var(--mono);font-size:11px;color:#aaa">
+      claude @ <span id="ns-term-proj" style="color:#cc785c">—</span>
+    </div>
+    <button onclick="killAndNewSession()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">↺</button>
+    <button onclick="killSession()" style="background:none;border:1px solid #c0392b;border-radius:4px;color:#e05252;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">⬛</button>
+    <button onclick="minimizeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" id="ns-term-min-btn">—</button>
+    <button onclick="closeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">✕</button>
+  </div>
+  <div id="dm-xterm" style="flex:1;overflow:hidden;padding:2px 4px"></div>
 </div>
 
 <!-- Doc viewer overlay -->
@@ -1208,53 +1216,76 @@ function renderMilestoneCreator(projId, milestones) {
 
   const l0 = milestones.filter(m => (m.layer || 0) === 0);
   const l1 = milestones.filter(m => (m.layer || 0) === 1);
-
-  // Update ack badge
+  const doneTotal = milestones.filter(m => m.done).length;
   const acked = milestones.filter(m => m.claude_ack).length;
+
+  // Ack badge
   const badge = document.getElementById('dm-ms-ack-badge');
-  if (badge) badge.textContent = acked > 0 ? `◈ ${acked}/${milestones.length} ack'd` : '';
+  if (badge) badge.textContent = acked > 0 ? `◈ ${acked}/${milestones.length}` : '';
 
   if (!milestones.length) {
-    el.innerHTML = '<div style="color:var(--text-dim);font-size:11px">No milestones yet — add one below.</div>';
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:11px;padding:4px 0">No milestones yet.</div>';
     return;
   }
 
-  el.innerHTML = l0.map(m => {
-    const children = l1.filter(c => c.parent_id === m.id);
-    const ack = m.claude_ack
-      ? `<span class="ms-ack acked">◈ ${String(m.claude_ack).slice(5,10)}</span>`
-      : `<span class="ms-ack unread">○ unread</span>`;
-    const doneClass = m.done ? 'done' : '';
-    const toggle = m.done ? '✓' : '○';
+  // Overall progress bar
+  const pct = milestones.length ? Math.round(doneTotal / milestones.length * 100) : 0;
+  const progressBar = `<div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:4px">
+      <span>Progress</span><span>${doneTotal}/${milestones.length} · ${pct}%</span>
+    </div>
+    <div style="height:4px;background:var(--panel-border);border-radius:2px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:var(--green);border-radius:2px;transition:width .3s"></div>
+    </div>
+  </div>`;
 
-    const childHtml = children.map(c => {
+  // L0 milestone blocks
+  const blocksHtml = l0.map(m => {
+    const children = l1.filter(c => c.parent_id === m.id);
+    const childDone = children.filter(c => c.done).length;
+    // Determine visual state
+    const state = m.done ? 'done' : (children.length && childDone > 0 ? 'active' : 'pending');
+    const stateColor = {done:'var(--green)', active:'var(--accent)', pending:'var(--panel-border)'}[state];
+    const stateLabel = {done:'done', active:'in progress', pending:'pending'}[state];
+    const ackHtml = m.claude_ack
+      ? `<span style="font-size:9px;color:var(--green);font-family:var(--mono)">◈ ${String(m.claude_ack).slice(5,10)}</span>`
+      : `<span style="font-size:9px;color:var(--yellow);font-family:var(--mono)">○ unread</span>`;
+
+    const childrenHtml = children.map(c => {
       const cack = c.claude_ack
-        ? `<span class="ms-ack acked">◈ ${String(c.claude_ack).slice(5,10)}</span>`
-        : `<span class="ms-ack unread">○</span>`;
-      return `<div class="ms-item layer-1">
-        <button class="ms-toggle ${c.done?'done':''}" onclick="toggleMs('${esc(projId)}','${esc(c.id)}')">${c.done?'✓':'○'}</button>
-        <div class="ms-text-wrap">
-          <div class="ms-text ${c.done?'done':''}" contenteditable="true"
-            onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
-            >${esc(c.text)}</div>
+        ? `<span style="font-size:9px;color:var(--green);font-family:var(--mono)">◈</span>`
+        : `<span style="font-size:9px;color:var(--yellow);font-family:var(--mono)">○</span>`;
+      return `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0 3px 8px;border-left:1px solid var(--panel-border)">
+        <button class="ms-toggle ${c.done?'done':''}" style="margin-top:1px" onclick="toggleMs('${esc(projId)}','${esc(c.id)}')">${c.done?'✓':'○'}</button>
+        <div class="ms-text-wrap" style="flex:1">
+          <div class="ms-text ${c.done?'done':''}" style="display:block;width:100%;overflow:visible" contenteditable="true"
+            onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)">${esc(c.text)}</div>
         </div>
         ${cack}
         <button class="ms-del" onclick="deleteMs('${esc(projId)}','${esc(c.id)}')" title="Delete">✕</button>
       </div>`;
     }).join('');
 
-    return `<div class="ms-item">
-      <button class="ms-toggle ${doneClass}" onclick="toggleMs('${esc(projId)}','${esc(m.id)}')">${toggle}</button>
-      <div class="ms-text-wrap">
-        <div class="ms-text ${doneClass}" contenteditable="true"
-          onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-          >${esc(m.text)}</div>
-        <button class="ms-add-sub" onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub-milestone</button>
+    return `<div style="border-left:3px solid ${stateColor};border-radius:0 6px 6px 0;
+      background:var(--panel-soft);padding:8px 10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:${children.length?'6px':'0'}">
+        <button class="ms-toggle ${m.done?'done':''}" onclick="toggleMs('${esc(projId)}','${esc(m.id)}')">${m.done?'✓':'○'}</button>
+        <div class="ms-text-wrap" style="flex:1">
+          <div class="ms-text ${m.done?'done':''}" style="display:block;width:100%;overflow:visible;font-weight:500" contenteditable="true"
+            onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)">${esc(m.text)}</div>
+        </div>
+        ${ackHtml}
+        <span style="font-size:9px;font-family:var(--mono);color:${stateColor};background:var(--panel);
+          border:1px solid ${stateColor};border-radius:8px;padding:1px 6px">${stateLabel}</span>
+        <button class="ms-del" onclick="deleteMs('${esc(projId)}','${esc(m.id)}')" title="Delete">✕</button>
       </div>
-      ${ack}
-      <button class="ms-del" onclick="deleteMs('${esc(projId)}','${esc(m.id)}')" title="Delete">✕</button>
-    </div>${childHtml}`;
+      ${childrenHtml}
+      <button class="ms-add-sub" style="margin-top:${children.length?'4px':'0'};margin-left:28px"
+        onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub</button>
+    </div>`;
   }).join('');
+
+  el.innerHTML = progressBar + blocksHtml;
 }
 
 async function toggleMs(projId, mid) {
@@ -2048,17 +2079,21 @@ async function commitRename(el, projId) {
 // ── Detail modal (centered overlay) ──────────────────────────────────────────
 
 function closeDetail() {
-  closeTerminal();
+  // Terminal stays open (floating) — independent of detail modal
   activeIdx = null;
   document.getElementById('detail-overlay').classList.remove('show');
   render();
 }
 
 function openTerminal(projId) {
-  document.getElementById('dm-body').style.display = 'none';
-  const panel = document.getElementById('dm-terminal');
-  panel.classList.add('show');
-  document.getElementById('dm-term-proj').textContent = projId;
+  // Show floating terminal (no longer embedded in modal)
+  const float = document.getElementById('ns-terminal-float');
+  float.style.display = 'flex';
+  document.getElementById('ns-term-proj').textContent = projId;
+  _termMinimized = false;
+  document.getElementById('dm-xterm').style.display = '';
+  document.getElementById('ns-term-min-btn').textContent = '—';
+  float.style.height = float.dataset.lastH || '340px';
 
   // Init xterm once
   if (!_term) {
@@ -2131,13 +2166,69 @@ function _sendResize(ws) {
   ws.send(`\x00resize:${_term.cols},${_term.rows}`);
 }
 
+let _termMinimized = false;
+
 function closeTerminal() {
   if (_termRo) { _termRo.disconnect(); _termRo = null; }
-  // Detach WS without killing — session persists server-side for reconnect
   if (_termWs) { _termWs.close(); _termWs = null; }
-  document.getElementById('dm-terminal').classList.remove('show');
-  document.getElementById('dm-body').style.display = '';
+  document.getElementById('ns-terminal-float').style.display = 'none';
 }
+
+function minimizeTerminal() {
+  const float = document.getElementById('ns-terminal-float');
+  const xterm = document.getElementById('dm-xterm');
+  const btn = document.getElementById('ns-term-min-btn');
+  _termMinimized = !_termMinimized;
+  if (_termMinimized) {
+    float.dataset.lastH = float.style.height || '340px';
+    float.style.height = '36px';
+    xterm.style.display = 'none';
+    btn.textContent = '□';
+  } else {
+    float.style.height = float.dataset.lastH || '340px';
+    xterm.style.display = '';
+    btn.textContent = '—';
+    setTimeout(() => _termFit?.fit(), 80);
+  }
+}
+
+// Make terminal draggable
+(function() {
+  let dx = 0, dy = 0, dragging = false;
+  document.addEventListener('DOMContentLoaded', () => {
+    const hdr = document.getElementById('ns-terminal-drag-hdr');
+    const float = document.getElementById('ns-terminal-float');
+    if (!hdr || !float) return;
+    hdr.addEventListener('mousedown', e => {
+      if (e.target.tagName === 'BUTTON') return;
+      dragging = true;
+      const r = float.getBoundingClientRect();
+      dx = e.clientX - r.left; dy = e.clientY - r.top;
+      float.style.right = 'auto'; float.style.bottom = 'auto';
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      float.style.left = `${e.clientX - dx}px`;
+      float.style.top  = `${e.clientY - dy}px`;
+    });
+    document.addEventListener('mouseup', () => { dragging = false; });
+    // Touch drag
+    hdr.addEventListener('touchstart', e => {
+      if (e.target.tagName === 'BUTTON') return;
+      const t = e.touches[0];
+      const r = float.getBoundingClientRect();
+      dx = t.clientX - r.left; dy = t.clientY - r.top;
+      float.style.right = 'auto'; float.style.bottom = 'auto';
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      if (!dx && !dy) return;
+      const t = e.touches[0];
+      float.style.left = `${t.clientX - dx}px`;
+      float.style.top  = `${t.clientY - dy}px`;
+    }, { passive: true });
+  });
+})();
 
 function killSession() {
   if (_termWs && _termWs.readyState === 1) _termWs.send('\x00kill-session');
