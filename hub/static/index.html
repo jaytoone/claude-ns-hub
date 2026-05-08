@@ -229,11 +229,22 @@ let activeTab = 'northstar';
 async function initConfig() {
   try {
     const cfg = await fetch('/config').then(r => r.json());
-    TABS.ctx.standalone = cfg.ctx_url;
-    document.getElementById('frame-ctx').src    = cfg.ctx_url;
-    document.getElementById('frame-corpus').src = cfg.corpus_url;
-    document.getElementById('frame-northstar').src = cfg.northstar_url;
-    document.getElementById('frame-market-signals').src = cfg.market_signals_url || '/market-signals';
+    TABS.ctx.standalone    = cfg.ctx_url;
+    TABS.corpus.standalone = cfg.corpus_url;
+
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    const pushTheme = (frameId, src) => {
+      const f = document.getElementById(frameId);
+      // Push theme once iframe finishes loading (cross-origin iframes can't read parent localStorage)
+      f.addEventListener('load', () => {
+        try { f.contentWindow.postMessage({type:'hub-theme', value:theme}, '*'); } catch(_) {}
+      }, {once: true});
+      f.src = src;
+    };
+    pushTheme('frame-ctx',            cfg.ctx_url);
+    pushTheme('frame-corpus',         cfg.corpus_url);
+    pushTheme('frame-northstar',      cfg.northstar_url);
+    pushTheme('frame-market-signals', cfg.market_signals_url || '/market-signals');
   } catch (_) {}
 }
 initConfig();

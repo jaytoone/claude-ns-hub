@@ -204,8 +204,14 @@ main { max-width: 1400px; margin: 0 auto; padding: 20px 24px; display: flex; fle
 <body>
 
 <script>
-(function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();
-window.addEventListener('message',e=>{if(e.data?.type==='hub-theme')document.documentElement.setAttribute('data-theme',e.data.value)});
+// Cross-origin: can't read hub's localStorage. Theme arrives via postMessage from parent.
+// Fallback: respect system preference until parent pushes the theme.
+if (matchMedia('(prefers-color-scheme:dark)').matches)
+  document.documentElement.setAttribute('data-theme','dark');
+window.addEventListener('message', e => {
+  if (e.data?.type === 'hub-theme')
+    document.documentElement.setAttribute('data-theme', e.data.value);
+});
 </script>
 <header>
   <div class="brand">
