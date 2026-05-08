@@ -1357,9 +1357,25 @@ function render() {
     _visEdges = new vis.DataSet(visEdges);
     const container = document.getElementById('ns-graph-canvas');
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    // Use hierarchical layout when projects have parent relationships, else physics
+    const hasHierarchy = projects.some(p => p.parent || (p.connections||[]).length > 0);
+    const useTree = hasHierarchy || projects.every(p => !p.x);
+
     _network = new vis.Network(container, { nodes: _visNodes, edges: _visEdges }, {
+      layout: useTree ? {
+        hierarchical: {
+          enabled: true,
+          direction: 'UD',       // top-down tree
+          sortMethod: 'directed',
+          levelSeparation: 120,
+          nodeSpacing: 160,
+          treeSpacing: 200,
+          blockShifting: true,
+          edgeMinimization: true,
+        }
+      } : { randomSeed: 42 },
       physics: {
-        enabled: true,
+        enabled: !useTree,
         forceAtlas2Based: {
           gravitationalConstant: -60, centralGravity: 0.01,
           springLength: 160, springConstant: 0.08, damping: 0.4,
@@ -1373,13 +1389,19 @@ function render() {
         multiselect: false,
       },
       manipulation: { enabled: false },
-      edges: { smooth: { type: 'curvedCW', roundness: 0.15 } },
+      edges: { smooth: useTree
+        ? { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 }
+        : { type: 'curvedCW', roundness: 0.15 } },
     });
 
-    // Save positions after stabilization
+    // Focus canvas so right-click works immediately (cold right-click fix)
+    container.setAttribute('tabindex', '0');
+    container.focus();
+
+    // Save positions after physics stabilization (tree layout doesn't need this)
     _network.on('stabilizationIterationsDone', () => {
       _network.setOptions({ physics: { enabled: false } });
-      savePositions();
+      if (!useTree) savePositions();
     });
 
     // Node click → detail (or finish connect if in connect mode)
@@ -1405,12 +1427,18 @@ function render() {
     });
 
     // Right-click → context menu
-    _network.on('oncontext', params => {
-      params.event.preventDefault();
-      if (params.nodes.length === 1) {
-        showCtxMenu(params.event.clientX, params.event.clientY, params.nodes[0]);
-      }
+    // Fix: bind mousedown(button=2) not contextmenu — avoids cold-click focus issue
+    container.addEventListener('mousedown', e => {
+      if (e.button !== 2) return;
+      e.preventDefault();
+      container.focus();
+      // Small delay so vis-network registers the mousedown before getNodeAt
+      setTimeout(() => {
+        const nodeId = _network.getNodeAt({ x: e.offsetX, y: e.offsetY });
+        if (nodeId !== undefined) showCtxMenu(e.clientX, e.clientY, nodeId);
+      }, 10);
     });
+    container.addEventListener('contextmenu', e => e.preventDefault());
 
     // Save position after manual drag
     _network.on('dragEnd', params => {
@@ -1645,14 +1673,11 @@ function fitGraph() { _network?.fit({ animation: { duration: 400, easingFunction
 
 function resetLayout() {
   if (!_network) return;
-  _network.setOptions({ physics: { enabled: true } });
-  setTimeout(() => {
-    _network.stabilize(150);
-    _network.once('stabilizationIterationsDone', () => {
-      _network.setOptions({ physics: { enabled: false } });
-      savePositions();
-    });
-  }, 50);
+  // Destroy and recreate to force layout recalculation
+  _network.destroy();
+  _network = null;
+  render();
+  setTimeout(() => fitGraph(), 600);
 }
 
 // ── Inline rename ─────────────────────────────────────────────────────────────
