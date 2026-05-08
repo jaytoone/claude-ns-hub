@@ -74,9 +74,18 @@ header {
 .updated-at { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
 
 /* ── Swimlane layout ────────────────────────────────────────────────────────── */
-.grid-wrap { padding: 12px 16px; overflow: auto; }
-.ns-swimlane { position: relative; }
+.grid-wrap {
+  padding: 12px 16px;
+  overflow-x: auto;   /* horizontal scroll preserves desktop layout on mobile */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.ns-swimlane {
+  position: relative;
+  min-width: max-content; /* never shrink below content — forces horizontal scroll */
+}
 .ns-lane { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.ns-lane-nodes { flex-wrap: nowrap !important; } /* single row per lane on all screen sizes */
 .ns-lane-label {
   width: 72px; flex-shrink: 0; font-family: var(--mono); font-size: 9px;
   text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim);
@@ -127,10 +136,7 @@ header {
 }
 /* Each node is its own column — no group wrapper */
 .ns-group-orphan, .ns-group-nodes-col { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
-@media (max-width: 640px) {
-  .ns-lane-label { width: 48px; font-size: 8px; }
-  .ns-node { width: 130px; }
-}
+/* Mobile: swimlane scrolls horizontally — no layout changes needed */
 
 /* Right-click context menu */
 .ns-ctx-menu {
@@ -212,10 +218,8 @@ header {
 .status-label.paused   { color: var(--text-dim); }
 
 @media (max-width: 640px) {
-  .grid-wrap { padding: 8px 10px; }
-  .ns-lane-label { width: 50px; font-size: 8px; }
-  .ns-node { width: 130px; }
-  .ns-node-name { font-size: 12px; }
+  /* Swimlane scrolls horizontally — layout preserved as-is */
+  .grid-wrap { padding: 6px 8px; }
 }
 
 /* ── Milestone Creator ────────────────────────────────────────────────────── */
