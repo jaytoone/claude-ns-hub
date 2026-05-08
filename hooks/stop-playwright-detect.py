@@ -63,10 +63,21 @@ SESSION_HASH = session_hash(SESSION_ID)
 # ── UI Detection: scan for running web servers ────────────────────────────────
 
 UI_PORTS = [3000, 3001, 3002, 3003, 4200, 5000, 5173, 5174,
-            8000, 8080, 8081, 8787, 8989, 9000]
+            8000, 8080, 8081, 8989, 9000]  # 8787 excluded (ctx-dashboard, not a project UI)
 
 def detect_ui_url(cwd: str) -> str | None:
     """Scan listening ports for a running web server. Return URL or None."""
+    # Check .playwright-hook.json first — project-level override wins
+    hook_cfg = Path(cwd) / ".playwright-hook.json"
+    if hook_cfg.exists():
+        try:
+            cfg = json.loads(hook_cfg.read_text())
+            base = cfg.get("baseUrl")
+            if base:
+                return base
+        except Exception:
+            pass
+
     # Only proceed if project looks like it has UI files
     ui_signals = [
         "package.json", "index.html", "app.py", "server.py", "main.py",
@@ -76,16 +87,25 @@ def detect_ui_url(cwd: str) -> str | None:
         return None
 
     ss_out = run(["ss", "-tlnp"])
-    listening = set()
-    for m in re.finditer(r"(?:[\d.]+|\*):(\d+)", ss_out):
-        listening.add(int(m.group(1)))
+    # Parse port → actual bind address from ss output
+    # Format: "LISTEN 0 128 0.0.0.0:3000  0.0.0.0:*" or "127.0.0.1:8787"
+    port_bind = {}
+    for line in ss_out.splitlines():
+        m = re.search(r"([\d.]+|\*|\[::\]):(\d+)\s", line)
+        if m:
+            addr, port_str = m.group(1), m.group(2)
+            port_bind[int(port_str)] = addr
 
     for port in UI_PORTS:
-        if port in listening:
-            # Quick reachability check
+        if port in port_bind:
+            bind_addr = port_bind[port]
+            # Normalize: * and 0.0.0.0 are all-interface binds
+            reach_addr = "127.0.0.1" if bind_addr not in ("0.0.0.0", "*", "[::]") else "127.0.0.1"
             try:
-                urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=2)
-                return f"http://127.0.0.1:{port}"
+                urllib.request.urlopen(f"http://{reach_addr}:{port}/", timeout=2)
+                # Report the ACTUAL bind address so it's accurate in hook output
+                display_addr = bind_addr if bind_addr not in ("*", "[::]") else "0.0.0.0"
+                return f"http://{display_addr}:{port}"
             except Exception:
                 continue
     return None
@@ -137,8 +157,13 @@ if not Path(SESSION_START_HEAD).exists():
     Path(SESSION_START_HEAD).write_text(head)
     Path(SESSION_SNAPSHOT).write_text("\n".join(current_all))
     if not current_all:
-        sys.exit(0)
-    block("New Claude session started — ignoring prior uncommitted changes.\n\nIf you have new work from this session, please mention it.")
+        # Non-git project with .playwright-hook.json: skip git tracking, go straight to verify
+        if (Path(CWD) / ".playwright-hook.json").exists() and not head:
+            pass  # fall through to UI verification below
+        else:
+            sys.exit(0)
+    else:
+        block("New Claude session started — ignoring prior uncommitted changes.\n\nIf you have new work from this session, please mention it.")
 
 session_base = set(Path(SESSION_SNAPSHOT).read_text().splitlines()) if Path(SESSION_SNAPSHOT).exists() else set()
 session_init_head = Path(SESSION_START_HEAD).read_text().strip() if Path(SESSION_START_HEAD).exists() else ""
@@ -152,7 +177,8 @@ new_files = [f for f in current_all if f not in session_base]
 changed_raw = list(set(new_files + [f for f in committed_since.splitlines() if f]))
 changed_raw = sorted(set(filter(None, changed_raw)))
 
-if not changed_raw:
+_no_git_hook = (Path(CWD) / ".playwright-hook.json").exists() and not git("rev-parse", "HEAD")
+if not changed_raw and not _no_git_hook:
     block("No new work in this Claude session.\n\nIf you have newly changed files, please mention them.")
 
 TARGETS = [f for f in changed_raw if not should_skip(f)]
@@ -205,7 +231,7 @@ if Path(BLOCK_FLAG).exists():
             pass
     block(msg)
 
-if not TARGETS:
+if not TARGETS and not _no_git_hook:
     sys.exit(0)
 
 # ── Generic Playwright invariant check ───────────────────────────────────────
@@ -229,17 +255,23 @@ def run_ui_check(url: str) -> list[dict]:
             try:
                 resp = page.goto(url, wait_until="domcontentloaded", timeout=10000)
                 status = resp.status if resp else 0
+                final_url = page.url  # may differ from url if redirected
+                redirected = final_url.rstrip("/") != url.rstrip("/")
                 results.append({"check": "http_ok", "ok": 200 <= status < 400, "detail": str(status)})
 
                 title = page.title()
                 bad_title = not title or any(w in title.lower() for w in ["error", "not found", "404", "500"])
                 results.append({"check": "page_title", "ok": not bad_title, "detail": title[:60]})
 
-                has_content = page.evaluate("""() => {
-                    const sel = 'main, #app, #root, #__next, [role="main"], body > div, .content, .wrap, .layout';
-                    const el = document.querySelector(sel);
-                    return el ? el.innerText.trim().length > 10 : document.body.innerText.trim().length > 10;
-                }""")
+                # If server redirected (e.g. / → /ko), it's clearly alive — skip blank-page check
+                if redirected:
+                    has_content = True
+                else:
+                    has_content = page.evaluate("""() => {
+                        const sel = 'main, #app, #root, #__next, [role="main"], body > div, .content, .wrap, .layout';
+                        const el = document.querySelector(sel);
+                        return el ? el.innerText.trim().length > 10 : document.body.innerText.trim().length > 10;
+                    }""")
                 results.append({"check": "has_content", "ok": has_content, "detail": "" if has_content else "blank page"})
 
             except PWTimeout:
@@ -254,7 +286,10 @@ def run_ui_check(url: str) -> list[dict]:
 
 # ── Build output ──────────────────────────────────────────────────────────────
 
-url_to_check = UI_URL or "http://localhost:3000"
+display_url = UI_URL or "http://localhost:3000"
+# Playwright/Chromium needs a routable address — 0.0.0.0 is a bind wildcard, not a destination
+check_url = re.sub(r'http://0\.0\.0\.0:', 'http://127.0.0.1:', display_url)
+url_to_check = check_url  # kept for compat with check_results usage below
 n_targets = len(TARGETS)
 changed_summary = "\n".join(TARGETS[:8]) + ("\n..." if n_targets > 8 else "")
 
@@ -272,7 +307,7 @@ if check_results:
 
 # Save context for re-entry
 ctx = {
-    "url": url_to_check,
+    "url": display_url,
     "targets": TARGETS,
     "magnitude": f"{n_targets} file{'s' if n_targets != 1 else ''}",
     "checks": check_results,
@@ -298,7 +333,7 @@ else:
     # Needs manual verification
     msg = f"[PLAYWRIGHT] {n_targets} UI file{'s' if n_targets != 1 else ''} changed — verify before committing."
     msg += f"\n\nChanged:\n{changed_summary}"
-    msg += f"\nURL: {url_to_check}"
+    msg += f"\nURL: {display_url}"
     if check_summary:
         msg += check_summary
     msg += f"\n\nVerify with Playwright, then:\n  touch {FLAG}"
