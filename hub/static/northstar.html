@@ -143,8 +143,18 @@ header {
   outline: none; border-radius: 2px; cursor: text;
 }
 .ns-node-name:focus { background: var(--bg-deep); padding: 0 2px; overflow: visible; white-space: normal; }
-.ns-node-sess { font-size: 9px; font-family: var(--mono); color: var(--text-dim); flex-shrink: 0; cursor: pointer; }
-.ns-node-sess.live { color: var(--green); }
+/* Session status pill */
+.ns-sess-pill {
+  font-size: 8px; font-family: var(--mono); font-weight: 600;
+  padding: 1px 5px; border-radius: 8px; flex-shrink: 0; cursor: pointer;
+  transition: opacity .12s; white-space: nowrap;
+}
+.ns-sess-pill:hover { opacity: .75; }
+.ns-sess-idle     { background: var(--panel-border); color: var(--text-dim); }
+.ns-sess-running  { background: var(--green); color: #fff; animation: sess-pulse 1.5s ease-in-out infinite; }
+.ns-sess-waiting  { background: var(--yellow); color: #fff; }
+.ns-sess-done     { background: var(--blue); color: #fff; }
+@keyframes sess-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
 .ns-node-bar-wrap { height: 3px; background: var(--panel-border); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
 .ns-node-bar { height: 100%; border-radius: 2px; }
 .ns-node-bottom { display: flex; justify-content: space-between; }
@@ -1319,6 +1329,23 @@ async function refreshSessionStatus() {
   } catch(_) {}
 }
 
+function buildSessPill(s) {
+  if (!s || s === 'dead' || s === 'none')
+    return { cls: 'ns-sess-idle', label: 'idle' };
+  if (s === 'active' || s === 'running')
+    return { cls: 'ns-sess-running', label: 'run' };
+  if (s === 'waiting')
+    return { cls: 'ns-sess-waiting', label: 'wait' };
+  if (s === 'done')
+    return { cls: 'ns-sess-done', label: 'done' };
+  if (s.startsWith('idle:')) {
+    const secs = parseInt(s.split(':')[1]);
+    const label = secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs/60)}m` : `${Math.round(secs/3600)}h`;
+    return { cls: 'ns-sess-idle', label };
+  }
+  return { cls: 'ns-sess-idle', label: 'idle' };
+}
+
 function sessCell(projId) {
   const s = _sessionStatus[projId];
   if (!s || s === 'dead') return `<span class="sess-dot sess-none"><span class="sess-indicator"></span>—</span>`;
@@ -1350,8 +1377,7 @@ function nodeCard(p, idx) {
     }
   }
   const sKey = _sessionStatus[p.id||p.name];
-  const sessDot = sKey === 'active' ? '●' : '·';
-  const sessClass = sKey === 'active' ? 'live' : '';
+  const sessPill = buildSessPill(sKey);
   const active = idx === activeIdx ? 'active' : '';
   const stage = p.stage || 'unassigned';
   const stageClass = stage !== 'unassigned' ? `stage-${stage}` : '';
@@ -1366,7 +1392,7 @@ function nodeCard(p, idx) {
         onblur="saveNodeName(this,'${pid}')"
         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
         >${esc(p.name)}</span>
-      <span class="ns-node-sess ${sessClass}" onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">${sessDot}</span>
+      <span class="ns-sess-pill ${sessPill.cls}" onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')" title="Click to open terminal">${sessPill.label}</span>
     </div>
     <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
     <div class="ns-node-bottom">

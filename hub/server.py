@@ -1130,11 +1130,28 @@ async def save_memo(proj_id: str, request: Request):
     return JSONResponse({"ok": True})
 
 
+# Explicit pill status set by hooks (overrides derived WS state)
+_pill_status: dict[str, str] = {}  # proj_id → RUNNING|WAITING|IDLE|DONE
+
+
+@app.patch("/api/northstar/{proj_id}/session-status")
+async def set_session_status(proj_id: str, request: Request):
+    """Hook endpoint — Stop/Notification hooks POST status updates here."""
+    data = await request.json()
+    status = data.get("status", "IDLE").upper()
+    if status not in ("RUNNING", "WAITING", "IDLE", "DONE"):
+        return JSONResponse({"ok": False, "error": "invalid status"}, status_code=400)
+    _pill_status[proj_id] = status
+    return JSONResponse({"ok": True, "status": status})
+
+
 @app.get("/api/northstar/sessions")
 async def ns_sessions():
     """Return terminal session status for all projects."""
     result = {}
     now = time.time()
+
+    # WS-connected sessions
     for proj_id, proc in list(_sessions.items()):
         if not proc.isalive():
             result[proj_id] = "dead"
@@ -1143,6 +1160,16 @@ async def ns_sessions():
             result[proj_id] = f"idle:{idle_secs}"
         else:
             result[proj_id] = "active"
+
+    # Override with explicit hook-set status (WAITING, DONE, etc.)
+    for proj_id, status in _pill_status.items():
+        if status == "WAITING":
+            result[proj_id] = "waiting"
+        elif status == "DONE" and proj_id not in result:
+            result[proj_id] = "done"
+        elif status == "IDLE" and proj_id not in result:
+            pass  # IDLE is the default (no entry)
+
     return JSONResponse(result)
 
 

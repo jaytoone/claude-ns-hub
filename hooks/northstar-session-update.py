@@ -179,6 +179,18 @@ def main():
     # P3: Try to acknowledge milestones mentioned in commits
     try_ack_milestones(proj_id, commits)
 
+    # P4: Set session status pill to IDLE on session end
+    try:
+        payload = json.dumps({"status": "IDLE"}).encode()
+        req = urllib.request.Request(
+            f"{HUB_API}/api/northstar/{proj_id}/session-status",
+            data=payload, headers={"Content-Type": "application/json"}, method="PATCH"
+        )
+        with urllib.request.urlopen(req, timeout=2):
+            pass
+    except Exception:
+        pass
+
     sys.exit(0)
 
 

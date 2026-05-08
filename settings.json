@@ -187,6 +187,18 @@
         ]
       }
     ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/northstar-notify-status.py",
+            "async": true
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "hooks": [
