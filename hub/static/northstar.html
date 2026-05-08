@@ -809,6 +809,7 @@ header {
       <!-- Node actions (shown when right-clicking a node) -->
       <div id="ctx-node-items">
         <div class="ns-ctx-item" id="ctx-rename">✎ Rename</div>
+        <div class="ns-ctx-item" id="ctx-setparent">⊂ Set parent group</div>
         <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
         <div class="ns-ctx-sep"></div>
         <div class="ns-ctx-item danger" id="ctx-delete">✕ Remove node</div>
@@ -1528,6 +1529,55 @@ document.getElementById('ctx-rename').onclick = () => {
   const el = document.querySelector(`.ns-node[data-pid="${CSS.escape(pid)}"] .ns-node-name`);
   if (el) renameNode(el, pid);
 };
+document.getElementById('ctx-setparent').onclick = () => {
+  const pid = _ctxNodeId; if (!pid) return;
+  hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === pid);
+  if (!p) return;
+  const curLayer = parseInt(p.layer)||0;
+  // Candidates: projects in higher lanes (lower layer number)
+  const candidates = projects.filter(x => (parseInt(x.layer)||0) < curLayer && (x.id||x.name) !== pid);
+  // Build selection UI using the inline overlay
+  const wrap = document.getElementById('ns-rename-wrap');
+  const input = document.getElementById('ns-rename-input');
+  if (!wrap || !input) return;
+  // Replace input with a select-like input: show datalist of candidates
+  const candidateNames = candidates.map(x => x.name || x.id);
+  const curParent = p.parent || '';
+  input.value = curParent;
+  input.placeholder = candidateNames.length
+    ? `Parent: ${candidateNames.join(' / ')} (or leave blank)`
+    : 'Move node to a higher lane first';
+  wrap.style.left = '50%'; wrap.style.top = '45%';
+  wrap.style.transform = 'translate(-50%,-50%)';
+  wrap.style.display = 'block';
+  input.focus(); input.select();
+  const cleanup = () => {
+    wrap.style.display = 'none'; wrap.style.transform = '';
+    input.removeEventListener('keydown', onKey);
+  };
+  const saveParent = async (val) => {
+    cleanup();
+    const newParent = val.trim() || null;
+    // Resolve by name or id
+    const parentProj = newParent
+      ? projects.find(x => x.name === newParent || (x.id||x.name) === newParent)
+      : null;
+    const parentId = parentProj ? (parentProj.id||parentProj.name) : null;
+    await fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({parent: parentId}),
+    });
+    p.parent = parentId;
+    render();
+  };
+  const onKey = (e) => {
+    if (e.key === 'Enter') saveParent(input.value);
+    if (e.key === 'Escape') cleanup();
+  };
+  input.addEventListener('keydown', onKey);
+};
+
 document.getElementById('ctx-setpath').onclick = () => {
   const pid = _ctxNodeId; if (!pid) return;
   hideCtxMenu();
