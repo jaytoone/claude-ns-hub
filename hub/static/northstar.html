@@ -1396,10 +1396,7 @@ function render() {
     container.setAttribute('tabindex', '0');
     container.focus();
 
-    // Layer band labels drawn behind nodes
-    _network.on('beforeDrawing', ctx => {
-      drawLayerBands(ctx);
-    });
+    // Band backgrounds removed — clean canvas
 
     // After first draw: unfix y-axis (hierarchical mode sets fixed.y=true → blocks vertical drag)
     // Must modify body.nodes directly — _visNodes.update() doesn't override internal fixed state
