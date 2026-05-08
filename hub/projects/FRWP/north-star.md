@@ -1,7 +1,11 @@
 ---
-category: 'SVTool'
+category: SVTool
+connections:
+- Driller
+- FromScratch
 current: negative
 deadline: ''
+layer: 1
 log:
 - date: '2026-05-07'
   text: 'Phase 3 result: 23/25 symbols negative EV. Only SHIB/SUI (meme/high-vol)
@@ -22,9 +26,12 @@ milestones:
   text: Live paper trading validation
 name: FRWP
 note: Fixed Risk-Reward Win-ratio Prediction — ML crypto/stock trading strategy
+position_x: 3
 status: behind
 target: '> 0 (breakeven)'
 unit: ''
+x: 365
+y: 130
 ---
 
 # FRWP — North Star

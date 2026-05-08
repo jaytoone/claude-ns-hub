@@ -1,32 +1,48 @@
 ---
-category: 'SVTool'
-current: —
+category: SVTool
+connections: []
+current: '1256'
 deadline: '2026-09-30'
 id: CTX
+layer: 1
 links: ''
 log:
+- date: '2026-05-06'
+  text: 'step_seed_vault() cold-start fix shipped (3964d39) — git history pre-loads vault.db on install, G1 recall fires session 1'
+- date: '2026-05-06'
+  text: '--reseed flag + sharing trigger built (ff34059) — first G1 recall prompts team install; PyPI baseline: 39/day 633/wk'
 - date: '2026-05-07'
-  text: '08e262b fix: Korean tokenizer gap in eval pipeline + 6 regression tests;
-    9cd2371 docs: fix HN item ID 47996700→48017090 (4pts), update reactions log (+1
-    more)'
+  text: 'Hub Market tab = CTX channel manager live — GitHub ★4, HN 4pts, GeekNews 4comments, PyPI 696/wk (+10%); driller corpus created (7 entity corpora now)'
 - date: '2026-05-08'
-  text: 'fd84cf9 docs: add CJK intent comment to production tokenize() regex; 08e262b
-    fix: Korean tokenizer gap in eval pipeline + 6 regression tests (+1 more)'
-metric: Plugin active installs
+  text: 'a0027a1 feat: ship CTX dashboard in pip wheel + ctx-dashboard CLI; channel reactions + PyPI scrape fixed in market-signals.py'
+metric: PyPI downloads/week
 milestones:
+- done: true
+  text: 'Cold-start fix: vault seed on install (3964d39) — G1 recall fires session 1'
+- done: true
+  text: 'Sharing trigger: .omc/ctx-g1-first-fire.flag fires team install prompt (ff34059)'
+- done: true
+  text: 'Channel manager live in hub — GitHub/HN/GeekNews/Dev.to/PyPI tracked (9cd2371)'
+- done: true
+  text: 'ctx-dashboard CLI shipped in pip wheel (a0027a1)'
 - done: false
-  text: Publish to Claude Code plugin marketplace
+  text: 'Cloud vault infra decision (Supabase vs Railway) — unblocks Pro paywall'
 - done: false
-  text: Reach 50 installs
+  text: 'Pro paywall: team shared vault gate + $15-20/mo pricing'
 - done: false
-  text: Reach 100 installs
+  text: 'Publish to Claude Code plugin marketplace'
 - done: false
-  text: Reach 500 installs
+  text: 'Reach 50 active installs (beyond downloads)'
+- done: false
+  text: 'Sustain 3 consecutive weeks of +10% WoW PyPI growth'
 name: CTX
-note: Claude Code memory + context retrieval plugin. Measures real adoption, not downloads.
+note: 'Claude Code memory + context retrieval plugin. PyPI 696/wk (+10% WoW), HN 4pts, GitHub 4 stars. Next gate: cloud infra decision → Pro paywall.'
+position_x: 1
 status: on-track
-target: '500'
-unit: installs
+target: '1000'
+unit: downloads/wk
+x: -585
+y: 0
 ---
 
 # CTX — North Star
@@ -43,9 +59,21 @@ Gives Claude Code persistent memory across sessions — G1 (time), G2 (space), C
 - Retention: per-session utility rate visible to user (they see CTX working)
 
 ## OKRs — 2026 Q2
-- K1: Ship v1.0 to marketplace
-- K2: Reach 50 active installs
-- K3: Achieve >70% utility rate (sessions where CTX retrieval is used)
+
+### Done
+- ✓ Cold-start fix: vault seed on install (G1 fires session 1)
+- ✓ Sharing trigger: team install prompt on first G1 recall
+- ✓ Channel manager: live reaction metrics in hub dashboard
+- ✓ ctx-dashboard CLI shipped in wheel
+
+### In progress
+- K1: Cloud vault infra decision → Pro paywall design ($15-20/mo)
+- K2: 3 customer interviews ("would you pay $15/mo for team vault sync?")
+- K3: Sustain PyPI +10% WoW for 3 consecutive weeks (currently at week 1)
+
+### Upcoming
+- K4: Publish to Claude Code plugin marketplace
+- K5: Reach 50 active installs (tracked separately from downloads)
 
 ## Links
 - Repo: /home/desk-1/Project/CTX

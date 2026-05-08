@@ -1,9 +1,11 @@
 ---
 category: Content
+connections:
+- Driller
 current: '0'
 deadline: '2026-12-31'
 id: MOAT
-layer: 0
+layer: 1
 links: ''
 log: []
 metric: YouTube subscriber count
@@ -16,9 +18,11 @@ milestones:
   text: Publish first longform (CTX or DARWIN V5)
 - done: false
   text: Reach 1,000 subscribers
-name: MOAT
+name: Claude-Hub
 note: AI tech channel — Korean audience, Shorts + longform strategy
+parent: null
 position_x: 4
+repo_path: ''
 status: behind
 target: 1,000
 unit: subscribers

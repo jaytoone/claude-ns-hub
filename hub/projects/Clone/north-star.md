@@ -1,15 +1,22 @@
 ---
-category: 'SVTool'
-name: Clone
-metric: "—"
-current: "—"
-target: "—"
-unit: ""
-status: paused
-deadline: ""
-note: "SVTool — Clone project"
-milestones: []
+category: SVTool
+connections:
+- FreeOS
+current: —
+deadline: ''
+layer: 1
 log: []
+metric: —
+milestones: []
+name: Clone
+note: SVTool — Clone project
+parent: null
+position_x: 3
+status: paused
+target: —
+unit: ''
+x: -365
+y: 0
 ---
 
 # Clone — North Star

@@ -769,16 +769,12 @@ header {
       <div class="ns-swimlane" id="ns-swimlane" style="position:relative">
         <svg id="ns-svg-lines"></svg>
         <div class="ns-lane" id="lane-0">
-          <div class="ns-lane-label">Strategic</div>
+          <div class="ns-lane-label">Vertical</div>
           <div class="ns-lane-nodes" id="lane-nodes-0"></div>
         </div>
         <div class="ns-lane" id="lane-1">
-          <div class="ns-lane-label">Domain</div>
+          <div class="ns-lane-label">SVTool</div>
           <div class="ns-lane-nodes" id="lane-nodes-1"></div>
-        </div>
-        <div class="ns-lane" id="lane-2">
-          <div class="ns-lane-label">Execution</div>
-          <div class="ns-lane-nodes" id="lane-nodes-2"></div>
         </div>
       </div>
     </div>
@@ -1329,13 +1325,13 @@ function nodeCard(p, idx) {
 }
 
 function render() {
-  const lanes = {0:[], 1:[], 2:[]};
+  const lanes = {0:[], 1:[]};
   projects.forEach((p, i) => {
-    const layer = Math.min(2, Math.max(0, parseInt(p.layer)||0));
+    const layer = Math.min(1, Math.max(0, parseInt(p.layer)||0));  // 2 lanes: 0=Vertical, 1=SVTool
     lanes[layer].push({p, i});
   });
 
-  [0,1,2].forEach(l => {
+  [0,1].forEach(l => {
     const el = document.getElementById(`lane-nodes-${l}`);
     if (!el) return;
     if (!lanes[l].length) { el.innerHTML = ''; return; }
@@ -1423,7 +1419,7 @@ function render() {
       document.querySelectorAll('.ns-lane-nodes').forEach(l => l.classList.remove('drag-over'));
     });
   });
-  [0,1,2].forEach(l => {
+  [0,1].forEach(l => {
     const laneEl = document.getElementById(`lane-nodes-${l}`);
     if (!laneEl) return;
     laneEl.addEventListener('dragover', e => {
