@@ -131,19 +131,32 @@ def _load_projects() -> list:
                 if data.get("name"):
                     data["id"] = proj_dir.name  # preserve case to match folder
                     data["file_path"] = str(md)
-                    # Normalize milestones: accept plain strings or {done,text} dicts
+                    # Normalize milestones: upgrade old {done,text} → new {id,layer,parent_id,claude_ack,...}
                     raw_ms = data.get("milestones", [])
                     norm_ms = []
+                    auto_id = [0]  # counter for auto-generated IDs
+                    def _next_id():
+                        auto_id[0] += 1
+                        return f"M{auto_id[0]}"
                     for m in (raw_ms if isinstance(raw_ms, list) else []):
                         if isinstance(m, dict):
-                            norm_ms.append({"done": bool(m.get("done")), "text": str(m.get("text",""))})
+                            # Already has new schema or partial old schema
+                            entry = {
+                                "id":        m.get("id") or _next_id(),
+                                "text":      str(m.get("text", "")),
+                                "layer":     int(m.get("layer", 0)),
+                                "parent_id": m.get("parent_id") or None,
+                                "done":      bool(m.get("done")),
+                                "claude_ack": m.get("claude_ack") or None,
+                            }
+                            norm_ms.append(entry)
                         elif isinstance(m, str):
                             done = m.startswith("[x]") or m.startswith("[X]")
                             text = m.lstrip("[x] [X] [ ] ").lstrip("- ").strip()
-                            # Strip leading date prefix (e.g. "2026-05-07: text")
                             import re as _re2
                             text = _re2.sub(r"^\d{4}-\d{2}-\d{2}:\s*", "", text)
-                            norm_ms.append({"done": done, "text": text})
+                            norm_ms.append({"id": _next_id(), "text": text, "layer": 0,
+                                           "parent_id": None, "done": done, "claude_ack": None})
                     data["milestones"] = norm_ms
                     # Normalize log: accept plain strings or {date,text} dicts
                     raw_log = data.get("log", [])
@@ -904,6 +917,88 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
             _session_idle_since[proj_id] = time.time()
 
     await asyncio.gather(pty_to_ws(), ws_to_pty())
+
+
+@app.get("/api/northstar/{proj_id}/milestones")
+async def get_milestones(proj_id: str):
+    projects = _load_projects()
+    p = next((p for p in projects if p.get("id") == proj_id), None)
+    if not p:
+        return JSONResponse({"ok": False, "milestones": []})
+    return JSONResponse({"ok": True, "milestones": p.get("milestones", [])})
+
+
+@app.post("/api/northstar/{proj_id}/milestones")
+async def create_milestone(proj_id: str, request: Request):
+    data = await request.json()
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    milestones = proj.get("milestones", [])
+    # Auto-assign ID
+    existing_ids = {m.get("id","") for m in milestones if isinstance(m, dict)}
+    layer = int(data.get("layer", 0))
+    parent_id = data.get("parent_id") or None
+    # Generate ID: M{n} for layer 0, M{parent}.{n} for layer 1
+    if layer == 0:
+        n = sum(1 for m in milestones if isinstance(m, dict) and m.get("layer", 0) == 0) + 1
+        new_id = f"M{n}"
+        while new_id in existing_ids:
+            n += 1
+            new_id = f"M{n}"
+    else:
+        siblings = [m for m in milestones if isinstance(m, dict) and m.get("parent_id") == parent_id]
+        new_id = f"{parent_id}.{len(siblings)+1}"
+        while new_id in existing_ids:
+            new_id = new_id + "x"
+    new_ms = {
+        "id": new_id, "text": data.get("text", "New milestone"),
+        "layer": layer, "parent_id": parent_id,
+        "done": False, "claude_ack": None,
+    }
+    milestones.append(new_ms)
+    proj["milestones"] = milestones
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True, "milestone": new_ms})
+
+
+@app.patch("/api/northstar/{proj_id}/milestones/{mid}")
+async def update_milestone(proj_id: str, mid: str, request: Request):
+    data = await request.json()
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    milestones = proj.get("milestones", [])
+    updated = False
+    for m in milestones:
+        if isinstance(m, dict) and m.get("id") == mid:
+            for k in ("text", "done", "claude_ack", "layer", "parent_id"):
+                if k in data:
+                    m[k] = data[k]
+            updated = True
+            break
+    if not updated:
+        return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
+    proj["milestones"] = milestones
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True})
+
+
+@app.delete("/api/northstar/{proj_id}/milestones/{mid}")
+async def delete_milestone(proj_id: str, mid: str):
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    before = len(proj.get("milestones", []))
+    # Remove milestone and all its children
+    proj["milestones"] = [m for m in proj.get("milestones", [])
+                          if isinstance(m, dict) and m.get("id") != mid
+                          and m.get("parent_id") != mid]
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True, "removed": before - len(proj["milestones"])})
 
 
 @app.get("/api/northstar/{proj_id}/memo")

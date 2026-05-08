@@ -148,18 +148,46 @@ header {
   .row-status-dot { width: 6px; height: 6px; margin-right: 3px; }
 }
 
-/* Memo textarea */
-.dm-memo {
-  width: 100%; min-height: 110px; max-height: 280px;
-  background: var(--bg-deep); border: 1px solid var(--panel-border);
-  border-radius: 6px; padding: 10px 12px; resize: vertical;
-  font-size: 12px; font-family: var(--mono); color: var(--text);
-  line-height: 1.6; transition: border-color .15s;
-  -webkit-overflow-scrolling: touch;
+/* ── Milestone Creator ────────────────────────────────────────────────────── */
+.ms-item {
+  display: flex; align-items: flex-start; gap: 6px; padding: 5px 0;
+  border-bottom: 1px solid var(--panel-border);
 }
-.dm-memo:focus { outline: none; border-color: var(--accent); }
-.dm-memo::placeholder { color: var(--text-dim); }
-.dm-memo-save-status { font-size: 10px; color: var(--text-dim); font-family: var(--mono); margin-left: 6px; }
+.ms-item:last-child { border-bottom: none; }
+.ms-item.layer-1 { padding-left: 18px; }
+.ms-toggle {
+  cursor: pointer; font-size: 13px; line-height: 1; flex-shrink: 0;
+  color: var(--text-dim); background: none; border: none; padding: 0;
+  margin-top: 1px; transition: color .1s;
+}
+.ms-toggle.done { color: var(--green); }
+.ms-toggle:hover { color: var(--accent); }
+.ms-text-wrap { flex: 1; min-width: 0; }
+.ms-text {
+  font-size: 12px; color: var(--text); line-height: 1.4; cursor: text;
+  word-break: break-word; outline: none; border-radius: 2px;
+}
+.ms-text.done { color: var(--text-dim); text-decoration: line-through; }
+.ms-text:focus { background: var(--bg-deep); padding: 1px 3px; margin: -1px -3px; }
+.ms-ack {
+  font-size: 10px; font-family: var(--mono); flex-shrink: 0;
+  margin-top: 2px; white-space: nowrap;
+}
+.ms-ack.acked { color: var(--green); }
+.ms-ack.unread { color: var(--text-dim); }
+.ms-del {
+  cursor: pointer; font-size: 12px; color: var(--text-dim); flex-shrink: 0;
+  background: none; border: none; padding: 0; margin-top: 1px;
+  opacity: 0; transition: opacity .1s;
+}
+.ms-item:hover .ms-del { opacity: 1; }
+.ms-del:hover { color: var(--red); }
+.ms-add-sub {
+  font-size: 10px; font-family: var(--mono); color: var(--text-dim);
+  background: none; border: none; cursor: pointer; padding: 0;
+  margin-top: 2px; display: block;
+}
+.ms-add-sub:hover { color: var(--accent); }
 
 /* ── Project card ────────────────────────────────────────────────────────────── */
 .card {
@@ -998,28 +1026,134 @@ function rowHtml(p, i) {
 let _rowOrder = null; // persisted drag-drop order
 let _sessionStatus = {}; // proj_id → "active"|"idle:N"|"none"
 
-// ── Memo save (debounced) ─────────────────────────────────────────────────────
-let _memoTimer = null;
-function schedMemoSave(projId) {
-  const status = document.getElementById('dm-memo-status');
-  if (status) status.textContent = 'editing…';
-  clearTimeout(_memoTimer);
-  _memoTimer = setTimeout(() => saveMemo(projId), 1200);
-}
-async function saveMemo(projId) {
-  const el = document.getElementById('dm-memo');
-  const status = document.getElementById('dm-memo-status');
+// ── Milestone Creator ─────────────────────────────────────────────────────────
+let _msProjectId = null;
+
+async function loadMilestones(projId) {
+  _msProjectId = projId;
+  const el = document.getElementById('dm-ms-creator');
   if (!el) return;
   try {
-    await fetch(`/api/northstar/${encodeURIComponent(projId)}/memo`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({content: el.value}),
-    });
-    if (status) { status.textContent = 'saved'; setTimeout(() => { if(status) status.textContent=''; }, 1800); }
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`);
+    const data = await r.json();
+    renderMilestoneCreator(projId, data.milestones || []);
   } catch(_) {
-    if (status) status.textContent = 'error';
+    if (el) el.innerHTML = '<span style="color:var(--text-dim)">Failed to load milestones</span>';
   }
 }
+
+function renderMilestoneCreator(projId, milestones) {
+  const el = document.getElementById('dm-ms-creator');
+  if (!el) return;
+
+  const l0 = milestones.filter(m => (m.layer || 0) === 0);
+  const l1 = milestones.filter(m => (m.layer || 0) === 1);
+
+  // Update ack badge
+  const acked = milestones.filter(m => m.claude_ack).length;
+  const badge = document.getElementById('dm-ms-ack-badge');
+  if (badge) badge.textContent = acked > 0 ? `◈ ${acked}/${milestones.length} ack'd` : '';
+
+  if (!milestones.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:11px">No milestones yet — add one below.</div>';
+    return;
+  }
+
+  el.innerHTML = l0.map(m => {
+    const children = l1.filter(c => c.parent_id === m.id);
+    const ack = m.claude_ack
+      ? `<span class="ms-ack acked">◈ ${String(m.claude_ack).slice(5,10)}</span>`
+      : `<span class="ms-ack unread">○ unread</span>`;
+    const doneClass = m.done ? 'done' : '';
+    const toggle = m.done ? '✓' : '○';
+
+    const childHtml = children.map(c => {
+      const cack = c.claude_ack
+        ? `<span class="ms-ack acked">◈ ${String(c.claude_ack).slice(5,10)}</span>`
+        : `<span class="ms-ack unread">○</span>`;
+      return `<div class="ms-item layer-1">
+        <button class="ms-toggle ${c.done?'done':''}" onclick="toggleMs('${esc(projId)}','${esc(c.id)}')">${c.done?'✓':'○'}</button>
+        <div class="ms-text-wrap">
+          <div class="ms-text ${c.done?'done':''}" contenteditable="true"
+            onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
+            >${esc(c.text)}</div>
+        </div>
+        ${cack}
+        <button class="ms-del" onclick="deleteMs('${esc(projId)}','${esc(c.id)}')" title="Delete">✕</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="ms-item">
+      <button class="ms-toggle ${doneClass}" onclick="toggleMs('${esc(projId)}','${esc(m.id)}')">${toggle}</button>
+      <div class="ms-text-wrap">
+        <div class="ms-text ${doneClass}" contenteditable="true"
+          onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
+          >${esc(m.text)}</div>
+        <button class="ms-add-sub" onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub-milestone</button>
+      </div>
+      ${ack}
+      <button class="ms-del" onclick="deleteMs('${esc(projId)}','${esc(m.id)}')" title="Delete">✕</button>
+    </div>${childHtml}`;
+  }).join('');
+}
+
+async function toggleMs(projId, mid) {
+  const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`);
+  const data = await r.json();
+  const ms = data.milestones?.find(m => m.id === mid);
+  if (!ms) { await loadMilestones(projId); return; }
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({done: !ms.done}),
+  });
+  await loadMilestones(projId);
+}
+
+async function saveMs(projId, mid, text) {
+  const status = document.getElementById('dm-ms-save-status');
+  if (status) status.textContent = 'saving…';
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text: text.trim()}),
+  });
+  if (status) { status.textContent = 'saved'; setTimeout(() => { if(status) status.textContent=''; }, 1500); }
+}
+
+async function addMilestone(projId, layer, parentId) {
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({layer, parent_id: parentId, text: 'New milestone'}),
+  });
+  await loadMilestones(projId);
+  // Focus the new item for immediate editing
+  setTimeout(() => {
+    const items = document.querySelectorAll('#dm-ms-creator .ms-text');
+    if (items.length) items[items.length - 1].focus();
+  }, 100);
+}
+
+async function deleteMs(projId, mid) {
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+    method: 'DELETE',
+  });
+  await loadMilestones(projId);
+}
+
+// Reload from API for toggleMs (need current state)
+(async function() {
+  const orig = window.toggleMs;
+  window.toggleMs = async (projId, mid) => {
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`);
+    const data = await r.json();
+    const ms = (data.milestones || []).find(m => m.id === mid);
+    if (!ms) return;
+    await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({done: !ms.done}),
+    });
+    await loadMilestones(projId);
+  };
+})();
 
 async function _openWithTerminal(origIdx, projId) {
   activeIdx = origIdx;
@@ -1091,9 +1225,11 @@ function render() {
         gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
       }
     }
-    const activeMilestone = p.milestones.find(m => !m.done);
-    let stepText = activeMilestone ? activeMilestone.text : '';
-    stepText = stepText.replace(/^Phase\s+\d+\s+v?\d*[a-z]?:\s*/i, '').trim();
+    const activeMilestone = p.milestones.find(m => typeof m === 'object' ? !m.done : true);
+    let stepText = activeMilestone
+      ? (typeof activeMilestone === 'string' ? activeMilestone : (activeMilestone.text || ''))
+      : '';
+    stepText = (stepText || '').replace(/^Phase\s+\d+\s+v?\d*[a-z]?:\s*/i, '').trim();
     if (stepText.length > 34) stepText = stepText.slice(0, 32) + '…';
     const lastLog = p.log && p.log.length ? p.log[p.log.length - 1] : null;
     const logDate = lastLog ? (lastLog.date || '').slice(5) : '—';
@@ -1302,11 +1438,10 @@ async function openDetail(idx) {
     '<div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>';
 
   // Fetch OKRs + CTX + doc in parallel
-  const [okrData, ctxData, docData, memoData] = await Promise.all([
+  const [okrData, ctxData, docData] = await Promise.all([
     fetch(`/api/northstar/${esc(p.id)}/okrs`).then(r=>r.json()).catch(()=>({ok:false,okrs:[]})),
     fetch('/api/ctx-pulse').then(r=>r.json()).catch(()=>({ok:false,topics:[]})),
     fetch(`/api/northstar/${esc(p.id)}/doc`).then(r=>r.json()).catch(()=>({ok:false})),
-    fetch(`/api/northstar/${esc(p.id)}/memo`).then(r=>r.json()).catch(()=>({ok:false,content:''})),
   ]);
 
   if (ctxData.ok) ctxTopics = ctxData.topics || [];
@@ -1333,8 +1468,9 @@ async function openDetail(idx) {
       </div>`;
   }
 
-  // Render right column
-  renderRight(p, ctxData.topics || [], docData, memoData?.content || '');
+  // Render right column then load milestones
+  renderRight(p, ctxData.topics || [], docData);
+  loadMilestones(p.id);
 
   // Alignment is manual — user clicks ↻ Refresh to run
 }
@@ -1419,7 +1555,7 @@ function renderHierarchy(p) {
   `;
 }
 
-function renderRight(p, topics, docData, memoContent = '') {
+function renderRight(p, topics, docData) {
   const topicsHtml = topics.slice(0, 7).map(t =>
     `<div class="ctx-item">
       <div class="ctx-heat"><div class="ctx-heat-fill" style="width:${Math.round(t.heat*100)}%"></div></div>
@@ -1467,15 +1603,17 @@ function renderRight(p, topics, docData, memoContent = '') {
       <div class="dm-note">${esc(p.note)}</div>
     </div>` : ''}
 
-    <!-- Memo -->
-    <div class="dm-section">
+    <!-- Milestone Creator -->
+    <div class="dm-section" id="dm-ms-creator-section">
       <div class="dm-section-label">
-        Memo
-        <span class="dm-memo-save-status" id="dm-memo-status"></span>
+        Milestones
+        <span id="dm-ms-ack-badge" style="font-size:10px;color:var(--green);font-family:var(--mono);margin-left:8px"></span>
+        <span id="dm-ms-save-status" style="font-size:10px;color:var(--text-dim);font-family:var(--mono);margin-left:4px"></span>
       </div>
-      <textarea class="dm-memo" id="dm-memo"
-        placeholder="Notes, decisions, context for Claude…"
-        oninput="schedMemoSave('${esc(p.id)}')">${esc(memoContent)}</textarea>
+      <div id="dm-ms-creator" style="font-size:12px;font-family:var(--mono);color:var(--text-dim)">Loading…</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="dm-btn" style="font-size:11px" onclick="addMilestone('${esc(p.id)}', 0, null)">+ milestone</button>
+      </div>
     </div>
   `;
 }
