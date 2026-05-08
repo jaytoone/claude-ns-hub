@@ -41,6 +41,14 @@
   --status-paused: var(--text-dim);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Custom scrollbar — theme-matched ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+::-webkit-scrollbar-corner { background: transparent; }
+* { scrollbar-width: thin; scrollbar-color: var(--panel-border) transparent; }
 html, body { height: 100%; background: var(--bg); overflow: hidden; }
 body { font: 14px/1.55 var(--sans); color: var(--text-soft); -webkit-font-smoothing: antialiased; }
 
@@ -1306,73 +1314,88 @@ function renderMilestoneCreator(projId, milestones) {
 
   // Numbered toggle list (Notion-style: ▶/▼ + number + text + meta)
   // expandKey stored in localStorage per project
-  // Numbered toggle list
-  const toggleHtml = `<div style="font-size:12px">
+  // Notion-style numbered toggles
+  const toggleHtml = `
+  <style>
+    .nt-row { display:flex; align-items:flex-start; gap:5px; padding:4px 6px; border-radius:4px;
+      cursor:pointer; transition:background .08s; user-select:none; }
+    .nt-row:hover { background:var(--panel-soft); }
+    .nt-row:hover .nt-del { opacity:1; }
+    .nt-num { font-family:var(--mono); font-size:10px; color:var(--text-dim); flex-shrink:0; width:18px; text-align:right; padding-top:2px; }
+    .nt-arrow { font-size:9px; flex-shrink:0; padding-top:3px; width:12px; transition:transform .15s; color:var(--text-dim); }
+    .nt-check { width:17px; height:17px; border-radius:50%; flex-shrink:0; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; font-size:9px; transition:all .12s; margin-top:1px; }
+    .nt-text { flex:1; font-size:12.5px; line-height:1.55; color:var(--text); outline:none; overflow-wrap:anywhere;
+      background:transparent; caret-color:var(--accent); }
+    .nt-text:focus { color:var(--text); }
+    .nt-done .nt-text { color:var(--text-dim); text-decoration:line-through; }
+    .nt-meta { display:flex; align-items:center; gap:4px; flex-shrink:0; padding-top:2px; }
+    .nt-del { opacity:0; transition:opacity .1s; background:none; border:none; cursor:pointer;
+      color:var(--text-dim); font-size:11px; padding:0 2px; }
+    .nt-del:hover { color:var(--red); }
+    .nt-sub-wrap { margin-left:30px; border-left:2px solid var(--panel-border); padding-left:8px; padding-bottom:2px; }
+    .nt-sub-row { display:flex; align-items:flex-start; gap:5px; padding:3px 4px; border-radius:3px; transition:background .08s; }
+    .nt-sub-row:hover { background:var(--panel-soft); }
+    .nt-sub-row:hover .nt-del { opacity:1; }
+    .nt-ack-g { font-family:var(--mono); font-size:9px; color:var(--green); }
+    .nt-ack-o { font-family:var(--mono); font-size:9px; color:var(--yellow); }
+    .nt-add { font-family:var(--mono); font-size:10px; color:var(--text-dim); background:none; border:none;
+      cursor:pointer; padding:3px 6px; border-radius:3px; transition:background .08s; }
+    .nt-add:hover { background:var(--panel-soft); color:var(--accent); }
+  </style>
+  <div>
     ${l0.map((m, idx) => {
       const children = l1.filter(c => c.parent_id === m.id);
       const childDone = children.filter(c => c.done).length;
       const state = m.done ? 'done' : (childDone > 0 && childDone < children.length ? 'active' : 'pending');
-      const stateColor = {done:'var(--green)',active:'var(--accent)',pending:'var(--text-dim)'}[state];
+      const sc = {done:'var(--green)',active:'var(--accent)',pending:'var(--panel-border)'}[state];
+      const sbg = {done:'var(--green)',active:'var(--accent-soft)',pending:'var(--panel)'}[state];
+      const sfg = {done:'#fff',active:'var(--accent-deep)',pending:'var(--text-dim)'}[state];
       const isOpen = !!expanded[m.id];
       const num = idx + 1;
-      const ackIcon = m.claude_ack
-        ? `<span style="font-family:var(--mono);font-size:9px;color:var(--green)">◈</span>`
-        : `<span style="font-family:var(--mono);font-size:9px;color:var(--yellow)">○</span>`;
 
       const subHtml = isOpen && children.length ? `
-        <div style="margin-left:22px;border-left:2px solid var(--panel-border);padding-left:10px">
-          ${children.map((c, ci) => {
-            const cAck = c.claude_ack
-              ? `<span style="font-family:var(--mono);font-size:9px;color:var(--green)">◈</span>`
-              : `<span style="font-family:var(--mono);font-size:9px;color:var(--yellow)">○</span>`;
-            return `<div style="display:flex;align-items:flex-start;gap:6px;padding:3px 0;border-bottom:1px solid var(--panel-border)">
-              <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);flex-shrink:0;margin-top:1px">${num}.${ci+1}</span>
-              <button onclick="toggleMs('${esc(projId)}','${esc(c.id)}')"
-                style="width:16px;height:16px;border-radius:50%;border:1.5px solid ${c.done?'var(--green)':'var(--panel-border)'};
-                background:${c.done?'var(--green)':'var(--panel)'};color:${c.done?'#fff':'var(--text-dim)'};
-                font-size:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px"
+        <div class="nt-sub-wrap">
+          ${children.map((c, ci) => `
+            <div class="nt-sub-row ${c.done?'nt-done':''}">
+              <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
+              <button class="nt-check" onclick="toggleMs('${esc(projId)}','${esc(c.id)}')"
+                style="border:1.5px solid ${c.done?'var(--green)':'var(--panel-border)'};
+                background:${c.done?'var(--green)':'var(--panel)'};color:${c.done?'#fff':'var(--text-dim)'}"
               >${c.done?'✓':'○'}</button>
-              <div style="flex:1;color:${c.done?'var(--text-dim)':'var(--text-soft)'};${c.done?'text-decoration:line-through;':''}
-                cursor:text;line-height:1.4;overflow-wrap:anywhere"
+              <div class="nt-text ${c.done?'':''}  " style="font-size:11.5px;${c.done?'color:var(--text-dim);text-decoration:line-through;':''}"
                 contenteditable="true"
                 onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
+                onclick="event.stopPropagation()"
               >${esc(c.text)}</div>
-              ${cAck}
-              <button class="ms-del" onclick="deleteMs('${esc(projId)}','${esc(c.id)}')" style="font-size:10px">✕</button>
-            </div>`;
-          }).join('')}
-          <button class="ms-add-sub" style="margin-top:4px"
-            onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub-milestone</button>
+              <span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}">${c.claude_ack?'◈':'○'}</span>
+              <button class="nt-del" onclick="deleteMs('${esc(projId)}','${esc(c.id)}')">✕</button>
+            </div>`
+          ).join('')}
+          <button class="nt-add" onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub</button>
         </div>` : '';
 
-      return `<div style="border-bottom:1px solid var(--panel-border)">
-        <div style="display:flex;align-items:flex-start;gap:6px;padding:5px 0;cursor:pointer"
-          onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
-          <span style="font-family:var(--mono);font-size:11px;color:var(--text-dim);flex-shrink:0;width:16px;text-align:right;margin-top:1px"
-          >${num}.</span>
-          <span style="font-family:var(--mono);font-size:10px;color:${stateColor};flex-shrink:0;margin-top:1px"
-          >${children.length ? (isOpen?'▼':'▶') : '·'}</span>
-          <button onclick="event.stopPropagation();toggleMs('${esc(projId)}','${esc(m.id)}')"
-            style="width:18px;height:18px;border-radius:50%;border:2px solid ${stateColor};
-            background:${m.done?stateColor:'var(--panel)'};color:${m.done?'#fff':stateColor};
-            font-size:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:0"
-          >${m.done?'✓':'○'}</button>
-          <div style="flex:1;font-weight:${state==='active'?'500':'400'};
-            color:${m.done?'var(--text-dim)':'var(--text)'};
-            ${m.done?'text-decoration:line-through;':''}
-            line-height:1.4;overflow-wrap:anywhere"
-            contenteditable="true"
-            onclick="event.stopPropagation()"
-            onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-          >${esc(m.text)}</div>
-          <div style="display:flex;align-items:center;gap:3px;flex-shrink:0">
-            ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
-            ${ackIcon}
-            <button class="ms-del" onclick="event.stopPropagation();deleteMs('${esc(projId)}','${esc(m.id)}')" style="font-size:10px">✕</button>
+      return `
+        <div onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
+          <div class="nt-row ${m.done?'nt-done':''}">
+            <span class="nt-num">${num}.</span>
+            <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
+            <button class="nt-check" onclick="event.stopPropagation();toggleMs('${esc(projId)}','${esc(m.id)}')"
+              style="border:2px solid ${sc};background:${sbg};color:${sfg}"
+            >${m.done?'✓':'○'}</button>
+            <div class="nt-text" style="font-weight:${state==='active'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
+              contenteditable="true"
+              onclick="event.stopPropagation()"
+              onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
+            >${esc(m.text)}</div>
+            <div class="nt-meta">
+              ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
+              <span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}">${m.claude_ack?'◈':'○'}</span>
+              <button class="nt-del" onclick="event.stopPropagation();deleteMs('${esc(projId)}','${esc(m.id)}')">✕</button>
+            </div>
           </div>
-        </div>
-        ${subHtml}
-      </div>`;
+          ${subHtml}
+        </div>`;
     }).join('')}
   </div>`;
 
