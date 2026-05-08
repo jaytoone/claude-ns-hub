@@ -1347,9 +1347,7 @@ async function deleteMs(projId, mid) {
 })();
 
 async function _openWithTerminal(origIdx, projId) {
-  activeIdx = origIdx;
-  render();
-  await openDetail(origIdx);
+  // Terminal is now a floating panel — just open it directly, no detail modal
   openTerminal(projId);
 }
 
