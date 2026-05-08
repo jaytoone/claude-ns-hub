@@ -1338,30 +1338,11 @@ function render() {
     if (!el) return;
     if (!lanes[l].length) { el.innerHTML = ''; return; }
 
-    // Sort by position_x so reorder is reflected immediately
+    // Sort by position_x — this is the authoritative display order
     lanes[l].sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
 
-    // Group by parent: orphans shown directly, children grouped under parent label
-    const parentGroups = {};   // parentId → [{p,i}]
-    const orphans = [];
-    lanes[l].forEach(({p, i}) => {
-      const par = p.parent || null;
-      // Only group if parent exists and is in a DIFFERENT (higher) lane
-      const parentProj = par ? projects.find(x => (x.id||x.name) === par) : null;
-      const parentLayer = parentProj ? (parseInt(parentProj.layer)||0) : -1;
-      if (parentProj && parentLayer < l) {
-        if (!parentGroups[par]) parentGroups[par] = [];
-        parentGroups[par].push({p, i});
-      } else {
-        orphans.push({p, i});
-      }
-    });
-
-    // Every node is its own independent column — connections shown via SVG lines
-    const allInLane = [...orphans];
-    Object.values(parentGroups).forEach(children => allInLane.push(...children));
-    // Sort by position (orphans first, then grouped children near their parent's x position)
-    el.innerHTML = allInLane.map(({p, i}) =>
+    // All nodes as independent columns (parent-child hierarchy shown via SVG lines only)
+    el.innerHTML = lanes[l].map(({p, i}) =>
       `<div class="ns-group-orphan">${nodeCard(p, i)}</div>`
     ).join('');
   });
