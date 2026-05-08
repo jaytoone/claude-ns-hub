@@ -1355,7 +1355,7 @@ function renderMilestoneCreator(projId, milestones) {
       const num = idx + 1;
 
       const subHtml = isOpen && children.length ? `
-        <div class="nt-sub-wrap">
+        <div class="nt-sub-wrap" onclick="event.stopPropagation()">
           ${children.map((c, ci) => `
             <div class="nt-sub-row ${c.done?'nt-done':''}">
               <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
@@ -1369,10 +1369,10 @@ function renderMilestoneCreator(projId, milestones) {
                 onclick="event.stopPropagation()"
               >${esc(c.text)}</div>
               <span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}">${c.claude_ack?'◈':'○'}</span>
-              <button class="nt-del" onclick="deleteMs('${esc(projId)}','${esc(c.id)}')">✕</button>
+              <button class="nt-del" onclick="event.stopPropagation();deleteMs('${esc(projId)}','${esc(c.id)}')">✕</button>
             </div>`
           ).join('')}
-          <button class="nt-add" onclick="addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub</button>
+          <button class="nt-add" onclick="event.stopPropagation();addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub</button>
         </div>` : '';
 
       return `
