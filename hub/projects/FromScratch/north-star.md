@@ -51,7 +51,7 @@ milestones:
 name: FromScratch
 note: OR-Ensemble distillation → darwin36b v2 plan (FFN-only selective merge + LoRA
   KD)
-status: on_track
+status: on-track
 target: 93.9%
 unit: '%'
 ---

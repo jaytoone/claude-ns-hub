@@ -48,7 +48,8 @@ def _bound_ip(port: int) -> str:
                 m = re.search(r"(\d+\.\d+\.\d+\.\d+):" + str(port), line)
                 if m:
                     ip = m.group(1)
-                    return "127.0.0.1" if ip == "0.0.0.0" else ip
+                    # 0.0.0.0 means all interfaces — use Tailscale IP so remote clients can reach it
+                    return _tailscale_interface_ip() if ip == "0.0.0.0" else ip
     except Exception:
         pass
     return "127.0.0.1"
@@ -130,8 +131,34 @@ def _load_projects() -> list:
                 if data.get("name"):
                     data["id"] = proj_dir.name  # preserve case to match folder
                     data["file_path"] = str(md)
-                    data.setdefault("milestones", [])
-                    data.setdefault("log", [])
+                    # Normalize milestones: accept plain strings or {done,text} dicts
+                    raw_ms = data.get("milestones", [])
+                    norm_ms = []
+                    for m in (raw_ms if isinstance(raw_ms, list) else []):
+                        if isinstance(m, dict):
+                            norm_ms.append({"done": bool(m.get("done")), "text": str(m.get("text",""))})
+                        elif isinstance(m, str):
+                            done = m.startswith("[x]") or m.startswith("[X]")
+                            text = m.lstrip("[x] [X] [ ] ").lstrip("- ").strip()
+                            # Strip leading date prefix (e.g. "2026-05-07: text")
+                            import re as _re2
+                            text = _re2.sub(r"^\d{4}-\d{2}-\d{2}:\s*", "", text)
+                            norm_ms.append({"done": done, "text": text})
+                    data["milestones"] = norm_ms
+                    # Normalize log: accept plain strings or {date,text} dicts
+                    raw_log = data.get("log", [])
+                    norm_log = []
+                    for entry in (raw_log if isinstance(raw_log, list) else []):
+                        if isinstance(entry, dict):
+                            norm_log.append({"date": str(entry.get("date","")), "text": str(entry.get("text",""))})
+                        elif isinstance(entry, str):
+                            import re as _re3
+                            dm = _re3.match(r"(\d{4}-\d{2}-\d{2}):\s*(.*)", entry)
+                            if dm:
+                                norm_log.append({"date": dm.group(1), "text": dm.group(2)})
+                            else:
+                                norm_log.append({"date": "", "text": entry})
+                    data["log"] = norm_log
                     data.setdefault("deadline", "")
                     data.setdefault("links", "")
                     # Compute staleness
