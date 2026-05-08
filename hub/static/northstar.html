@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>North Star</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
@@ -74,32 +73,49 @@ header {
 .theme-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
 .updated-at { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
 
-/* ── Node graph canvas ──────────────────────────────────────────────────────── */
-.grid-wrap { padding: 0; overflow: hidden; position: relative; }
-#ns-graph-canvas {
-  width: 100%; height: calc(100vh - 120px);
-  background: var(--bg);
+/* ── Swimlane layout ────────────────────────────────────────────────────────── */
+.grid-wrap { padding: 12px 16px; overflow: auto; }
+.ns-swimlane { position: relative; }
+.ns-lane { display: flex; align-items: flex-start; margin-bottom: 10px; }
+.ns-lane-label {
+  width: 72px; flex-shrink: 0; font-family: var(--mono); font-size: 9px;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim);
+  padding-top: 20px; padding-right: 8px; text-align: right;
 }
-[data-theme="dark"] #ns-graph-canvas { background: #181614; }
-
-/* vis.js manipulation toolbar override */
-.vis-manipulation { background: var(--panel-soft) !important; border-bottom: 1px solid var(--panel-border) !important; font-family: var(--mono) !important; font-size: 11px !important; }
-.vis-button { color: var(--text-dim) !important; border-color: var(--panel-border) !important; }
-.vis-button:hover { color: var(--accent) !important; border-color: var(--accent) !important; }
-.vis-button.vis-connect { background: var(--accent-soft) !important; }
-
-/* Graph toolbar at bottom */
-.ns-graph-toolbar {
-  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-  display: flex; gap: 8px; z-index: 10;
+.ns-lane-nodes {
+  flex: 1; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;
+  min-height: 84px; padding: 8px 10px;
+  border-left: 2px solid var(--panel-border);
+  border-radius: 0 8px 8px 0; transition: border-color .1s, background .1s;
 }
-.ns-graph-btn {
-  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 6px;
-  padding: 5px 12px; font-family: var(--mono); font-size: 11px; cursor: pointer;
-  color: var(--text-dim); transition: all .12s; white-space: nowrap;
+.ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
+/* ── Project node card ── */
+.ns-node {
+  width: 154px; background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 8px 10px; cursor: pointer; user-select: none;
+  transition: box-shadow .12s, border-color .12s; flex-shrink: 0;
 }
-.ns-graph-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-.ns-graph-btn.active { border-color: var(--accent); color: var(--accent-deep); background: var(--accent-soft); }
+.ns-node:hover { box-shadow: 0 2px 10px rgba(31,28,26,.10); }
+.ns-node.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.ns-node-top { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+.ns-node-sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ns-node-name {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  outline: none; border-radius: 2px; cursor: text;
+}
+.ns-node-name:focus { background: var(--bg-deep); padding: 0 2px; overflow: visible; white-space: normal; }
+.ns-node-sess { font-size: 9px; font-family: var(--mono); color: var(--text-dim); flex-shrink: 0; cursor: pointer; }
+.ns-node-sess.live { color: var(--green); }
+.ns-node-bar-wrap { height: 3px; background: var(--panel-border); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
+.ns-node-bar { height: 100%; border-radius: 2px; }
+.ns-node-bottom { display: flex; justify-content: space-between; }
+.ns-node-gap { font-family: var(--mono); font-size: 9px; }
+.ns-node-date { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+@media (max-width: 640px) {
+  .ns-lane-label { width: 48px; font-size: 8px; }
+  .ns-node { width: 130px; }
+}
 
 /* Right-click context menu */
 .ns-ctx-menu {
@@ -742,12 +758,20 @@ header {
         <span class="updated-at" id="updated-at">—</span>
       </div>
     </header>
-    <div class="grid-wrap" style="position:relative">
-      <div id="ns-graph-canvas"></div>
-      <div class="ns-graph-toolbar">
-        <button class="ns-graph-btn" onclick="fitGraph()">⊡ Fit</button>
-        <button class="ns-graph-btn" onclick="resetLayout()">↺ Layout</button>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);padding:0 4px">Right-click node for actions</span>
+    <div class="grid-wrap">
+      <div class="ns-swimlane" id="ns-swimlane">
+        <div class="ns-lane" id="lane-0">
+          <div class="ns-lane-label">Strategic</div>
+          <div class="ns-lane-nodes" id="lane-nodes-0"></div>
+        </div>
+        <div class="ns-lane" id="lane-1">
+          <div class="ns-lane-label">Domain</div>
+          <div class="ns-lane-nodes" id="lane-nodes-1"></div>
+        </div>
+        <div class="ns-lane" id="lane-2">
+          <div class="ns-lane-label">Execution</div>
+          <div class="ns-lane-nodes" id="lane-nodes-2"></div>
+        </div>
       </div>
     </div>
 
@@ -1259,491 +1283,151 @@ function sessCell(projId) {
   return `<span class="sess-dot sess-none"><span class="sess-indicator"></span>—</span>`;
 }
 
-// ── Node graph (vis-network) ──────────────────────────────────────────────────
+// ── SWIMLANE RENDER ──────────────────────────────────────────────────────────
 
-let _network = null;
-let _visNodes = null;
-let _visEdges = null;
-let _connectMode = false;
-let _posDebounce = null;
-
-function nodeColor(status) {
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const map = {
-    'on-track': { bg: dark ? '#0e2318' : '#e8f5ee', border: '#3d8b5e', font: dark ? '#4caf78' : '#2d6b44' },
-    'behind':   { bg: dark ? '#250e0e' : '#fdf0ef', border: '#c0392b', font: dark ? '#e05252' : '#922b21' },
-    'achieved': { bg: dark ? '#2a1e17' : '#f5e6de', border: '#cc785c', font: dark ? '#e8926e' : '#a34b2c' },
-    'paused':   { bg: dark ? '#1e1c1a' : '#f5f2ec', border: '#8a8278', font: dark ? '#b0a89e' : '#5a5450' },
-  };
-  return map[status] || map['paused'];
-}
-
-function buildVisData() {
-  const visNodes = [], visEdges = [], seenEdges = new Set();
-  projects.forEach((p, i) => {
-    const pct = Math.round(calcPct(p.current, p.target) * 100);
-    const col = nodeColor(p.status || 'paused');
-    let gapText = `${pct}%`;
-    if (p.current && p.current !== '—' && p.target && p.target !== '—') {
-      const c = parseNum(p.current), t = parseNum(p.target);
-      if (c !== null && t !== null) {
-        const rem = t - c;
-        gapText = rem > 0 ? `${formatGapNum(rem)}${p.unit||''}` : 'done';
-      }
+function nodeCard(p, idx) {
+  const pct = Math.round(calcPct(p.current, p.target) * 100);
+  const color = statusColor(p.status);
+  const dotColor = statusColor(p.status || 'paused');
+  const lastLog = p.log?.length ? p.log[p.log.length-1] : null;
+  const logDate = lastLog ? (lastLog.date||'').slice(5) : '—';
+  let gapText = pct+'%', gapColor = 'var(--text-dim)';
+  if (p.current && p.current !== '—' && p.target && p.target !== '—') {
+    const c = parseNum(p.current), t = parseNum(p.target);
+    if (c !== null && t !== null) {
+      const rem = t - c;
+      const u = p.unit||'';
+      gapText = rem > 0 ? `${formatGapNum(rem)}${u}` : 'done';
+      gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
     }
-    const lastLog = p.log?.length ? p.log[p.log.length-1] : null;
-    const dateStr = lastLog ? (lastLog.date||'').slice(5) : '';
-    const sessDot = _sessionStatus[p.id||p.name] === 'active' ? '● ' : '';
-    const label = `${sessDot}${p.name}\n${gapText}${dateStr ? '  '+dateStr : ''}`;
-
-    const layer = Math.min(2, Math.max(0, parseInt(p.layer) || 0));
-
-    const node = {
-      id: p.id || p.name,
-      label,
-      level: layer,
-      color: { background: col.bg, border: col.border,
-               highlight: { background: col.bg, border: '#cc785c' },
-               hover: { background: col.bg, border: '#cc785c' } },
-      font: { color: col.font, size: 12, face: '"JetBrains Mono", ui-monospace, monospace',
-              multi: false },
-      shape: 'box',
-      borderWidth: p.status === 'on-track' ? 2 : 1.5,
-      borderWidthSelected: 3,
-      margin: { top: 7, right: 10, bottom: 7, left: 10 },
-      shadow: { enabled: false },
-      _idx: i,
-    };
-    if (i === activeIdx) {
-      node.borderWidth = 3;
-      node.color.border = '#cc785c';
-      node.shadow = { enabled: true, color: 'rgba(204,120,92,0.3)', size: 8, x: 0, y: 0 };
-    }
-    visNodes.push(node);
-    // Build edges from connections field
-    (p.connections || []).forEach(targetId => {
-      const edgeKey = [p.id||p.name, targetId].sort().join('|');
-      if (!seenEdges.has(edgeKey)) {
-        seenEdges.add(edgeKey);
-        visEdges.push({
-          id: edgeKey,
-          from: p.id || p.name,
-          to: targetId,
-          color: { color: '#c4bdb5', highlight: '#cc785c', hover: '#cc785c', opacity: 0.7 },
-          width: 1.5, selectionWidth: 2.5,
-          smooth: { type: 'curvedCW', roundness: 0.15 },
-          arrows: { to: { enabled: true, scaleFactor: 0.6 } },
-        });
-      }
-    });
-    // Also draw parent link if set
-    if (p.parent && p.parent !== (p.id||p.name)) {
-      const edgeKey = [p.id||p.name, p.parent].sort().join('|');
-      if (!seenEdges.has(edgeKey)) {
-        seenEdges.add(edgeKey);
-        visEdges.push({
-          id: edgeKey,
-          from: p.parent, to: p.id||p.name,
-          dashes: [5, 3],
-          color: { color: '#c4bdb5', opacity: 0.5 },
-          width: 1, arrows: { to: { enabled: true, scaleFactor: 0.5 } },
-        });
-      }
-    }
-  });
-  return { visNodes, visEdges };
+  }
+  const sKey = _sessionStatus[p.id||p.name];
+  const sessDot = sKey === 'active' ? '●' : '·';
+  const sessClass = sKey === 'active' ? 'live' : '';
+  const active = idx === activeIdx ? 'active' : '';
+  const pid = esc(p.id||p.name);
+  return `<div class="ns-node ${active}" data-idx="${idx}" data-pid="${pid}" draggable="true">
+    <div class="ns-node-top">
+      <span class="ns-node-sdot" style="background:${dotColor}"></span>
+      <span class="ns-node-name" ondblclick="renameNode(this,'${pid}')"
+        onblur="saveNodeName(this,'${pid}')"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+        >${esc(p.name)}</span>
+      <span class="ns-node-sess ${sessClass}" onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">${sessDot}</span>
+    </div>
+    <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
+    <div class="ns-node-bottom">
+      <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
+      <span class="ns-node-date">${esc(logDate)}</span>
+    </div>
+  </div>`;
 }
 
 function render() {
-  if (!projects.length) return;
-  const { visNodes, visEdges } = buildVisData();
+  const lanes = {0:[], 1:[], 2:[]};
+  projects.forEach((p, i) => {
+    const layer = Math.min(2, Math.max(0, parseInt(p.layer)||0));
+    lanes[layer].push({p, i});
+  });
 
-  if (!_network) {
-    // Initial render — create network
-    _visNodes = new vis.DataSet(visNodes);
-    _visEdges = new vis.DataSet(visEdges);
-    const container = document.getElementById('ns-graph-canvas');
-    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    // Use hierarchical for initial layout, then convert to free dragging
-    // This avoids vis-network snapping nodes back after drag
-    _network = new vis.Network(container, { nodes: _visNodes, edges: _visEdges }, {
-      layout: {
-        hierarchical: {
-          enabled: true,
-          direction: 'UD',
-          sortMethod: 'directed',
-          levelSeparation: 200,  // y spacing = 200 matches _bandCenters delta
-          nodeSpacing: 170,
-          treeSpacing: 220,
-          blockShifting: true,
-          edgeMinimization: true,
-          parentCentralization: true,
-        }
-      },
-      physics: { enabled: false },
-      interaction: {
-        hover: true, tooltipDelay: 300,
-        dragNodes: true, dragView: true, zoomView: true,
-        multiselect: false,
-        // Allow free Y movement so nodes can cross layer bands
-        navigationButtons: false,
-      },
-      manipulation: { enabled: false },
-      edges: { smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 } },
+  [0,1,2].forEach(l => {
+    const el = document.getElementById(`lane-nodes-${l}`);
+    if (!el) return;
+    el.innerHTML = lanes[l].length
+      ? lanes[l].map(({p,i}) => nodeCard(p,i)).join('')
+      : '';
+  });
+
+  // Click → open detail
+  document.querySelectorAll('.ns-node').forEach(node => {
+    node.addEventListener('click', e => {
+      const name = node.querySelector('.ns-node-name');
+      if (name && name.getAttribute('contenteditable') === 'true') return;
+      if (e.target.classList.contains('ns-node-sess')) return;
+      const i = +node.dataset.idx;
+      if (activeIdx === i) { closeDetail(); return; }
+      activeIdx = i; render(); openDetail(i);
     });
-
-    // Focus canvas so right-click works immediately (cold right-click fix)
-    container.setAttribute('tabindex', '0');
-    container.focus();
-
-    // Band backgrounds removed — clean canvas
-
-    // After first draw: unfix y-axis (hierarchical mode sets fixed.y=true → blocks vertical drag)
-    // Must modify body.nodes directly — _visNodes.update() doesn't override internal fixed state
-    _network.once('afterDrawing', () => {
-      Object.values(_network.body.nodes).forEach(node => {
-        if (node?.options) node.options.fixed = { x: false, y: false };
-      });
-      _network.redraw();
-      setTimeout(() => _network.fit({ animation: { duration: 300 } }), 80);
-    });
-
-    // Node click → detail (or finish connect if in connect mode)
-    _network.on('click', params => {
-      if (params.nodes.length === 1) {
-        const nodeId = params.nodes[0];
-        if (_connectingFrom) { finishConnect(nodeId); return; }  // connect mode
-        const idx = projects.findIndex(p => (p.id||p.name) === nodeId);
-        if (idx < 0) return;
-        if (activeIdx === idx) { closeDetail(); return; }
-        activeIdx = idx;
-        render();
-        openDetail(idx);
-      } else if (params.nodes.length === 0 && params.edges.length === 0) {
-        if (_connectingFrom) { cancelConnect(); return; }
-        if (activeIdx !== null) { closeDetail(); }
-      }
-    });
-
-    // Double-click → rename
-    _network.on('doubleClick', params => {
-      if (params.nodes.length === 1) showRenameInput(params.nodes[0]);
-    });
-
-    // Right-click → context menu
-    // Fix: bind mousedown(button=2) not contextmenu — avoids cold-click focus issue
-    container.addEventListener('mousedown', e => {
-      if (e.button !== 2) return;
+    // Right-click context menu
+    node.addEventListener('contextmenu', e => {
       e.preventDefault();
-      container.focus();
-      setTimeout(() => {
-        const pos = { x: e.offsetX, y: e.offsetY };
-        const nodeId = _network.getNodeAt(pos);
-        if (nodeId !== undefined) { showCtxMenu(e.clientX, e.clientY, nodeId, null); return; }
-        const edgeId = _network.getEdgeAt(pos);
-        if (edgeId !== undefined) { showCtxMenu(e.clientX, e.clientY, null, edgeId); return; }
-      }, 10);
+      _ctxNodeId = node.dataset.pid;
+      _ctxEdgeId = null;
+      const nodeItems = document.getElementById('ctx-node-items');
+      const edgeItems = document.getElementById('ctx-edge-items');
+      if (nodeItems) nodeItems.style.display = '';
+      if (edgeItems) edgeItems.style.display = 'none';
+      const menu = document.getElementById('ns-ctx-menu');
+      menu.style.left = `${Math.min(e.clientX, window.innerWidth-180)}px`;
+      menu.style.top  = `${Math.min(e.clientY, window.innerHeight-160)}px`;
+      menu.classList.add('show');
     });
-    container.addEventListener('contextmenu', e => e.preventDefault());
+  });
 
-    // Track drag y-position during drag (before vis snaps back in hierarchical mode)
-    let _dragY = null;
-    _network.on('dragging', params => {
-      if (params.nodes.length) {
-        _dragY = _network.getPositions([params.nodes[0]])[params.nodes[0]]?.y ?? null;
-      }
+  // Drag between lanes
+  let _dragSrc = null, _dragIdx = null;
+  document.querySelectorAll('.ns-node').forEach(node => {
+    node.addEventListener('dragstart', e => {
+      _dragSrc = node; _dragIdx = +node.dataset.idx;
+      node.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
     });
-
-    // Drag end — use captured _dragY to detect target band
-    _network.on('dragEnd', async params => {
-      if (!params.nodes.length || _dragY == null) { _dragY = null; return; }
-      const nodeId = params.nodes[0];
-      const nodeY = _dragY;
-      _dragY = null;
-      if (Object.keys(_bandCenters).length < 1) return;
-
-      // Find nearest band by y-distance
-      let nearest = 0, minDist = Infinity;
-      Object.entries(_bandCenters).forEach(([lvl, cy]) => {
-        const d = Math.abs(nodeY - cy);
-        if (d < minDist) { minDist = d; nearest = parseInt(lvl); }
-      });
-
-      const p = projects.find(x => (x.id||x.name) === nodeId);
-      if (!p) return;
-      const oldLayer = parseInt(p.layer) || 0;
-      if (nearest === oldLayer) return;
-
-      // Layer changed — save and rebuild
-      await fetch(`/api/northstar/${encodeURIComponent(nodeId)}/layout`, {
+    node.addEventListener('dragend', () => {
+      node.classList.remove('dragging');
+      document.querySelectorAll('.ns-lane-nodes').forEach(l => l.classList.remove('drag-over'));
+    });
+  });
+  [0,1,2].forEach(l => {
+    const laneEl = document.getElementById(`lane-nodes-${l}`);
+    if (!laneEl) return;
+    laneEl.addEventListener('dragover', e => {
+      e.preventDefault();
+      document.querySelectorAll('.ns-lane-nodes').forEach(x => x.classList.remove('drag-over'));
+      laneEl.classList.add('drag-over');
+    });
+    laneEl.addEventListener('dragleave', () => laneEl.classList.remove('drag-over'));
+    laneEl.addEventListener('drop', async e => {
+      e.preventDefault();
+      laneEl.classList.remove('drag-over');
+      if (_dragIdx == null) return;
+      const p = projects[_dragIdx];
+      if (!p || (parseInt(p.layer)||0) === l) return;
+      await fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
         method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ layer: nearest }),
+        body: JSON.stringify({layer: l}),
       });
-      p.layer = nearest;
-      if (_network) { _network.destroy(); _network = null; }
+      p.layer = l;
+      _dragSrc = null; _dragIdx = null;
       render();
-      setTimeout(() => fitGraph(), 400);
     });
-
-  } else {
-    // Subsequent renders — update data
-    _visNodes.update(visNodes);
-    _visEdges.update(visEdges);
-    // Add new edges (e.g., after reconnect)
-    const existingIds = new Set(_visEdges.getIds());
-    visEdges.forEach(e => { if (!existingIds.has(e.id)) _visEdges.add(e); });
-    // Remove deleted edges
-    const newIds = new Set(visEdges.map(e => e.id));
-    _visEdges.getIds().forEach(id => { if (!newIds.has(id)) _visEdges.remove(id); });
-  }
-}
-
-function savePositions() {
-  if (!_network) return;
-  const positions = _network.getPositions();
-  projects.forEach(p => {
-    const pid = p.id || p.name;
-    if (positions[pid]) {
-      const { x, y } = positions[pid];
-      if (Math.abs((p.x||0) - x) > 2 || Math.abs((p.y||0) - y) > 2) {
-        p.x = Math.round(x); p.y = Math.round(y);
-        fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
-          method: 'PATCH', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ x: p.x, y: p.y }),
-        }).catch(() => {});
-      }
-    }
   });
 }
 
-// ── Context menu ──────────────────────────────────────────────────────────────
-let _ctxNodeId = null;
-let _connectingFrom = null;
-
-function hideCtxMenu() {
-  document.getElementById('ns-ctx-menu').classList.remove('show');
-  _ctxNodeId = null;
+// Inline rename in swimlane
+function renameNode(el, projId) {
+  el.setAttribute('contenteditable', 'true');
+  el.focus();
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(r);
 }
-
-let _ctxEdgeId = null;
-
-function showCtxMenu(x, y, nodeId = null, edgeId = null) {
-  _ctxNodeId = nodeId;
-  _ctxEdgeId = edgeId;
-  const menu = document.getElementById('ns-ctx-menu');
-  const nodeItems = document.getElementById('ctx-node-items');
-  const edgeItems = document.getElementById('ctx-edge-items');
-  nodeItems.style.display = nodeId ? '' : 'none';
-  edgeItems.style.display = edgeId ? '' : 'none';
-  if (!nodeId && !edgeId) return;
-  menu.style.left = `${Math.min(x, window.innerWidth - 180)}px`;
-  menu.style.top  = `${Math.min(y, window.innerHeight - 160)}px`;
-  menu.classList.add('show');
-}
-
-document.addEventListener('click', hideCtxMenu);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtxMenu(); cancelConnect(); } });
-
-// Context menu actions
-document.getElementById('ctx-remove-edge').onclick = async () => {
-  if (!_ctxEdgeId) return;
-  hideCtxMenu();
-  const edgeId = _ctxEdgeId;
-  const [a, b] = edgeId.split('|');
-  if (a && b) {
-    await fetch(`/api/northstar/${encodeURIComponent(a)}/connect/${encodeURIComponent(b)}`, { method: 'DELETE' });
-    const pa = projects.find(p => (p.id||p.name) === a);
-    const pb = projects.find(p => (p.id||p.name) === b);
-    if (pa) pa.connections = (pa.connections||[]).filter(c => c !== b);
-    if (pb) pb.connections = (pb.connections||[]).filter(c => c !== a);
-    // Also clear parent field if this was a parent edge
-    [pa, pb].forEach(p => { if (p?.parent === (p === pa ? b : a)) p.parent = null; });
-    render();
-  }
-};
-
-document.getElementById('ctx-connect').onclick = () => {
-  if (!_ctxNodeId || !_network) return;
-  const fromId = _ctxNodeId;
-  hideCtxMenu();
-  startConnectMode(fromId);
-};
-
-function startConnectMode(fromId) {
-  _connectingFrom = fromId;
-  // Visual: highlight the source node + show banner
-  _network.selectNodes([fromId]);
-  const banner = document.getElementById('ns-connect-banner');
-  const fromName = (projects.find(p => (p.id||p.name) === fromId) || {}).name || fromId;
-  banner.textContent = `Connecting from "${fromName}" — click target node  (Esc to cancel)`;
-  banner.style.display = 'block';
-  document.getElementById('ns-graph-canvas').style.cursor = 'crosshair';
-}
-
-async function finishConnect(toId) {
-  if (!_connectingFrom || _connectingFrom === toId) { cancelConnect(); return; }
-  const fromId = _connectingFrom;
-  cancelConnect();
-  await fetch(`/api/northstar/${encodeURIComponent(fromId)}/connect`, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ target: toId }),
+async function saveNodeName(el, projId) {
+  el.removeAttribute('contenteditable');
+  const newName = el.textContent.trim();
+  const p = projects.find(x => (x.id||x.name) === projId);
+  if (!newName || !p || newName === p.name) return;
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/rename`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name: newName}),
   });
-  const fp = projects.find(p => (p.id||p.name) === fromId);
-  const tp = projects.find(p => (p.id||p.name) === toId);
-  if (fp) fp.connections = [...new Set([...(fp.connections||[]), toId])];
-  if (tp) tp.connections = [...new Set([...(tp.connections||[]), fromId])];
-  render();
+  p.name = newName;
 }
 
-function cancelConnect() {
-  _connectingFrom = null;
-  document.getElementById('ns-connect-banner').style.display = 'none';
-  document.getElementById('ns-graph-canvas').style.cursor = '';
-  _network?.unselectAll();
-}
-
-document.getElementById('ctx-rename').onclick = () => {
-  if (!_ctxNodeId) return;
-  hideCtxMenu();
-  showRenameInput(_ctxNodeId);
-};
-
-document.getElementById('ctx-setpath').onclick = () => {
-  if (!_ctxNodeId) return;
-  hideCtxMenu();
-  const p = projects.find(x => (x.id||x.name) === _ctxNodeId);
-  const cur = p?.repo_path || '';
-  showInlineInput(`Dir path for ${p?.name||_ctxNodeId}:`, cur, async (val) => {
-    await fetch(`/api/northstar/${encodeURIComponent(_ctxNodeId)}/layout`, {
-      method: 'PATCH', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({repo_path: val.trim()}),
-    });
-    if (p) p.repo_path = val.trim();
-  });
-};
-
-document.getElementById('ctx-delete').onclick = async () => {
-  if (!_ctxNodeId) return;
-  const p = projects.find(x => (x.id||x.name) === _ctxNodeId);
-  const nodeId = _ctxNodeId;
-  hideCtxMenu();
-  // Show confirmation via the rename input (repurposed as confirm)
-  const wrap = document.getElementById('ns-rename-wrap');
-  const input = document.getElementById('ns-rename-input');
-  input.value = '';
-  input.placeholder = `Type "${p?.name||nodeId}" to confirm delete`;
-  wrap.style.left = '50%'; wrap.style.top = '45%'; wrap.style.transform = 'translate(-50%,-50%)';
-  wrap.style.display = 'block';
-  input.focus();
-  const onKey = async (e) => {
-    if (e.key === 'Escape') { wrap.style.display='none'; wrap.style.transform=''; input.removeEventListener('keydown',onKey); }
-    if (e.key === 'Enter') {
-      wrap.style.display='none'; wrap.style.transform=''; input.removeEventListener('keydown',onKey);
-      if (input.value.trim() === (p?.name||nodeId)) {
-        await fetch(`/api/northstar/${encodeURIComponent(nodeId)}`, { method: 'DELETE' });
-        await loadData();
-      }
-    }
-  };
-  input.addEventListener('keydown', onKey);
-};
-
-// ── Add project modal ─────────────────────────────────────────────────────────
-function showAddProject() {
-  document.getElementById('add-proj-name').value = '';
-  document.getElementById('add-proj-path').value = '';
-  document.getElementById('ns-add-modal').classList.add('show');
-  setTimeout(() => document.getElementById('add-proj-name').focus(), 100);
-}
-function hideAddProject() { document.getElementById('ns-add-modal').classList.remove('show'); }
-
-async function submitAddProject() {
-  const name = document.getElementById('add-proj-name').value.trim();
-  const path = document.getElementById('add-proj-path').value.trim();
-  if (!name) { document.getElementById('add-proj-name').focus(); return; }
-  hideAddProject();
-  await fetch('/api/northstar/create', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name, repo_path: path || null }),
-  });
-  await loadData();
-}
-
-function toggleConnectMode() {} // kept for compat — use right-click instead
-
-// ── Inline input (replaces prompt() which is blocked in iframe) ───────────────
-function showRenameInput(nodeId) {
-  const p = projects.find(x => (x.id||x.name) === nodeId);
-  if (!p || !_network) return;
-  const pos = _network.getPositions([nodeId])[nodeId];
-  if (!pos) return;
-  const dom = _network.canvasToDOM(pos);
-  // canvasToDOM returns coords relative to canvas container, not viewport
-  // For position:fixed we need viewport coords = containerRect + dom offset
-  const containerRect = document.getElementById('ns-graph-canvas').getBoundingClientRect();
-  const wrap = document.getElementById('ns-rename-wrap');
-  const input = document.getElementById('ns-rename-input');
-  input.value = p.name;
-  wrap.style.left = `${containerRect.left + dom.x - 80}px`;
-  wrap.style.top  = `${containerRect.top + dom.y - 16}px`;
-  wrap.style.display = 'block';
-  input.focus();
-  input.select();
-
-  const finish = async () => {
-    wrap.style.display = 'none';
-    input.removeEventListener('keydown', onKey);
-    input.removeEventListener('blur', finish);
-    const newName = input.value.trim();
-    if (newName && newName !== p.name) await commitRenameById(nodeId, newName);
-  };
-  const onKey = (e) => {
-    if (e.key === 'Enter') finish();
-    if (e.key === 'Escape') { wrap.style.display = 'none'; input.removeEventListener('keydown', onKey); input.removeEventListener('blur', finish); }
-  };
-  input.addEventListener('keydown', onKey);
-  input.addEventListener('blur', finish);
-}
-
-function showInlineInput(label, initial, onConfirm) {
-  const val = window._inlinePrompt ? window._inlinePrompt(label, initial) : initial;
-  // Fallback: simple in-canvas prompt using the rename overlay repurposed
-  const wrap = document.getElementById('ns-rename-wrap');
-  const input = document.getElementById('ns-rename-input');
-  input.value = initial;
-  input.placeholder = label;
-  wrap.style.left = '50%';
-  wrap.style.top = '50%';
-  wrap.style.transform = 'translate(-50%,-50%)';
-  wrap.style.display = 'block';
-  input.focus();
-  input.select();
-  const finish = async () => {
-    wrap.style.display = 'none';
-    wrap.style.transform = '';
-    input.removeEventListener('keydown', onKey);
-    input.removeEventListener('blur', finish);
-    await onConfirm(input.value);
-  };
-  const onKey = (e) => {
-    if (e.key === 'Enter') finish();
-    if (e.key === 'Escape') { wrap.style.display = 'none'; wrap.style.transform = ''; input.removeEventListener('keydown', onKey); input.removeEventListener('blur', finish); }
-  };
-  input.addEventListener('keydown', onKey);
-  input.addEventListener('blur', finish);
-}
-
-function fitGraph() { _network?.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } }); }
-
-function resetLayout() {
-  if (!_network) return;
-  // Destroy and recreate to force layout recalculation
-  _network.destroy();
-  _network = null;
-  render();
-  setTimeout(() => fitGraph(), 600);
-}
-
+// Compat stubs (called from context menu)
+function fitGraph() {}
+function resetLayout() { render(); }
+function drawConnections() {}
 // ── Inline rename ─────────────────────────────────────────────────────────────
 function startRename(el, projId) {
   el.setAttribute('contenteditable', 'true');
