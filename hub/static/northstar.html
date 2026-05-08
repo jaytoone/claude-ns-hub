@@ -1292,6 +1292,7 @@ function buildVisData() {
     const node = {
       id: p.id || p.name,
       label,
+      level: Math.min(2, Math.max(0, parseInt(p.layer) || 0)),  // tree level from layer field
       color: { background: col.bg, border: col.border,
                highlight: { background: col.bg, border: '#cc785c' },
                hover: { background: col.bg, border: '#cc785c' } },
@@ -1304,9 +1305,6 @@ function buildVisData() {
       shadow: { enabled: false },
       _idx: i,
     };
-    if (p.x != null && p.y != null) {
-      node.x = p.x; node.y = p.y; node.fixed = { x: false, y: false };
-    }
     if (i === activeIdx) {
       node.borderWidth = 3;
       node.color.border = '#cc785c';
@@ -1357,51 +1355,38 @@ function render() {
     _visEdges = new vis.DataSet(visEdges);
     const container = document.getElementById('ns-graph-canvas');
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-    // Use hierarchical layout when projects have parent relationships, else physics
-    const hasHierarchy = projects.some(p => p.parent || (p.connections||[]).length > 0);
-    const useTree = hasHierarchy || projects.every(p => !p.x);
-
+    // Always use hierarchical tree layout — level driven by project.layer (0/1/2)
     _network = new vis.Network(container, { nodes: _visNodes, edges: _visEdges }, {
-      layout: useTree ? {
+      layout: {
         hierarchical: {
           enabled: true,
-          direction: 'UD',       // top-down tree
+          direction: 'UD',
           sortMethod: 'directed',
-          levelSeparation: 120,
-          nodeSpacing: 160,
-          treeSpacing: 200,
+          levelSeparation: 130,
+          nodeSpacing: 170,
+          treeSpacing: 220,
           blockShifting: true,
           edgeMinimization: true,
+          parentCentralization: true,
         }
-      } : { randomSeed: 42 },
-      physics: {
-        enabled: !useTree,
-        forceAtlas2Based: {
-          gravitationalConstant: -60, centralGravity: 0.01,
-          springLength: 160, springConstant: 0.08, damping: 0.4,
-        },
-        solver: 'forceAtlas2Based',
-        stabilization: { enabled: true, iterations: 150, updateInterval: 50 },
       },
+      physics: { enabled: false },
       interaction: {
         hover: true, tooltipDelay: 300,
         dragNodes: true, dragView: true, zoomView: true,
         multiselect: false,
       },
       manipulation: { enabled: false },
-      edges: { smooth: useTree
-        ? { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 }
-        : { type: 'curvedCW', roundness: 0.15 } },
+      edges: { smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.4 } },
     });
 
     // Focus canvas so right-click works immediately (cold right-click fix)
     container.setAttribute('tabindex', '0');
     container.focus();
 
-    // Save positions after physics stabilization (tree layout doesn't need this)
-    _network.on('stabilizationIterationsDone', () => {
-      _network.setOptions({ physics: { enabled: false } });
-      if (!useTree) savePositions();
+    // Tree layout auto-positions — fit to view after initial layout completes
+    _network.once('afterDrawing', () => {
+      setTimeout(() => _network.fit({ animation: { duration: 300 } }), 80);
     });
 
     // Node click → detail (or finish connect if in connect mode)
