@@ -798,8 +798,8 @@ header {
                color:var(--text);outline:none;width:160px;box-shadow:0 4px 12px rgba(31,28,26,.18)"/>
     </div>
 
-    <!-- Connect mode banner -->
-    <div id="ns-connect-banner" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);
+    <!-- Link mode banner -->
+    <div id="ns-link-banner" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);
       background:var(--accent-soft);border:1px solid var(--accent);border-radius:6px;
       padding:6px 16px;font-family:var(--mono);font-size:11px;color:var(--accent-deep);
       z-index:20;white-space:nowrap;pointer-events:none"></div>
@@ -809,7 +809,8 @@ header {
       <!-- Node actions (shown when right-clicking a node) -->
       <div id="ctx-node-items">
         <div class="ns-ctx-item" id="ctx-rename">✎ Rename</div>
-        <div class="ns-ctx-item" id="ctx-setparent">⊂ Set parent group</div>
+        <div class="ns-ctx-item" id="ctx-link-parent">⊂ Link to parent (click parent)</div>
+        <div class="ns-ctx-item" id="ctx-unlink-parent">⊄ Remove from group</div>
         <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
         <div class="ns-ctx-sep"></div>
         <div class="ns-ctx-item danger" id="ctx-delete">✕ Remove node</div>
@@ -1382,10 +1383,27 @@ function render() {
 
   // Click → open detail (or finish connect if in connect mode)
   document.querySelectorAll('.ns-node').forEach(node => {
-    node.addEventListener('click', e => {
+    node.addEventListener('click', async e => {
       const name = node.querySelector('.ns-node-name');
       if (name && name.getAttribute('contenteditable') === 'true') return;
       if (e.target.classList.contains('ns-node-sess')) return;
+      // Link mode: this click selects the parent
+      if (_linkingChild && _linkingChild !== node.dataset.pid) {
+        const childPid = _linkingChild;
+        const parentPid = node.dataset.pid;
+        cancelLink();
+        const p = projects.find(x => (x.id||x.name) === childPid);
+        if (p) {
+          await fetch(`/api/northstar/${encodeURIComponent(childPid)}/layout`, {
+            method:'PATCH', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({parent: parentPid}),
+          });
+          p.parent = parentPid;
+          render();
+        }
+        return;
+      }
+      if (_linkingChild) { cancelLink(); return; }
       const i = +node.dataset.idx;
       if (activeIdx === i) { closeDetail(); return; }
       activeIdx = i; render(); openDetail(i);
@@ -1521,7 +1539,7 @@ function hideCtxMenu() {
   _ctxNodeId = null;
 }
 document.addEventListener('click', hideCtxMenu);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtxMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideCtxMenu(); cancelLink(); } });
 
 document.getElementById('ctx-rename').onclick = () => {
   const pid = _ctxNodeId; if (!pid) return;
@@ -1529,53 +1547,37 @@ document.getElementById('ctx-rename').onclick = () => {
   const el = document.querySelector(`.ns-node[data-pid="${CSS.escape(pid)}"] .ns-node-name`);
   if (el) renameNode(el, pid);
 };
-document.getElementById('ctx-setparent').onclick = () => {
+let _linkingChild = null;  // pid of node waiting to be linked to a parent
+
+function cancelLink() {
+  _linkingChild = null;
+  const b = document.getElementById('ns-link-banner');
+  if (b) b.style.display = 'none';
+}
+
+document.getElementById('ctx-link-parent').onclick = () => {
+  const pid = _ctxNodeId; if (!pid) return;
+  hideCtxMenu();
+  _linkingChild = pid;
+  const p = projects.find(x => (x.id||x.name) === pid);
+  const banner = document.getElementById('ns-link-banner');
+  if (banner) {
+    banner.textContent = `"${p?.name||pid}" — click the parent node to link  (Esc to cancel)`;
+    banner.style.display = 'block';
+  }
+};
+
+document.getElementById('ctx-unlink-parent').onclick = async () => {
   const pid = _ctxNodeId; if (!pid) return;
   hideCtxMenu();
   const p = projects.find(x => (x.id||x.name) === pid);
   if (!p) return;
-  const curLayer = parseInt(p.layer)||0;
-  // Candidates: projects in higher lanes (lower layer number)
-  const candidates = projects.filter(x => (parseInt(x.layer)||0) < curLayer && (x.id||x.name) !== pid);
-  // Build selection UI using the inline overlay
-  const wrap = document.getElementById('ns-rename-wrap');
-  const input = document.getElementById('ns-rename-input');
-  if (!wrap || !input) return;
-  // Replace input with a select-like input: show datalist of candidates
-  const candidateNames = candidates.map(x => x.name || x.id);
-  const curParent = p.parent || '';
-  input.value = curParent;
-  input.placeholder = candidateNames.length
-    ? `Parent: ${candidateNames.join(' / ')} (or leave blank)`
-    : 'Move node to a higher lane first';
-  wrap.style.left = '50%'; wrap.style.top = '45%';
-  wrap.style.transform = 'translate(-50%,-50%)';
-  wrap.style.display = 'block';
-  input.focus(); input.select();
-  const cleanup = () => {
-    wrap.style.display = 'none'; wrap.style.transform = '';
-    input.removeEventListener('keydown', onKey);
-  };
-  const saveParent = async (val) => {
-    cleanup();
-    const newParent = val.trim() || null;
-    // Resolve by name or id
-    const parentProj = newParent
-      ? projects.find(x => x.name === newParent || (x.id||x.name) === newParent)
-      : null;
-    const parentId = parentProj ? (parentProj.id||parentProj.name) : null;
-    await fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
-      method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({parent: parentId}),
-    });
-    p.parent = parentId;
-    render();
-  };
-  const onKey = (e) => {
-    if (e.key === 'Enter') saveParent(input.value);
-    if (e.key === 'Escape') cleanup();
-  };
-  input.addEventListener('keydown', onKey);
+  await fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({parent: null}),
+  });
+  p.parent = null;
+  render();
 };
 
 document.getElementById('ctx-setpath').onclick = () => {
