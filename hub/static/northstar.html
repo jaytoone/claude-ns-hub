@@ -1460,6 +1460,33 @@ async function saveNodeName(el, projId) {
   p.name = newName;
 }
 
+// ── Inline overlay input (used by context menu actions) ───────────────────────
+function showInlineInput(placeholder, initial, onConfirm) {
+  const wrap = document.getElementById('ns-rename-wrap');
+  const input = document.getElementById('ns-rename-input');
+  if (!wrap || !input) return;
+  input.value = initial;
+  input.placeholder = placeholder;
+  wrap.style.left = '50%';
+  wrap.style.top  = '45%';
+  wrap.style.transform = 'translate(-50%,-50%)';
+  wrap.style.display = 'block';
+  input.focus(); input.select();
+  const cleanup = () => {
+    wrap.style.display = 'none';
+    wrap.style.transform = '';
+    input.removeEventListener('keydown', onKey);
+    input.removeEventListener('blur', onBlur);
+  };
+  const onKey = async (e) => {
+    if (e.key === 'Enter') { cleanup(); await onConfirm(input.value); }
+    if (e.key === 'Escape') cleanup();
+  };
+  const onBlur = async () => { cleanup(); await onConfirm(input.value); };
+  input.addEventListener('keydown', onKey);
+  input.addEventListener('blur', onBlur);
+}
+
 // Compat stubs (called from context menu)
 function fitGraph() {}
 function resetLayout() { render(); }
@@ -1496,15 +1523,17 @@ document.addEventListener('click', hideCtxMenu);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtxMenu(); });
 
 document.getElementById('ctx-rename').onclick = () => {
-  if (!_ctxNodeId) return; hideCtxMenu();
-  const el = document.querySelector(`.ns-node[data-pid="${CSS.escape(_ctxNodeId)}"] .ns-node-name`);
-  if (el) renameNode(el, _ctxNodeId);
+  const pid = _ctxNodeId; if (!pid) return;
+  hideCtxMenu();
+  const el = document.querySelector(`.ns-node[data-pid="${CSS.escape(pid)}"] .ns-node-name`);
+  if (el) renameNode(el, pid);
 };
 document.getElementById('ctx-setpath').onclick = () => {
-  if (!_ctxNodeId) return; hideCtxMenu();
-  const p = projects.find(x => (x.id||x.name) === _ctxNodeId);
+  const pid = _ctxNodeId; if (!pid) return;
+  hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === pid);
   showInlineInput('Directory path:', p?.repo_path||'', async val => {
-    await fetch(`/api/northstar/${encodeURIComponent(_ctxNodeId)}/layout`, {
+    await fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
       method:'PATCH', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({repo_path: val.trim()}),
     });
@@ -1512,12 +1541,12 @@ document.getElementById('ctx-setpath').onclick = () => {
   });
 };
 document.getElementById('ctx-delete').onclick = async () => {
-  if (!_ctxNodeId) return;
-  const nodeId = _ctxNodeId; hideCtxMenu();
-  const p = projects.find(x => (x.id||x.name) === nodeId);
-  showInlineInput(`Type "${p?.name||nodeId}" to confirm:`, '', async val => {
-    if (val.trim() === (p?.name||nodeId)) {
-      await fetch(`/api/northstar/${encodeURIComponent(nodeId)}`, { method:'DELETE' });
+  const pid = _ctxNodeId; if (!pid) return;
+  hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === pid);
+  showInlineInput(`Type "${p?.name||pid}" to confirm:`, '', async val => {
+    if (val.trim() === (p?.name||pid)) {
+      await fetch(`/api/northstar/${encodeURIComponent(pid)}`, { method:'DELETE' });
       await loadData();
     }
   });
