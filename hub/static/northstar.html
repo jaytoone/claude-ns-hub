@@ -1401,8 +1401,13 @@ function render() {
       drawLayerBands(ctx);
     });
 
-    // Fit after initial layout
+    // After first draw: unfix y-axis (hierarchical mode sets fixed.y=true → blocks vertical drag)
+    // Must modify body.nodes directly — _visNodes.update() doesn't override internal fixed state
     _network.once('afterDrawing', () => {
+      Object.values(_network.body.nodes).forEach(node => {
+        if (node?.options) node.options.fixed = { x: false, y: false };
+      });
+      _network.redraw();
       setTimeout(() => _network.fit({ animation: { duration: 300 } }), 80);
     });
 
