@@ -84,9 +84,11 @@ header {
 /* ── Swimlane layout ────────────────────────────────────────────────────────── */
 .grid-wrap {
   padding: 12px 16px;
-  overflow-x: auto;   /* horizontal scroll preserves desktop layout on mobile */
+  overflow-x: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;   /* GPU compositing hint */
+  transform: translateZ(0);       /* force own compositing layer */
 }
 .ns-swimlane {
   position: relative;
@@ -1289,7 +1291,8 @@ function renderMilestoneCreator(projId, milestones) {
 
   const l0 = milestones.filter(m => (m.layer || 0) === 0);
   const l1 = milestones.filter(m => (m.layer || 0) === 1);
-  const doneTotal = milestones.filter(m => m.done).length;
+  const doneTotal = milestones.filter(m => (m.status||'') === 'done' || m.done).length;
+  const queuedTotal = milestones.filter(m => (m.status||'') === 'queued').length;
   const acked = milestones.filter(m => m.claude_ack).length;
 
   // Ack badge
@@ -1305,7 +1308,8 @@ function renderMilestoneCreator(projId, milestones) {
   const pct = milestones.length ? Math.round(doneTotal / milestones.length * 100) : 0;
   const progressBar = `<div style="margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:4px">
-      <span>Milestones</span><span>${doneTotal}/${milestones.length} · ${pct}%</span>
+      <span>Milestones</span>
+      <span>${doneTotal}/${milestones.length} done${queuedTotal>0?` · <span style="color:var(--accent)">${queuedTotal} queued</span>`:''}</span>
     </div>
     <div style="height:3px;background:var(--panel-border);border-radius:2px;overflow:hidden">
       <div style="height:100%;width:${pct}%;background:var(--green);border-radius:2px;transition:width .3s"></div>
@@ -1346,23 +1350,34 @@ function renderMilestoneCreator(projId, milestones) {
   <div>
     ${l0.map((m, idx) => {
       const children = l1.filter(c => c.parent_id === m.id);
-      const childDone = children.filter(c => c.done).length;
-      const state = m.done ? 'done' : (childDone > 0 && childDone < children.length ? 'active' : 'pending');
-      const sc = {done:'var(--green)',active:'var(--accent)',pending:'var(--panel-border)'}[state];
-      const sbg = {done:'var(--green)',active:'var(--accent-soft)',pending:'var(--panel)'}[state];
-      const sfg = {done:'#fff',active:'var(--accent-deep)',pending:'var(--text-dim)'}[state];
+      // 3-state: pending / queued / done
+      // state derives from m.status field (new) or m.done (old compat)
+      const mStatus = m.status || (m.done ? 'done' : 'pending');
+      // User can only set pending↔queued; done is Claude-only
+      const sc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)'}[mStatus]||'var(--panel-border)';
+      const sbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)'}[mStatus]||'var(--panel)';
+      const sfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)'}[mStatus]||'var(--text-dim)';
+      const stateIcon = {done:'✓',queued:'⏵',pending:'○'}[mStatus]||'○';
       const isOpen = !!expanded[m.id];
       const num = idx + 1;
 
+      function childStatusOf(c) { return c.status || (c.done ? 'done' : 'pending'); }
+
       const subHtml = isOpen && children.length ? `
         <div class="nt-sub-wrap" onclick="event.stopPropagation()">
-          ${children.map((c, ci) => `
-            <div class="nt-sub-row ${c.done?'nt-done':''}">
+          ${children.map((c, ci) => {
+            const cs = c.status || (c.done?'done':'pending');
+            const csc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)'}[cs]||'var(--panel-border)';
+            const csbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)'}[cs]||'var(--panel)';
+            const csfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)'}[cs]||'var(--text-dim)';
+            const csIcon = {done:'✓',queued:'⏵',pending:'○'}[cs]||'○';
+            const canToggle = cs !== 'done';  // done is Claude-only
+            return `
+            <div class="nt-sub-row ${cs==='done'?'nt-done':''}">
               <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
-              <button class="nt-check" onclick="toggleMs('${esc(projId)}','${esc(c.id)}')"
-                style="border:1.5px solid ${c.done?'var(--green)':'var(--panel-border)'};
-                background:${c.done?'var(--green)':'var(--panel)'};color:${c.done?'#fff':'var(--text-dim)'}"
-              >${c.done?'✓':'○'}</button>
+              <button class="nt-check" ${canToggle?`onclick="toggleMsQueue('${esc(projId)}','${esc(c.id)}')" title="${cs==='queued'?'Remove from queue':'Add to queue'}"`:' disabled title="Claude marks done"'}
+                style="border:1.5px solid ${csc};background:${csbg};color:${csfg};${!canToggle?'cursor:not-allowed;opacity:.7':''}"
+              >${csIcon}</button>
               <div class="nt-text" style="font-size:11.5px;${c.done?'color:var(--text-dim);text-decoration:line-through;':''}"
                 contenteditable="true"
                 data-ms-id="${esc(c.id)}"
@@ -1379,12 +1394,13 @@ function renderMilestoneCreator(projId, milestones) {
 
       return `
         <div onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
-          <div class="nt-row ${m.done?'nt-done':''}">
+          <div class="nt-row ${mStatus==='done'?'nt-done':''}">
             <span class="nt-num">${num}.</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
-            <button class="nt-check" onclick="event.stopPropagation();toggleMs('${esc(projId)}','${esc(m.id)}')"
+            <button class="nt-check"
+              ${mStatus!=='done' ? `onclick="event.stopPropagation();toggleMsQueue('${esc(projId)}','${esc(m.id)}')" title="${mStatus==='queued'?'Remove from queue (currently queued)':'Add to queue'}"` : `disabled onclick="event.stopPropagation()" title="Done — set by Claude only" style="cursor:not-allowed;opacity:.8"`}
               style="border:2px solid ${sc};background:${sbg};color:${sfg}"
-            >${m.done?'✓':'○'}</button>
+            >${stateIcon}</button>
             <div class="nt-text" style="font-weight:${state==='active'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
               data-ms-id="${esc(m.id)}"
@@ -1458,17 +1474,24 @@ function toggleMsExpand(projId, mid) {
   loadMilestones(projId);
 }
 
-async function toggleMs(projId, mid) {
-  const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`);
+// User action: toggle between pending ↔ queued (cannot set done — Claude only)
+async function toggleMsQueue(projId, mid) {
+  const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`);
   const data = await r.json();
-  const ms = data.milestones?.find(m => m.id === mid);
+  const ms = (data.milestones || []).find(m => m.id === mid);
   if (!ms) { await loadMilestones(projId); return; }
+  const curStatus = ms.status || (ms.done ? 'done' : 'pending');
+  if (curStatus === 'done') return;  // Claude-only, block
+  const newStatus = curStatus === 'queued' ? 'pending' : 'queued';
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({done: !ms.done}),
+    body: JSON.stringify({status: newStatus}),
   });
   await loadMilestones(projId);
 }
+
+// Alias kept for backwards compat (auto-ack still uses this)
+async function toggleMs(projId, mid) { return toggleMsQueue(projId, mid); }
 
 async function saveMs(projId, mid, text) {
   const status = document.getElementById('dm-ms-save-status');
@@ -2335,7 +2358,23 @@ function openTerminal(projId) {
   const ws = new WebSocket(`${proto}//${location.host}/ws/session/${encodeURIComponent(projId)}`);
   _termWs = ws;
 
-  _term.onData(data => { if (ws.readyState === 1) ws.send(data); });
+  // Korean/CJK IME fix: suppress onData during composition, send on compositionend
+  let _imeComposing = false;
+  _term.onData(data => {
+    if (_imeComposing) return;  // block intermediate syllables
+    if (ws.readyState === 1) ws.send(data);
+  });
+
+  // Hook into xterm's internal textarea for composition events
+  const _xtArea = document.querySelector('#dm-xterm textarea');
+  if (_xtArea) {
+    _xtArea.addEventListener('compositionstart', () => { _imeComposing = true; });
+    _xtArea.addEventListener('compositionupdate', () => { _imeComposing = true; });
+    _xtArea.addEventListener('compositionend', e => {
+      _imeComposing = false;
+      if (ws.readyState === 1 && e.data) ws.send(e.data);
+    });
+  }
 
   // Batch incoming chunks into one write per animation frame (reduces repaints)
   let _wsBatch = '';

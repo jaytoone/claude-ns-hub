@@ -101,8 +101,9 @@ def try_ack_milestones(proj_id: str, commits: list[str]) -> int:
         req = urllib.request.Request(f"{HUB_API}/api/northstar/{proj_id}/milestones")
         with urllib.request.urlopen(req, timeout=3) as resp:
             data = json.loads(resp.read())
-        # Process all undone milestones (acked or not — re-check for auto-done)
-        milestones = [m for m in data.get("milestones", []) if not m.get("done")]
+        # Process queued + undone milestones for auto-completion
+        milestones = [m for m in data.get("milestones", [])
+                      if not m.get("done") and (m.get("status") or "pending") != "done"]
         if not milestones:
             return 0
 
@@ -122,9 +123,10 @@ def try_ack_milestones(proj_id: str, commits: list[str]) -> int:
             patch = {}
             if not m.get("claude_ack"):
                 patch["claude_ack"] = now_iso
-            # Auto-mark done if strong match + commit signals completion
+            # Auto-mark done if strong match + commit signals completion (Claude-only action)
             if score >= 0.65 and commits_imply_done:
                 patch["done"] = True
+                patch["status"] = "done"
 
             if not patch:
                 continue

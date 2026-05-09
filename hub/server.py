@@ -141,13 +141,24 @@ def _load_projects() -> list:
                     for m in (raw_ms if isinstance(raw_ms, list) else []):
                         if isinstance(m, dict):
                             # Already has new schema or partial old schema
+                            # Derive status: new schema uses status:, old used done:bool
+                            raw_status = m.get("status", "")
+                            if raw_status in ("pending", "queued", "done"):
+                                status = raw_status
+                            elif m.get("done"):
+                                status = "done"
+                            else:
+                                status = "pending"
                             entry = {
                                 "id":        m.get("id") or _next_id(),
                                 "text":      str(m.get("text", "")),
                                 "layer":     int(m.get("layer", 0)),
                                 "parent_id": m.get("parent_id") or None,
-                                "done":      bool(m.get("done")),
+                                "status":    status,
+                                "done":      status == "done",   # keep for backwards compat
                                 "claude_ack": m.get("claude_ack") or None,
+                                "queued_at": m.get("queued_at") or None,
+                                "done_at":   m.get("done_at") or None,
                             }
                             norm_ms.append(entry)
                         elif isinstance(m, str):
@@ -981,11 +992,34 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
     proj = _parse_md_frontmatter(md)
     milestones = proj.get("milestones", [])
     updated = False
+    now_iso = __import__('datetime').datetime.now().strftime("%Y-%m-%dT%H:%M")
     for m in milestones:
         if isinstance(m, dict) and m.get("id") == mid:
-            for k in ("text", "done", "claude_ack", "layer", "parent_id"):
+            # User-settable fields: text, layer, parent_id, claude_ack, status=queued/pending only
+            for k in ("text", "layer", "parent_id", "claude_ack"):
                 if k in data:
                     m[k] = data[k]
+            # Status: user can set pending/queued; done is Claude-only (set via done=True or status=done)
+            new_status = data.get("status")
+            if new_status in ("pending", "queued"):
+                m["status"] = new_status
+                m["done"] = False
+                if new_status == "queued":
+                    m.setdefault("queued_at", now_iso)
+                else:
+                    m.pop("queued_at", None)
+            elif new_status == "done" or data.get("done") is True:
+                # Claude-only: mark done
+                m["status"] = "done"
+                m["done"] = True
+                m["done_at"] = now_iso
+                if "claude_ack" not in data:
+                    m["claude_ack"] = now_iso
+            # Old-style done=False (from auto-ack) — treat as pending
+            elif data.get("done") is False:
+                if m.get("status") != "queued":
+                    m["status"] = "pending"
+                m["done"] = False
             updated = True
             break
     if not updated:
