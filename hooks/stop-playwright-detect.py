@@ -65,6 +65,44 @@ SESSION_HASH = session_hash(SESSION_ID)
 UI_PORTS = [3000, 3001, 3002, 3003, 4200, 5000, 5173, 5174,
             8000, 8080, 8081, 8989, 9000]  # 8787 excluded (ctx-dashboard, not a project UI)
 
+def load_hook_cfg(cwd: str) -> dict:
+    """Load .playwright-hook.json from project dir."""
+    hook_cfg = Path(cwd) / ".playwright-hook.json"
+    if hook_cfg.exists():
+        try:
+            return json.loads(hook_cfg.read_text())
+        except Exception:
+            pass
+    return {}
+
+_HOOK_CFG = load_hook_cfg(CWD)
+_ALWAYS_VERIFY = _HOOK_CFG.get("alwaysVerify", False)
+_EXTRA_REPO_PATHS = [
+    str(Path(p.replace("~", str(Path.home()))).expanduser())
+    for p in _HOOK_CFG.get("extraRepoPaths", [])
+]
+
+
+def get_extra_repo_changes(repo_paths: list[str], skip_fn) -> list[str]:
+    """Check additional git repos for UI-relevant changes since session start."""
+    extra_changes = []
+    for repo_path in repo_paths:
+        rp = Path(repo_path)
+        if not rp.exists():
+            continue
+        def _git(*args):
+            return run(["git", "-C", str(rp), "-c", "core.quotepath=false", *args])
+        # Get uncommitted changes in this repo
+        diff = _git("diff", "HEAD", "--name-only")
+        status = _git("status", "--porcelain")
+        untracked = "\n".join(l[3:] for l in status.splitlines() if l.startswith("??"))
+        all_files = sorted(set(filter(None, (diff + "\n" + untracked).splitlines())))
+        relevant = [f for f in all_files if not skip_fn(f)]
+        # Use bare filenames (no repo-name prefix) so skip patterns don't interfere
+        extra_changes.extend(relevant)
+    return extra_changes
+
+
 def detect_ui_url(cwd: str) -> str | None:
     """Scan listening ports for a running web server. Return URL or None."""
     # Check .playwright-hook.json first — project-level override wins
@@ -114,6 +152,22 @@ UI_URL = detect_ui_url(CWD)
 # Also check playwright.config.* (original behavior — keep backwards compat)
 PW_CONFIG = next(Path(CWD).rglob("playwright.config.*"), None) if Path(CWD).exists() else None
 
+def get_verify_script(cwd: str) -> str | None:
+    """Return verifyScript command from .playwright-hook.json if configured.
+    Expands ~ in the command string but returns it as a runnable shell command."""
+    hook_cfg = Path(cwd) / ".playwright-hook.json"
+    if hook_cfg.exists():
+        try:
+            cfg = json.loads(hook_cfg.read_text())
+            script = cfg.get("verifyScript")
+            if script:
+                return script.replace("~", str(Path.home()))
+        except Exception:
+            pass
+    return None
+
+VERIFY_SCRIPT = get_verify_script(CWD)
+
 if not UI_URL and not PW_CONFIG:
     sys.exit(0)  # No UI detected — skip silently
 
@@ -157,13 +211,17 @@ if not Path(SESSION_START_HEAD).exists():
     Path(SESSION_START_HEAD).write_text(head)
     Path(SESSION_SNAPSHOT).write_text("\n".join(current_all))
     if not current_all:
+        # alwaysVerify: skip git tracking entirely, go straight to verify
+        if _ALWAYS_VERIFY:
+            pass  # fall through to UI verification below
         # Non-git project with .playwright-hook.json: skip git tracking, go straight to verify
-        if (Path(CWD) / ".playwright-hook.json").exists() and not head:
+        elif (Path(CWD) / ".playwright-hook.json").exists() and not head:
             pass  # fall through to UI verification below
         else:
             sys.exit(0)
     else:
-        block("New Claude session started — ignoring prior uncommitted changes.\n\nIf you have new work from this session, please mention it.")
+        if not _ALWAYS_VERIFY:
+            block("New Claude session started — ignoring prior uncommitted changes.\n\nIf you have new work from this session, please mention it.")
 
 session_base = set(Path(SESSION_SNAPSHOT).read_text().splitlines()) if Path(SESSION_SNAPSHOT).exists() else set()
 session_init_head = Path(SESSION_START_HEAD).read_text().strip() if Path(SESSION_START_HEAD).exists() else ""
@@ -177,8 +235,12 @@ new_files = [f for f in current_all if f not in session_base]
 changed_raw = list(set(new_files + [f for f in committed_since.splitlines() if f]))
 changed_raw = sorted(set(filter(None, changed_raw)))
 
+# Check extra repos (e.g. ~/.claude/hub) for UI-relevant changes
+extra_changes = get_extra_repo_changes(_EXTRA_REPO_PATHS, should_skip) if _EXTRA_REPO_PATHS else []
+changed_raw = sorted(set(changed_raw + extra_changes))
+
 _no_git_hook = (Path(CWD) / ".playwright-hook.json").exists() and not git("rev-parse", "HEAD")
-if not changed_raw and not _no_git_hook:
+if not changed_raw and not _no_git_hook and not _ALWAYS_VERIFY:
     block("No new work in this Claude session.\n\nIf you have newly changed files, please mention them.")
 
 TARGETS = [f for f in changed_raw if not should_skip(f)]
@@ -199,26 +261,28 @@ def uncommitted_ui_files() -> list[str]:
     return [f for f in (git("diff", "HEAD", "--name-only") + "\n" + git("diff", "--cached", "--name-only")).splitlines()
             if f and not should_skip(f)]
 
-# Cross-session: same HEAD+diff already verified
-cross = next(Path("/tmp").glob(f"pw-checked-*-{head_hash}-{diff_hash}.flag"), None)
-if cross:
-    Path(BLOCK_FLAG).unlink(missing_ok=True)
-    unc = uncommitted_ui_files()
-    msg = "Cross-session verification passed."
-    if unc:
-        msg += f"\n\nUncommitted changes:\n" + "\n".join(unc[:5])
-        msg += "\n\nCommit: git add <files> && git commit -m '...'"
-    block(msg)
+# alwaysVerify=true → skip all dedup, always run verifyScript fresh
+if not _ALWAYS_VERIFY:
+    # Cross-session: same HEAD+diff already verified
+    cross = next(Path("/tmp").glob(f"pw-checked-*-{head_hash}-{diff_hash}.flag"), None)
+    if cross:
+        Path(BLOCK_FLAG).unlink(missing_ok=True)
+        unc = uncommitted_ui_files()
+        msg = "Cross-session verification passed."
+        if unc:
+            msg += f"\n\nUncommitted changes:\n" + "\n".join(unc[:5])
+            msg += "\n\nCommit: git add <files> && git commit -m '...'"
+        block(msg)
 
-# Same-session: already verified
-if Path(FLAG).exists():
-    Path(BLOCK_FLAG).unlink(missing_ok=True)
-    unc = uncommitted_ui_files()
-    msg = "Playwright verification complete."
-    if unc:
-        msg += f"\n\nUncommitted changes:\n" + "\n".join(unc[:5])
-        msg += "\n\nCommit: git add <files> && git commit -m '...'"
-    block(msg)
+    # Same-session: already verified
+    if Path(FLAG).exists():
+        Path(BLOCK_FLAG).unlink(missing_ok=True)
+        unc = uncommitted_ui_files()
+        msg = "Playwright verification complete."
+        if unc:
+            msg += f"\n\nUncommitted changes:\n" + "\n".join(unc[:5])
+            msg += "\n\nCommit: git add <files> && git commit -m '...'"
+        block(msg)
 
 # Re-entry: verification still pending
 if Path(BLOCK_FLAG).exists():
@@ -233,8 +297,39 @@ if Path(BLOCK_FLAG).exists():
             pass
     block(msg)
 
-if not TARGETS and not _no_git_hook:
+if not TARGETS and not _no_git_hook and not _ALWAYS_VERIFY:
     sys.exit(0)
+
+# ── Custom verifyScript runner ────────────────────────────────────────────────
+
+def run_custom_verify(script: str) -> list[dict]:
+    """Run a project-specific verify script (full command) and parse its structured output."""
+    try:
+        r = subprocess.run(
+            script, shell=True,
+            capture_output=True, text=True, timeout=60
+        )
+        output = r.stdout + r.stderr
+        results = []
+        for line in output.splitlines():
+            line = line.strip()
+            if line.startswith("✅") or line.startswith("❌"):
+                ok = line.startswith("✅")
+                rest = line[1:].strip()
+                # "health/northstar" or "ns_nodes  → 9 nodes"
+                if "→" in rest:
+                    name, detail = rest.split("→", 1)
+                else:
+                    name, detail = rest, ""
+                results.append({"check": name.strip(), "ok": ok, "detail": detail.strip()})
+        # If script produced no parseable lines, treat exit code as single pass/fail
+        if not results:
+            results.append({"check": "verify_script", "ok": r.returncode == 0,
+                            "detail": output[:120] if r.returncode != 0 else ""})
+        return results
+    except Exception as e:
+        return [{"check": "verify_script", "ok": False, "detail": str(e)[:100]}]
+
 
 # ── Generic Playwright invariant check ───────────────────────────────────────
 
@@ -315,8 +410,13 @@ url_to_check = check_url  # kept for compat with check_results usage below
 n_targets = len(TARGETS)
 changed_summary = "\n".join(TARGETS[:8]) + ("\n..." if n_targets > 8 else "")
 
-# Run generic checks (fast, headless)
-check_results = run_ui_check(url_to_check) if UI_URL else []
+# Run custom E2E verify script if configured, otherwise generic checks
+if VERIFY_SCRIPT:
+    check_results = run_custom_verify(VERIFY_SCRIPT)
+elif UI_URL:
+    check_results = run_ui_check(url_to_check)
+else:
+    check_results = []
 checks_ok = all(r["ok"] for r in check_results)
 failed = [r for r in check_results if not r["ok"]]
 

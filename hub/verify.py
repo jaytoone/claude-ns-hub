@@ -141,18 +141,17 @@ def run_playwright_checks(base: str, screenshot: bool = False) -> list[dict]:
                 except Exception as e:
                     results.append({"check": f"dark_mode/{svc}_listener", "ok": False, "detail": str(e)[:80]})
 
-            # Check 4: NS table rows (same-origin iframe)
+            # Check 4: NS swimlane nodes (same-origin iframe)
             rows = page.evaluate("""() => {
                 const f = document.getElementById('frame-northstar');
                 try {
-                    const tbody = f.contentDocument.querySelector('#grid');
-                    return tbody ? tbody.querySelectorAll('tr[data-orig-idx]').length : 0;
+                    return f.contentDocument.querySelectorAll('.ns-node').length;
                 } catch(e) { return -1; }
             }""")
             results.append({
-                "check": "ns_table_rows",
+                "check": "ns_nodes",
                 "ok": rows > 0,
-                "detail": f"{rows} rows" if rows > 0 else "table empty or not loaded",
+                "detail": f"{rows} nodes" if rows > 0 else "swimlane empty or not loaded",
             })
 
             # Check 5: no JS console errors

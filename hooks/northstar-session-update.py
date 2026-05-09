@@ -89,10 +89,28 @@ def _commit_implies_done(commit_text: str) -> bool:
     return bool(tokens & _DONE_SIGNALS)
 
 
-def try_ack_milestones(proj_id: str, commits: list[str]) -> int:
-    """Check milestones against commit text.
-    - claude_ack written when match >= 0.55
-    - done=True also set when match >= 0.65 AND commit implies completion
+def read_completion_log(proj_id: str) -> list[dict]:
+    """Read Claude's explicit completion signals from completion-log.jsonl."""
+    log_path = Path.home() / f".claude/hub/projects/{proj_id}/completion-log.jsonl"
+    entries = []
+    if not log_path.exists():
+        return entries
+    try:
+        for line in log_path.read_text().splitlines():
+            line = line.strip()
+            if line:
+                entries.append(json.loads(line))
+    except Exception:
+        pass
+    return entries
+
+
+def try_ack_milestones(proj_id: str, commits: list[str], session_id: str = "") -> int:
+    """Check milestones against:
+    1. Explicit completion-log.jsonl entries (primary — Claude's own signal)
+    2. Jaccard similarity against commit text (fallback)
+    - claude_ack written when Jaccard match >= 0.55
+    - pending_confirmation set when completion log entry exists OR Jaccard >= 0.65 + done signal
     """
     import urllib.request
     now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M")
@@ -101,32 +119,43 @@ def try_ack_milestones(proj_id: str, commits: list[str]) -> int:
         req = urllib.request.Request(f"{HUB_API}/api/northstar/{proj_id}/milestones")
         with urllib.request.urlopen(req, timeout=3) as resp:
             data = json.loads(resp.read())
-        # Process queued + undone milestones for auto-completion
         milestones = [m for m in data.get("milestones", [])
-                      if not m.get("done") and (m.get("status") or "pending") != "done"]
+                      if not m.get("done") and (m.get("status") or "pending") not in ("done", "pending_confirmation")]
         if not milestones:
             return 0
 
         corpus = " ".join(commits)
         commits_imply_done = _commit_implies_done(corpus)
 
+        # P1: Check completion log first (explicit Claude signal — highest priority)
+        completion_entries = read_completion_log(proj_id)
+        logged_mids = {e.get("milestone_id"): e for e in completion_entries
+                       if e.get("session_id", "") == session_id or not session_id}
+
         for m in milestones:
             mid = m.get("id", "")
             text = m.get("text", "")
             if not mid or not text:
                 continue
-            score = jaccard_similarity(text, corpus)
-            if score < 0.55:
-                continue
 
-            # Build patch payload
             patch = {}
             if not m.get("claude_ack"):
                 patch["claude_ack"] = now_iso
-            # Auto-mark done if strong match + commit signals completion (Claude-only action)
-            if score >= 0.65 and commits_imply_done:
-                patch["done"] = True
-                patch["status"] = "done"
+
+            # P1: Explicit completion log entry → pending_confirmation (user confirms within 24h)
+            if mid in logged_mids:
+                patch["status"] = "pending_confirmation"
+                patch["done"] = False  # user must confirm
+            else:
+                # Fallback: Jaccard
+                score = jaccard_similarity(text, corpus)
+                if score < 0.55:
+                    if not patch:
+                        continue
+                    # Only write ack, no status change
+                elif score >= 0.65 and commits_imply_done:
+                    patch["status"] = "pending_confirmation"
+                    patch["done"] = False
 
             if not patch:
                 continue
@@ -208,8 +237,8 @@ def main():
     except Exception:
         pass  # Hub offline or error — fail silently
 
-    # P3: Try to acknowledge milestones mentioned in commits
-    try_ack_milestones(proj_id, commits)
+    # P3: Try to acknowledge milestones (completion log first, Jaccard fallback)
+    try_ack_milestones(proj_id, commits, session_id=info.get("session_id", ""))
 
     # P4: Set session status pill to IDLE on session end
     try:

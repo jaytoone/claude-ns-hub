@@ -1,0 +1,5 @@
+{
+  "baseUrl": "http://100.119.82.4:9000",
+  "verifyScript": "python3 ~/.claude/hub/verify.py",
+  "skipGitCheck": false
+}

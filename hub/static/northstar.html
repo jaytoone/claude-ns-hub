@@ -50,7 +50,7 @@
 ::-webkit-scrollbar-corner { background: transparent; }
 * { scrollbar-width: thin; scrollbar-color: var(--panel-border) transparent; }
 html, body { height: 100%; background: var(--bg); overflow: hidden; }
-body { font: 14px/1.55 var(--sans); color: var(--text-soft); -webkit-font-smoothing: antialiased; }
+body { font: 14px/1.55 var(--sans); color: var(--text-soft); -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 /* ── Layout ─────────────────────────────────────────────────────────────────── */
 .layout { display: block; height: 100vh; overflow-y: auto; }
@@ -85,8 +85,9 @@ header {
 .grid-wrap {
   padding: 12px 16px;
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: hidden;             /* vertical scroll handled by .layout, not swimlane */
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;           /* tell browser: only horizontal touch here, let vertical bubble up */
   will-change: scroll-position;   /* GPU compositing hint */
   transform: translateZ(0);       /* force own compositing layer */
 }
@@ -108,7 +109,7 @@ header {
   box-shadow: 0 0 0 1px var(--accent);
 }
 .ns-lane-nodes {
-  flex: 1; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start;
+  flex: 1; display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch;
   min-height: 84px; padding: 8px 12px;
   border-left: 2px solid var(--panel-border);
   border-radius: 0 8px 8px 0; transition: border-color .1s, background .1s;
@@ -122,6 +123,7 @@ header {
   border-radius: 8px; padding: 8px 10px; cursor: pointer; user-select: none;
   transition: box-shadow .12s, border-color .12s, background .12s; flex-shrink: 0;
   position: relative;
+  display: flex; flex-direction: column;
 }
 .ns-node:hover { box-shadow: 0 2px 10px rgba(31,28,26,.10); }
 .ns-node.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
@@ -141,10 +143,12 @@ header {
 /* Terminal button in card footer */
 .ns-node-term {
   font-family: var(--mono); font-size: 9px; color: var(--text-dim); cursor: pointer;
-  padding: 0 3px; border-radius: 3px; transition: background .1s, color .1s;
+  padding: 1px 5px; border-radius: 3px; transition: background .1s, color .1s, border-color .1s;
   flex-shrink: 0;
+  border: 1px solid var(--panel-border);
+  background: var(--bg-deep);
 }
-.ns-node-term:hover { background: var(--accent-soft); color: var(--accent-deep); }
+.ns-node-term:hover { background: var(--accent-soft); color: var(--accent-deep); border-color: var(--accent); }
 .ns-node-top { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
 .ns-node-sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .ns-node-name {
@@ -160,16 +164,17 @@ header {
   transition: opacity .12s; white-space: nowrap;
 }
 .ns-sess-pill:hover { opacity: .75; }
-.ns-sess-idle     { background: var(--panel-border); color: var(--text-dim); }
-.ns-sess-running  { background: var(--green); color: #fff; animation: sess-pulse 1.5s ease-in-out infinite; }
-.ns-sess-waiting  { background: var(--yellow); color: #fff; }
-.ns-sess-done     { background: var(--blue); color: #fff; }
+.ns-sess-idle      { background: #e8e4de; color: #8a8278; border: 1px solid #d4cfc8; }
+.ns-sess-running   { background: #2d7a4f; color: #fff; animation: sess-pulse 1.5s ease-in-out infinite; }
+.ns-sess-waiting   { background: #e8a020; color: #fff; }
+.ns-sess-done      { background: #3b6a9a; color: #fff; }
+.ns-sess-detached  { background: #6b5ea8; color: #fff; }
 @keyframes sess-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
 .ns-node-bar-wrap { height: 3px; background: var(--panel-border); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
 .ns-node-bar { height: 100%; border-radius: 2px; }
-.ns-node-bottom { display: flex; justify-content: space-between; }
-.ns-node-gap { font-family: var(--mono); font-size: 9px; }
-.ns-node-date { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+.ns-node-bottom { display: flex; justify-content: space-between; margin-top: auto; gap: 4px; overflow: hidden; }
+.ns-node-gap { font-family: var(--mono); font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ns-node-date { font-family: var(--mono); font-size: 9px; color: var(--text-dim); white-space: nowrap; flex-shrink: 0; }
 /* SVG connection lines overlay */
 #ns-svg-lines {
   position: absolute; top: 0; left: 0; pointer-events: none;
@@ -394,8 +399,8 @@ header {
 .gauge-wrap { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 14px; }
 .gauge-svg-wrap { flex-shrink: 0; }
 .gauge-svg { display: block; }
-.gauge-track { fill: none; stroke: var(--bg-deep); stroke-width: 9; stroke-linecap: round; }
-.gauge-fill  { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray .6s ease; }
+.gauge-track { fill: none; stroke: var(--bg-deep); stroke-width: 11; stroke-linecap: butt; }
+.gauge-fill  { fill: none; stroke-width: 11; stroke-linecap: round; transition: stroke-dasharray .6s ease; }
 .gauge-center-text { font-family: var(--serif); }
 .gauge-value { font-size: 13px; font-weight: 500; fill: var(--text); }
 .gauge-label { font-size: 7px; fill: var(--text-dim); font-family: var(--mono); }
@@ -458,13 +463,9 @@ header {
 
 /* ── Responsive — mobile/tablet ────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  /* Keep html/body overflow:hidden — .main-area is the scroll container (matches desktop pattern) */
-  .layout { flex-direction: column; height: 100vh; }
-  .main-area {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;  /* smooth momentum scroll on iOS */
-  }
+  /* .layout is the scroll container on mobile — same as desktop */
+  .layout { display: block; height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .main-area { width: 100%; }
 
   /* Grid: single column on mobile */
   .grid { grid-template-columns: 1fr; }
@@ -873,8 +874,8 @@ header {
         <span class="page-sub">project goals</span>
       </div>
       <div class="header-right">
-        <button class="refresh-btn" id="align-btn" onclick="cycleAlign()" title="Card alignment">⇐⇒</button>
         <button class="refresh-btn" onclick="showAddProject()" style="background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)">+ node</button>
+        <button class="refresh-btn" id="align-btn" onclick="cycleAlign()" title="Card alignment">⇐⇒</button>
         <button class="refresh-btn" onclick="loadData()">↻ refresh</button>
         <span class="updated-at" id="updated-at">—</span>
       </div>
@@ -924,7 +925,7 @@ header {
         <div class="ns-ctx-item danger" id="ctx-delete">✕ Remove node</div>
       </div>
       <!-- Stage submenu -->
-      <div id="ctx-stage-items" style="display:none">
+      <div id="ctx-stage-items" style="display:none" onclick="event.stopPropagation()">
         <div class="ns-ctx-item" onclick="setStage('unassigned')">○ Unassigned</div>
         <div class="ns-ctx-item" onclick="setStage('assigned')" style="color:var(--blue)">◉ Assigned</div>
         <div class="ns-ctx-item" onclick="setStage('focused')" style="color:var(--accent)">● Focused</div>
@@ -989,7 +990,7 @@ header {
 
 <!-- Floating draggable terminal -->
 <div id="ns-terminal-float" style="display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:300;
-  width:min(760px,92vw);height:min(500px,72vh);background:#1a1916;border:1px solid #333;border-radius:10px;
+  width:min(860px,94vw);height:min(640px,80vh);background:#1a1916;border:1px solid #333;border-radius:10px;
   box-shadow:0 12px 40px rgba(0,0,0,.45);display:none;flex-direction:column;overflow:hidden;
   resize:both;">
   <div id="ns-terminal-drag-hdr" style="display:flex;align-items:center;gap:8px;padding:7px 12px;
@@ -997,12 +998,13 @@ header {
     <div style="flex:1;font-family:var(--mono);font-size:11px;color:#aaa">
       claude @ <span id="ns-term-proj" style="color:#cc785c">—</span>
     </div>
-    <button onclick="killAndNewSession()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">↺</button>
-    <button onclick="killSession()" style="background:none;border:1px solid #c0392b;border-radius:4px;color:#e05252;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">⬛</button>
-    <button onclick="minimizeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" id="ns-term-min-btn">—</button>
-    <button onclick="closeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">✕</button>
+    <button onclick="minimizeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" id="ns-term-min-btn" title="Minimize">—</button>
+    <button onclick="closeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Close">✕</button>
+    <button onclick="killSession()" style="background:none;border:1px solid #c0392b;border-radius:4px;color:#e05252;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Kill session">⬛</button>
   </div>
   <div id="dm-xterm" style="flex:1;overflow:hidden;padding:2px 4px"></div>
+  <div id="ns-term-resize" style="position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:se-resize;
+    display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;user-select:none">⤡</div>
 </div>
 
 <!-- Doc viewer overlay -->
@@ -1061,7 +1063,16 @@ async function loadData() {
     document.getElementById('updated-at').textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
 
     if (activeIdx !== null && projects[activeIdx]) {
-      openDetail(activeIdx);
+      const overlay = document.getElementById('detail-overlay');
+      if (overlay && overlay.classList.contains('show')) {
+        // Detail already open — silently update pill + milestones without full reopen (prevents blink)
+        const p = projects[activeIdx];
+        const pill = document.getElementById('dm-status-pill');
+        if (pill) { pill.textContent = STATUS_LABEL[p.status] || p.status; pill.className = `dm-status-pill ${p.status || 'paused'}`; }
+        if (_msProjectId) loadMilestones(_msProjectId);
+      } else {
+        openDetail(activeIdx);
+      }
     }
   } catch(e) {
     console.error('loadData failed', e);
@@ -1272,12 +1283,97 @@ async function loadMilestones(projId) {
   const el = document.getElementById('dm-ms-creator');
   if (!el) return;
   try {
-    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`);
+    // Try multi-NS endpoint first
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars`);
     const data = await r.json();
-    renderMilestoneCreator(projId, data.milestones || []);
+    const nsList = data.north_stars || [];
+    if (nsList.length > 1) {
+      renderMultiNS(projId, nsList);
+    } else if (nsList.length === 1) {
+      renderMilestoneCreator(projId, nsList[0].milestones || []);
+    } else {
+      // Fallback to legacy endpoint
+      const r2 = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`);
+      const d2 = await r2.json();
+      renderMilestoneCreator(projId, d2.milestones || []);
+    }
   } catch(_) {
     if (el) el.innerHTML = '<span style="color:var(--text-dim)">Failed to load milestones</span>';
   }
+}
+
+function renderMultiNS(projId, nsList) {
+  const el = document.getElementById('dm-ms-creator');
+  if (!el) return;
+
+  const statusColor = s => s === 'behind' ? 'var(--red)' : s === 'exploring' ? 'var(--yellow,#d4a017)' : 'var(--green)';
+  const statusLabel = s => s === 'behind' ? '↓ Behind' : s === 'exploring' ? '◎ Exploring' : '✓ On Track';
+
+  let html = `<div style="margin-bottom:12px">`;
+
+  nsList.forEach((ns, ni) => {
+    const done  = (ns.milestones || []).filter(m => m.done).length;
+    const total = (ns.milestones || []).length;
+    const pct   = total ? Math.round(done / total * 100) : 0;
+    const sc    = statusColor(ns.status);
+    const tabId = `ns-tab-${ni}`;
+
+    html += `
+    <div style="margin-bottom:16px;padding:12px;border:1px solid var(--panel-border);
+         border-radius:8px;background:var(--bg)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <span style="font-family:var(--serif);font-size:13px;color:var(--text);font-weight:500">${esc(ns.name)}</span>
+          <span style="margin-left:8px;font-size:10px;font-family:var(--mono);
+              color:${sc};border:1px solid ${sc};border-radius:3px;padding:1px 6px">${statusLabel(ns.status)}</span>
+        </div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${done}/${total}</span>
+      </div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text-dim);margin-bottom:6px">
+        ${esc(ns.metric || '')} → <span style="color:var(--accent)">${esc(ns.target || '')}</span>
+        ${ns.current ? ` | now: <span style="color:${sc}">${esc(ns.current)}</span>` : ''}
+      </div>
+      <div style="height:2px;background:var(--panel-border);border-radius:1px;margin-bottom:8px">
+        <div style="width:${pct}%;height:100%;background:${sc};border-radius:1px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+    `;
+
+    (ns.milestones || []).forEach((ms, mi) => {
+      const isDone = ms.done;
+      const dotCol = isDone ? 'var(--green)' : mi === done ? 'var(--accent)' : 'var(--panel-border)';
+      html += `
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer"
+             onclick="toggleNSMilestone('${esc(projId)}','${esc(ns.id)}','${esc(ms.id||ms.text)}',${!isDone},this)">
+          <div style="width:10px;height:10px;border-radius:50%;background:${dotCol};
+               border:1.5px solid ${dotCol};flex-shrink:0;transition:all .2s"></div>
+          <span style="font-size:12px;font-family:var(--mono);
+               color:${isDone ? 'var(--text-dim)' : 'var(--text-soft)'};
+               ${isDone ? 'text-decoration:line-through' : ''}">${esc(ms.text)}</span>
+        </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+async function toggleNSMilestone(projId, nsId, mid, newDone, rowEl) {
+  // Optimistic UI update
+  const dot  = rowEl.querySelector('div');
+  const text = rowEl.querySelector('span');
+  if (dot) dot.style.background = newDone ? 'var(--green)' : 'var(--panel-border)';
+  if (text) {
+    text.style.color = newDone ? 'var(--text-dim)' : 'var(--text-soft)';
+    text.style.textDecoration = newDone ? 'line-through' : '';
+  }
+  try {
+    await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars/${encodeURIComponent(nsId)}/milestones/${encodeURIComponent(mid)}`,
+      { method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ done: newDone }) });
+  } catch(_) {}
 }
 
 function renderMilestoneCreator(projId, milestones) {
@@ -1353,44 +1449,77 @@ function renderMilestoneCreator(projId, milestones) {
       // 3-state: pending / queued / done
       // state derives from m.status field (new) or m.done (old compat)
       const mStatus = m.status || (m.done ? 'done' : 'pending');
+      // pending_confirmation: show confirm/reopen buttons inline
+      if (mStatus === 'pending_confirmation') {
+        const confirmHtml = `
+          <div class="nt-row" style="background:rgba(204,120,92,.08);border:1px solid var(--accent-soft);border-radius:5px;padding:6px 8px;margin-bottom:2px">
+            <span class="nt-num">${idx+1}.</span>
+            <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px">⏳</span>
+            <div style="flex:1;font-size:12px;color:var(--text)">${esc(m.text)}</div>
+            <div style="display:flex;gap:4px;flex-shrink:0">
+              <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
+                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono)">✓ Confirm</button>
+              <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
+                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono)">↩ Reopen</button>
+            </div>
+          </div>`;
+        return confirmHtml;
+      }
       // User can only set pending↔queued; done is Claude-only
-      const sc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)'}[mStatus]||'var(--panel-border)';
-      const sbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)'}[mStatus]||'var(--panel)';
-      const sfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)'}[mStatus]||'var(--text-dim)';
-      const stateIcon = {done:'✓',queued:'⏵',pending:'○'}[mStatus]||'○';
+      const sc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)',pending_confirmation:'var(--accent)'}[mStatus]||'var(--panel-border)';
+      const sbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)',pending_confirmation:'rgba(204,120,92,.15)'}[mStatus]||'var(--panel)';
+      const sfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)',pending_confirmation:'var(--accent-deep)'}[mStatus]||'var(--text-dim)';
+      const stateIcon = {done:'✓',queued:'⏵',pending:'○',pending_confirmation:'⏳'}[mStatus]||'○';
       const isOpen = !!expanded[m.id];
       const num = idx + 1;
+      const childDone = children.filter(c => (c.status||'') === 'done' || c.done).length;
 
-      function childStatusOf(c) { return c.status || (c.done ? 'done' : 'pending'); }
+      // Pre-compute child rows outside template literal (avoids 4-level template nesting parse error)
+      const childrenHtml = children.map((c, ci) => {
+        const cs = c.status || (c.done?'done':'pending');
+        const csc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)'}[cs]||'var(--panel-border)';
+        const csbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)'}[cs]||'var(--panel)';
+        const csfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)'}[cs]||'var(--text-dim)';
+        const csIcon = {done:'✓',queued:'⏵',pending:'○'}[cs]||'○';
+        const cStateTitle = cs==='queued' ? 'Queued — Claude is working on this'
+          : cs==='done' ? 'Done — completed by Claude'
+          : 'Pending — Claude will queue when ready';
+        const cBtnAttrs = `disabled onclick="event.stopPropagation()" title="${cStateTitle}" style="cursor:default;opacity:${cs==='pending'?'.5':'1'}"`;
 
-      const subHtml = isOpen && children.length ? `
-        <div class="nt-sub-wrap" onclick="event.stopPropagation()">
-          ${children.map((c, ci) => {
-            const cs = c.status || (c.done?'done':'pending');
-            const csc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)'}[cs]||'var(--panel-border)';
-            const csbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)'}[cs]||'var(--panel)';
-            const csfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)'}[cs]||'var(--text-dim)';
-            const csIcon = {done:'✓',queued:'⏵',pending:'○'}[cs]||'○';
-            const canToggle = cs !== 'done';  // done is Claude-only
-            return `
-            <div class="nt-sub-row ${cs==='done'?'nt-done':''}">
-              <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
-              <button class="nt-check" ${canToggle?`onclick="toggleMsQueue('${esc(projId)}','${esc(c.id)}')" title="${cs==='queued'?'Remove from queue':'Add to queue'}"`:' disabled title="Claude marks done"'}
-                style="border:1.5px solid ${csc};background:${csbg};color:${csfg};${!canToggle?'cursor:not-allowed;opacity:.7':''}"
-              >${csIcon}</button>
-              <div class="nt-text" style="font-size:11.5px;${c.done?'color:var(--text-dim);text-decoration:line-through;':''}"
-                contenteditable="true"
-                data-ms-id="${esc(c.id)}"
-                onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
-                onkeydown="handleMsTab(event,'${esc(projId)}','${esc(c.id)}')"
-                onclick="event.stopPropagation()"
-              >${esc(c.text)}</div>
-              <span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}">${c.claude_ack?'◈':'○'}</span>
-              <button class="nt-del" onclick="event.stopPropagation();deleteMs('${esc(projId)}','${esc(c.id)}')">✕</button>
-            </div>`
-          ).join('')}
-          <button class="nt-add" onclick="event.stopPropagation();addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub</button>
-        </div>` : '';
+        const cAckTitle = c.claude_ack ? `AI acknowledged (${c.claude_ack})` : 'Not yet reviewed by AI';
+        return `
+          <div class="nt-sub-row ${cs==='done'?'nt-done':''}">
+            <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
+            <button class="nt-check" ${cBtnAttrs}
+              style="border:1.5px solid ${csc};background:${csbg};color:${csfg};${!canToggle?'cursor:not-allowed;opacity:.7':''}"
+            >${csIcon}</button>
+            <div class="nt-text" style="font-size:11.5px;${c.done?'color:var(--text-dim);text-decoration:line-through;':''}"
+              contenteditable="true"
+              data-ms-id="${esc(c.id)}"
+              onblur="saveMs('${esc(projId)}','${esc(c.id)}',this.textContent)"
+              onkeydown="handleMsTab(event,'${esc(projId)}','${esc(c.id)}')"
+              onclick="event.stopPropagation()"
+            >${esc(c.text)}</div>
+            <span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${cAckTitle}">${c.claude_ack?'◈':'○'}</span>
+            <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${esc(c.text)}')">✕</button>
+          </div>`;
+      }).join('');
+
+      const subHtml = isOpen && children.length
+        ? `<div class="nt-sub-wrap" onclick="event.stopPropagation()">${childrenHtml}<button class="nt-add" onclick="event.stopPropagation();addMilestone('${esc(projId)}',1,'${esc(m.id)}')">+ sub</button></div>`
+        : '';
+
+      // State button: user cannot change state — Claude manages all transitions automatically
+      const mStateTitle = mStatus==='queued' ? 'Queued — Claude is working on this'
+        : mStatus==='done' ? 'Done — completed by Claude'
+        : 'Pending — Claude will queue when ready';
+      const mBtnAttrs = `disabled onclick="event.stopPropagation()" title="${mStateTitle}" style="cursor:default;opacity:${mStatus==='pending'?'.5':'1'}"`;
+
+      const mAckTitle = m.claude_ack ? `AI acknowledged (${m.claude_ack})` : 'Not yet reviewed by AI';
+      // ★ badge: user added but Claude hasn't acknowledged yet
+      const mNewBadge = (!m.claude_ack && m.user_added_at)
+        ? `<span style="font-size:9px;color:var(--accent);margin-left:3px" title="Added by user — Claude hasn't seen this yet">★</span>`
+        : '';
 
       return `
         <div onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
@@ -1398,20 +1527,20 @@ function renderMilestoneCreator(projId, milestones) {
             <span class="nt-num">${num}.</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <button class="nt-check"
-              ${mStatus!=='done' ? `onclick="event.stopPropagation();toggleMsQueue('${esc(projId)}','${esc(m.id)}')" title="${mStatus==='queued'?'Remove from queue (currently queued)':'Add to queue'}"` : `disabled onclick="event.stopPropagation()" title="Done — set by Claude only" style="cursor:not-allowed;opacity:.8"`}
+              ${mBtnAttrs}
               style="border:2px solid ${sc};background:${sbg};color:${sfg}"
             >${stateIcon}</button>
-            <div class="nt-text" style="font-weight:${state==='active'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
+            <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
               data-ms-id="${esc(m.id)}"
               onclick="event.stopPropagation()"
               onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
               onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-            >${esc(m.text)}</div>
+            >${esc(m.text)}${mNewBadge}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
-              <span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}">${m.claude_ack?'◈':'○'}</span>
-              <button class="nt-del" onclick="event.stopPropagation();deleteMs('${esc(projId)}','${esc(m.id)}')">✕</button>
+              <span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'◈':'○'}</span>
+              <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
             </div>
           </div>
           ${subHtml}
@@ -1503,6 +1632,22 @@ async function saveMs(projId, mid, text) {
   if (status) { status.textContent = 'saved'; setTimeout(() => { if(status) status.textContent=''; }, 1500); }
 }
 
+async function confirmMsDone(projId, mid) {
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status: 'done', done: true}),
+  });
+  await loadMilestones(projId);
+}
+
+async function reopenMs(projId, mid) {
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status: 'pending', done: false}),
+  });
+  await loadMilestones(projId);
+}
+
 async function addMilestone(projId, layer, parentId) {
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`, {
     method: 'POST', headers: {'Content-Type':'application/json'},
@@ -1511,9 +1656,15 @@ async function addMilestone(projId, layer, parentId) {
   await loadMilestones(projId);
   // Focus the new item for immediate editing
   setTimeout(() => {
-    const items = document.querySelectorAll('#dm-ms-creator .ms-text');
+    const items = document.querySelectorAll('#dm-ms-creator .nt-text');
     if (items.length) items[items.length - 1].focus();
   }, 100);
+}
+
+async function confirmDeleteMs(projId, mid, text) {
+  const label = (text || 'this stone').trim().slice(0, 60);
+  if (!confirm(`Delete "${label}"?\n\nThis cannot be undone.`)) return;
+  await deleteMs(projId, mid);
 }
 
 async function deleteMs(projId, mid) {
@@ -1553,13 +1704,17 @@ async function refreshSessionStatus() {
 
 function buildSessPill(s) {
   if (!s || s === 'dead' || s === 'none')
-    return { cls: 'ns-sess-idle', label: 'idle' };
-  if (s === 'active' || s === 'running')
-    return { cls: 'ns-sess-running', label: 'run' };
-  if (s === 'waiting')
+    return { cls: '', label: '' };  // no pill when no session
+  if (s === 'detached')
+    return { cls: 'ns-sess-detached', label: 'detached' };
+  if (s === 'active' || s === 'running' || s === 'ACTIVE')
+    return { cls: 'ns-sess-running', label: 'ACTIVE' };
+  if (s === 'waiting' || s === 'wait')
     return { cls: 'ns-sess-waiting', label: 'wait' };
   if (s === 'done')
     return { cls: 'ns-sess-done', label: 'done' };
+  if (s === 'idle' || s === 'IDLE')
+    return { cls: 'ns-sess-idle', label: 'idle' };
   if (s.startsWith('idle:')) {
     const secs = parseInt(s.split(':')[1]);
     const label = secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs/60)}m` : `${Math.round(secs/3600)}h`;
@@ -1621,7 +1776,7 @@ function nodeCard(p, idx) {
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
       <span class="ns-node-date">${esc(logDate)}</span>
       <span class="ns-node-term" title="Open Claude session"
-        onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_</span>
+        onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_ claude</span>
     </div>
   </div>`;
 }
@@ -1730,7 +1885,7 @@ function render() {
       const pSrc = projects[_dragIdx];
       const pTgt = projects[+node.dataset.idx];
       if (!pSrc || !pTgt) return;
-      if ((parseInt(pSrc.layer)||0) !== (parseInt(pTgt.layer)||0)) return; // different lane → handled by lane drop
+      if ((parseInt(pSrc.layer)||0) !== (parseInt(pTgt.layer)||0)) return;
       e.preventDefault(); e.stopPropagation();
       document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
       const rect = node.getBoundingClientRect();
@@ -1768,9 +1923,11 @@ function render() {
           body: JSON.stringify({position_x: newPos}),
         });
       });
-      await Promise.all(saves);
+      // Optimistic: render immediately, save in background
       _dragSrc = null; _dragIdx = null;
       render();
+      requestAnimationFrame(() => requestAnimationFrame(() => drawParentLines()));
+      Promise.all(saves); // fire-and-forget
     });
   });
 
@@ -1790,14 +1947,15 @@ function render() {
       const p = projects[_dragIdx];
       if (!p || (parseInt(p.layer)||0) === l) return;  // same lane handled by node drop
       const newPos = projects.filter(x => (parseInt(x.layer)||0) === l).length;
-      await fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
-        method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({layer: l, position_x: newPos}),
-      });
+      // Optimistic update: mutate in-memory first, render immediately
       p.layer = l; p.position_x = newPos;
       _dragSrc = null; _dragIdx = null;
       render();
       requestAnimationFrame(() => drawParentLines());
+      fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({layer: l, position_x: newPos}),
+      }); // fire-and-forget
     });
   });
 
@@ -1965,6 +2123,8 @@ function cycleAlign() {
   const next = ALIGN_OPTIONS[(idx + 1) % ALIGN_OPTIONS.length];
   localStorage.setItem('ns-card-align', next.key);
   applyAlign();
+  render();
+  requestAnimationFrame(() => requestAnimationFrame(() => drawParentLines()));
 }
 
 // ── Lane label management ─────────────────────────────────────────────────────
@@ -2064,17 +2224,17 @@ function cancelLink() {
   if (b) b.style.display = 'none';
 }
 
-document.getElementById('ctx-stage').onclick = () => {
-  // Show stage submenu
+document.getElementById('ctx-stage').onclick = (e) => {
+  e.stopPropagation(); // prevent document click from closing menu
   document.getElementById('ctx-node-items').style.display = 'none';
   document.getElementById('ctx-stage-items').style.display = '';
 };
 
 async function setStage(stageName) {
+  const pid = _ctxNodeId; if (!pid) return; // read BEFORE hideCtxMenu clears it
   document.getElementById('ctx-stage-items').style.display = 'none';
   document.getElementById('ctx-node-items').style.display = '';
   hideCtxMenu();
-  const pid = _ctxNodeId; if (!pid) return;
   const p = projects.find(x => (x.id||x.name) === pid);
   if (!p) return;
   await fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
@@ -2162,7 +2322,7 @@ async function commitRename(el, projId) {
 
 // Redraw on theme change
 window.addEventListener('message', e => {
-  if (e.data?.type === 'hub-theme' && _network) {
+  if (e.data?.type === 'hub-theme' && typeof _network !== 'undefined' && _network) {
     setTimeout(() => render(), 50); // let CSS vars update first
   }
 });
@@ -2174,7 +2334,7 @@ const LAYER_COLORS_DARK  = ['rgba(204,120,92,0.08)', 'rgba(76,175,120,0.06)', 'r
 let _bandCenters = {};  // level → canvas y-center (updated each draw)
 
 function drawLayerBands(ctx) {
-  if (!_network || !projects.length) return;
+  if (typeof _network === 'undefined' || !_network || !projects.length) return;
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   const colors = dark ? LAYER_COLORS_DARK : LAYER_COLORS_LIGHT;
   const textColor = dark ? 'rgba(176,168,158,0.65)' : 'rgba(110,100,90,0.7)';
@@ -2315,7 +2475,7 @@ function openTerminal(projId) {
   _termMinimized = false;
   document.getElementById('dm-xterm').style.display = '';
   document.getElementById('ns-term-min-btn').textContent = '—';
-  float.style.height = float.dataset.lastH || '340px';
+  float.style.height = float.dataset.lastH || '520px';
 
   // Init xterm once
   if (!_term) {
@@ -2371,8 +2531,51 @@ function openTerminal(projId) {
     _xtArea.addEventListener('compositionstart', () => { _imeComposing = true; });
     _xtArea.addEventListener('compositionupdate', () => { _imeComposing = true; });
     _xtArea.addEventListener('compositionend', e => {
-      _imeComposing = false;
       if (ws.readyState === 1 && e.data) ws.send(e.data);
+      // Reset AFTER onData fires so the final syllable isn't sent twice
+      setTimeout(() => { _imeComposing = false; }, 0);
+    });
+  }
+
+  // Resize handle — bottom-right drag
+  const _resizeHandle = document.getElementById('ns-term-resize');
+  const _floatEl = document.getElementById('ns-terminal-float');
+  if (_resizeHandle && _floatEl) {
+    const savedSize = JSON.parse(localStorage.getItem('ns-term-size') || 'null');
+    if (savedSize) { _floatEl.style.width = savedSize.w; _floatEl.style.height = savedSize.h; }
+    _resizeHandle.addEventListener('mousedown', rme => {
+      rme.preventDefault();
+      const startX = rme.clientX, startY = rme.clientY;
+      const startW = _floatEl.offsetWidth, startH = _floatEl.offsetHeight;
+      const onMove = me => {
+        const nw = Math.max(320, Math.min(window.innerWidth * 0.95, startW + me.clientX - startX));
+        const nh = Math.max(200, Math.min(window.innerHeight * 0.90, startH + me.clientY - startY));
+        _floatEl.style.width = nw + 'px'; _floatEl.style.height = nh + 'px';
+        if (_termFitAddon) _termFitAddon.fit();
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        localStorage.setItem('ns-term-size', JSON.stringify({w: _floatEl.style.width, h: _floatEl.style.height}));
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  // Right-click paste + auto-copy on select
+  _term.onSelectionChange(() => {
+    const sel = _term.getSelection();
+    if (sel && navigator.clipboard) navigator.clipboard.writeText(sel).catch(() => {});
+  });
+  const _termEl = document.getElementById('ns-terminal-float');
+  if (_termEl) {
+    _termEl.addEventListener('contextmenu', async e => {
+      e.preventDefault();
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && ws.readyState === 1) ws.send(text);
+      } catch(_) {}
     });
   }
 
@@ -2407,9 +2610,15 @@ function _sendResize(ws) {
 let _termMinimized = false;
 
 function closeTerminal() {
+  const projId = document.getElementById('ns-term-proj')?.textContent?.trim();
   if (_termRo) { _termRo.disconnect(); _termRo = null; }
   if (_termWs) { _termWs.close(); _termWs = null; }
   document.getElementById('ns-terminal-float').style.display = 'none';
+  // Mark as detached — PTY still alive, pill shows "detached" until next refresh
+  if (projId && projId !== '—') {
+    _sessionStatus[projId] = 'detached';
+    render();
+  }
 }
 
 function minimizeTerminal() {
@@ -2418,12 +2627,12 @@ function minimizeTerminal() {
   const btn = document.getElementById('ns-term-min-btn');
   _termMinimized = !_termMinimized;
   if (_termMinimized) {
-    float.dataset.lastH = float.style.height || '340px';
+    float.dataset.lastH = float.style.height || '520px';
     float.style.height = '36px';
     xterm.style.display = 'none';
     btn.textContent = '□';
   } else {
-    float.style.height = float.dataset.lastH || '340px';
+    float.style.height = float.dataset.lastH || '520px';
     xterm.style.display = '';
     btn.textContent = '—';
     setTimeout(() => _termFit?.fit(), 80);
@@ -2469,12 +2678,30 @@ function minimizeTerminal() {
   });
 })();
 
-function killSession() {
-  if (_termWs && _termWs.readyState === 1) _termWs.send('\x00kill-session');
-  setTimeout(() => {
+async function killSession() {
+  const projId = document.getElementById('ns-term-proj')?.textContent?.trim();
+
+  // Update status pill immediately — don't wait for Stop hook
+  if (projId && projId !== '—') {
+    _sessionStatus[projId] = 'none';
+    render(); // redraw cards with updated pill
+    // Persist to server
+    fetch(`/api/northstar/${encodeURIComponent(projId)}/session-status`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status: 'IDLE'})
+    }).catch(() => {});
+  }
+
+  if (_termWs && _termWs.readyState === 1) {
+    _termWs.send('\x00kill-session');
+    setTimeout(() => { if (_termWs) { _termWs.close(); _termWs = null; } closeTerminal(); }, 300);
+  } else {
+    if (projId && projId !== '—') {
+      await fetch(`/api/northstar/${encodeURIComponent(projId)}/session`, { method: 'DELETE' }).catch(() => {});
+    }
     if (_termWs) { _termWs.close(); _termWs = null; }
     closeTerminal();
-  }, 300);
+  }
 }
 
 function killAndNewSession() {
@@ -2648,15 +2875,21 @@ function renderRight(p, topics, docData) {
     <!-- Quick actions -->
     <div class="dm-section">
       <div class="dm-section-label">Actions</div>
-      <button class="dm-btn" style="width:100%;background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent);margin-bottom:8px" onclick="openTerminal('${esc(p.id)}')">▶ Open Claude session</button>
+      <!-- Open Claude session removed — use ›_ claude button on NS card instead -->
       <div class="dm-action-row">
         ${docData?.ok
           ? `<button class="dm-btn" onclick="openDoc('${esc(p.id)}', '${esc(docData.path)}')">◈ Spec doc</button>`
           : `<button class="dm-btn" style="opacity:.4;pointer-events:none">◈ No spec</button>`}
-        <button class="dm-btn dm-btn-refresh" onclick="refreshAlignment()" title="Check alignment with current work">↻ Align</button>
+        ${(!p.milestones || p.milestones.length === 0)
+          ? `<button class="dm-btn dm-btn-refresh" onclick="initMilestones('${esc(p.id)}')" title="No milestones — sync from project environment">⊕ Init</button>`
+          : ''}
       </div>
       <div id="dm-align-result" style="margin-top:8px"></div>
       <div id="eval-result"></div>
+      ${(!p.milestones || p.milestones.length === 0) ? `
+      <div style="margin-top:10px;padding:8px 10px;border-radius:5px;background:rgba(184,134,11,.08);border:1px solid rgba(184,134,11,.25);font-size:11px;color:var(--text-dim)">
+        No milestones or goals defined. Click <strong>⊕ Init</strong> to detect from project, or add milestones above.
+      </div>` : ''}
     </div>
 
     ${p.note ? `<div class="dm-section">
@@ -2707,6 +2940,25 @@ function renderAlignResult(align) {
         <div class="align-redirect-text">${esc(align.redirect)}</div>
       </div>` : ''}
     </div>`;
+}
+
+async function initMilestones(projId) {
+  const el = document.getElementById('dm-align-result');
+  if (el) el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:6px 0">⊕ Syncing milestones from project environment…</div>';
+  // Reuse alignment endpoint — it reads repo and suggests milestones
+  try {
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/sync-milestones`, {method:'POST'}).catch(() => null);
+    if (r && r.ok) {
+      const d = await r.json();
+      if (el) el.innerHTML = `<div style="font-size:11px;color:var(--green);padding:6px 0">✓ ${d.added||0} milestones detected. Refresh to see them.</div>`;
+      setTimeout(() => loadData(), 1500);
+    } else {
+      // Fallback: just re-run alignment which shows suggestions
+      if (el) el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:6px 0">No auto-detect available for this project. Add milestones manually above.</div>';
+    }
+  } catch(_) {
+    if (el) el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);padding:6px 0">No auto-detect endpoint. Add milestones manually above.</div>';
+  }
 }
 
 async function refreshAlignment() {
@@ -3050,8 +3302,13 @@ document.getElementById('doc-overlay').addEventListener('click', e => {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
 loadData();
-setInterval(loadData, 30000);
-setInterval(async () => { await refreshSessionStatus(); render(); }, 15000); // session status every 15s
+// Reactive-only: no auto-refresh polling. ↻ refresh button for manual reload.
+// Session status updates every 2 min (lightweight, no render when detail open).
+setInterval(async () => {
+  await refreshSessionStatus();
+  const overlay = document.getElementById('detail-overlay');
+  if (!overlay || !overlay.classList.contains('show')) render();
+}, 120000); // session pill only, every 2 min
 </script>
 </body>
 </html>

@@ -24,7 +24,7 @@ STATIC = HERE / "static"
 NORTHSTAR_DATA = HERE / "northstar.json"        # legacy fallback
 PROJECTS_DIR = HERE / "projects"                 # new: per-project markdown files
 
-HOST = os.environ.get("HUB_HOST", "127.0.0.1")
+HOST = os.environ.get("HUB_HOST", "0.0.0.0")
 PORT = int(os.environ.get("HUB_PORT", "9000"))
 
 
@@ -143,7 +143,7 @@ def _load_projects() -> list:
                             # Already has new schema or partial old schema
                             # Derive status: new schema uses status:, old used done:bool
                             raw_status = m.get("status", "")
-                            if raw_status in ("pending", "queued", "done"):
+                            if raw_status in ("pending", "queued", "done", "pending_confirmation"):
                                 status = raw_status
                             elif m.get("done"):
                                 status = "done"
@@ -159,6 +159,7 @@ def _load_projects() -> list:
                                 "claude_ack": m.get("claude_ack") or None,
                                 "queued_at": m.get("queued_at") or None,
                                 "done_at":   m.get("done_at") or None,
+                                "pending_confirm_at": m.get("pending_confirm_at") or None,
                             }
                             norm_ms.append(entry)
                         elif isinstance(m, str):
@@ -814,6 +815,20 @@ def _kill_session(proj_id: str) -> None:
 
 
 @app.on_event("startup")
+async def _expose_ports_to_tailscale():
+    """Auto-expose hub ports to all online Tailscale Windows clients on startup."""
+    import subprocess
+    for port in [9000]:
+        try:
+            subprocess.run(
+                [str(Path.home() / ".local/bin/wsl-expose"), str(port)],
+                capture_output=True, timeout=10
+            )
+        except Exception:
+            pass  # wsl-expose optional — fail silently if clients offline
+
+
+@app.on_event("startup")
 async def _start_session_gc():
     """Background task: reap idle or dead sessions every 60 s."""
     async def _gc():
@@ -939,6 +954,65 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
     await asyncio.gather(pty_to_ws(), ws_to_pty())
 
 
+@app.get("/api/northstar/{proj_id}/north-stars")
+async def get_north_stars(proj_id: str):
+    """Return all North Stars for a project (multi-NS structure)."""
+    projects = _load_projects()
+    p = next((p for p in projects if p.get("id") == proj_id), None)
+    if not p:
+        return JSONResponse({"ok": False, "north_stars": []})
+    ns_list = p.get("north_stars")
+    if ns_list:
+        # Normalize milestones inside each NS
+        for ns in ns_list:
+            raw_ms = ns.get("milestones", [])
+            norm = []
+            for i, m in enumerate(raw_ms):
+                if isinstance(m, dict):
+                    norm.append({
+                        "id":   m.get("id", f"{ns['id']}_M{i+1}"),
+                        "text": str(m.get("text", "")),
+                        "done": bool(m.get("done", False)),
+                        "ns_id": ns["id"],
+                    })
+            ns["milestones"] = norm
+        return JSONResponse({"ok": True, "north_stars": ns_list})
+    # Fallback: wrap legacy milestones into a single NS
+    legacy = p.get("milestones", [])
+    fallback_ns = [{
+        "id": "default",
+        "name": p.get("name", proj_id),
+        "metric": p.get("metric", ""),
+        "target": p.get("target", ""),
+        "status": p.get("status", ""),
+        "current": p.get("current", ""),
+        "milestones": legacy,
+    }]
+    return JSONResponse({"ok": True, "north_stars": fallback_ns})
+
+
+@app.patch("/api/northstar/{proj_id}/north-stars/{ns_id}/milestones/{mid}")
+async def update_ns_milestone(proj_id: str, ns_id: str, mid: str, request: Request):
+    """Toggle a milestone inside a specific North Star."""
+    data = await request.json()
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    ns_list = proj.get("north_stars", [])
+    for ns in ns_list:
+        if ns.get("id") == ns_id:
+            for ms in ns.get("milestones", []):
+                if isinstance(ms, dict) and (ms.get("id") == mid or ms.get("text") == mid):
+                    if "done" in data:
+                        ms["done"] = bool(data["done"])
+                    break
+            break
+    proj["north_stars"] = ns_list
+    _write_md_frontmatter(md, proj)
+    return JSONResponse({"ok": True})
+
+
 @app.get("/api/northstar/{proj_id}/milestones")
 async def get_milestones(proj_id: str):
     projects = _load_projects()
@@ -972,10 +1046,12 @@ async def create_milestone(proj_id: str, request: Request):
         new_id = f"{parent_id}.{len(siblings)+1}"
         while new_id in existing_ids:
             new_id = new_id + "x"
+    from datetime import datetime as _dt
     new_ms = {
         "id": new_id, "text": data.get("text", "New milestone"),
         "layer": layer, "parent_id": parent_id,
         "done": False, "claude_ack": None,
+        "user_added_at": _dt.now().strftime("%Y-%m-%dT%H:%M"),  # badge for unacknowledged
     }
     milestones.append(new_ms)
     proj["milestones"] = milestones
@@ -1008,11 +1084,19 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
                     m.setdefault("queued_at", now_iso)
                 else:
                     m.pop("queued_at", None)
+            elif new_status == "pending_confirmation":
+                # Stop hook: waiting for user to confirm within 24h
+                m["status"] = "pending_confirmation"
+                m["done"] = False
+                m.setdefault("pending_confirm_at", now_iso)
+                if "claude_ack" not in data:
+                    m["claude_ack"] = now_iso
             elif new_status == "done" or data.get("done") is True:
-                # Claude-only: mark done
+                # Claude-only OR user confirmed: mark done
                 m["status"] = "done"
                 m["done"] = True
                 m["done_at"] = now_iso
+                m.pop("pending_confirm_at", None)
                 if "claude_ack" not in data:
                     m["claude_ack"] = now_iso
             # Old-style done=False (from auto-ack) — treat as pending
@@ -1177,6 +1261,14 @@ async def set_session_status(proj_id: str, request: Request):
         return JSONResponse({"ok": False, "error": "invalid status"}, status_code=400)
     _pill_status[proj_id] = status
     return JSONResponse({"ok": True, "status": status})
+
+
+@app.delete("/api/northstar/{proj_id}/session")
+async def kill_session_http(proj_id: str):
+    """Kill a terminal session via HTTP (fallback when WS not available)."""
+    _kill_session(proj_id)
+    _pill_status.pop(proj_id, None)  # clear stuck waiting/active pill
+    return {"ok": True, "killed": proj_id}
 
 
 @app.get("/api/northstar/sessions")
