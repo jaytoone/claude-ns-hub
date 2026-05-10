@@ -644,7 +644,7 @@ header {
 .dm-layer {
   position: relative; margin-bottom: 8px;
 }
-.dm-layer-collapsed .dm-okr-list,
+.dm-layer-collapsed .dm-okr-list { display: none !important; }
 .dm-layer-collapsed .dm-ms-creator { display: none; }
 /* Vertical connector between layers */
 .dm-layer::after {
@@ -2991,11 +2991,12 @@ async function openDetail(idx) {
     if (okrSection) {
       const okrs = okrData.okrs || [];
       const title = okrData.section || 'OKRs';
-      okrSection.innerHTML = `<div class="dm-layer">
-        <div class="dm-layer-head" onclick="this.parentElement.classList.toggle('dm-layer-collapsed')" style="cursor:pointer">
+      // Keep collapsed by default; populate list content
+      okrSection.innerHTML = `<div class="dm-layer dm-layer-collapsed">
+        <div class="dm-layer-head" onclick="this.parentElement.classList.toggle('dm-layer-collapsed');this.querySelector('.dm-layer-count').textContent=this.parentElement.classList.contains('dm-layer-collapsed')?'▸ expand':'▾ collapse'" style="cursor:pointer;opacity:.6">
           <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
           <span class="dm-layer-title">${esc(title)}</span>
-          <span class="dm-layer-count">${okrs.length} KRs</span>
+          <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▸ ${okrs.length} KRs</span>
         </div>
         <div class="dm-okr-list">${okrs.length ? okrs.map(kr=>{const m=kr.match(/^(K\d+):\s*(.+)/);return`<div class="dm-okr-item"><span class="dm-okr-key">${m?esc(m[1]):'·'}</span><span class="dm-okr-text">${m?esc(m[2]):esc(kr)}</span></div>`;}).join(''):'<div style="font-size:12px;color:var(--text-dim)">No OKRs defined in spec doc</div>'}</div>
       </div>`;
@@ -3055,16 +3056,20 @@ function renderHierarchy(p) {
         <span class="dm-target">${esc(p.target||'—')}</span>
       </div>
       ${p.deadline ? `<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>` : ''}
+      <!-- Spec doc slot — injected by renderRight, shown near NS section top -->
+      <div id="dm-spec-slot" style="margin-top:6px"></div>
     </div>
 
-    <!-- Layer 2: OKRs (populated async) -->
+    <!-- Layer 2: OKRs (collapsed by default — click header to expand) -->
     <div id="dm-okr-section">
-      <div class="dm-layer">
-        <div class="dm-layer-head">
+      <div class="dm-layer dm-layer-collapsed">
+        <div class="dm-layer-head" onclick="this.parentElement.classList.toggle('dm-layer-collapsed')"
+          style="cursor:pointer;opacity:.6">
           <div class="dm-layer-icon okr">K</div>
           <span class="dm-layer-title">OKRs</span>
+          <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▸ expand</span>
         </div>
-        <div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">Loading…</div>
+        <div class="dm-okr-list" style="display:none"></div>
       </div>
     </div>
 
@@ -3080,13 +3085,6 @@ function renderHierarchy(p) {
       <div style="margin-top:8px">
         <button class="dm-btn" style="font-size:11px" onclick="addMilestone('${esc(p.id)}', 0, null)">+ milestone</button>
       </div>
-    </div>
-
-    <!-- Bottom row: Spec doc link + Note -->
-    <div id="dm-bottom-row" style="display:flex;align-items:flex-start;gap:12px;margin-top:4px;padding-top:8px;border-top:1px solid var(--panel-border)">
-      <!-- Spec doc button injected by renderRight -->
-      <div id="dm-spec-slot" style="flex-shrink:0"></div>
-      ${p.note ? `<div style="flex:1;font-size:11px;color:var(--text-dim);line-height:1.5;font-style:italic">${esc(p.note)}</div>` : ''}
     </div>
   `;
 }
