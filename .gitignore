@@ -84,3 +84,9 @@ hud/
 claude-flow-mcp-backup.json
 .omc/retrieval_log.jsonl
 hub/notifications.log
+hub/task-queue/
+hub/task-results/
+hub/task-locks/
+hub/worker.log
+hub/test-task-worker.py
+projects/
