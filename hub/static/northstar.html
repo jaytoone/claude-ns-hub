@@ -1604,7 +1604,7 @@ function renderMilestoneCreator(projId, milestones) {
               onkeydown="handleMsTab(event,'${esc(projId)}','${esc(c.id)}')"
               onclick="event.stopPropagation()"
             >${esc(c.text)}</div>
-            ${cs!=='done' ? `<span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${cAckTitle}">${c.claude_ack?'◈':'○'}</span>` : ''}
+            ${cs!=='done' ? `<span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${cAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${c.claude_ack?'acked':'review'}</span>` : ''}
             <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${esc(c.text)}')">✕</button>
           </div>`;
       }).join('');
@@ -1645,7 +1645,7 @@ function renderMilestoneCreator(projId, milestones) {
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
               ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)" title="Active cron monitor: ${esc(m.cron_job_id)}">cron</span>` : ''}
-              ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'◈':'○'}</span>` : ''}
+              ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${m.claude_ack?'acked':'review'}</span>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
             </div>
           </div>
