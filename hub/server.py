@@ -1275,6 +1275,29 @@ async def run_milestone(proj_id: str, mid: str):
     return JSONResponse({"ok": True, "queued": True, "message": "Injected into Claude session on next prompt"})
 
 
+@app.get("/api/northstar/{proj_id}/task-results")
+async def get_task_results(proj_id: str, limit: int = 5):
+    """Return recent task execution results for a project."""
+    results_dir = HERE / "task-results"
+    if not results_dir.exists():
+        return JSONResponse({"ok": True, "results": []})
+    results = []
+    pattern = f"task-{proj_id}-*"
+    files = sorted(results_dir.glob(pattern), key=lambda f: f.stat().st_mtime, reverse=True)
+    for f in files[:limit]:
+        try:
+            data = __import__("json").loads(f.read_text())
+            results.append({
+                "task_id": data.get("task_id", f.stem),
+                "status": data.get("status", "?"),
+                "output": (data.get("output", "") or "")[:400],
+                "completed_at": data.get("completed_at", ""),
+            })
+        except Exception:
+            pass
+    return JSONResponse({"ok": True, "results": results})
+
+
 @app.post("/api/northstar/{proj_id}/execute")
 async def execute_project(proj_id: str):
     """Smart dispatcher: if no milestones → init roadmap; if milestones exist → process queued work.

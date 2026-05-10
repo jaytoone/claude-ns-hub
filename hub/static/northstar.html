@@ -1794,12 +1794,33 @@ async function executeProject(projId, btn) {
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/execute`, {method:'POST'});
     const d = await r.json();
     if (d.ok) {
-      btn.textContent = d.mode === 'init' ? '⊕' : '✓';
+      btn.textContent = d.mode === 'init' ? '⊕' : '⟳';
       btn.title = d.message;
-      setTimeout(() => {
-        btn.textContent = orig; btn.title = 'Execute: process queued milestones via claude -c -p';
-        btn.classList.remove('running');
-      }, 4000);
+      // Show results panel and start polling
+      const resPanel = document.getElementById('dm-task-results');
+      const resBody = document.getElementById('dm-task-results-body');
+      if (resPanel && resBody) {
+        resPanel.style.display = 'block';
+        resBody.textContent = `[${new Date().toLocaleTimeString()}] Dispatched ${d.tasks_created || 0} task(s)…`;
+        let polls = 0;
+        const poll = setInterval(async () => {
+          polls++;
+          try {
+            const r2 = await fetch(`/api/northstar/${encodeURIComponent(projId)}/task-results?limit=3`);
+            const d2 = await r2.json();
+            if (d2.results && d2.results.length) {
+              resBody.innerHTML = d2.results.map(r => {
+                const icon = r.status === 'done' ? '✓' : r.status === 'failed' ? '✕' : '⟳';
+                const out = (r.output || '').split('\n')[0].slice(0, 80);
+                return `<div style="margin-bottom:3px"><span style="color:${r.status==='done'?'var(--green)':r.status==='failed'?'var(--red)':'var(--accent)'}">${icon}</span> ${esc(r.task_id.slice(-12))}: ${esc(out)}</div>`;
+              }).join('');
+            }
+          } catch(_) {}
+          if (polls >= 12) { clearInterval(poll); btn.textContent = orig; btn.classList.remove('running'); }
+        }, 5000);
+      } else {
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('running'); }, 4000);
+      }
     } else {
       btn.textContent = d.error?.includes('No active terminal') ? '⚠' : '!';
       btn.title = d.error || 'Error';
@@ -3078,6 +3099,11 @@ function renderHierarchy(p) {
       ${p.deadline ? `<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>` : ''}
       <!-- Spec doc slot — injected by renderRight, shown near NS section top -->
       <div id="dm-spec-slot" style="margin-top:6px"></div>
+      <!-- Task execution results (shown after Execute is clicked) -->
+      <div id="dm-task-results" style="display:none;margin-top:8px;padding:8px 10px;border-radius:5px;background:var(--bg-deep);border:1px solid var(--panel-border)">
+        <div style="font-size:9px;font-family:var(--mono);color:var(--text-dim);margin-bottom:5px;letter-spacing:.05em">EXECUTION LOG</div>
+        <div id="dm-task-results-body" style="font-size:11px;font-family:var(--mono);color:var(--text-soft);line-height:1.5;max-height:120px;overflow-y:auto"></div>
+      </div>
     </div>
 
     <!-- Layer 2: OKRs (collapsed by default — click header to expand) -->
