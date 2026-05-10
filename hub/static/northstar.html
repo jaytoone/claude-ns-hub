@@ -1573,9 +1573,9 @@ function renderMilestoneCreator(projId, milestones) {
       }
       // User can only set pending↔queued; done is Claude-only
       const sc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)',pending_confirmation:'var(--accent)'}[mStatus]||'var(--panel-border)';
-      const sbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)',pending_confirmation:'rgba(204,120,92,.15)'}[mStatus]||'var(--panel)';
+      const sbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'transparent',pending_confirmation:'rgba(204,120,92,.15)'}[mStatus]||'transparent';
       const sfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)',pending_confirmation:'var(--accent-deep)'}[mStatus]||'var(--text-dim)';
-      const stateIcon = {done:'✓',queued:'⏵',pending:'○',pending_confirmation:'⏳'}[mStatus]||'○';
+      const stateLabel = {done:'done',queued:'queue',pending:'···',pending_confirmation:'wait'}[mStatus]||'···';
       const isOpen = !!expanded[m.id];
       const num = idx + 1;
       const childDone = children.filter(c => (c.status||'') === 'done' || c.done).length;
@@ -1584,9 +1584,9 @@ function renderMilestoneCreator(projId, milestones) {
       const childrenHtml = children.map((c, ci) => {
         const cs = c.status || (c.done?'done':'pending');
         const csc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)'}[cs]||'var(--panel-border)';
-        const csbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'var(--panel)'}[cs]||'var(--panel)';
+        const csbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'transparent'}[cs]||'transparent';
         const csfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)'}[cs]||'var(--text-dim)';
-        const csIcon = {done:'✓',queued:'⏵',pending:'○'}[cs]||'○';
+        const csIcon = {done:'done',queued:'queue',pending:'···'}[cs]||'···';
         const cStateTitle = cs==='queued' ? 'Queued — Claude is working on this'
           : cs==='done' ? 'Done — completed by Claude'
           : 'Pending — Claude will queue when ready';
@@ -1597,7 +1597,7 @@ function renderMilestoneCreator(projId, milestones) {
           <div class="nt-sub-row ${cs==='done'?'nt-done':''}">
             <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
             <button class="nt-check" ${cBtnAttrs}
-              style="border:1.5px solid ${csc};background:${csbg};color:${csfg};cursor:default;opacity:${cs==='pending'?'.5':'1'}${!canToggle?';cursor:not-allowed;opacity:.7':''}"
+              style="border:1px solid ${csc};background:${csbg};color:${csfg};cursor:default;opacity:${cs==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:0 4px;font-size:7px;letter-spacing:.03em;min-width:26px${!canToggle?';cursor:not-allowed':''}"
             >${csIcon}</button>
             <div class="nt-text" style="font-size:11.5px;${c.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
@@ -1635,8 +1635,8 @@ function renderMilestoneCreator(projId, milestones) {
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <button class="nt-check"
               ${mBtnAttrs}
-              style="border:2px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.5':'1'}"
-            >${stateIcon}</button>
+              style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:0 5px;font-size:8px;letter-spacing:.03em;min-width:30px"
+            >${stateLabel}</button>
             <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
               data-ms-id="${esc(m.id)}"
