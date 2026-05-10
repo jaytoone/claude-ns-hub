@@ -3191,19 +3191,23 @@ function renderRight(p, topics, docData) {
       : `<button class="dm-btn" style="opacity:.35;pointer-events:none;font-size:10px">no spec</button>`;
   }
 
-  // Right panel: minimal — only init + align result
+  // Right panel: note + init if needed
+  const msCount = (p.milestones||[]).length;
   document.getElementById('dm-right').innerHTML = `
-    <div class="dm-section">
-      ${(!p.milestones || p.milestones.length === 0) ? `
-        <div class="dm-action-row" style="margin-bottom:8px">
-          <button class="dm-btn dm-btn-refresh" onclick="initMilestones('${esc(p.id)}')" title="No milestones — sync from project environment">⊕ Init</button>
-        </div>
-        <div style="padding:8px 10px;border-radius:5px;background:rgba(184,134,11,.08);border:1px solid rgba(184,134,11,.25);font-size:11px;color:var(--text-dim)">
-          No milestones yet. Click <strong>⊕ Init</strong> or add above.
-        </div>` : ''}
-      <div id="dm-align-result"></div>
-      <div id="eval-result"></div>
-    </div>
+    ${p.note ? `<div class="dm-section">
+      <div class="dm-section-label" style="margin-bottom:4px">Note</div>
+      <div class="dm-note">${esc(p.note)}</div>
+    </div>` : ''}
+    ${msCount === 0 ? `<div class="dm-section">
+      <div class="dm-action-row" style="margin-bottom:8px">
+        <button class="dm-btn dm-btn-refresh" onclick="initMilestones('${esc(p.id)}')" title="No milestones — sync from project environment">⊕ Init</button>
+      </div>
+      <div style="padding:8px 10px;border-radius:5px;background:rgba(184,134,11,.08);border:1px solid rgba(184,134,11,.25);font-size:11px;color:var(--text-dim)">
+        No milestones yet. Click <strong>⊕ Init</strong> or add above.
+      </div>
+    </div>` : ''}
+    <div id="dm-align-result"></div>
+    <div id="eval-result"></div>
   `;
 }
 
