@@ -83,3 +83,4 @@ remote/
 hud/
 claude-flow-mcp-backup.json
 .omc/retrieval_log.jsonl
+hub/notifications.log

@@ -39,14 +39,6 @@ milestones:
   parent_id: null
   status: done
   text: Stop hook E2E verify — hub/verify.py 14-check runs on every session end
-- claude_ack: 2026-05-10T17:34
-  done: false
-  id: M8
-  layer: 0
-  parent_id: null
-  text: milestone 설계서 making skills needed, very 체계적이고 크론의 생명 주기를 고려한 , 여러가지 문제 발생
-    성을 고려한 스타를 향한 마일스톤(크론) 설게서 를 만들어내는 스킬이 필요함
-  user_added_at: 2026-05-10T17:30
 - claude_ack: 2026-05-10T18:51
   done: true
   done_at: 2026-05-10T18:51
@@ -69,55 +61,94 @@ milestones:
     현재 왼쪽에 패널 (즉 노스 스타 / okr / milestone ) 을 포함한 페이지 네이션이 되어야할것이다. 즉 스타 별로 프로그래스 아크가
     보여지게 되겠지 .
   user_added_at: 2026-05-10T17:44
-- claude_ack: 2026-05-10T18:46
-  done: false
+- claude_ack: 2026-05-10T22:19
+  done: true
+  done_at: 2026-05-10T22:19
   id: M11
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-10T18:46
-  status: pending
-  text: Spec docs 도 현재 오른 패널에 보여지는데 왼쪽 패널에 통합가능는게 좋을것 (어차피 버튼 으로 존재하니까 ) -> 노트 패널은
-    왜 필요한지 잘모르겠다. -> 현재 디테일 스타 카드에 페인이 두개자나, 그냥 한개로 통합하ㅐ도 될거같아.
+  queued_at: 2026-05-10T21:10
+  status: done
+  text: ns  현재 디테일 스타 카드에 페인이 두개자나, 그냥 한개로 통합하ㅐ도 될거같아.
   user_added_at: 2026-05-10T17:46
-- claude_ack: 2026-05-10T18:48
-  done: false
+- claude_ack: 2026-05-10T21:10
+  done: true
+  done_at: 2026-05-10T21:10
   id: M12
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-10T18:48
   queued_at: 2026-05-10T18:29
-  status: pending_confirmation
+  status: done
   text: 마일스톤 상태 (펜팅 / 큐 / 등등의 상태가 좀더 직관적으로 보이도록 수정해야함 - badge 상태를 텍스트로 표시하기바람)
   user_added_at: 2026-05-10T17:47
-- claude_ack: 2026-05-10T18:03
-  done: false
+- claude_ack: 2026-05-10T21:10
+  done: true
+  done_at: 2026-05-10T21:10
   id: M13
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-10T18:03
-  status: pending
+  status: done
   text: terminal height longer * 1.5 and , width narrower to 3/5 to the current state,
   user_added_at: 2026-05-10T17:56
-- claude_ack: 2026-05-10T18:49
-  done: false
+- claude_ack: 2026-05-10T21:10
+  done: true
+  done_at: 2026-05-10T21:10
   id: M14
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-10T18:49
   queued_at: 2026-05-10T18:29
-  status: pending_confirmation
+  status: done
   text: 대기중인 작업이 없다면 다음 큐를 바로 실행하도록해야한다. 그리고 유아이에서 등록된 마일스톤을 인지하는 시간을 줄이도록해야한다.
   user_added_at: 2026-05-10T18:24
 - clarification_question: 이것은 구체적인 구현 요청인가요, 아니면 아키텍처 방향에 대한 질문인가요? 어떤 에이전트에게 위임하는
     방식을 원하시나요?
-  claude_ack: '2026-05-10T18:29:24+09:00'
+  claude_ack: 2026-05-10T19:38
   done: false
   id: M15
   layer: 0
   parent_id: null
-  status: needs_clarification
+  pending_confirm_at: 2026-05-10T19:38
+  queued_at: 2026-05-10T22:23
+  status: queued
   text: 마일스톤 관리를 개별 에이전트에게 위임가능한가 (컨텍스트 문제는 어떡하나 ? )
   user_added_at: 2026-05-10T18:25
+- clarification_question: '마일스톤에 대한 claude 커멘트/실시간 작업 확인 - 구체적으로 어떤 UI를 원하시나요? (예:
+    진행 로그 표시, 현재 작업 중인 milestone 강조 등)'
+  claude_ack: '2026-05-10T21:21:23+09:00'
+  done: false
+  id: M16
+  layer: 0
+  parent_id: null
+  status: needs_clarification
+  text: milestone 에 대한 claude 의 커멘트나 실시간 작업을 확인가능하도록 해야한다. (커멘트의 경우 사용자의 불명확한 입력 등에
+    대해 이차적인 사용자의 입력을 요구하는 경우를 의미함.)
+  user_added_at: 2026-05-10T21:10
+- claude_ack: 2026-05-10T21:23
+  done: false
+  id: M17
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-10T21:23
+  queued_at: 2026-05-10T21:21
+  status: pending_confirmation
+  text: okr 이 꼭 필요한가 그리고 sepc docs 는 패널 상단으로 올려서 잘보이게 하는게 맞지
+  user_added_at: 2026-05-10T21:11
+- claude_ack: 2026-05-10T22:09
+  done: false
+  id: M18
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-10T22:09
+  status: pending
+  text: 카드 너비는 줄일 수 있자나 , 아직 안줄여짐 2/3 사이즈로 너비 줄여
+  user_added_at: 2026-05-10T22:08
+- claude_ack: null
+  done: false
+  id: M19
+  layer: 0
+  parent_id: null
+  text: run button
+  user_added_at: 2026-05-10T22:46
 name: Claude-Hub
 note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
   first, then leverage it for content/career.

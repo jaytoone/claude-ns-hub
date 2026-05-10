@@ -1,11 +1,11 @@
 {
-  "captured_at": "2026-05-10T10:00:21.270814+00:00",
+  "captured_at": "2026-05-10T13:26:14.601822+00:00",
   "cwd": "/home/desk-1/.claude",
-  "turn_count": 2044,
+  "turn_count": 2177,
   "decisions": [
     {
       "text": "done",
-      "context": "⏵ ✓` 아이콘 → `pending` `queue` `done` 텍스트 pill로 교체:",
+      "context": "tion` → hub UI에서 Confirm 클릭하면 done - **시스템 버그 수정**: `acked but never queued` pending 마일스톤을 SessionStart + Stop hook이 자동 감지해서 queue합니다",
       "tag": "impl_complete"
     }
   ]

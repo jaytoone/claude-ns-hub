@@ -72,10 +72,10 @@ milestones:
 - done: true
   text: '[Darwin-A] DONE 2026-05-11 — Jaccard=0.057 (2/35 correct). jackrong35b solves
     Q105+Q120 from darwin36b failures. Low but nonzero — Darwin-B viable.'
-- done: false
-  text: '[Darwin-B] RUNNING 2026-05-11 — CPU DARE-TIES merge darwin36b+jackrong35b
-    (1811 tensors, 1.9TB RAM). Genome: ffn=0.45, attn=0.15, global=0.25. PID 525173.
-    Eval on 35 failure Qs when merge completes. Expected: ~87-90% GPQA Diamond.'
+- done: true
+  text: '[Darwin-B] DONE 2026-05-11 — FAILED. 0/35 correct (0.0%). DARE-TIES weight
+    averaging breaks MoE router-weight coordination. ffn=0.45 too aggressive. Next:
+    router-aware expert grafting OR conservative ffn=0.05 re-merge.'
 - done: false
   text: '[Darwin-C] GSPO on darwin36b: MoE-stable RL (arXiv:2507.18071) with router
     weight freeze for first 20 steps + load-balance aux loss. Avoids expert-activation
@@ -85,6 +85,13 @@ milestones:
     → 2-3x faster eval if tokenizers match. Enables rapid CMA-ES fitness evaluation.'
 - done: false
   text: 'Final: ≥93% single-model GPQA Diamond via Darwin evolutionary merge'
+- claude_ack: null
+  done: false
+  id: M12
+  layer: 0
+  parent_id: null
+  text: 'Darwin-B v2: conservative DARE-TIES ffn=0.05 re-merge eval'
+  user_added_at: 2026-05-10T21:45
 name: FromScratch
 note: 'NEW NS 2026-05-09: Darwin-native CMA-ES evolutionary merge as primary lever.
   Post-training (SFT/GRPO) hit ceilings. Correct approach: merge darwin36b(85%) +

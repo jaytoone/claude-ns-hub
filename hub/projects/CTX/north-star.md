@@ -66,6 +66,10 @@ log:
   text: '7f9d5a9 fix: deterministic sort tiebreaks + build_docs_bm25 dedup (hang-in
     PR #4 + #5); b19c250 feat: /api/stats endpoint + weekly PyPI trend snapshot (1,854
     total, 912 last 7d) (+1 more)'
+- date: '2026-05-10'
+  text: '411b6a2 [hang-in] refactor(eval): unify 3 eval-pipeline tokenizers via monolith
+    bm25-memory.tokenize (PR-3 re-author); 7c25f50 [hang-in] docs: add MAINTAINERS.md
+    (per #1 — area-of-ownership split) (+1 more)'
 metric: PyPI downloads/week
 milestones:
 - done: true
@@ -124,7 +128,6 @@ unit: downloads/wk
 x: -585
 y: 0
 ---
-
 
 # CTX — North Star
 
