@@ -73,6 +73,25 @@ def _ensure_watcher():
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
+    # Also ensure task-worker.sh is running
+    worker_pid = Path("/tmp/hub-task-worker.pid")
+    worker_sh = Path.home() / ".claude/hub/task-worker.sh"
+    if worker_sh.exists():
+        if worker_pid.exists():
+            try:
+                os.kill(int(worker_pid.read_text().strip()), 0)
+            except (OSError, ValueError):
+                worker_pid.unlink(missing_ok=True)
+        if not worker_pid.exists():
+            worker_py = Path.home() / ".claude/hub/task-worker.py"
+            target = str(worker_py) if worker_py.exists() else str(worker_sh)
+            cmd = [sys.executable, target] if target.endswith(".py") else ["bash", target]
+            subprocess.Popen(
+                cmd,
+                stdout=open("/tmp/hub-task-worker.log", "a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
 
 
 def main():
