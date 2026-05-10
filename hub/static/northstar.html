@@ -644,6 +644,8 @@ header {
 .dm-layer {
   position: relative; margin-bottom: 8px;
 }
+.dm-layer-collapsed .dm-okr-list,
+.dm-layer-collapsed .dm-ms-creator { display: none; }
 /* Vertical connector between layers */
 .dm-layer::after {
   content: ''; position: absolute; left: 11px; bottom: -8px; width: 2px; height: 8px;
@@ -1499,6 +1501,7 @@ function renderMilestoneCreator(projId, milestones) {
       display:flex; align-items:center; justify-content:center; font-size:9px; transition:all .12s; margin-top:1px; }
     .nt-text { flex:1; font-size:12.5px; line-height:1.55; color:var(--text); outline:none; overflow-wrap:anywhere;
       background:transparent; caret-color:var(--accent); }
+    .nt-text:empty::before { content: 'New milestone…'; color:var(--text-dim); opacity:.5; pointer-events:none; font-style:italic; }
     .nt-text:focus { color:var(--text); }
     .nt-done .nt-text { color:var(--text-dim); text-decoration:line-through; }
     .nt-meta { display:flex; align-items:center; gap:4px; flex-shrink:0; padding-top:2px; }
@@ -1728,11 +1731,14 @@ async function toggleMsQueue(projId, mid) {
 async function toggleMs(projId, mid) { return toggleMsQueue(projId, mid); }
 
 async function saveMs(projId, mid, text) {
+  const trimmed = text.trim();
+  // Auto-delete if left empty (user dismissed without typing)
+  if (!trimmed) { await deleteMs(projId, mid); return; }
   const status = document.getElementById('dm-ms-save-status');
   if (status) status.textContent = 'saving…';
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({text: text.trim()}),
+    body: JSON.stringify({text: trimmed}),
   });
   if (status) { status.textContent = 'saved'; setTimeout(() => { if(status) status.textContent=''; }, 1500); }
 }
@@ -1765,7 +1771,7 @@ async function submitClarification(projId, mid, answer) {
 async function addMilestone(projId, layer, parentId) {
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`, {
     method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({layer, parent_id: parentId, text: 'New milestone'}),
+    body: JSON.stringify({layer, parent_id: parentId, text: ''}),
   });
   await loadMilestones(projId);
   // Focus the new item for immediate editing
@@ -2974,9 +2980,28 @@ async function openDetail(idx) {
 
   // Render right column then load milestones
   renderRight(p, ctxData.topics || [], docData);
-  loadMilestones(p.id);
 
-  // Alignment is manual — user clicks ↻ Refresh to run
+  // Multi-NS: full left-panel pagination (arc + milestones per NS page)
+  const nsResp = await fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]}));
+  const nsList = nsResp.north_stars || [];
+  if (nsList.length > 1) {
+    renderMultiNSLeftPanel(p, nsList, okrData);
+  } else {
+    // OKR section for single-NS (update after already rendered by renderHierarchy)
+    if (okrSection) {
+      const okrs = okrData.okrs || [];
+      const title = okrData.section || 'OKRs';
+      okrSection.innerHTML = `<div class="dm-layer">
+        <div class="dm-layer-head" onclick="this.parentElement.classList.toggle('dm-layer-collapsed')" style="cursor:pointer">
+          <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
+          <span class="dm-layer-title">${esc(title)}</span>
+          <span class="dm-layer-count">${okrs.length} KRs</span>
+        </div>
+        <div class="dm-okr-list">${okrs.length ? okrs.map(kr=>{const m=kr.match(/^(K\d+):\s*(.+)/);return`<div class="dm-okr-item"><span class="dm-okr-key">${m?esc(m[1]):'·'}</span><span class="dm-okr-text">${m?esc(m[2]):esc(kr)}</span></div>`;}).join(''):'<div style="font-size:12px;color:var(--text-dim)">No OKRs defined in spec doc</div>'}</div>
+      </div>`;
+    }
+    loadMilestones(p.id);
+  }
 }
 
 function renderHierarchy(p) {
@@ -3058,6 +3083,90 @@ function renderHierarchy(p) {
       </div>
     </div>
   `;
+}
+
+function renderMultiNSLeftPanel(p, nsList, okrData) {
+  const dmLeft = document.getElementById('dm-left');
+  const sc = s => s==='behind'?'var(--red)':s==='exploring'?'var(--yellow,#d4a017)':'var(--green)';
+  let cur = 0;
+  let touchStartX = 0;
+
+  function showPage() {
+    const ns = nsList[cur];
+    const pct = calcPct(ns.current || p.current, ns.target || p.target);
+    const color = sc(ns.status || p.status);
+    const cx = 100, cy = 95, r = 80;
+    const bgPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
+    const fgPath = gaugePath(pct, cx, cy, r);
+    const doneMs = (ns.milestones||[]).filter(m=>m.done||m.status==='done').length;
+    const totalMs = (ns.milestones||[]).length;
+    const btnBase = 'font-family:var(--mono);font-size:14px;background:none;border:1px solid var(--panel-border);border-radius:5px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);';
+    const dots = nsList.map((_,i)=>`<span onclick="window.__nsLPGo(${i})" style="display:inline-block;width:${i===cur?'18':'7'}px;height:7px;border-radius:4px;background:${i===cur?'var(--accent)':'var(--panel-border)'};cursor:pointer;transition:all .2s;margin:0 3px"></span>`).join('');
+
+    dmLeft.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <button style="${btnBase}${cur===0?'opacity:.3;cursor:default':''}" onclick="window.__nsLPGo(${cur-1})">‹</button>
+        <div style="text-align:center">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text-dim);margin-bottom:4px">${cur+1} / ${nsList.length}</div>
+          <div style="display:flex;align-items:center;justify-content:center">${dots}</div>
+        </div>
+        <button style="${btnBase}${cur===nsList.length-1?'opacity:.3;cursor:default':''}" onclick="window.__nsLPGo(${cur+1})">›</button>
+      </div>
+
+      <div class="dm-layer">
+        <div class="dm-layer-head">
+          <div class="dm-layer-icon ns" title="North Star">☆</div>
+          <span class="dm-layer-title">${esc(ns.name||p.name)}</span>
+          <span class="dm-layer-count" style="color:${color}">${Math.round(pct*100)}%</span>
+        </div>
+        <div class="dm-metric-name">${esc(ns.metric||p.metric||'—')}</div>
+        <div class="dm-gauge-wrap">
+          <svg width="200" height="110" viewBox="0 0 200 110">
+            <path class="gauge-track" d="${bgPath}" stroke-width="11"/>
+            <path class="gauge-fill" d="${fgPath}" stroke="${color}" stroke-width="11" fill="none" stroke-linecap="round"/>
+            <text x="${cx}" y="${cy-18}" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="20" fill="${color}">${Math.round(pct*100)}%</text>
+            <text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--text-dim)">of target</text>
+          </svg>
+        </div>
+        <div class="dm-ns-meta">
+          <span class="dm-current" style="color:${color}">${esc(ns.current||p.current||'—')}</span>
+          <span class="dm-sep">→</span>
+          <span class="dm-target">${esc(ns.target||p.target||'—')}</span>
+        </div>
+        ${p.deadline?`<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>`:''}
+      </div>
+
+      <div id="dm-okr-section"></div>
+
+      <div class="dm-layer">
+        <div class="dm-layer-head">
+          <div class="dm-layer-icon ms" title="Milestones">◎</div>
+          <span class="dm-layer-title">Milestones</span>
+          <span class="dm-layer-count" id="dm-ms-ack-badge">${doneMs}/${totalMs}</span>
+        </div>
+        <div id="dm-ms-creator" style="font-size:12px">Loading…</div>
+        <button class="dm-ms-add-btn" onclick="addMilestone('${esc(p.id)}',0,null)" style="margin-top:8px;font-family:var(--mono);font-size:11px;background:none;border:1px dashed var(--panel-border);border-radius:5px;padding:4px 10px;color:var(--text-dim);cursor:pointer;width:100%;text-align:left">+ milestone</button>
+      </div>`;
+
+    // Load milestones for current NS page
+    renderMilestoneCreator(p.id, ns.milestones || []);
+
+    // Touch swipe
+    dmLeft.ontouchstart = e => { touchStartX = e.touches[0].clientX; };
+    dmLeft.ontouchend = e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (dx < -50 && cur < nsList.length-1) window.__nsLPGo(cur+1);
+      if (dx > 50 && cur > 0) window.__nsLPGo(cur-1);
+    };
+  }
+
+  window.__nsLPGo = idx => {
+    if (idx < 0 || idx >= nsList.length) return;
+    cur = idx;
+    showPage();
+  };
+
+  showPage();
 }
 
 function renderRight(p, topics, docData) {
