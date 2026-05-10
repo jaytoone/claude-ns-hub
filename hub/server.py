@@ -1285,25 +1285,30 @@ async def execute_project(proj_id: str):
             "proj_id": proj_id,
             "proj_name": proj.get("name", proj_id),
             "hub_api": hub_api,
-            "message": f"No milestones found for {proj_id}. Run /ns-stone to initialize milestone roadmap, then set up queued items.",
+            "message": f"No milestones found for {proj_id}. Run /ns-stone to initialize milestone roadmap.",
         }
         mode = "init"
     else:
-        # EXECUTE MODE: milestones exist → process queued/pending work
-        queued = [m for m in active_ms if m.get("status") == "queued"]
-        pending = [m for m in active_ms if m.get("status") in ("pending", None) and not m.get("claude_ack")]
-        first_work = (queued or pending)[:1]
+        # EXECUTE MODE: list ALL stones needing attention → per-stone CronCreate
+        actionable = [m for m in active_ms if m.get("status") in ("queued", "pending", "needs_clarification")]
+        stones_for_cron = [
+            {
+                "id": m.get("id"),
+                "text": m.get("text", "")[:80],
+                "status": m.get("status", "pending"),
+                "claude_ack": bool(m.get("claude_ack")),
+            }
+            for m in actionable[:5]  # cap at 5 to avoid overwhelming
+        ]
         entry = {
             "ts": _dt_.now().isoformat(timespec="seconds"),
-            "type": "execute_work",
+            "type": "execute_all",
             "proj_id": proj_id,
             "proj_name": proj.get("name", proj_id),
             "hub_api": hub_api,
             "total_active": len(active_ms),
-            "queued_count": len(queued),
-            "pending_count": len(pending),
-            "first_milestone": first_work[0] if first_work else None,
-            "message": f"Execute {proj_id}: {len(queued)} queued, {len(pending)} unacked pending. Process first queued item.",
+            "stones": stones_for_cron,
+            "message": f"Execute {proj_id}: create per-stone CronCreate for {len(stones_for_cron)} actionable stones.",
         }
         mode = "work"
 

@@ -45,18 +45,26 @@ def main():
             parts.append(f"  → Project name: {e.get('proj_name', proj)}")
             parts.append(f"  → After creating milestones, queue the first actionable one")
 
-        elif etype == "execute_work":
-            first = e.get("first_milestone")
-            parts.append(f"\n[EXECUTE WORK] {proj}: {e.get('queued_count',0)} queued, {e.get('pending_count',0)} pending")
-            if first:
-                mid = first.get("id", "?")
-                text = first.get("text", "")
-                status = first.get("status", "pending")
-                parts.append(f"  → First item: {mid} [{status}]: \"{text}\"")
-                parts.append(f"  → PATCH claude_ack=now: {hub}/api/northstar/{proj}/milestones/{mid}")
-                parts.append(f"  → Implement it, write completion-log, PATCH status=pending_confirmation")
-            else:
-                parts.append(f"  → No actionable items found. Check milestone states.")
+        elif etype in ("execute_work", "execute_all"):
+            stones = e.get("stones", [])
+            parts.append(f"\n[EXECUTE ALL] {proj}: {len(stones)} actionable stones detected.")
+            parts.append(f"  For EACH stone below, create a CronCreate(cron='*/1 * * * *', recurring=False) that:")
+            parts.append(f"  1. Checks if the stone is done (reads completion-log)")
+            parts.append(f"  2. If not done: ack it + implement it + write completion-log + PATCH pending_confirmation")
+            parts.append(f"  3. CronDelete itself after completing")
+            parts.append(f"  4. Uses hub_api: {hub}")
+            parts.append(f"")
+            parts.append(f"  Stones to process:")
+            for s in stones:
+                mid = s.get("id", "?")
+                text = s.get("text", "")[:50]
+                status = s.get("status", "pending")
+                acked = "acked" if s.get("claude_ack") else "unacked"
+                parts.append(f"    {mid} [{status}/{acked}]: \"{text}\"")
+            parts.append(f"")
+            parts.append(f"  Create ONE CronCreate per stone NOW. Each cron runs independently.")
+            parts.append(f"  Cron prompt template for each stone MID:")
+            parts.append(f"    'Check {proj}/MID: if not done → PATCH ack + implement + write ~/.claude/hub/projects/{proj}/completion-log.jsonl + PATCH pending_confirmation {hub}/api/northstar/{proj}/milestones/MID, then CronDelete this job.'")
 
         else:
             # Legacy: individual milestone run
