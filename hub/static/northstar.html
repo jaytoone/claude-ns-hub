@@ -1031,8 +1031,6 @@ header {
     <div style="flex:1;font-family:var(--mono);font-size:11px;color:#aaa">
       claude @ <span id="ns-term-proj" style="color:#cc785c">—</span>
     </div>
-    <button onclick="termCopy()" style="background:none;border:1px solid #555;border-radius:4px;color:#7ec8c8;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Copy selected text">⎘</button>
-    <button onclick="termPaste()" style="background:none;border:1px solid #555;border-radius:4px;color:#7ec8c8;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Paste clipboard">⇧</button>
     <button onclick="minimizeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" id="ns-term-min-btn" title="Minimize">—</button>
     <button onclick="closeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Close">✕</button>
     <button onclick="killSession()" style="background:none;border:1px solid #c0392b;border-radius:4px;color:#e05252;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Kill session">⬛</button>
@@ -1646,6 +1644,9 @@ function renderMilestoneCreator(projId, milestones) {
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
               ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)" title="Active cron monitor: ${esc(m.cron_job_id)}">cron</span>` : ''}
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${m.claude_ack?'acked':'review'}</span>` : ''}
+              ${mStatus!=='done' ? `<button onclick="event.stopPropagation();runMilestone('${esc(projId)}','${esc(m.id)}',this)"
+                title="Dispatch to Claude Code worker"
+                style="font-size:8px;padding:1px 5px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono)">▶ run</button>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
             </div>
           </div>
@@ -1755,6 +1756,27 @@ async function reopenMs(projId, mid) {
     body: JSON.stringify({status: 'pending', done: false}),
   });
   await loadMilestones(projId);
+}
+
+async function runMilestone(projId, mid, btn) {
+  const orig = btn.textContent;
+  btn.textContent = '⟳';
+  btn.disabled = true;
+  try {
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}/run`, {method:'POST'});
+    const d = await r.json();
+    if (d.ok) {
+      btn.textContent = '✓';
+      btn.style.borderColor = 'var(--text-dim)';
+      btn.style.color = 'var(--text-dim)';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; btn.style.borderColor=''; btn.style.color=''; }, 3000);
+    } else {
+      btn.textContent = '!';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+    }
+  } catch(_) {
+    btn.textContent = orig; btn.disabled = false;
+  }
 }
 
 async function submitClarification(projId, mid, answer) {
@@ -2739,22 +2761,6 @@ function openTerminal(projId) {
     }, {passive: false});
   }
 
-  // Right-click paste + auto-copy on select
-  _term.onSelectionChange(() => {
-    const sel = _term.getSelection();
-    if (sel && navigator.clipboard) navigator.clipboard.writeText(sel).catch(() => {});
-  });
-  const _termEl = document.getElementById('ns-terminal-float');
-  if (_termEl) {
-    _termEl.addEventListener('contextmenu', async e => {
-      e.preventDefault();
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text && ws.readyState === 1) ws.send(text);
-      } catch(_) {}
-    });
-  }
-
   // Batch incoming chunks into one write per animation frame (reduces repaints)
   let _wsBatch = '';
   let _wsRaf = null;
@@ -2853,42 +2859,6 @@ function minimizeTerminal() {
     }, { passive: true });
   });
 })();
-
-function termCopy() {
-  const sel = _term ? _term.getSelection() : '';
-  if (sel && navigator.clipboard) {
-    navigator.clipboard.writeText(sel).then(() => {
-      const btn = document.querySelector('[title="Copy selected text"]');
-      if (btn) { btn.style.color='#3d8b5e'; setTimeout(()=>btn.style.color='#7ec8c8',600); }
-    }).catch(() => {});
-  }
-}
-
-async function termPaste() {
-  // Try clipboard API first (works on HTTPS)
-  if (navigator.clipboard && navigator.clipboard.readText) {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text && _termWs && _termWs.readyState === 1) { _termWs.send(text); return; }
-    } catch(_) {}
-  }
-  // Fallback: native input prompt for iOS (clipboard API blocked on HTTP)
-  const inp = document.createElement('input');
-  inp.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'
-    + 'z-index:9999;padding:10px;font-size:14px;width:80vw;background:#1a1916;'
-    + 'color:#d4cfc8;border:1px solid #cc785c;border-radius:6px;';
-  inp.placeholder = 'Paste here then press Enter';
-  document.body.appendChild(inp);
-  inp.focus();
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (inp.value && _termWs && _termWs.readyState === 1) _termWs.send(inp.value);
-      document.body.removeChild(inp);
-    } else if (e.key === 'Escape') {
-      document.body.removeChild(inp);
-    }
-  });
-}
 
 async function killSession() {
   const projId = document.getElementById('ns-term-proj')?.textContent?.trim();

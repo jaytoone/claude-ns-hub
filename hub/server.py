@@ -152,7 +152,7 @@ def _load_projects() -> list:
                             entry = {
                                 "id":        m.get("id") or _next_id(),
                                 "text":      str(m.get("text", "")),
-                                "layer":     int(m.get("layer", 0)),
+                                "layer":     int(m.get("layer") or 0),
                                 "parent_id": m.get("parent_id") or None,
                                 "status":    status,
                                 "done":      status == "done",   # keep for backwards compat
@@ -1216,6 +1216,44 @@ async def delete_milestone(proj_id: str, mid: str):
                           and m.get("parent_id") != mid]
     _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "removed": before - len(proj["milestones"])})
+
+
+@app.post("/api/northstar/{proj_id}/milestones/{mid}/run")
+async def run_milestone(proj_id: str, mid: str):
+    """Dispatch a milestone to the task-worker queue for autonomous processing."""
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    milestone = next((m for m in proj.get("milestones", []) if m.get("id") == mid), None)
+    if not milestone:
+        return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
+
+    task_queue = HERE / "task-queue"
+    task_queue.mkdir(parents=True, exist_ok=True)
+    from datetime import datetime as _dt_
+    ts = _dt_.now().strftime("%Y%m%d-%H%M%S")
+    task_file = task_queue / f"task-{proj_id}-{mid}-{ts}.md"
+    hub_api = f"http://{os.environ.get('HUB_HOST','100.119.82.4')}:9000"
+    lines = [
+        f"# Task: {proj_id} / {mid}",
+        f"",
+        f"Process milestone {mid} in project {proj_id}:",
+        f"  Text: \"{milestone.get('text', '')}\"",
+        f"  Status: {milestone.get('status', 'pending')}",
+        f"",
+        f"Instructions:",
+        f"1. PATCH {hub_api}/api/northstar/{proj_id}/milestones/{mid} with claude_ack=now",
+        f"2. If text is clear and actionable: implement it, PATCH status=pending_confirmation",
+        f"3. If vague or a question: PATCH status=needs_clarification + clarification_question",
+        f"4. Write completion evidence to ~/.claude/hub/projects/{proj_id}/completion-log.jsonl",
+        f"   Format: {{\"session_id\":\"worker\",\"milestone_id\":\"{mid}\",\"evidence\":\"...\",\"timestamp\":\"ISO\"}}",
+        f"",
+        f"Hub API base: {hub_api}",
+        f"Project: {proj_id}",
+    ]
+    task_file.write_text("\n".join(lines))
+    return JSONResponse({"ok": True, "task_file": task_file.name})
 
 
 @app.post("/api/northstar/create")

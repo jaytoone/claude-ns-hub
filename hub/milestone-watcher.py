@@ -87,8 +87,7 @@ def run():
         def process_IN_CLOSE_WRITE(self, event):
             proj_id = get_watched_paths().get(event.pathname, "unknown")
             write_notification(proj_id, "north-star-updated")
-            # Dispatch task to worker queue for autonomous processing
-            dispatch_task(proj_id)
+            # Auto-dispatch removed — use Run button in hub UI for manual dispatch
 
     notifier = pyinotify.Notifier(wm, Handler())
 
