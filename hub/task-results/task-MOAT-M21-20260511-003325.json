@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M21-20260511-003325",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M21-20260511-003325.md",
+  "status": "done",
+  "output": "M21 complete. Here's the test summary:\n\n| Test | Endpoint | Result |\n|------|----------|--------|\n| Direct inject | `POST /api/terminal/MOAT/inject` | `ok:true` — prompt written to PTY |\n| Execute routing | `POST /api/northstar/MOAT/execute` | `mode:\"terminal\"` — injected 1 queued stone |\n| Session status | `GET /api/northstar/sessions` | `{\"MOAT\":\"active\"}` |\n| Empty prompt | `POST /api/terminal/MOAT/inject` with `\"\"` | 400 `\"prompt required\"` |\n| Missing session | `POST /api/terminal/NONEXISTENT/inject` | 404 with helpful hint |\n\nThe terminal injection flow is working correctly — when a MOAT terminal session is alive, `/execute` routes to `mode:\"terminal\"` and injects the prompt directly into the PTY rather than falling back to the task-worker file queue.\n",
+  "completed_at": "2026-05-11T00:34:47.527245"
+}

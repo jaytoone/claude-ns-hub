@@ -1,0 +1,7 @@
+{
+  "task_id": "task-Clone-20260511-003523-169",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-Clone-20260511-003523-169.md",
+  "status": "done",
+  "output": "M1 done. Here's what was produced:\n\n**M1: 보험 조사 — insurance market & product research**\n\nResearch saved to `docs/research/20260511-insurance-market-research.md`. Key findings:\n\n- **Market**: KRW 254.7T total premiums (2025E); non-life overtook life; 290,000 GA-affiliated agents\n- **Top pain** (HIGH confidence): GA agents manually log into each insurer's system to build proposals — 30–60 min per customer, no unified tool\n- **Only known competitor**: SOLUTUS Lifree 2.0 (launched Feb 2026), DB-backed, targeting large GAs only — ~4,300 small/mid GAs unserved\n- **TAM**: KRW 34–114B for agent-facing B2B SaaS (~$25–84M USD)\n- **Top beachhead**: GA AI proposal & multi-insurer comparison tool → validate WTP with 10 GA agent interviews before building\n",
+  "completed_at": "2026-05-11T00:40:24.264480"
+}

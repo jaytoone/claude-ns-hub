@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M19-20260511-002010",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M19-20260511-002010.md",
+  "status": "done",
+  "output": "M19 processed. The stone \"run button\" is ambiguous — an ▶ Execute button is already implemented per milestone card. Clarification question posted: asking what specific location/function the user wants for a new run button. Status set to `pending_confirmation` awaiting user's answer.\n",
+  "completed_at": "2026-05-11T00:21:23.312087"
+}

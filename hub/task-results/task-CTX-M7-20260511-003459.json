@@ -1,0 +1,7 @@
+{
+  "task_id": "task-CTX-M7-20260511-003459",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-CTX-M7-20260511-003459.md",
+  "status": "done",
+  "output": "M7 is set to `pending_confirmation`. Here's what was done and what remains:\n\n**Completed (automated):**\n- `plugin/.claude-plugin/plugin.json` — version bumped `0.3.8 → 0.3.19`\n- `plugin/README.md` — created with install instructions and links\n- `plugin/LICENSE` — copied MIT license into plugin directory\n- Committed as `3031cbd` and pushed to `jaytoone/CTX`\n\n**Requires user action:**\nThe official submission form at `https://claude.ai/settings/plugins/submit` (or `https://platform.claude.com/plugins/submit`) requires Google OAuth login. Open either URL, sign in with `be2jay67@gmail.com`, and submit CTX with:\n- **Repo:** `https://github.com/jaytoone/CTX`\n- **Category:** productivity / development\n- **Description:** Cross-session memory for Claude Code — G1 + G2 + CM retrieval hooks via BM25\n",
+  "completed_at": "2026-05-11T00:39:34.016116"
+}

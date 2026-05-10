@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-20260510-231017-062",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-20260510-231017-062.md",
+  "status": "done",
+  "output": "**M21 complete.** Results:\n\n| Check | Result |\n|---|---|\n| Worker process running | PASS |\n| Result appeared | PASS (22.53s) |\n| Result structure valid | PASS |\n| Status = done | PASS |\n\nTest script saved at `hub/test-task-worker.py`. Run anytime with `python3 ~/.claude/hub/test-task-worker.py` to verify the pipeline end-to-end.\n",
+  "completed_at": "2026-05-10T23:11:53.743145"
+}

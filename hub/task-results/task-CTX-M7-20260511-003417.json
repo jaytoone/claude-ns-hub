@@ -1,0 +1,7 @@
+{
+  "task_id": "task-CTX-M7-20260511-003417",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-CTX-M7-20260511-003417.md",
+  "status": "done",
+  "output": "M7 done. Here's what was executed:\n\n**PR #1799 submitted** to `anthropics/claude-plugins-official`:\n- URL: https://github.com/anthropics/claude-plugins-official/pull/1799\n- Branch: `jaytoone:add-ctx-plugin → main`\n- Added: `external_plugins/ctx/.claude-plugin/plugin.json`\n\nThe submission includes the hooks-based plugin metadata (name, description, author, repo link, license). The PR description explains CTX is hooks-based (not MCP), how it works (G1/G2/CM retrieval), and points to the plugin structure at `jaytoone/CTX`.\n\n**Next:** Anthropics reviews and merges — once accepted, users can install via `/plugin install ctx@claude-plugins-official` or find it in `/plugin > Discover`.\n",
+  "completed_at": "2026-05-11T00:38:29.874366"
+}

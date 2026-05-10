@@ -1317,9 +1317,7 @@ async def execute_project(proj_id: str):
     else:
         # Check if terminal session is open — prefer terminal injection (full context)
         term_proc = _sessions.get(proj_id)
-        # Also check _pill_status for sessions tracked via hooks (bypass permissions flow)
-        term_active = (term_proc and term_proc.isalive()) or (proj_id in _pill_status)
-        if term_active and term_proc and term_proc.isalive():
+        if term_proc and term_proc.isalive():
             # TERMINAL MODE: inject execute prompt directly into running Claude session
             actionable = [m for m in active_ms if m.get("status") in ("queued", "pending", "needs_clarification")][:5]
             stone_lines = "\n".join(

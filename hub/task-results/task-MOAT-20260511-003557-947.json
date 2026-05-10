@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-20260511-003557-947",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-20260511-003557-947.md",
+  "status": "done",
+  "output": "M22 had an empty title, so I've acknowledged it and set it to `needs_clarification`.\n\n**What task should M22 represent?** Please fill in the milestone text in the hub UI and I'll pick it up automatically.\n",
+  "completed_at": "2026-05-11T00:36:36.142602"
+}

@@ -10,3 +10,4 @@
 - [RULE] stop-playwright-detect hook: backend-only 파일(supabase/functions/*, API routes 등) 변경 시 E2E 건너뜀. UI 서버 실행 중 + UI 파일 변경 시에만 E2E 필수 — 2026-05-08
 - [FIXED] lipsync-worker 70% 고착 버그: reinvokeWorker()가 fire-and-forget이라 edge function 종료 시 fetch 미발송 → polling chain 중단. 수정: 200ms await 추가 (v43 배포 2026-05-08)
 - [FIXED] video-lipsync worker 미시작 버그: lipsync-worker 첫 호출도 fire-and-forget → metadata=NULL로 영구 stuck. 동일 패턴, 동일 수정 (v48 배포 2026-05-08). ginipickofficial 5개 job 345크레딧 환불 완료
+- [FIXED] SevenZero 결제 후 크레딧 미지급 버그: refreshSession() 없이 getSession() 캐시 토큰 사용 → 401 → credits never given. Fix: refreshSession() 강제 갱신 + 실패 시 logAttempt({status:'failed'}) 추가. v1.23.439 배포 2026-05-11. SevenZero 버튼 임시 숨김(v1.23.440), 재활성화: Vercel env NEXT_PUBLIC_SEVENZERO_ENABLED=true

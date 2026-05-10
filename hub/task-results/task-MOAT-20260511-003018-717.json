@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-20260511-003018-717",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-20260511-003018-717.md",
+  "status": "done",
+  "output": "M21 done. Summary of what was tested and fixed:\n\n**Bug found and fixed:** Both `proc.write()` calls in `server.py` used `.encode()` on a `PtyProcessUnicode` session, which expects strings not bytes. This caused a silent exception in `/execute` (swallowed at line 1339), making it always fall back to task-worker even when a terminal was open. The `/inject` endpoint returned a 500 error.\n\n**Fix:** Removed `.encode()` from both write calls:\n- Line 1054: `proc.write(prompt + \"\\n\")`  \n- Line 1334: `term_proc.write(inject_prompt + \"\\n\")`\n\n**Test results after fix:**\n- `POST /api/terminal/MOAT/inject` → `{\"ok\": true}` ✅\n- `POST /api/northstar/MOAT/execute` with active session → `{\"mode\": \"terminal\"}` ✅\n",
+  "completed_at": "2026-05-11T00:35:24.140842"
+}

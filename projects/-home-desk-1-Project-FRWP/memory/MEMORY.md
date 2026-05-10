@@ -25,6 +25,12 @@
 - 15m/: US+KR 36종목 (yfinance, 60d) ✅
 - KR 1h 2yr: yfinance .KS (730d limit) ✅ | KR 15m 2yr: 불가 (무료소스 없음)
 
+## Blood Flow Concept Pivot (2026-05-10)
+- Blood flow viz now maps **technological supply chain bottlenecks** → specific stocks
+- Bottleneck thesis: OBV accumulating + ST bearish = smart money pre-positioning at chokepoint
+- Core bottleneck themes being mapped: AI infra, EV battery chain, grid/power, cybersecurity
+- vascular.html (Canvas-based) is the primary viz — port 7788
+
 ## Paper Trading (WSL)
 - Portfolio: $9,789.34 (dd=2.7%) restored from Turso
 - 2-week paper: 18 trades, WR=88.9%, +$87.62

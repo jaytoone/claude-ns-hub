@@ -13,7 +13,9 @@
 - [GRPO Gate 1]: DONE 2026-05-10 — 30 outers complete on GPUs 0+1. ALL signals -1.0 throughout (zero correct rollouts). MoE expert-activation volatility confirmed as hard blocker — standard GRPO cannot learn on darwin36b. Gate 1 = FAILED. Darwin-C (GSPO) required for any RL approach.
 - [jackrong35b memory footprint]: 118.48 GB + 21.34 GB MoE expert forward = 139.82 GB total. Exceeds single H200 (139.81 GB) by 10 MB — cannot run on single GPU, needs 2 fully free GPUs (no other processes).
 - [Darwin-A v2]: DONE 2026-05-11 — stopped at 13/18 second half (sufficient signal). Final: 2/17 correct = Jaccard=0.057. Nonzero complementarity — jackrong35b solves Q105 and Q120 from darwin36b failures. Darwin-B launched immediately after.
-- [Darwin-B]: DONE 2026-05-11 — FAILED. 0/35 correct (0.0%). Genome ffn=0.45 too aggressive — disrupted MoE routing without transferring chemistry knowledge. 10.4min CPU merge, 235min GPU eval. Root cause: DARE-TIES weight averaging breaks MoE router-weight coordination. Expert weights can't be averaged independently. Options: (1) conservative ffn=0.1 re-test, (2) router-aware expert grafting, (3) inference ensemble.
+- [Darwin-B v1]: DONE 2026-05-11 — FAILED. 0/35 correct. ffn=0.45 too aggressive — broke MoE routing.
+- [Darwin-B v2]: DONE 2026-05-11 — SUCCESS. 7/35=20% correct. ffn=0.05, global=0.05, density=0.95. 146min eval. Trace-level mixing preserves MoE routing while importing jackrong chemistry knowledge. Key: MoE DARE-TIES needs ffn≤0.05.
+- [Darwin-B v3 plan]: CMA-ES genome search around ffn=[0.02-0.08] → target 10-15/35 → ~90% GPQA Diamond.
 - [Gate 3 SFT 200-step RESULT]: 2026-05-09 — darwin36b + jackrong27b traces, 200 steps: 4-5/35 failure Qs correct (11-14%). Baseline 0%. Signal confirmed — teacher trace SFT works!
 - [Gate 3 SFT 1000-step]: RUNNING on GPUs 4-5. Cron 14c36e1f monitors. Auto-eval will launch when done.
 - [live-inf]: launched 2026-05-09 — goal=reach ≥88% GPQA Diamond. Cron monitoring SFT 1k completion.

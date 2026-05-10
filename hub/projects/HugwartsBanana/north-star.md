@@ -391,6 +391,22 @@ log:
   text: b254e7e v1.23.438 20260508 - fix video-lipsync worker 미시작 버그 (fire-and-forget
     → 200ms await 추가); b3652a7 v1.23.437 20260508 - fix lipsync-worker 70% 고착 버그 (reinvokeWorker
     fire-and-forget → 200ms await 추가) (+1 more)
+- date: '2026-05-10'
+  text: b254e7e v1.23.438 20260508 - fix video-lipsync worker 미시작 버그 (fire-and-forget
+    → 200ms await 추가); b3652a7 v1.23.437 20260508 - fix lipsync-worker 70% 고착 버그 (reinvokeWorker
+    fire-and-forget → 200ms await 추가) (+1 more)
+- date: '2026-05-11'
+  text: b254e7e v1.23.438 20260508 - fix video-lipsync worker 미시작 버그 (fire-and-forget
+    → 200ms await 추가); b3652a7 v1.23.437 20260508 - fix lipsync-worker 70% 고착 버그 (reinvokeWorker
+    fire-and-forget → 200ms await 추가) (+1 more)
+- date: '2026-05-11'
+  text: c125d40 v1.23.440 20260511 - SevenZero 결제 버튼 임시 점검 숨김 (NEXT_PUBLIC_SEVENZERO_ENABLED=true
+    일 때만 노출); 3f2baee v1.23.439 20260511 - fix SevenZero 결제 후 크레딧 미지급 버그 (세션 만료 +
+    실패 미로깅) (+1 more)
+- date: '2026-05-11'
+  text: 1f75c36 v1.23.441 20260511 - SevenZero 결제 버튼 점검 안내 오버레이 (클릭 불가 + '점검 중' 텍스트);
+    c125d40 v1.23.440 20260511 - SevenZero 결제 버튼 임시 점검 숨김 (NEXT_PUBLIC_SEVENZERO_ENABLED=true
+    일 때만 노출) (+1 more)
 metric: Weekly new payers
 milestones:
 - claude_ack: null

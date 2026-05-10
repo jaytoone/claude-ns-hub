@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M21-20260511-003126",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M21-20260511-003126.md",
+  "status": "done",
+  "output": "M21 complete. Summary of what was tested:\n\n1. **Sessions API** (`GET /api/northstar/sessions`) — returns `{\"MOAT\": \"idle:24\"}` showing idle PTY session\n2. **Direct inject** (`POST /api/terminal/MOAT/inject`) — successfully writes prompt to PTY, returns `{\"ok\": true}`\n3. **Execute endpoint** (`POST /api/northstar/MOAT/execute`) — correctly detects active session, returns `mode: \"terminal\"` (not `mode: \"work\"` fallback)\n4. **No-session fallback** — returns 404 with user-facing hint to open terminal first\n\nAll four paths of the terminal injection flow verified working. M21 → `pending_confirmation`.\n",
+  "completed_at": "2026-05-11T00:35:37.934823"
+}

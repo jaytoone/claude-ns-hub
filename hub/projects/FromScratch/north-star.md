@@ -49,6 +49,10 @@ log:
   text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
     culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
     (+1 more)
+- date: '2026-05-11'
+  text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
+    culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
+    (+1 more)
 metric: GPQA Diamond single-model score
 milestones:
 - done: true
@@ -73,25 +77,54 @@ milestones:
   text: '[Darwin-A] DONE 2026-05-11 — Jaccard=0.057 (2/35 correct). jackrong35b solves
     Q105+Q120 from darwin36b failures. Low but nonzero — Darwin-B viable.'
 - done: true
-  text: '[Darwin-B] DONE 2026-05-11 — FAILED. 0/35 correct (0.0%). DARE-TIES weight
-    averaging breaks MoE router-weight coordination. ffn=0.45 too aggressive. Next:
-    router-aware expert grafting OR conservative ffn=0.05 re-merge.'
-- done: false
+  text: '[Darwin-B v2] DONE 2026-05-11 — SUCCESS. 7/35=20% with ffn=0.05. MoE needs
+    trace-level mixing. v1 failed at ffn=0.45. Next: Darwin-B v3 CMA-ES ffn=[0.02-0.08]
+    → target 10-15/35 → ~90% GPQA Diamond.'
+- claude_ack: '2026-05-10T15:04:58Z'
+  done: false
+  id: M9
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-11T00:04
+  status: queued
   text: '[Darwin-C] GSPO on darwin36b: MoE-stable RL (arXiv:2507.18071) with router
     weight freeze for first 20 steps + load-balance aux loss. Avoids expert-activation
     volatility. (~4h Gate 0 test)'
-- done: false
+- claude_ack: '2026-05-10T15:04:58Z'
+  done: false
+  id: M10
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-11T00:04
+  status: queued
   text: '[Darwin-D] Speculative decoding eval: darwin28b draft + darwin36b target
     → 2-3x faster eval if tokenizers match. Enables rapid CMA-ES fitness evaluation.'
-- done: false
+- claude_ack: '2026-05-10T15:04:58Z'
+  done: false
+  id: M11
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-11T00:04
+  status: queued
   text: 'Final: ≥93% single-model GPQA Diamond via Darwin evolutionary merge'
-- claude_ack: null
+- claude_ack: 2026-05-11T00:38
+  cron_job_id: null
   done: false
   id: M12
   layer: 0
   parent_id: null
+  pending_confirm_at: 2026-05-11T00:38
+  status: pending_confirmation
   text: 'Darwin-B v2: conservative DARE-TIES ffn=0.05 re-merge eval'
   user_added_at: 2026-05-10T21:45
+- claude_ack: 2026-05-11T00:33
+  done: false
+  id: M13
+  layer: 0
+  parent_id: null
+  text: Consider the evolution / experimental latency -> we should using vllm and
+    also for It we can use other model that is compatible with vllm .
+  user_added_at: 2026-05-11T00:24
 name: FromScratch
 note: 'NEW NS 2026-05-09: Darwin-native CMA-ES evolutionary merge as primary lever.
   Post-training (SFT/GRPO) hit ceilings. Correct approach: merge darwin36b(85%) +

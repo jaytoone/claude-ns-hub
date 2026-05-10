@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M21-20260511-003315",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M21-20260511-003315.md",
+  "status": "done",
+  "output": "M21 complete. Summary of what was tested and fixed:\n\n**Tests run:**\n1. `POST /api/terminal/MOAT/inject` with active session → **200 OK** (injection succeeded)\n2. `POST /api/terminal/MOAT/inject` with empty prompt → **400** (correct validation)\n3. `POST /api/northstar/MOAT/execute` with active PTY session → **`mode: terminal`**, 1 stone injected\n4. `POST /api/northstar/CTX/execute` with no active session → **`mode: work`**, 4 task files created (fallback path)\n\n**Bug fixed:** Dead `term_active` variable in `/execute` (server.py ~1319). The `_pill_status` OR branch was computed but never changed behavior — the injection block already required `term_proc.isalive()` directly. Simplified to a direct `if term_proc and term_proc.isalive():` check.\n",
+  "completed_at": "2026-05-11T00:35:40.531486"
+}

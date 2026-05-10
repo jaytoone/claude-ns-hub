@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M18-20260511-002010",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M18-20260511-002010.md",
+  "status": "done",
+  "output": "Done. Changed `.detail-modal` `max-width` from `880px` → `580px` (≈2/3) at `northstar.html:619`. Status set to `pending_confirmation`.\n",
+  "completed_at": "2026-05-11T00:20:58.281166"
+}

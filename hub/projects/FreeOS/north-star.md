@@ -12,6 +12,7 @@ name: FreeOS
 note: VERTICAL FreeOS project
 parent: null
 position_x: 2
+stage: unassigned
 status: paused
 target: —
 unit: ''

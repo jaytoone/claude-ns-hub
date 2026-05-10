@@ -102,24 +102,26 @@ milestones:
   user_added_at: 2026-05-10T18:24
 - clarification_question: 이것은 구체적인 구현 요청인가요, 아니면 아키텍처 방향에 대한 질문인가요? 어떤 에이전트에게 위임하는
     방식을 원하시나요?
-  claude_ack: 2026-05-10T19:38
+  claude_ack: 2026-05-10T23:56
+  cron_job_id: null
   done: false
   id: M15
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-10T19:38
   queued_at: 2026-05-10T22:23
-  status: queued
+  status: pending_confirmation
   text: 마일스톤 관리를 개별 에이전트에게 위임가능한가 (컨텍스트 문제는 어떡하나 ? )
   user_added_at: 2026-05-10T18:25
 - clarification_question: '마일스톤에 대한 claude 커멘트/실시간 작업 확인 - 구체적으로 어떤 UI를 원하시나요? (예:
     진행 로그 표시, 현재 작업 중인 milestone 강조 등)'
-  claude_ack: '2026-05-10T21:21:23+09:00'
+  claude_ack: 2026-05-11T00:24
   done: false
   id: M16
   layer: 0
   parent_id: null
-  status: needs_clarification
+  pending_confirm_at: 2026-05-11T00:24
+  status: pending_confirmation
   text: milestone 에 대한 claude 의 커멘트나 실시간 작업을 확인가능하도록 해야한다. (커멘트의 경우 사용자의 불명확한 입력 등에
     대해 이차적인 사용자의 입력을 요구하는 경우를 의미함.)
   user_added_at: 2026-05-10T21:10
@@ -133,22 +135,57 @@ milestones:
   status: pending_confirmation
   text: okr 이 꼭 필요한가 그리고 sepc docs 는 패널 상단으로 올려서 잘보이게 하는게 맞지
   user_added_at: 2026-05-10T21:11
-- claude_ack: 2026-05-10T22:09
+- claude_ack: 2026-05-11T00:20
   done: false
   id: M18
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-10T22:09
-  status: pending
-  text: 카드 너비는 줄일 수 있자나 , 아직 안줄여짐 2/3 사이즈로 너비 줄여
+  status: pending_confirmation
+  text: 카드 너비는 줄일 수 있자나 , 아직 안줄여짐 2/3 사이즈로 너비 줄여 -> 내가 말한 카드 너비란 카드 디테일 너비를 의미함, 수정하기바람
   user_added_at: 2026-05-10T22:08
-- claude_ack: null
+- clarification_question: '"run button"이 무엇을 실행하는 버튼인가요? 이미 마일스톤 카드에 ▶ Execute 버튼이
+    구현되어 있습니다. 다른 위치/기능의 run 버튼을 원하시나요? (예: 터미널 명령 실행, 특정 스크립트 실행, 다른 화면의 버튼 등)'
+  claude_ack: 2026-05-11T00:21
   done: false
   id: M19
   layer: 0
   parent_id: null
+  pending_confirm_at: 2026-05-11T00:21
+  status: pending_confirmation
   text: run button
   user_added_at: 2026-05-10T22:46
+- claude_ack: 2026-05-10T23:18
+  done: true
+  done_at: 2026-05-10T23:18
+  id: M20
+  layer: null
+  parent_id: null
+  status: done
+  text: ocpy and paste -> 터미널에서 삭제 -> 제대로 안됨 확인 바람 (ns card 터미널 말하는거)
+  user_added_at: 2026-05-10T22:51
+- claude_ack: 2026-05-11T00:35
+  done: false
+  id: M21
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T00:34
+  queued_at: 2026-05-11T00:30
+  status: pending_confirmation
+  text: test execute terminal injection flow
+  user_added_at: 2026-05-11T00:30
+- clarification_question: M22 text is empty — what task should this milestone represent?
+  claude_ack: 2026-05-11T00:00
+  done: false
+  id: M22
+  layer: 0
+  parent_id: null
+  status: needs_clarification
+  text: No-dash right top’s align button should have the text too (‘align’ like the
+    node / refresh) and the refresh in the ns -dash can be synced with the top bar’s
+    refresh (currently n s -dash refresh is manual cause the ns-detail cards should
+    not refreshed when user interactive / controll with it )
+  user_added_at: 2026-05-11T00:35
 name: Claude-Hub
 note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
   first, then leverage it for content/career.

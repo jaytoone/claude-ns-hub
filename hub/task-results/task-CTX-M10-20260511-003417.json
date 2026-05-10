@@ -1,0 +1,7 @@
+{
+  "task_id": "task-CTX-M10-20260511-003417",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-CTX-M10-20260511-003417.md",
+  "status": "done",
+  "output": "Done. The root cause: `~/.cache/codebase-memory-mcp/` doesn't exist on this machine, so the hook always falls back to `[G2-GREP]` (plain file paths) instead of `[G2-PREFETCH]` (Function/Class symbols). The dashboard only extracted `[G2-PREFETCH]`, so \"Code files\" always showed \"nothing surfaced\".\n\nTwo fixes applied (both editable-install live):\n- **`ctx_report.py:237-260`** — `_extract_block` now handles Format 3 (plain file paths for `[G2-GREP]`), and filters `Start with:` summary lines before the Format 3 check\n- **`server.py:461-463`** — `_compute_samples` falls back to `[G2-GREP]` extraction when `[G2-PREFETCH]` is empty\n\nThe dashboard \"Code files\" block will now show file paths from git-grep results when no codebase-memory DB is indexed.\n",
+  "completed_at": "2026-05-11T00:38:55.420160"
+}

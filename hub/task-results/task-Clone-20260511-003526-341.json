@@ -1,0 +1,7 @@
+{
+  "task_id": "task-Clone-20260511-003526-341",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-Clone-20260511-003526-341.md",
+  "status": "done",
+  "output": "M1 done. Summary:\n\n**M1 — Insurance Market Research** (`docs/research/insurance-market-research.md`)\n- Korean insurance market: ~USD 190B gross premium (2025), digital distribution growing but still minority\n- Top consumer pain: payout disputes from coverage opacity — 2,459 FSS complaints (2022–H1 2025)\n- Existing tools (Banksalad, 보맵, 굿리치) show premiums but no AI coverage-logic layer\n- **Primary opportunity:** B2B2C via GA channel — \"advisor clone\" that generates FSS-compliant suitability docs and personalized proposals for agents\n- **B2C WTP is unproven** — Koreans pay $0 directly for insurance advice today (commission covers it)\n- Next action: 5-interview sprint with GA managers (법인대리점 본부장급) before committing to build\n\n**M2** (Clone tool scope & spec — SVTool feature set) is queued next.\n",
+  "completed_at": "2026-05-11T00:38:57.567519"
+}

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M21-20260511-003230",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M21-20260511-003230.md",
+  "status": "done",
+  "output": "M21 complete. Here's the test summary:\n\n**Execute terminal injection flow — 3 paths verified:**\n\n| Path | Condition | Result |\n|------|-----------|--------|\n| `mode=terminal` | MOAT has active PTY (`_sessions[\"MOAT\"].isalive()`) | Injected prompt directly into PTY — `1 stones` |\n| `mode=work` | CTX no terminal, has queued milestones | Created 4 task files in `task-queue/` |\n| `mode=init` | Clone has 0 milestones | Created `task-Clone-init-*.md` init task |\n\nAll three branches of `/api/northstar/{proj_id}/execute` are functional. Test task files cleaned up. M21 → `pending_confirmation`.\n",
+  "completed_at": "2026-05-11T00:34:49.498667"
+}

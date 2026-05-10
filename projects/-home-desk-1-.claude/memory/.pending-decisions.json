@@ -1,11 +1,11 @@
 {
-  "captured_at": "2026-05-10T13:26:14.601822+00:00",
+  "captured_at": "2026-05-10T15:39:35.642013+00:00",
   "cwd": "/home/desk-1/.claude",
-  "turn_count": 2177,
+  "turn_count": 2322,
   "decisions": [
     {
-      "text": "done",
-      "context": "tion` → hub UI에서 Confirm 클릭하면 done - **시스템 버그 수정**: `acked but never queued` pending 마일스톤을 SessionStart + Stop hook이 자동 감지해서 queue합니다",
+      "text": "achieved",
+      "context": "*JUDGMENT**: YES — outer goal achieved. **SCORE** (iter 1): - quality: 0.85 (clean API + UI separation) - completeness: 0.80 (both init/work modes) - ",
       "tag": "impl_complete"
     }
   ]

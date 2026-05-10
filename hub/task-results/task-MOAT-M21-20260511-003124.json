@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M21-20260511-003124",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M21-20260511-003124.md",
+  "status": "done",
+  "output": "M21 complete. Here's the test summary:\n\n**Execute Terminal Injection Flow — Test Results (M21)**\n\n| Test | Result |\n|------|--------|\n| `POST /api/terminal/MOAT/inject` with no session | 404 + helpful hint |\n| `POST /api/terminal/MOAT/inject` with active session | 200 OK, prompt injected |\n| `POST /api/northstar/MOAT/execute` with no session | `mode=work`, task files created (correct fallback) |\n| `POST /api/northstar/MOAT/execute` with active session | `mode=terminal`, injected via PTY |\n| Transient PTY error handling | 500 on first call (stale PTY), succeeds on retry; execute's `except: pass` fallback works |\n| Bytes encoding | `proc.write((prompt + \"\\n\").encode())` correct — ptyprocess needs bytes |\n\n**Findings:** Flow works end-to-end. One side effect: when execute falls back to work mode, it creates task files — 3 duplicate M21 files were created during testing and have been cleaned up.\n",
+  "completed_at": "2026-05-11T00:35:53.465137"
+}

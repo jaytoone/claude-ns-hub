@@ -25,13 +25,19 @@ log:
 - date: '2026-05-10'
   text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
     sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
+- date: '2026-05-11'
+  text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
+    sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
 metric: Strategy EV after fees (25-symbol avg)
 milestones:
-- claude_ack: null
+- clarification_question: The milestone text is empty. What task should this milestone
+    represent for the FRWP project?
+  claude_ack: '2026-05-11T00:00:00Z'
   done: false
   id: M1
   layer: 0
   parent_id: null
+  status: needs_clarification
   text: ''
   user_added_at: 2026-05-10T18:50
 name: FRWP

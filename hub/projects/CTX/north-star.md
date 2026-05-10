@@ -84,20 +84,61 @@ milestones:
 - done: true
   status: done
   text: Cloud vault infra decision (Supabase vs Railway) — unblocks Pro paywall
-- done: false
+- claude_ack: '2026-05-11T00:00:00Z'
+  done: false
+  id: M6
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T00:12
+  queued_at: 2026-05-11T00:09
+  status: pending_confirmation
   text: 'Pro paywall: team shared vault gate + $15-20/mo pricing'
-- done: false
+- claude_ack: 2026-05-11T00:39
+  done: false
+  id: M7
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T00:38
+  queued_at: 2026-05-11T00:09
+  status: pending_confirmation
   text: Publish to Claude Code plugin marketplace
-- done: false
+- clarification_answer: It’s done
+  clarification_answered_at: 2026-05-11T00:12
+  clarification_question: '"Active install" is ambiguous — what definition should
+    we use? Options: (A) telemetry opt-in users in Turso (trackable), (B) users who
+    ran ctx at least once after pip install, (C) distinct users active in the last
+    30 days. Also: what is the current active-install count, and are there specific
+    outreach/activation actions you want me to execute (e.g., follow-up DMs to existing
+    PyPI downloaders, onboarding nudge in ctx CLI, referral prompt)?'
+  claude_ack: 2026-05-11T00:36
+  done: false
+  id: M8
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T00:36
+  status: pending_confirmation
   text: Reach 50 active installs (beyond downloads)
-- done: false
+- clarification_question: 'M9 tracking infrastructure is live: wow-tracker.py initialized
+    with streak 1/3 (633→912 downloads/wk, +44.1% WoW). Next target ≥1,004/wk by May
+    18. Two more consecutive weeks needed. What growth actions should I execute? Options:
+    (a) Write distribution content for new channels (Reddit r/ClaudeAI, Discord),
+    (b) Plugin marketplace submission (overlaps M7), (c) Set up weekly Monday cron
+    to auto-snapshot + alert if WoW <10%.'
+  claude_ack: 2026-05-11T00:38
+  done: false
+  id: M9
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T00:38
+  status: needs_clarification
   text: Sustain 3 consecutive weeks of +10% WoW PyPI growth
-- claude_ack: null
+- claude_ack: 2026-05-11T00:38
   done: false
   id: M10
   layer: 0
   parent_id: null
-  status: pending
+  pending_confirm_at: 2026-05-11T00:38
+  status: pending_confirmation
   text: there are no code files showing on the ctx dasboard proof apne.
 - claude_ack: 2026-05-10T17:41
   done: true
@@ -122,6 +163,7 @@ note: 'Claude Code memory + context retrieval plugin. PyPI 696/wk (+10% WoW), HN
   GitHub 4 stars. Next gate: cloud infra decision → Pro paywall.'
 parent: MOAT
 position_x: 3
+stage: unassigned
 status: on-track
 target: '1000'
 unit: downloads/wk

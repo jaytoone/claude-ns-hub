@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-20260510-225214-223",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-20260510-225214-223.md",
+  "status": "done",
+  "output": "Done. Summary:\n\n- **M19 \"run button\"** → `needs_clarification`: Asked what the button runs and where it should appear (terminal command? script? which panel?)\n- **M20 \"copy and paste → remove from terminal\"** → implemented + `pending_confirmation`:\n  - Removed the ⎘ copy and ⇧ paste buttons from the terminal header\n  - Removed auto-copy-on-selection and right-click-paste handlers\n  - Removed `termCopy()` and `termPaste()` functions entirely\n",
+  "completed_at": "2026-05-10T22:55:16.937631"
+}

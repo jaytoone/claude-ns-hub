@@ -1,0 +1,7 @@
+{
+  "task_id": "task-MOAT-M16-20260511-002010",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-MOAT-M16-20260511-002010.md",
+  "status": "done",
+  "output": "M16 complete. Here's what was implemented:\n\n**`server.py`** — `claude_comment` added to the milestone PATCH handler's writable fields, so Claude can post a note to any milestone at any time.\n\n**`northstar.html`** — Three display locations:\n1. **NS card** (`nodeHtml`): A `❓` badge appears next to the project name when any milestone has `needs_clarification` status — visible at a glance without opening the detail modal\n2. **Milestone rows** (pending/queued/done): `claude_comment` renders below the milestone text with a left-border accent (orange when `queued` = actively working, grey otherwise)\n3. **`pending_confirmation` block**: Claude's comment shows with an orange-accent border, giving the user context on what was completed before they confirm\n4. **`needs_clarification` block**: Already showed `clarification_question` — now also shows `claude_comment` as a supplementary note\n",
+  "completed_at": "2026-05-11T00:24:41.336819"
+}

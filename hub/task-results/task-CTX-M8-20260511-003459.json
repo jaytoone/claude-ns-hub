@@ -1,0 +1,7 @@
+{
+  "task_id": "task-CTX-M8-20260511-003459",
+  "task_file": "/home/desk-1/.claude/hub/task-queue/task-CTX-M8-20260511-003459.md",
+  "status": "done",
+  "output": "Done. M8 (\"Reach 50 active installs beyond downloads\") is a business outcome goal, not a directly implementable task. I:\n\n1. ACK'd the milestone (`claude_ack=now`)\n2. Patched `status=needs_clarification` with clarification question: asking whether \"active install\" means (A) telemetry opt-in users in Turso, (B) first-run after pip install, or (C) 30-day active users — and what the current count is + what outreach actions to execute\n3. Logged to `completion-log.jsonl`\n4. Patched to `pending_confirmation`\n\nThe stone blocks on a definition before any code or outreach can be executed.\n",
+  "completed_at": "2026-05-11T00:36:23.953355"
+}
