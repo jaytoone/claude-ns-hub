@@ -1383,9 +1383,50 @@ async def execute_project(proj_id: str):
         return JSONResponse({"ok": True, "mode": mode, "tasks_created": 1,
                              "message": f"Init task queued for {proj_id}"})
     else:
-        # Always use task-worker: claude --continue --print (reliable, full session context)
-        # PTY injection removed — Claude Code TUI doesn't accept raw \r submissions
+        # TMUX SESSION MODE: spawn one persistent claude session, inject cron-creation prompt
+        # CronCreate in this session = auto-retry on API errors (built-in resilience)
         actionable = [m for m in active_ms if m.get("status") in ("queued", "pending", "needs_clarification")][:5]
+        session_name = f"claude-exec-{proj_id}"
+        proj_dirs = {
+            "MOAT": "/home/desk-1/Project/Moat", "CTX": "/home/desk-1/Project/CTX",
+            "FromScratch": "/home/desk-1/Project/FromScratch",
+            "HugwartsBanana": "/home/desk-1/Project/VIDraft/HugwartsBanana",
+            "AIKB": "/home/desk-1/Project/AIKB", "FRWP": "/home/desk-1/Project/FRWP",
+        }
+        proj_dir = proj_dirs.get(proj_id, str(Path.home() / "Project" / proj_id))
+
+        if actionable:
+            stone_lines = "\n".join(
+                f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:60]}\""
+                for m in actionable
+            )
+            cron_prompt = (
+                f"For project {proj_id}, create one CronCreate per stone below "
+                f"(cron='*/2 * * * *', recurring=False). Each cron should: "
+                f"(1) PATCH claude_ack=now on {hub_api}/api/northstar/{proj_id}/milestones/MID, "
+                f"(2) implement the stone or set needs_clarification, "
+                f"(3) write to ~/.claude/hub/projects/{proj_id}/completion-log.jsonl, "
+                f"(4) PATCH status=pending_confirmation, (5) CronDelete itself.\\n\\n"
+                f"Stones:\\n{stone_lines}"
+            )
+            # Kill existing session if any, start fresh
+            subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+            subprocess.Popen([
+                "tmux", "new-session", "-d", "-s", session_name,
+                "-c", proj_dir if Path(proj_dir).exists() else str(Path.home()),
+                "claude", "--dangerously-skip-permissions", "--continue"
+            ])
+            # Wait for claude to start, then send the prompt
+            import asyncio as _aio
+            await _aio.sleep(3)
+            subprocess.run(["tmux", "send-keys", "-t", session_name, cron_prompt, "Enter"])
+            return JSONResponse({
+                "ok": True, "mode": "tmux",
+                "session": session_name,
+                "tasks_created": len(actionable),
+                "message": f"Spawned tmux session '{session_name}' — {len(actionable)} cron jobs being created"
+            })
+
         tasks_created = 0
         for m in actionable:
             mid = m.get("id", "")
