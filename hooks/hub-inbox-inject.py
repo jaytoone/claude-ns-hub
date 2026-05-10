@@ -33,20 +33,40 @@ def main():
     # Clear inbox immediately (atomic: write empty)
     INBOX.write_text("")
 
-    parts = ["[HUB MILESTONE RUN REQUEST] Process these milestones now:"]
+    parts = ["[HUB INBOX] Process these requests BEFORE responding to the user:"]
     for e in entries:
+        etype = e.get("type", "run")
         proj = e.get("proj_id", "?")
-        mid = e.get("mid", "?")
-        text = e.get("text", "")
-        status = e.get("status", "pending")
         hub = e.get("hub_api", "http://100.119.82.4:9000")
-        parts.append(f"\n  {proj}/{mid} [{status}]: \"{text}\"")
-        parts.append(f"  → PATCH {hub}/api/northstar/{proj}/milestones/{mid}")
-        parts.append(f"    claude_ack=now, then implement if clear or set needs_clarification if vague")
-        parts.append(f"    On done: write to ~/.claude/hub/projects/{proj}/completion-log.jsonl")
-        parts.append(f"    PATCH status=pending_confirmation")
 
-    parts.append("\nProcess these BEFORE responding to the user's message.")
+        if etype == "execute_init":
+            parts.append(f"\n[EXECUTE INIT] {proj} has no milestones.")
+            parts.append(f"  → Use /ns-stone to analyze project and create milestone roadmap")
+            parts.append(f"  → Project name: {e.get('proj_name', proj)}")
+            parts.append(f"  → After creating milestones, queue the first actionable one")
+
+        elif etype == "execute_work":
+            first = e.get("first_milestone")
+            parts.append(f"\n[EXECUTE WORK] {proj}: {e.get('queued_count',0)} queued, {e.get('pending_count',0)} pending")
+            if first:
+                mid = first.get("id", "?")
+                text = first.get("text", "")
+                status = first.get("status", "pending")
+                parts.append(f"  → First item: {mid} [{status}]: \"{text}\"")
+                parts.append(f"  → PATCH claude_ack=now: {hub}/api/northstar/{proj}/milestones/{mid}")
+                parts.append(f"  → Implement it, write completion-log, PATCH status=pending_confirmation")
+            else:
+                parts.append(f"  → No actionable items found. Check milestone states.")
+
+        else:
+            # Legacy: individual milestone run
+            mid = e.get("mid", "?")
+            text = e.get("text", "")
+            status = e.get("status", "pending")
+            parts.append(f"\n[RUN] {proj}/{mid} [{status}]: \"{text}\"")
+            parts.append(f"  → PATCH {hub}/api/northstar/{proj}/milestones/{mid}")
+            parts.append(f"    claude_ack=now, implement if clear or needs_clarification if vague")
+            parts.append(f"    On done: write completion-log, PATCH status=pending_confirmation")
     ctx = "\n".join(parts)
 
     print(json.dumps({

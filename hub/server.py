@@ -1254,6 +1254,65 @@ async def run_milestone(proj_id: str, mid: str):
     return JSONResponse({"ok": True, "queued": True, "message": "Injected into Claude session on next prompt"})
 
 
+@app.post("/api/northstar/{proj_id}/execute")
+async def execute_project(proj_id: str):
+    """Smart dispatcher: if no milestones → init roadmap; if milestones exist → process queued work.
+    Writes to session-inbox.jsonl for pickup by UserPromptSubmit hook."""
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    milestones = proj.get("milestones", [])
+    active_ms = [m for m in milestones if not m.get("done") and m.get("status") != "done"]
+
+    from datetime import datetime as _dt_
+    _host = os.environ.get('HUB_HOST', '0.0.0.0')
+    if _host == '0.0.0.0':
+        import re as _re_
+        try:
+            _r = __import__('subprocess').run(['ss','-tlnp'], capture_output=True, text=True, timeout=2)
+            _m = _re_.search(r'(100\.\d+\.\d+\.\d+):9000', _r.stdout)
+            _host = _m.group(1) if _m else '127.0.0.1'
+        except Exception:
+            _host = '127.0.0.1'
+    hub_api = f"http://{_host}:9000"
+
+    if not active_ms:
+        # INIT MODE: no milestones → create roadmap
+        entry = {
+            "ts": _dt_.now().isoformat(timespec="seconds"),
+            "type": "execute_init",
+            "proj_id": proj_id,
+            "proj_name": proj.get("name", proj_id),
+            "hub_api": hub_api,
+            "message": f"No milestones found for {proj_id}. Run /ns-stone to initialize milestone roadmap, then set up queued items.",
+        }
+        mode = "init"
+    else:
+        # EXECUTE MODE: milestones exist → process queued/pending work
+        queued = [m for m in active_ms if m.get("status") == "queued"]
+        pending = [m for m in active_ms if m.get("status") in ("pending", None) and not m.get("claude_ack")]
+        first_work = (queued or pending)[:1]
+        entry = {
+            "ts": _dt_.now().isoformat(timespec="seconds"),
+            "type": "execute_work",
+            "proj_id": proj_id,
+            "proj_name": proj.get("name", proj_id),
+            "hub_api": hub_api,
+            "total_active": len(active_ms),
+            "queued_count": len(queued),
+            "pending_count": len(pending),
+            "first_milestone": first_work[0] if first_work else None,
+            "message": f"Execute {proj_id}: {len(queued)} queued, {len(pending)} unacked pending. Process first queued item.",
+        }
+        mode = "work"
+
+    inbox = Path(__file__).parent / "session-inbox.jsonl"
+    with open(inbox, "a") as f:
+        f.write(__import__("json").dumps(entry, ensure_ascii=False) + "\n")
+    return JSONResponse({"ok": True, "mode": mode, "message": entry["message"]})
+
+
 @app.post("/api/northstar/create")
 async def create_project(request: Request):
     """Create a new project node with a minimal north-star.md."""
