@@ -1051,7 +1051,7 @@ async def terminal_inject(proj_id: str, request: Request):
 
     # Send prompt to PTY (append newline to submit)
     try:
-        proc.write(prompt + "\n")
+        proc.write(prompt + "\r")
         return JSONResponse({"ok": True, "message": f"Prompt injected into {proj_id} terminal"})
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
@@ -1331,7 +1331,7 @@ async def execute_project(proj_id: str):
                 f"Hub: {hub_api}"
             )
             try:
-                term_proc.write(inject_prompt + "\n")
+                term_proc.write(inject_prompt + "\r")
                 return JSONResponse({
                     "ok": True, "mode": "terminal",
                     "message": f"Injected into {proj_id} terminal — {len(actionable)} stones"
