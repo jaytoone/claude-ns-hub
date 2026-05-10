@@ -1051,7 +1051,7 @@ async def terminal_inject(proj_id: str, request: Request):
 
     # Send prompt to PTY (append newline to submit)
     try:
-        proc.write((prompt + "\n").encode())
+        proc.write(prompt + "\n")
         return JSONResponse({"ok": True, "message": f"Prompt injected into {proj_id} terminal"})
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
@@ -1317,7 +1317,9 @@ async def execute_project(proj_id: str):
     else:
         # Check if terminal session is open — prefer terminal injection (full context)
         term_proc = _sessions.get(proj_id)
-        if term_proc and term_proc.isalive():
+        # Also check _pill_status for sessions tracked via hooks (bypass permissions flow)
+        term_active = (term_proc and term_proc.isalive()) or (proj_id in _pill_status)
+        if term_active and term_proc and term_proc.isalive():
             # TERMINAL MODE: inject execute prompt directly into running Claude session
             actionable = [m for m in active_ms if m.get("status") in ("queued", "pending", "needs_clarification")][:5]
             stone_lines = "\n".join(
@@ -1331,7 +1333,7 @@ async def execute_project(proj_id: str):
                 f"Hub: {hub_api}"
             )
             try:
-                term_proc.write((inject_prompt + "\n").encode())
+                term_proc.write(inject_prompt + "\n")
                 return JSONResponse({
                     "ok": True, "mode": "terminal",
                     "message": f"Injected into {proj_id} terminal — {len(actionable)} stones"
