@@ -252,6 +252,42 @@ def main():
     except Exception:
         pass
 
+    # P5: Check milestones — inject next queued task + new unacked for zero-latency chaining
+    try:
+        req = urllib.request.Request(f"{HUB_API}/api/northstar/{proj_id}/milestones")
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            ms_data = json.loads(resp.read())
+        all_ms = ms_data.get("milestones", [])
+        queued_ms = [m for m in all_ms if m.get("status") == "queued" and not m.get("done")]
+        new_unacked = [m for m in all_ms if m.get("status") == "pending" and not m.get("claude_ack")]
+
+        parts = []
+
+        # New unacked: detect immediately (zero-latency UI registration)
+        if new_unacked:
+            parts.append(f"[NEW MILESTONES DETECTED] {len(new_unacked)} unacknowledged:")
+            for m in new_unacked[:3]:
+                parts.append(f"  - {m.get('id')}: '{m.get('text','')[:60]}'")
+            parts.append("Acknowledge and queue/clarify these now.")
+
+        # Next queued: start immediately after current task
+        if queued_ms:
+            next_m = queued_ms[0]
+            parts.append(f"[NEXT QUEUED TASK] {next_m.get('id')}: '{next_m.get('text','')[:70]}'")
+            parts.append("If you just completed a task, start this one now without waiting.")
+
+        if parts:
+            ctx = "\n".join(parts)
+            print(json.dumps({
+                "hookSpecificOutput": {
+                    "hookEventName": "Stop",
+                    "additionalContext": ctx
+                }
+            }))
+            sys.exit(0)
+    except Exception:
+        pass
+
     sys.exit(0)
 
 
