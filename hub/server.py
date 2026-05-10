@@ -1230,7 +1230,16 @@ async def run_milestone(proj_id: str, mid: str):
         return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
 
     from datetime import datetime as _dt_
-    hub_api = f"http://{os.environ.get('HUB_HOST','100.119.82.4')}:9000"
+    _host = os.environ.get('HUB_HOST', '0.0.0.0')
+    if _host == '0.0.0.0':
+        import re as _re_
+        try:
+            _r = __import__('subprocess').run(['ss','-tlnp'], capture_output=True, text=True, timeout=2)
+            _m = _re_.search(r'(100\.\d+\.\d+\.\d+):9000', _r.stdout)
+            _host = _m.group(1) if _m else '127.0.0.1'
+        except Exception:
+            _host = '127.0.0.1'
+    hub_api = f"http://{_host}:9000"
     inbox = Path.home() / ".claude/hub/session-inbox.jsonl"
     entry = {
         "ts": _dt_.now().isoformat(timespec="seconds"),
