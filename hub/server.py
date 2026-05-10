@@ -530,7 +530,7 @@ verdict per lens: PASS or WARN or FAIL. overall verdict: STRONG or MODERATE or W
 _MARKET_SIGNALS_SCRIPT = Path.home() / "Project" / "CTX" / "scripts" / "market-signals.py"
 _MARKET_SIGNALS_LOG    = Path.home() / "Project" / "CTX" / "docs" / "research" / "signal-log.jsonl"
 _MS_CACHE: dict = {"data": None, "ts": 0.0}
-_MS_TTL = 300  # 5 min
+_MS_TTL = 1800  # 30 min (pypistats rate limit: avoid >3 calls/5min)
 
 
 def _fetch_signals_sync() -> dict:
@@ -606,7 +606,7 @@ async def market_signals_save():
 _CHANNEL_LOG = Path.home() / "Project" / "CTX" / "docs" / "marketing" / "channel_reactions_log.md"
 _POSTS_DRAFT  = Path.home() / "Project" / "CTX" / "docs" / "marketing" / "20260502-channel-posts-draft.md"
 _CH_CACHE: dict = {"data": None, "ts": 0.0}
-_CH_TTL = 180  # 3 min (channels don't change faster)
+_CH_TTL = 600  # 10 min (channels: GH/GN/HN don't change faster; PyPI rate-limit safe)
 
 CHANNELS = [
     {
@@ -626,8 +626,8 @@ CHANNELS = [
     {
         "id": "hn",
         "name": "Hacker News",
-        "url": "https://news.ycombinator.com/item?id=48017090",
-        "api": "https://hn.algolia.com/api/v1/items/48017090",
+        "url": "https://news.ycombinator.com/item?id=48071940",
+        "api": "https://hn.algolia.com/api/v1/items/48071940",
         "type": "hn_api",
     },
     {
@@ -643,6 +643,14 @@ CHANNELS = [
         "url": "https://linkedin.com/feed/",
         "api": None,
         "type": "manual",
+    },
+    {
+        "id": "naver_mail",
+        "name": "Naver Mail",
+        "url": "https://mail.naver.com/",
+        "api": "https://mail.naver.com/json/readMail/",
+        "type": "naver_mail",
+        "note": "nave94@naver.com — GitHub/GN/HN reply notifications",
     },
     {
         "id": "pypi",
@@ -687,6 +695,42 @@ def _fetch_channel(ch: dict) -> dict:
             result["note"] = "rate limited — retry later"
         else:
             result["error"] = err[:80]
+
+    # Naver mail: check unread count via Naver mail JSON API (session cookie required)
+    if ch["type"] == "naver_mail":
+        try:
+            import subprocess as _sp
+            # Use a lightweight python-requests call with session cookies from browser
+            # Naver mail unread count endpoint
+            r2 = _sp.run(
+                ["python3", "-c", """
+import urllib.request, json, http.cookiejar
+# Naver mail folder count API (no auth needed if cookie present — use fallback)
+try:
+    req = urllib.request.Request(
+        'https://mail.naver.com/json/folderList/',
+        headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://mail.naver.com/'}
+    )
+    with urllib.request.urlopen(req, timeout=5) as r:
+        d = json.load(r)
+    inbox = next((f for f in d.get('folderList',[]) if f.get('id')=='0'), {})
+    print(json.dumps({'unread': inbox.get('unreadCount', 0), 'total': inbox.get('totalCount', 0)}))
+except Exception as e:
+    print(json.dumps({'error': str(e)[:60]}))
+"""],
+                capture_output=True, text=True, timeout=8
+            )
+            if r2.stdout.strip():
+                d2 = json.loads(r2.stdout.strip())
+                result["unread"] = d2.get("unread", "?")
+                result["total"] = d2.get("total", "?")
+                if "error" in d2:
+                    result["note"] = "cookie auth required — check manually"
+            else:
+                result["note"] = "manual check required"
+        except Exception as exc2:
+            result["note"] = "manual check required"
+        return result
 
     # HTML scrape fallback for channels that don't return JSON
     if ch["type"] == "html_scrape":
@@ -826,6 +870,54 @@ async def _expose_ports_to_tailscale():
             )
         except Exception:
             pass  # wsl-expose optional — fail silently if clients offline
+
+
+@app.on_event("startup")
+async def _start_milestone_watcher():
+    """Background cron: check completion-log.jsonl every 5 min → auto-mark queued milestones."""
+    async def _watch():
+        while True:
+            await asyncio.sleep(300)  # 5 minutes
+            try:
+                for proj_dir in PROJECTS_DIR.iterdir():
+                    if not proj_dir.is_dir():
+                        continue
+                    proj_id = proj_dir.name
+                    log_file = proj_dir / "completion-log.jsonl"
+                    if not log_file.exists():
+                        continue
+                    # Read completion log entries
+                    entries = []
+                    for line in log_file.read_text().splitlines():
+                        line = line.strip()
+                        if line:
+                            try: entries.append(json.loads(line))
+                            except Exception: pass
+                    if not entries:
+                        continue
+                    logged_mids = {e.get("milestone_id"): e for e in entries if e.get("milestone_id")}
+                    # Load milestones via internal function (normalized)
+                    md = PROJECTS_DIR / proj_id / "north-star.md"
+                    if not md.exists():
+                        continue
+                    proj = _parse_md_frontmatter(md)
+                    raw_ms = proj.get("milestones", []) if isinstance(proj, dict) else []
+                    now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M")
+                    for m in raw_ms:
+                        if not isinstance(m, dict): continue
+                        mid = str(m.get("id", "")).strip()
+                        if not mid: continue
+                        status = m.get("status", "pending")
+                        if status in ("done", "pending_confirmation") or m.get("done"): continue
+                        if mid in logged_mids:
+                            patch = {"status": "pending_confirmation", "done": False,
+                                     "pending_confirm_at": now_iso, "claude_ack": now_iso}
+                            m.update(patch)
+                            proj["milestones"] = raw_ms
+                            _save_project(proj_id, proj)
+            except Exception:
+                pass
+    asyncio.create_task(_watch())
 
 
 @app.on_event("startup")
@@ -1084,6 +1176,14 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
                     m.setdefault("queued_at", now_iso)
                 else:
                     m.pop("queued_at", None)
+            elif new_status == "needs_clarification":
+                m["status"] = "needs_clarification"
+                m["done"] = False
+                if "clarification_question" in data:
+                    m["clarification_question"] = data["clarification_question"]
+                if "clarification_answer" in data:
+                    m["clarification_answer"] = data["clarification_answer"]
+                    m["clarification_answered_at"] = now_iso
             elif new_status == "pending_confirmation":
                 # Stop hook: waiting for user to confirm within 24h
                 m["status"] = "pending_confirmation"
@@ -1312,6 +1412,30 @@ async def health(service: str):
             return JSONResponse({"ok": r.status_code < 500, "status": r.status_code})
     except Exception:
         return JSONResponse({"ok": False, "status": 0})
+
+
+@app.get("/api/verify-plan")
+async def verify_plan():
+    """Return dynamic check list based on current services config — no hardcoded checks."""
+    checks = []
+    # 1. Health checks — derived from actual registered services
+    built_in = ["northstar", "market-signals"]
+    for svc in built_in + list(SERVICES.keys()):
+        checks.append({"id": f"health/{svc}", "type": "health", "url": f"/health/{svc}"})
+    # 2. Tab loaded checks — one per service
+    for svc in built_in + list(SERVICES.keys()):
+        checks.append({"id": f"tab_loaded/{svc}", "type": "tab_loaded", "frame_id": f"frame-{svc}"})
+    # 3. Dark mode checks — same-origin iframes only
+    for svc in ["northstar", "market-signals"]:
+        checks.append({"id": f"dark_mode/{svc}", "type": "dark_mode_iframe", "frame_id": f"frame-{svc}"})
+    # 4. Cross-origin dark mode listeners
+    for svc in SERVICES.keys():
+        checks.append({"id": f"dark_mode/{svc}_listener", "type": "dark_mode_listener", "svc": svc})
+    # 5. NS board nodes (inside northstar iframe)
+    checks.append({"id": "ns_nodes", "type": "selector", "selector": ".ns-node", "frame_id": "frame-northstar", "min": 1})
+    # 6. No JS errors
+    checks.append({"id": "no_console_errors", "type": "no_js_errors"})
+    return JSONResponse({"checks": checks, "count": len(checks), "services": list(SERVICES.keys())})
 
 
 if __name__ == "__main__":

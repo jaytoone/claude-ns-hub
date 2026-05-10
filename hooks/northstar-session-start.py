@@ -74,11 +74,50 @@ def main():
     milestones = ms_data.get("milestones", [])
     queued = [m for m in milestones if m.get("status") == "queued"]
     pending = [m for m in milestones if not m.get("done") and (m.get("status") or "pending") == "pending"]
+    needs_clarification = [m for m in milestones if m.get("status") == "needs_clarification"]
+    answered = [m for m in needs_clarification if (m.get("clarification_answer") or "").strip()]
+    unanswered = [m for m in needs_clarification if not (m.get("clarification_answer") or "").strip()]
 
-    if not queued and not pending:
+    # Auto-promote answered clarifications → pending (Claude will pick them up as new pending)
+    for m in answered:
+        try:
+            req = urllib.request.Request(
+                f"{hub}/api/northstar/{proj_id}/milestones/{m['id']}",
+                data=json.dumps({"status": "pending"}).encode(),
+                headers={"Content-Type": "application/json"},
+                method="PATCH"
+            )
+            urllib.request.urlopen(req, timeout=3)
+        except Exception:
+            pass
+    # Refresh after auto-promotion
+    if answered:
+        try:
+            req2 = urllib.request.Request(f"{hub}/api/northstar/{proj_id}/milestones")
+            with urllib.request.urlopen(req2, timeout=3) as resp:
+                ms_data2 = json.loads(resp.read())
+            milestones = ms_data2.get("milestones", [])
+            queued = [m for m in milestones if m.get("status") == "queued"]
+            pending = [m for m in milestones if not m.get("done") and (m.get("status") or "pending") == "pending"]
+        except Exception:
+            pass
+
+    if not queued and not pending and not unanswered:
         sys.exit(0)
 
     lines = [f"[NS:{proj_id}] Milestone status —"]
+
+    if answered:
+        lines.append(f"  AUTO-QUEUED from clarification ({len(answered)} promoted to pending):")
+        for m in answered:
+            lines.append(f"    • {m.get('text','')[:60]} → answer: \"{m.get('clarification_answer','')[:40]}\"")
+
+    if unanswered:
+        lines.append(f"  NEEDS CLARIFICATION ({len(unanswered)} waiting for user input in hub UI):")
+        for m in unanswered[:3]:
+            lines.append(f"    • {m.get('text','')[:60]}")
+            if m.get("clarification_question"):
+                lines.append(f"      Q: {m['clarification_question'][:60]}")
 
     if queued:
         lines.append(f"  QUEUED (work on these first):")
@@ -100,6 +139,20 @@ def main():
     lines.append(f'  echo \'{{"session_id":"{session_id[:8]}","milestone_id":"MX","evidence":"what you did","timestamp":"$(date -Iseconds)"}}\' >> {log_path}')
     lines.append("  The Stop hook reads this file to mark milestones as pending_confirmation.")
     lines.append("  User confirms within 24h → done. No log entry = Jaccard fallback only.")
+
+    # CRON PROTOCOL: create crons for queued milestones if not already watching
+    if queued:
+        lines.append("")
+        lines.append("CRON PROTOCOL (mandatory for queued milestones):")
+        lines.append("  Each QUEUED milestone needs a CronCreate job (every 15 min) that:")
+        lines.append("  1. Checks completion-log.jsonl for this milestone_id")
+        lines.append(f"  2. If found: PATCH http://100.119.82.4:9000/api/northstar/{proj_id}/milestones/MX with status=pending_confirmation, then CronDelete this job")
+        lines.append("  3. If not found: continue monitoring")
+        for m in queued[:3]:
+            mid = m.get('id', '?')
+            text = m.get('text', '')[:50]
+            lines.append(f"  → Create cron for {mid}: '{text}'")
+        lines.append("  Use CronCreate tool now if these crons don't already exist.")
 
     msg = "\n".join(lines)
 
