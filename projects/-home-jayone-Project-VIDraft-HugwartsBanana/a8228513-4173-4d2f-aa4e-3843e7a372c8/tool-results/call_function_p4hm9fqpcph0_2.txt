@@ -1,0 +1,176 @@
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220000_fix_promo_code_credit_transactions.sql-43-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220000_fix_promo_code_credit_transactions.sql-44-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220000_fix_promo_code_credit_transactions.sql-45-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20260120220000_fix_promo_code_credit_transactions.sql:46:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220000_fix_promo_code_credit_transactions.sql-47-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220000_fix_promo_code_credit_transactions.sql-48-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220000_fix_promo_code_credit_transactions.sql-49-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031070000_revert_promo_code_fix.sql-37-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031070000_revert_promo_code_fix.sql-38-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031070000_revert_promo_code_fix.sql-39-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20251031070000_revert_promo_code_fix.sql:40:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031070000_revert_promo_code_fix.sql-41-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031070000_revert_promo_code_fix.sql-42-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031070000_revert_promo_code_fix.sql-43-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031120200_fix_promo_code_updated_at_original.sql-38-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031120200_fix_promo_code_updated_at_original.sql-39-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031120200_fix_promo_code_updated_at_original.sql-40-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20251031120200_fix_promo_code_updated_at_original.sql:41:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031120200_fix_promo_code_updated_at_original.sql-42-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031120200_fix_promo_code_updated_at_original.sql-43-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031120200_fix_promo_code_updated_at_original.sql-44-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-7-SELECT
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-8-  prc.referral_code,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-9-  prc.group_id,
+supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql:10:  prc.referral_type,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-11-  prc.description AS promo_description,
+supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql:12:  prc.credit_amount AS promo_credit,
+supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql:13:  prc.max_uses AS promo_max_uses,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-14-  prc.expires_at AS promo_expires_at,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-15-  prc.is_active AS promo_is_active,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-16-  COUNT(DISTINCT u.id) AS total_referred_users,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-37-GROUP BY
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-38-  prc.referral_code,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-39-  prc.group_id,
+supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql:40:  prc.referral_type,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-41-  prc.description,
+supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql:42:  prc.credit_amount,
+supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql:43:  prc.max_uses,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-44-  prc.expires_at,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-45-  prc.is_active,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260403000002_create_promo_conversion_stats_view.sql-46-  g.name,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-12-    credits INTEGER NOT NULL CHECK (credits > 0),
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-13-    valid_from TIMESTAMPTZ NOT NULL,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-14-    valid_until TIMESTAMPTZ NOT NULL,
+supabase/migrations/20251023000000_create_promo_codes_system.sql:15:    max_uses INTEGER DEFAULT NULL,  -- NULL = 무제한
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-16-    current_uses INTEGER DEFAULT 0 NOT NULL,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-17-    is_active BOOLEAN DEFAULT true NOT NULL,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-18-    description TEXT,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-21-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-22-    CONSTRAINT valid_date_range CHECK (valid_until > valid_from),
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-23-    CONSTRAINT non_negative_uses CHECK (current_uses >= 0),
+supabase/migrations/20251023000000_create_promo_codes_system.sql:24:    CONSTRAINT max_uses_check CHECK (max_uses IS NULL OR max_uses > 0)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-25-);
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-26-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-27--- 2. 프로모션 코드 사용 기록 (중복 방지)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-112-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-113-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-114-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20251023000000_create_promo_codes_system.sql:115:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-116-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-117-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-118-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-215-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-216-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-217-    -- 최대 사용 횟수 확인
+supabase/migrations/20251023000000_create_promo_codes_system.sql:218:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-219-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-220-            'valid', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-221-            'error', 'MAX_USES_REACHED'
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-269-            'code', code,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-270-            'credits', credits,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-271-            'total_uses', current_uses,
+supabase/migrations/20251023000000_create_promo_codes_system.sql:272:            'max_uses', max_uses,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-273-            'usage_rate', CASE
+supabase/migrations/20251023000000_create_promo_codes_system.sql:274:                WHEN max_uses IS NULL THEN NULL
+supabase/migrations/20251023000000_create_promo_codes_system.sql:275:                ELSE ROUND((current_uses * 100.0 / max_uses), 2)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-276-            END,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-277-            'total_credits_awarded', (
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-278-                SELECT COALESCE(SUM(credits_awarded), 0)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-321-COMMIT;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-322-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-323--- 테스트용 샘플 데이터
+supabase/migrations/20251023000000_create_promo_codes_system.sql:324:INSERT INTO public.promo_codes (code, credits, valid_from, valid_until, max_uses, description)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-325-VALUES
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-326-    ('HELLO1', 50, now(), now() + interval '30 days', 100, '신규 가입 환영 이벤트'),
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251023000000_create_promo_codes_system.sql-327-    ('HELLO2', 100, now(), now() + interval '7 days', 50, '주간 특별 프로모션'),
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220001_fix_promo_code_remove_updated_at.sql-42-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220001_fix_promo_code_remove_updated_at.sql-43-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220001_fix_promo_code_remove_updated_at.sql-44-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20260120220001_fix_promo_code_remove_updated_at.sql:45:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220001_fix_promo_code_remove_updated_at.sql-46-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220001_fix_promo_code_remove_updated_at.sql-47-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260120220001_fix_promo_code_remove_updated_at.sql-48-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031110000_fix_promo_code_remove_updated_at.sql-37-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031110000_fix_promo_code_remove_updated_at.sql-38-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031110000_fix_promo_code_remove_updated_at.sql-39-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20251031110000_fix_promo_code_remove_updated_at.sql:40:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031110000_fix_promo_code_remove_updated_at.sql-41-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031110000_fix_promo_code_remove_updated_at.sql-42-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031110000_fix_promo_code_remove_updated_at.sql-43-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031000000_fix_promo_code_credit_logs.sql-37-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031000000_fix_promo_code_credit_logs.sql-38-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031000000_fix_promo_code_credit_logs.sql-39-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20251031000000_fix_promo_code_credit_logs.sql:40:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031000000_fix_promo_code_credit_logs.sql-41-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031000000_fix_promo_code_credit_logs.sql-42-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031000000_fix_promo_code_credit_logs.sql-43-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260119000000_separate_promo_credits.sql-94-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260119000000_separate_promo_credits.sql-95-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260119000000_separate_promo_credits.sql-96-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20260119000000_separate_promo_credits.sql:97:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260119000000_separate_promo_credits.sql-98-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260119000000_separate_promo_credits.sql-99-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20260119000000_separate_promo_credits.sql-100-            'error', 'MAX_USES_REACHED',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-31-                is_active,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-32-                valid_from,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-33-                valid_until,
+supabase/migrations/20251031060000_debug_promo_codes.sql:34:                max_uses,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-35-                current_uses,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-36-                now() BETWEEN valid_from AND valid_until as is_time_valid
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-37-            INTO v_rm61up_details
+--
+supabase/migrations/20251031060000_debug_promo_codes.sql-44-            RAISE NOTICE '  Is Active: %', v_rm61up_details.is_active;
+supabase/migrations/20251031060000_debug_promo_codes.sql-45-            RAISE NOTICE '  Valid From: %', v_rm61up_details.valid_from;
+supabase/migrations/20251031060000_debug_promo_codes.sql-46-            RAISE NOTICE '  Valid Until: %', v_rm61up_details.valid_until;
+supabase/migrations/20251031060000_debug_promo_codes.sql:47:            RAISE NOTICE '  Max Uses: %', v_rm61up_details.max_uses;
+supabase/migrations/20251031060000_debug_promo_codes.sql-48-            RAISE NOTICE '  Current Uses: %', v_rm61up_details.current_uses;
+supabase/migrations/20251031060000_debug_promo_codes.sql-49-            RAISE NOTICE '  Is Time Valid: %', v_rm61up_details.is_time_valid;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-50-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-58-                    now(), v_rm61up_details.valid_from, v_rm61up_details.valid_until;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-59-            END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-60-
+supabase/migrations/20251031060000_debug_promo_codes.sql:61:            IF v_rm61up_details.max_uses IS NOT NULL AND v_rm61up_details.current_uses >= v_rm61up_details.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-62-                RAISE NOTICE '❌ Code has reached max uses';
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-63-            END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-64-        ELSE
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-68-        -- Show all codes
+supabase/migrations/20251031060000_debug_promo_codes.sql-69-        RAISE NOTICE 'All promo codes:';
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-70-        FOR v_rm61up_details IN
+supabase/migrations/20251031060000_debug_promo_codes.sql:71:            SELECT code, credits, is_active, valid_until, current_uses, max_uses
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-72-            FROM public.promo_codes
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-73-            ORDER BY created_at DESC
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-74-            LIMIT 10
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-79-                v_rm61up_details.is_active,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-80-                v_rm61up_details.valid_until,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-81-                v_rm61up_details.current_uses,
+supabase/migrations/20251031060000_debug_promo_codes.sql:82:                v_rm61up_details.max_uses;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-83-        END LOOP;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-84-    ELSE
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031060000_debug_promo_codes.sql-85-        RAISE NOTICE '❌ promo_codes table does NOT exist!';
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031090000_fix_promo_code_correct_table.sql-37-    END IF;
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031090000_fix_promo_code_correct_table.sql-38-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031090000_fix_promo_code_correct_table.sql-39-    -- 2. 최대 사용 횟수 확인
+supabase/migrations/20251031090000_fix_promo_code_correct_table.sql:40:    IF v_promo.max_uses IS NOT NULL AND v_promo.current_uses >= v_promo.max_uses THEN
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031090000_fix_promo_code_correct_table.sql-41-        RETURN jsonb_build_object(
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031090000_fix_promo_code_correct_table.sql-42-            'success', false,
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/migrations/20251031090000_fix_promo_code_correct_table.sql-43-            'error', 'MAX_USES_REACHED',

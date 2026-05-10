@@ -1,0 +1,489 @@
+# Entity Corpus Registry — external file (referenced by SKILL.md)
+# Each corpus = independent domain knowledge unit. New domain = new corpus block.
+
+# ─── Schema ───────────────────────────────────────────────────────────────────
+# name: {corpus_name}
+# primary_domain: demand_theory | go_to_market | product | research
+# related_domains: [...]          # cross-domain fallback (confidence=0.30)
+# layer: L1 (pure theory) | L2 (applied) | L3 (product-specific)
+# domain: "{description}"
+# trigger: ["{keywords}"]         # Corpus Router keyword detection
+# corpus_root: {absolute_path}
+# docs: {ID: filename}            # read_corpus(ID) -> Read(corpus_root + filename)
+# taxonomy_groups: {group: [doc_ids]}
+# core_theory: |                  # always injected into context
+# scope_gate: ["{condition}?"]    # all YES -> IN; any NO -> out_action
+# sycophancy_checks: {Q1: "...", ...}  # 7 recommended
+# gap_patterns: {name: "signal -> meaning"}  # 3-5 recommended
+# rwr_hints: {"surface_term": "taxonomy_term"}
+# product_docs: [doc_ids]         # optional: product-specific docs
+# status: draft | stable
+
+---
+# ─── corpus: wtp ──────────────────────────────────────────────────────────────
+name: wtp
+primary_domain: demand_theory
+related_domains: [pricing, product, sales, research]
+layer: L2
+domain: "VALUE GAP / WTP demand genesis / Career Mirror (identity-gap market)"
+trigger:
+  - WTP, VALUE GAP, L1-L5, L1, L2, L3, L4, L5, 갭, gap, Career Mirror, identity gap
+  - 수요, 지불 의향, 정체성, 빠짐, Social Amplifier, 커리어 미러, ICP, 레벨, 진단
+  - D(WTP), Gap_Intensity, Attainability, Ethical_Coefficient
+  - 돈을 낼
+corpus_root: /home/desk-1/Project/Ameva/docs/research/
+docs:
+  T1: 20260411-wtp-demand-genesis-theory.md
+  T2: 20260411-wtp-theory-v2.md                  # PRIMARY
+  T3: 20260411-wtp-meta-review.md
+  T4: 20260411-wtp-falsification-criteria.md
+  D1: 20260411-wtp-interview-protocol.md
+  D2: 20260411-wtp-jtbd-comparison.md
+  D3: 20260411-wtp-bbaijjim-audit-framework.md
+  D4: 20260411-wtp-korean-product-audit.md
+  P1: 20260411-wtp-career-mirror-mvp.md
+  P2: 20260411-wtp-career-mirror-pricing.md
+  P3: 20260411-wtp-activation-data-moat.md
+  P4: 20260411-wtp-product-design-patterns.md
+  P5: 20260411-wtp-regulatory-data-governance.md
+  S1: 20260411-wtp-seed-cohort-strategy.md
+  S2: 20260411-wtp-clg-community-strategy.md
+  S3: 20260411-wtp-pmf-metrics.md
+  S4: 20260411-wtp-decision-playbook.md
+  S5: 20260411-wtp-seed-investment-thesis.md
+  V1: 20260411-wtp-social-amplifier-experiment-v2.md
+  V2: 20260411-wtp-social-amplifier-experiment.md
+  V3: 20260411-wtp-one-pager.md
+taxonomy_groups:
+  이론: [T1, T2, T3, T4]
+  진단: [D1, D2, D3, D4]
+  제품: [P1, P2, P3, P4, P5]
+  전략: [S1, S2, S3, S4, S5]
+  검증: [V1, V2, V3]
+product_docs: [P1, P2, P3, P4, P5]
+core_theory: |
+  Gap_Intensity = Functional_Gap + Social_Position_Gap
+  D(WTP)_instantaneous = [Gap_Intensity x Attainability] x [Social_Amplifier]
+  D(WTP)_sustainable   = D(WTP)_instantaneous x Ethical_Coefficient
+  ICP = identity portability (NOT employment type) [T2]
+  L1: Social Position Gap -> L2: Commodity -> L3: Identity Delegation
+  L4: Meta-insight known -> L5: Meta-insight unknown + identity portable
+scope_gate:
+  - "고관여(high-involvement) 구매인가?"
+  - "정체성 인접(identity-adjacent) 결정인가?"
+  - "비독점 시장(경쟁 대안 존재)인가?"
+out_action: "JTBD 또는 Mental Accounting 프레임워크 제안"
+sycophancy_checks:
+  Q1: "enthusiasm!=WTP - 열정 신호를 지불 의향으로 처리하지 않았는가? [T4 HC-2]"
+  Q2: "ICP=identity portability - 고용 형태(직장인/프리랜서)로 분류하지 않았는가? [T2]"
+  Q3: "Social_Amplifier!=순수 곱셈 - v2 재정의(신호 전달 계수) 적용했는가? [T2]"
+  Q4: "빠짐(Ethical_Coefficient) - 제품이 갭 의존성을 키우지 않는가? [D3]"
+  Q5: "스코프 게이트 역추적 - 충동/commodity 구매에 일반화하지 않았는가? [T4]"
+  Q6: "실험 미실행 - V1/V2 실험 결과를 기정사실로 인용하지 않았는가? [V1]"
+  Q7: "v1->v2 - v1 공식(직선 Gap*WTP)을 v2 공식으로 교체했는가? [T2]"
+gap_patterns:
+  no_data_anchor: "수치 없는 단정 -> [UNCERTAIN] 가능성 높음"
+  no_agency: "1인칭 주어 없음 -> identity mobility 낮음 신호"
+  no_feedback_loop: "갭 인식 있으나 지속성 논리 없음 -> Ethical_Coefficient 체크"
+  no_social_amplifier: "타인 시선/비교 없음 -> Social_Amplifier = 0 가능성"
+  no_attainability: "달성 가능성 논의 없음 -> D(WTP) 낮음 예측"
+rwr_hints:
+  "돈 낼 의향": "WTP, D(WTP)_instantaneous"
+  "갭, 부족한 것": "Gap_Intensity, Functional/Social_Position_Gap"
+  "잘 나가는 사람": "Social_Amplifier, reference group"
+  "직장인, 프리랜서": "identity portability (NOT 고용 형태)"
+  "의존성, ��짐": "Ethical_Coefficient, D3 audit"
+status: stable
+
+---
+# ─── corpus: marketing_growth ───��─────────────────────────────────────────────
+name: marketing_growth
+primary_domain: go_to_market
+related_domains: [demand_theory, product, pricing]
+layer: L2
+domain: "Viral growth / K-factor / growth loops / user acquisition channels"
+trigger:
+  - viral, virality, k-factor, k factor, growth loop, viral loop, referral loop
+  - viral coefficient, user acquisition, growth channel, PLG, product-led growth
+  - CAC reduction, organic growth, loop velocity, cycle time
+  - 마케팅, 바이럴, 성장 루프, 사용자 획득, 채널, 획득, 리퍼럴
+corpus_root: /home/desk-1/Project/Ameva/docs/research/
+docs:
+  T1: 20260412-marketing-growth-theory.md
+  T4: 20260412-marketing-growth-falsification.md
+  D1: 20260412-marketing-growth-diagnostic.md
+  S1: 20260412-marketing-growth-loop-playbook.md
+taxonomy_groups:
+  이론: [T1, T4]
+  진단: [D1]
+  전략: [S1]
+core_theory: |
+  K-factor = invitations_per_user x invitation_conversion_rate.
+  K > 1.0 = theoretically self-sustaining; most operate at K=0.4-0.8.
+  Cycle time is the compounding multiplier. Activation rate is most predictive.
+  5 archetypes: viral/referral, PLG, content SEO, UGC/community, paid reinvestment.
+scope_gate:
+  - "Growth rate / referral / acquisition cost optimization인가?"
+  - "Loop design / viral coefficient diagnosis인가?"
+  - "PLG / freemium conversion / embedded virality인가?"
+out_action: "PLG/AARRR for non-viral; demand_theory for WTP/pricing; product for feature design"
+sycophancy_checks:
+  Q1: "K>1.0 achievable? Most products K=0.3-0.7. [T4 HC-1]"
+  Q2: "Viral = marketing tactic? No, product architecture. [T4 HC-4]"
+  Q3: "Optimizing K before activation? Activation first. [T4 HC-2]"
+  Q4: "Citing Slack/Facebook K-factors as targets? Outliers. [T4 HC-5]"
+  Q5: "Measuring by invitation volume not retained users? Trust erosion. [T4 HC-3]"
+gap_patterns:
+  loop_archetype_mismatch: "Non-collaborative product + PLG request -> incentivized referral"
+  k_factor_overreach: "K>1.0 target -> reframe to K=0.3-0.7 CAC reduction value"
+  activation_blind_spot: "Loop discussion without activation rate -> measurement gap"
+  trust_erosion_risk: "High-freq invite prompts -> anti-spam check"
+  vanity_viral_metrics: "High invites without retention -> redirect to 30-day retention"
+rwr_hints:
+  "go viral": "viral loop (K-factor, loop archetype, cycle time)"
+  "word of mouth": "referral loop / UGC loop / viral coefficient"
+  "growth hack": "loop mechanics / activation optimization"
+  "paid vs organic": "CAC structure / loop supplementation"
+  "referral program": "incentivized viral loop / two-sided incentive"
+  "채널 전략": "loop archetype selection / PLG vs incentivized vs content SEO"
+  "사용자 획득": "K-factor diagnostic / activation rate / loop velocity"
+status: stable
+
+---
+# ─── corpus: monetization ─────��───────────────────────────────────────────────
+name: monetization
+primary_domain: go_to_market
+related_domains: [demand_theory, product, marketing_growth]
+layer: L2
+domain: "SaaS / AI pricing models / monetization strategy / revenue model design"
+trigger:
+  - monetization, 수익화, pricing model, price model, saas pricing, revenue model
+  - usage-based, usage based, outcome-based, outcome based, freemium, flat-rate
+  - seat pricing, hybrid pricing, ltv cac, ltv:cac, gross margin
+  - 가격 모델, 가격 전략, 수익 모델, 과금, 수익, 마진, 유료화
+  - cogs, payback period, nrr, net revenue retention, value metric
+  - bill shock, enterprise pricing, 구독제, 요금제
+corpus_root: /home/desk-1/Project/Ameva/docs/research/
+docs:
+  T1: 20260412-monetization-theory.md
+  T4: 20260412-monetization-falsification.md
+  D1: 20260412-monetization-diagnostic.md
+  S1: 20260412-monetization-playbook.md
+taxonomy_groups:
+  이론: [T1, T4]
+  진단: [D1]
+  전략: [S1]
+core_theory: |
+  Models: flat-rate/seat, usage-based (UBP), outcome-based, hybrid.
+  67%+ SaaS >$10M ARR use hybrid/UBP. AI-native margin: 50-65% (vs 75-85% traditional).
+  Value metric = unit correlated with customer success AND vendor COGS.
+  LTV:CAC > 3 = healthy; > 5 = underpriced. Freemium needs K>0.3 + clear paywall.
+  UBP needs COGS floor (price >= 3x inference cost) + customer predictability.
+scope_gate:
+  - "Pricing/revenue model selection or design인가?"
+  - "Monetization mechanics (UBP, freemium, outcome-based, hybrid)인가?"
+  - "SaaS/AI unit economics (LTV, CAC, gross margin, NRR, COGS)인가?"
+out_action: "demand_theory for WTP; marketing_growth for acquisition; generic for feature design"
+sycophancy_checks:
+  Q1: "UBP default for AI? Needs COGS floor + predictability. [T4 HC-1]"
+  Q2: "80%+ gross margin for AI-native? Realistic: 50-65%. [T4 HC-3]"
+  Q3: "Freemium without viral loop? Charity tier risk. [T4 HC-5]"
+  Q4: "Copying competitor price without value metric check? [T4 HC-4]"
+  Q5: "Outcome-based without attribution? Contract failure. [T4 HC-6]"
+  Q6: "Revenue growth = model success? Check NRR + gross margin. [T4 HC-2]"
+gap_patterns:
+  no_cogs_check: "Pricing without COGS/margin data -> ask for inference cost first"
+  no_gtm_alignment: "Model without GTM motion -> PLG vs SLG determines model"
+  no_value_metric: "Pricing without value metric -> route to D1 selection step"
+  freemium_no_loop: "Freemium without viral loop mention -> charity_tier_risk"
+  ltv_cac_unknown: "Scaling without LTV:CAC data -> diagnostic required"
+rwr_hints:
+  "어떻게 돈을 받을까": "pricing model selection (D1 diagnostic)"
+  "얼마로 책정할까": "value metric + competitive pricing (D1 + T1)"
+  "무료 티어": "freemium design + viral loop prerequisite (S1)"
+  "구독 vs 종량제": "flat-rate vs usage-based comparison (T1 + D1)"
+  "AI 제품 마진": "AI COGS structure, inference cost floor (T1)"
+  "수익이 안 나요": "LTV:CAC + NRR + gross margin diagnostic (D1)"
+  "요금제 설계": "tier design + paywall moment (S1)"
+  "결과 기반 가격": "outcome-based + attribution requirements (T4)"
+status: stable
+
+---
+# ─── corpus: human_edge ───────────────────────────────────────────────────────
+name: human_edge
+primary_domain: demand_theory
+related_domains: [wtp, marketing_growth, monetization, product]
+layer: L1
+domain: "Human hardware tendencies / behavioral economics / evolutionary psychology primitives — WHY humans react the way they do (product-agnostic substrate under wtp/marketing/monetization)"
+trigger:
+  - human edge, human-edge, hardware, 하드웨어, 인간 본성, 인간 경향
+  - 희소성, scarcity, 한정, limited, waitlist, invite-only, FOMO
+  - 사회적 증명, social proof, 리뷰, UGC, bandwagon, peer, 또래
+  - 손실 회피, loss aversion, endowment, prospect theory, 빼앗김
+  - 앵커링, anchoring, 앵커, decoy, price anchor, 정가
+  - 상호성, reciprocity, 선물, 보답, 호의
+  - 일관성, commitment, consistency, foot in the door, 커밋
+  - 새로움, novelty, 도파민, dopamine, prediction error, 정보 갭, information gap
+  - 메타 인사이트, meta-insight, 나를 모르는 나, 블라인드 스팟, 성격 테스트, MBTI
+  - 지위, status, signaling, Veblen, luxury, 정체성 신호, 뱃지, tier
+  - 멍청한 부분, cognitive bias, 편향, heuristic, 휴리스틱
+  - System 1, System 2, 카너먼, Kahneman, Cialdini, 치알디니
+  - mental accounting, 심적 회계, pain of payment, 결제 고통
+  - IKEA effect, sunk cost, planning fallacy, default effect, status quo
+  - 떠먹여, spoon-feed, 1클릭, one-click, 프리셋, preset
+  - 다크패턴, dark pattern, ethical_coefficient, 빠짐, dependency
+  - 지갑 여는, spending pocket, 돈 쓰는, 돈 버리는
+corpus_root: /home/desk-1/Project/Entity/docs/research/
+docs:
+  T1: 20260416-human-edge-theory.md                 # PRIMARY — 9 primitives + user outline mapping + biases
+  T4: 20260416-human-edge-falsification.md          # 반증 기준 + 문화 경계 + 대체 설명 + WEIRD 편향
+  D1: 20260416-human-edge-diagnostic.md             # 13-문항 제품/랜딩페이지 감사 체크리스트
+  S1: 20260416-human-edge-playbook.md               # 9 primitives × AARRR matrix + 3 시나리오 블루프린트 + Kill Switch
+  V1: 20260416-human-edge-experiment.md             # Pain of Payment × Mental Accounting 2x2 factorial A/B (pre-registered)
+taxonomy_groups:
+  이론: [T1, T4]
+  진단: [D1]
+  전략: [S1]
+  검증: [V1]
+core_theory: |
+  2-system model: 95% 결정은 System 1 (빠름·감정·S1 하드웨어). 나머지 5%와 사후정당화가 System 2.
+  3 drives: S(Survival 손실회피 2.25x) + P(Position 지위·평판) + E(Energy 인지절약).
+  9 hardware primitives: Scarcity / Social Proof / Loss Aversion / Anchoring / Reciprocity
+     / Commitment / Novelty / Meta-Insight / Status Signaling.
+  Spending Pockets 4 conditions: Hedonic-Justified / Mental Accounting 분리 / Pain-of-Payment 최소 / Status-identity.
+  "빠짐"(dependency trap) = 단기 LTV↑ 장기 Ethical_Coefficient↓ — human-edge 악용의 부메랑.
+  human_edge = L1 hardware substrate → wtp = L2 identity-gap demand theory (D(WTP) multiplier 공급원).
+scope_gate:
+  - "소비자/사용자 System 1 반응이 유의미한 비중인 결정인가?"
+  - "측정/실험 가능한 레버인가? (철학적 담론 제외)"
+  - "마케팅/UX/제품 설계 또는 설득 전략과 직접 연결되는가?"
+out_action: "고관여 B2B 합의제 구매는 sales/MEDDIC 프레임; 조직/전략 구조는 strategy/gtm; 순수 이론 논의는 생략"
+sycophancy_checks:
+  Q1: "Cialdini 6을 그대로 재탕하지 않았는가? 2020s 메타분석은 권위↓, peer>authority 변동 반영했는가? [T1 HC-1]"
+  Q2: "단일 실험(잔디간판/호텔수건/팁)을 일반법칙으로 포장하지 않았는가? replication + 문화 의존성 표시? [T1 HC-2]"
+  Q3: "손실회피 2.25x를 한국 실거래에 직접 이식? 실거래 유효 배율 1.4-1.8x 보정 했는가? [T1 HC-3]"
+  Q4: "'인간은 비합리적'만 강조하지 않았는가? System 2 최종결재 경로 표시? [T1 HC-4]"
+  Q5: "다크패턴과 합법적 설득 경계 구분했는가? 2024 EU DSA + KR 소비자법 리스크 표시? [T1 HC-5]"
+  Q6: "문화 보정 했는가? 개인주의 vs 집단주의 반전 사례 표시? [T1 HC-6]"
+  Q7: "'빠짐' 장기 리스크(Ethical_Coefficient) 표시 없이 레버 추천하지 않았는가? [T1 HC-7]"
+gap_patterns:
+  no_s1_trigger: "제품 설명 전부 기능 스펙 → System 2만 자극, 95% 경로 놓침"
+  no_scarcity_or_status: "희소성/지위 신호 제로 → 구매 긴급성 낮음, 전환률 천장 낮음"
+  no_social_proof: "리뷰/사용자수/UGC 전무 → E 레버 부재, 첫 구매 허들 증가"
+  dark_pattern_heavy: "환불장벽/강제자동갱신/강요 popup → 단기 수치↑ 장기 Ethical_Coefficient↓"
+  novelty_fatigue: "주 단위 대규모 업데이트 → 인지 과부하, 의사결정 피로 축적"
+  status_misread: "공개 과시 레버를 '조용한 럭셔리' 층에 적용 → 세그먼트 오인식"
+  pain_of_payment_high: "결제 단계 많음 / 현금·송금 기반 → 전환률 구조적 제한"
+rwr_hints:
+  "사람 심리": "human-edge 9 primitives"
+  "왜 지갑을 여는가": "Spending Pockets 4 conditions (3.2)"
+  "왜 안 사는가": "9 primitives 역진단 + S1 trigger 점검"
+  "전환율 안 올라요": "no_s1_trigger + pain_of_payment + no_social_proof 진단"
+  "바이럴 안 터져요": "Social Proof + Novelty + Status 3축 교차 진단"
+  "떠먹여주기": "Spoon-Feeding (3.3) — 1클릭 거리, 프리셋, 자동 추천"
+  "빠짐": "Ethical_Coefficient × dependency_trap [cross: wtp.D3]"
+  "다크패턴": "HC-5 규제 리스크 + 장기 Ethical_Coefficient 체크"
+  "새로움": "Novelty (2.7) + Meta-Insight (2.8) 결합"
+  "멍청한 선택": "System 1 / 11 cognitive biases (3.4)"
+  "왜 저 사람은 저걸 살까": "Status Signaling (2.9) + Mental Accounting 진단"
+  "카너먼": "System 1/2 + Loss Aversion + Anchoring (T1 core)"
+  "치알디니": "6 principles 매핑 + 2020s 업데이트 HC-1"
+status: draft
+
+---
+# ─── corpus: competitive_intelligence ─────────────────────────────────────────
+# AUTO-GENERATED by Auto-Corpus Builder 2026-05-02 | query: "competitive intelligence B2B SaaS"
+name: competitive_intelligence
+primary_domain: research
+related_domains: [go_to_market, demand_theory, product]
+layer: L2
+domain: "CI frameworks / win-loss analysis / competitive positioning for B2B SaaS"
+trigger:
+  - competitive intelligence, CI program, win-loss, win loss, battlecard, battle card
+  - competitor analysis, competitive analysis, competitive research, competitive landscape
+  - competitive positioning, competitive strategy, competitive enablement
+  - win rate, loss reason, churn intelligence, deal loss
+  - klue, crayon, competitive monitoring, CI stack
+  - 경쟁 분석, 경쟁 인텔리전스, 경쟁사 분석, 배틀카드, 승패 분석
+corpus_root: /home/desk-1/.claude/skills/entity/corpora/competitive_intelligence/
+docs:
+  T1: 20260502-ci-theory.md
+  T4: 20260502-ci-falsification.md
+  D1: 20260502-ci-diagnostic.md
+  S1: 20260502-ci-playbook.md
+  S2: 20260502-ci-win-loss-deep.md
+taxonomy_groups:
+  이론: [T1, T4]
+  진단: [D1]
+  전략: [S1, S2]
+core_theory: |
+  CI_Output_Quality = Signal_Collection × Analysis_Framework × Activation_Layer
+  Win_Rate_Lift = f(External_Buyer_Interviews, Battlecard_Adoption, CI_Cadence) → +15-50%
+  Root_Cause_Bias: 85% CRM loss data is wrong → external buyer interview is ground truth
+  Maturity_Stages: Starter (<$1M, <$5k) → Growth ($1-10M, $10-25k) → Enterprise (>$10M, $50k+)
+  Activation_Formula: Battlecard_Effectiveness = Recency × Specificity × Sales_Adoption_Rate
+  3_Layer_Stack: Collect (signals) → Analyze (frameworks) → Activate (delivery)
+scope_gate:
+  - "B2B context (structured procurement, ≥1 stakeholder)?"
+  - "Goal is competitive positioning or deal-level sales enablement?"
+  - "≥1 active competitor or substitute exists in market?"
+out_action: "B2C: consumer intelligence / social listening frameworks. No competitors: category creation playbook. Customer discovery: JTBD framework."
+sycophancy_checks:
+  Q1: "more tools = better CI? No — strategy first, tool stack second. Maturity-matched investment required [T4 HC-1]"
+  Q2: "CRM loss data = ground truth? No — 85% error rate. External interviews required [T4 HC-2]"
+  Q3: "CI = one person's job? No — cross-functional program (PMM + Sales + Product + CS) [T4 HC-3]"
+  Q4: "real-time monitoring = priority for all stages? No — Enterprise tier only; Starter/Growth: quarterly [T4 HC-4]"
+  Q5: "feature lists = CI? No — positioning/ICP changes are the real signal [T4 HC-5]"
+  Q6: "annual audit = sufficient? No — monthly battlecard refresh + quarterly positioning audit minimum [T4 HC-6]"
+  Q7: "AI CI tools replace buyer interviews? No — AI handles collection, humans handle win-loss ground truth [T4 HC-7]"
+gap_patterns:
+  no_win_loss_program: "win/loss discussed without external buyer interviews → 85% error rate risk"
+  tool_before_strategy: "CI tool selection before workflow design → stacked tools with no ROI"
+  feature_list_as_ci: "competitor feature matrix as primary output → positioning/ICP shifts missed"
+  single_owner: "CI program with single owner → cross-functional blind spots; CS/Sales signals lost"
+  static_battlecards: "battlecards mentioned without update cadence → stale at deal time"
+rwr_hints:
+  "why are we losing deals": "win-loss analysis, external buyer interview, loss reason taxonomy"
+  "competitor is winning": "battlecard, competitive positioning, CI program"
+  "competitive intelligence": "CI Stack (Collect→Analyze→Activate), maturity stage"
+  "win rate": "win-loss analysis, battlecard adoption rate, CI cadence"
+  "battle card": "battlecard (sales activation layer of CI)"
+  "why did we lose": "external buyer interview, not CRM data (85% error rate)"
+status: stable
+
+---
+# ─── corpus: ei_survival ──────────────────────────────────────────────────────
+name: ei_survival
+primary_domain: product
+related_domains: [research, marketing_growth, wtp]
+layer: L2
+domain: "Cognitive sovereignty tools for humans in sustained contact with External Intelligence (AI)"
+trigger:
+  - EI, external intelligence, cognitive sovereignty, survival tool, survival tools
+  - scaffolded friction, cognitive debt, epistemic sovereignty, cognitive agency surrender
+  - cognitive offloading, co-evolution, AI contact, cognitive atrophy, cognitive resilience
+  - deliberate practice, AI-free, System 2, automation bias, zero-friction trap
+  - Arrival analogy, alien intelligence, heptapod, cognitive fingerprint, divergence score
+  - 인지 주권, 외계지성, 생존 도구, 인지 오염, 인지 부채, 인지 탄력성
+  - 인지 오프로딩, 인지 확장, 인지 위축, 인지 주체성
+corpus_root: /home/desk-1/Project/EI/docs/research/
+docs:
+  T1: ei-cognitive-agency-surrender-theory.md
+  T2: 20260429-ai-nonhuman-cognition-human-learning.md
+  T3: 20260429-ai-as-alien-intelligence-arrival-analogy.md
+  D1: ei-tool-design-patterns.md
+  D2: 20260429-ai-nonhuman-cognition-empirical-specialized.md
+  D3: 20260429-ai-nonhuman-cognition-experimental-protocols.md
+taxonomy_groups:
+  이론: [T1, T2, T3]
+  설계: [D1, D2, D3]
+product_docs: [D1]
+core_theory: |
+  Epistemic_Sovereignty = f(AI_dependency, Cognitive_Friction)
+  Target: Synergistic Synthesis quadrant = high AI dependency + high scaffolded friction
+  Risk: high AI_dependency + low Cognitive_Friction → Cognitive Agency Surrender
+  Mechanism: Scaffolded_Friction = structured divergence injection → System 2 awakening
+  Tool loop: AUDIT → FRICTION → PRACTICE → MONITOR → DIVERGE → repeat
+  Arrival frame: mastery of alien contact (Louise model) vs. passive restructuring (surrender model)
+scope_gate:
+  - "Is the query about human cognitive agency in AI-mediated environments?"
+  - "Is the context about tool design, individual practice, or EI product strategy?"
+out_action: "Route to wtp (if demand/WTP question) or marketing_growth (if acquisition question)"
+sycophancy_checks:
+  Q1: "anti-AI framing — are survival tools positioned as rejecting AI rather than intentional co-evolution?"
+  Q2: "friction = bad UX — is scaffolded friction being conflated with poor usability (extraneous friction)?"
+  Q3: "all offloading is bad — cognitive debt framing must not condemn retrieval-type offloads (low risk)"
+  Q4: "divergence always good — some convergence with AI output = legitimate learning, not monoculture"
+  Q5: "output quality proxy — product quality can rise while cognitive capacity falls; measure effort not outcomes"
+  Q6: "annual measurement — expansion/atrophy requires quarterly cadence minimum; annual is too slow"
+  Q7: "Class 1 sufficient — ESI alone is not the product; the loop (all 5 classes) creates retention"
+gap_patterns:
+  measurement_gap: "tool described without metric → unusable signal, no feedback loop"
+  anti_ai_drift: "survival framing becomes rejection framing → loses the intentional co-evolution positioning"
+  friction_conflation: "scaffolded friction described as reducing AI use → wrong mechanism (it's about System 2 engagement)"
+  monoculture_underplay: "homogenization risk framed as stylistic → misses civilizational-scale cognitive diversity stakes"
+  loop_fragmentation: "5 classes described as independent features → misses that the loop is the retention engine"
+rwr_hints:
+  "survival tool": "EI survival tool class (1–5), intentional co-evolution infrastructure"
+  "cognitive debt": "offload audit (Class 2), weighted by cognitive type (judgment > reasoning > generation > retrieval)"
+  "friction": "scaffolded cognitive friction (T1 §3) — germane load, NOT extraneous usability friction"
+  "AI-free": "deliberate practice engine (Class 3), CR-5 cognitive resilience framework"
+  "fingerprint": "cognitive fingerprint / divergence tracker (Class 4), semantic distance from AI baseline"
+  "expanding vs atrophying": "expansion/atrophy monitor (Class 5), quarterly baseline test"
+  "Louise": "Arrival analogy — mastery of alien contact model, intentional co-evolution"
+  "zero-friction": "zero-friction trap (T1 §2) — commercial HCI dogma that causes agency surrender"
+status: draft
+
+---
+# ─── corpus: driller ──────────────────────────────────────────────────────────
+name: driller
+primary_domain: go_to_market
+related_domains: [monetization, marketing_growth, demand_theory]
+layer: L3
+domain: "AI-tech monetization drill-down: vertical/persona/use-case → value metric → pricing model; outcome attributability latency; PLG field analysis; COGS floor by vertical"
+trigger:
+  - driller, drill down, drill-down, vertical selection, industry selection
+  - outcome attributability, attributability latency, attribution latency
+  - AI vertical, AI industry, AI persona, AI use case, value metric selection
+  - PLG by vertical, PLG field, PLG viable, PLG precondition
+  - COGS floor, inference cost, AI margin, AI profitability
+  - data flywheel, flywheel moat, usage signal, cross-user
+  - legal AI, healthcare AI, developer tools AI, sales AI, fintech AI
+  - open-core, free tier strategy, cloud vault, team paywall
+  - kill criteria, exit vertical, WTP ceiling
+corpus_root: /home/desk-1/Project/Driller/docs/research/
+docs:
+  T1: 20260507-driller-theory.md
+  T4: 20260507-driller-falsification.md
+  D1: 20260507-driller-diagnostic.md
+  S1: 20260507-driller-playbook.md
+taxonomy_groups:
+  이론: [T1, T4]
+  진단: [D1]
+  전략: [S1]
+core_theory: |
+  AI_monetization_fitness = f(outcome_attributability, decision_frequency, COGS/query_ratio)
+  5-layer drill: Industry → Persona → Use Case → Value Metric → Pricing Model
+  Outcome Attributability Latency = most predictive variable for pricing model selection.
+    Short latency (legal/dev/sales) → outcome-based viable
+    Long latency (marketing/healthcare outcomes) → UBP or seat proxy only
+  PLG preconditions: unified buyer/user identity AND sub-$500 ACV (both required)
+  COGS floor: price >= 3x (inference + pipeline + overhead) regardless of model
+  Data flywheel moat: algorithm is NOT the moat; accumulated usage signal is
+  Kill criterion: WTP_ceiling < COGS_floor × 3 → exit vertical
+scope_gate:
+  - "AI-native product (inference cost is real COGS component)?"
+  - "B2B or prosumer context (not consumer impulse)?"
+  - "Quantifiable AI output (measurable value unit exists)?"
+  out_action: "Standard SaaS → monetization corpus (L2). Viral growth → marketing_growth. Demand genesis → wtp."
+sycophancy_checks:
+  Q1: "Industry selected before attribution check? Run Step 1 (latency) first — industry ≠ pricing model. [T4 HC-1]"
+  Q2: "PLG assumed for enterprise devs? Enterprise fails sub-$500 precondition — SLG required. [T4 HC-2]"
+  Q3: "High WTP = high margin assumed? COGS floor still applies — legal high WTP + high inference = not automatically profitable. [T4 HC-3]"
+  Q4: "Outcome-based for healthcare? Liability creates structural barrier — long latency forces seat-based. [T4 HC-4]"
+  Q5: "Dev tools consumer pricing below $60? COGS check: 200-400 calls/day × $0.003-0.01 → $18-60 COGS floor. [T1 §7]"
+  Q6: "Data flywheel from per-user data? Per-user flywheel ≠ moat — cloud aggregation required for cross-user flywheel. [T1 §8]"
+gap_patterns:
+  industry_before_attribution: "Industry named without attribution latency check → pricing model selection blocked"
+  plg_without_preconditions: "PLG motion proposed without checking buyer/user identity AND ACV < $500"
+  cogs_blind_dev_tools: "Dev tools pricing set without COGS math (200-400 calls/day inference check)"
+  flywheel_without_cloud: "Data moat claimed without cloud aggregation layer design"
+  high_wtp_no_gtm: "Legal/finance targeted without enterprise sales motion (SLG) plan"
+rwr_hints:
+  "which industry should I target": "Layer 1 vertical selection + diagnostic Step 1 (attribution latency)"
+  "what pricing model": "Outcome Attributability Latency → pricing model decision tree (T1 §3)"
+  "should we do PLG": "PLG precondition check (D1 §3): unified buyer/user + sub-$500 ACV"
+  "how to monetize AI": "5-layer drill-down (T1 §2) → start with use case → value metric → COGS floor"
+  "data moat": "data flywheel: per-user vs cross-user (T1 §8) — cloud aggregation required"
+  "dev tools pricing": "COGS floor for high-frequency inference (T1 §7) — check $18-60/user/month"
+  "legal AI": "Short attribution latency → outcome-based viable, SLG required, COGS pressure LOW (T1 §4)"
+  "kill criteria": "WTP < COGS × 3 → exit (T4 §3)"
+status: stable
+
+---
+# ─── New domain placeholder ───────────────────────────────────────────────────
+# Copy schema above, fill required fields, set status: draft
+# Required: name, domain, trigger, corpus_root, docs, taxonomy_groups,
+#           core_theory, scope_gate, sycophancy_checks, gap_patterns, rwr_hints
+# Optional: product_docs, related_domains
+# Promotion: draft -> human review -> stable

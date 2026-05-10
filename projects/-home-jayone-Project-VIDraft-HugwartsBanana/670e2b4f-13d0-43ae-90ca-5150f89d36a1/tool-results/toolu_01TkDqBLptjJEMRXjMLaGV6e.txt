@@ -1,0 +1,252 @@
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-4-import {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-5-  DollarSign, Users, TrendingUp, RefreshCw, AlertTriangle,
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-6-  ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown,
+src/components/admin/WTPScorePanel.tsx:7:  CreditCard, Calendar, Repeat, Zap, UserX, BatteryLow
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-8-} from 'lucide-react'
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-9-import { useTranslation } from '@/lib/i18n/useTranslation'
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-10-import { useApp } from '@/contexts/AppContext'
+--
+src/components/admin/WTPScorePanel.tsx-27-    lastPaymentAt: string | null
+src/components/admin/WTPScorePanel.tsx-28-    avgPurchaseInterval: number | null
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-29-  }
+src/components/admin/WTPScorePanel.tsx:30:  tier: string
+src/components/admin/WTPScorePanel.tsx-31-  isAtRisk: boolean
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-32-}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-33-
+--
+src/components/admin/WTPScorePanel.tsx-39-  avgCountScore: number
+src/components/admin/WTPScorePanel.tsx-40-  avgRecencyScore: number
+src/components/admin/WTPScorePanel.tsx-41-  avgFrequencyScore: number
+src/components/admin/WTPScorePanel.tsx:42:  tierDistribution: {
+src/components/admin/WTPScorePanel.tsx-43-    high: number
+src/components/admin/WTPScorePanel.tsx-44-    medium: number
+src/components/admin/WTPScorePanel.tsx-45-    low: number
+--
+src/components/admin/WTPScorePanel.tsx-55-  totalNonPayers: number
+src/components/admin/WTPScorePanel.tsx-56-  activeNonPayers: number
+src/components/admin/WTPScorePanel.tsx-57-  usedProductNonPayers: number
+src/components/admin/WTPScorePanel.tsx:58:  topUsers: Array<{
+src/components/admin/WTPScorePanel.tsx-59-    id: string
+src/components/admin/WTPScorePanel.tsx-60-    email: string
+src/components/admin/WTPScorePanel.tsx-61-    username: string | null
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-77-  const [loading, setLoading] = useState(true)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-78-  const [refreshing, setRefreshing] = useState(false)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-79-  const [showCriteria, setShowCriteria] = useState(false)
+src/components/admin/WTPScorePanel.tsx:80:  const [stats, setStats] = useState<WTPScoreStats | null>(null)
+src/components/admin/WTPScorePanel.tsx:81:  const [users, setUsers] = useState<WTPUser[]>([])
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-82-  const [totalCount, setTotalCount] = useState(0)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-83-  const [currentPage, setCurrentPage] = useState(1)
+src/components/admin/WTPScorePanel.tsx:84:  const [sortField, setSortField] = useState<string>('wtpScore')
+src/components/admin/WTPScorePanel.tsx:85:  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-86-  const [minScoreFilter, setMinScoreFilter] = useState(0)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-87-  const [maxScoreFilter, setMaxScoreFilter] = useState(999)
+src/components/admin/WTPScorePanel.tsx:88:  const [nonPayerStats, setNonPayerStats] = useState<NonPayerStats | null>(null)
+src/components/admin/WTPScorePanel.tsx:89:  const [creditExhaustionStats, setCreditExhaustionStats] = useState<CreditExhaustionStats | null>(null)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-90-  const { addNotification } = useApp()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-91-  const { t, lang } = useTranslation()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-92-  const pageSize = 20
+--
+src/components/admin/WTPScorePanel.tsx-208-        case 'frequencyScore': aVal = a.breakdown.frequencyScore; bVal = b.breakdown.frequencyScore; break
+src/components/admin/WTPScorePanel.tsx-209-        case 'totalAmount': aVal = a.breakdown.totalAmount; bVal = b.breakdown.totalAmount; break
+src/components/admin/WTPScorePanel.tsx-210-        case 'paymentCount': aVal = a.breakdown.paymentCount; bVal = b.breakdown.paymentCount; break
+src/components/admin/WTPScorePanel.tsx:211:        case 'username': aVal = a.username.toLowerCase(); bVal = b.username.toLowerCase(); break
+src/components/admin/WTPScorePanel.tsx:212:        case 'tier': {
+src/components/admin/WTPScorePanel.tsx:213:          const tierOrder = { 'High': 3, 'Medium': 2, 'Low': 1 }
+src/components/admin/WTPScorePanel.tsx:214:          aVal = tierOrder[a.tier as keyof typeof tierOrder] || 0
+src/components/admin/WTPScorePanel.tsx:215:          bVal = tierOrder[b.tier as keyof typeof tierOrder] || 0
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-216-          break
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-217-        }
+src/components/admin/WTPScorePanel.tsx-218-        default: aVal = a.wtpScore; bVal = b.wtpScore
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-226-  }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-227-
+src/components/admin/WTPScorePanel.tsx-228-  const SortIcon = ({ field }: { field: string }) => {
+src/components/admin/WTPScorePanel.tsx:229:    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-230-    return sortOrder === 'asc'
+src/components/admin/WTPScorePanel.tsx:231:      ? <ArrowUp className="h-3 w-3 ml-1 text-blue-600" />
+src/components/admin/WTPScorePanel.tsx:232:      : <ArrowDown className="h-3 w-3 ml-1 text-blue-600" />
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-233-  }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-234-
+src/components/admin/WTPScorePanel.tsx:235:  const getTierColor = (tier: string) => {
+src/components/admin/WTPScorePanel.tsx:236:    switch (tier) {
+src/components/admin/WTPScorePanel.tsx:237:      case 'High': return 'text-green-700 bg-green-50 border-green-200'
+src/components/admin/WTPScorePanel.tsx:238:      case 'Medium': return 'text-yellow-700 bg-yellow-50 border-yellow-200'
+src/components/admin/WTPScorePanel.tsx:239:      case 'Low': return 'text-gray-600 bg-gray-50 border-gray-200'
+src/components/admin/WTPScorePanel.tsx-240-      default: return 'text-gray-600 bg-gray-50 border-gray-200'
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-241-    }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-242-  }
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-252-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-253-  if (loading && !stats) {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-254-    return (
+src/components/admin/WTPScorePanel.tsx:255:      <div className="space-y-4">
+src/components/admin/WTPScorePanel.tsx:256:        <h2 className="text-2xl font-bold text-gray-800">
+src/components/admin/WTPScorePanel.tsx-257-          {lang === 'ko' ? 'WTP 스코어 분석' : 'WTP Score Analysis'}
+src/components/admin/WTPScorePanel.tsx:258:        </h2>
+src/components/admin/WTPScorePanel.tsx:259:        <div className="bg-white rounded-2xl p-8 text-center">
+src/components/admin/WTPScorePanel.tsx:260:          <div className="animate-pulse text-gray-500">{lang === 'ko' ? '로딩 중...' : 'Loading...'}</div>
+src/components/admin/WTPScorePanel.tsx:261:        </div>
+src/components/admin/WTPScorePanel.tsx:262:      </div>
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-263-    )
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-264-  }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-265-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-266-  const sortedUsers = getSortedUsers()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-267-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-268-  return (
+src/components/admin/WTPScorePanel.tsx:269:    <div className="space-y-4">
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-270-      {/* Header */}
+src/components/admin/WTPScorePanel.tsx:271:      <div className="flex items-center justify-between">
+src/components/admin/WTPScorePanel.tsx:272:        <h2 className="text-2xl font-bold text-gray-800">
+src/components/admin/WTPScorePanel.tsx-273-          {lang === 'ko' ? 'WTP 스코어 분석' : 'WTP Score Analysis'}
+src/components/admin/WTPScorePanel.tsx:274:        </h2>
+src/components/admin/WTPScorePanel.tsx:275:        <div className="flex items-center gap-2">
+src/components/admin/WTPScorePanel.tsx:276:          <button
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-277-            onClick={() => setShowCriteria(!showCriteria)}
+src/components/admin/WTPScorePanel.tsx-278-            className="flex items-center gap-2 px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg transition-colors text-sm font-medium"
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-279-          >
+src/components/admin/WTPScorePanel.tsx:280:            <TrendingUp className="h-4 w-4" />
+src/components/admin/WTPScorePanel.tsx-281-            {lang === 'ko' ? '스코어 기준 보기' : 'View Criteria'}
+src/components/admin/WTPScorePanel.tsx:282:            {showCriteria ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+src/components/admin/WTPScorePanel.tsx:283:          </button>
+src/components/admin/WTPScorePanel.tsx:284:          <button
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-285-            onClick={handleRefresh}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-286-            disabled={refreshing}
+src/components/admin/WTPScorePanel.tsx-287-            className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-288-          >
+src/components/admin/WTPScorePanel.tsx:289:            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-290-            {refreshing
+src/components/admin/WTPScorePanel.tsx-291-              ? (lang === 'ko' ? '갱신 중...' : 'Refreshing...')
+src/components/admin/WTPScorePanel.tsx-292-              : (lang === 'ko' ? '스코어 갱신' : 'Refresh Scores')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-293-            }
+src/components/admin/WTPScorePanel.tsx:294:          </button>
+src/components/admin/WTPScorePanel.tsx:295:        </div>
+src/components/admin/WTPScorePanel.tsx:296:      </div>
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-297-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-298-      {/* Score Criteria */}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-299-      {showCriteria && (
+src/components/admin/WTPScorePanel.tsx:300:        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border-2 border-purple-200 shadow-md">
+src/components/admin/WTPScorePanel.tsx:301:          <h3 className="font-bold text-lg text-purple-900 mb-4 flex items-center gap-2">
+src/components/admin/WTPScorePanel.tsx:302:            <TrendingUp className="h-5 w-5" />
+src/components/admin/WTPScorePanel.tsx-303-            {lang === 'ko' ? 'WTP 스코어 기준 (0-70점)' : 'WTP Score Criteria (0-70 points)'}
+src/components/admin/WTPScorePanel.tsx:304:          </h3>
+src/components/admin/WTPScorePanel.tsx:305:          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+src/components/admin/WTPScorePanel.tsx:306:            <div className="bg-white rounded-xl p-4 border border-purple-200">
+src/components/admin/WTPScorePanel.tsx:307:              <div className="flex items-center gap-2 mb-2">
+src/components/admin/WTPScorePanel.tsx:308:                <DollarSign className="h-4 w-4 text-green-600" />
+src/components/admin/WTPScorePanel.tsx:309:                <h4 className="font-semibold text-sm text-gray-800">
+src/components/admin/WTPScorePanel.tsx-310-                  {lang === 'ko' ? '결제 금액' : 'Payment Amount'}
+src/components/admin/WTPScorePanel.tsx:311:                </h4>
+src/components/admin/WTPScorePanel.tsx:312:              </div>
+src/components/admin/WTPScorePanel.tsx:313:              <div className="text-2xl font-bold text-green-600 mb-1">30점</div>
+src/components/admin/WTPScorePanel.tsx:314:              <div className="text-xs text-gray-500">
+src/components/admin/WTPScorePanel.tsx-315-                {lang === 'ko' ? '1만원 = 1점 (max 30점)' : '1pt per \\10K (max 30pt)'}
+src/components/admin/WTPScorePanel.tsx:316:              </div>
+src/components/admin/WTPScorePanel.tsx:317:            </div>
+src/components/admin/WTPScorePanel.tsx:318:            <div className="bg-white rounded-xl p-4 border border-purple-200">
+src/components/admin/WTPScorePanel.tsx:319:              <div className="flex items-center gap-2 mb-2">
+src/components/admin/WTPScorePanel.tsx:320:                <Repeat className="h-4 w-4 text-blue-600" />
+src/components/admin/WTPScorePanel.tsx:321:                <h4 className="font-semibold text-sm text-gray-800">
+src/components/admin/WTPScorePanel.tsx-322-                  {lang === 'ko' ? '결제 횟수' : 'Payment Count'}
+src/components/admin/WTPScorePanel.tsx:323:                </h4>
+src/components/admin/WTPScorePanel.tsx:324:              </div>
+src/components/admin/WTPScorePanel.tsx:325:              <div className="text-2xl font-bold text-blue-600 mb-1">20점</div>
+src/components/admin/WTPScorePanel.tsx:326:              <div className="text-xs text-gray-500">
+src/components/admin/WTPScorePanel.tsx-327-                {lang === 'ko' ? '5회 = 5점 (max 20점)' : '5 payments = 5pt (max 20pt)'}
+src/components/admin/WTPScorePanel.tsx:328:              </div>
+src/components/admin/WTPScorePanel.tsx:329:            </div>
+src/components/admin/WTPScorePanel.tsx:330:            <div className="bg-white rounded-xl p-4 border border-purple-200">
+src/components/admin/WTPScorePanel.tsx:331:              <div className="flex items-center gap-2 mb-2">
+src/components/admin/WTPScorePanel.tsx:332:                <Calendar className="h-4 w-4 text-orange-600" />
+src/components/admin/WTPScorePanel.tsx:333:                <h4 className="font-semibold text-sm text-gray-800">
+src/components/admin/WTPScorePanel.tsx-334-                  {lang === 'ko' ? '결제 최근성' : 'Recency'}
+src/components/admin/WTPScorePanel.tsx:335:                </h4>
+src/components/admin/WTPScorePanel.tsx:336:              </div>
+src/components/admin/WTPScorePanel.tsx:337:              <div className="text-2xl font-bold text-orange-600 mb-1">10점</div>
+src/components/admin/WTPScorePanel.tsx:338:              <div className="text-xs text-gray-500">
+src/components/admin/WTPScorePanel.tsx:339:                {lang === 'ko' ? '30일이내 10점, 60일 5점' : '10pt <30d, 5pt <60d'}
+src/components/admin/WTPScorePanel.tsx:340:              </div>
+src/components/admin/WTPScorePanel.tsx:341:            </div>
+src/components/admin/WTPScorePanel.tsx:342:            <div className="bg-white rounded-xl p-4 border border-purple-200">
+src/components/admin/WTPScorePanel.tsx:343:              <div className="flex items-center gap-2 mb-2">
+src/components/admin/WTPScorePanel.tsx:344:                <Zap className="h-4 w-4 text-purple-600" />
+src/components/admin/WTPScorePanel.tsx:345:                <h4 className="font-semibold text-sm text-gray-800">
+src/components/admin/WTPScorePanel.tsx-346-                  {lang === 'ko' ? '결제 주기' : 'Frequency'}
+src/components/admin/WTPScorePanel.tsx:347:                </h4>
+src/components/admin/WTPScorePanel.tsx:348:              </div>
+src/components/admin/WTPScorePanel.tsx:349:              <div className="text-2xl font-bold text-purple-600 mb-1">10점</div>
+src/components/admin/WTPScorePanel.tsx:350:              <div className="text-xs text-gray-500">
+src/components/admin/WTPScorePanel.tsx:351:                {lang === 'ko' ? '평균 14일이내 10점' : '10pt if avg <=14 days'}
+src/components/admin/WTPScorePanel.tsx:352:              </div>
+src/components/admin/WTPScorePanel.tsx:353:            </div>
+src/components/admin/WTPScorePanel.tsx:354:          </div>
+src/components/admin/WTPScorePanel.tsx:355:          <div className="mt-4 pt-4 border-t border-purple-200">
+src/components/admin/WTPScorePanel.tsx:356:            <h4 className="font-semibold text-sm text-purple-900 mb-3">
+src/components/admin/WTPScorePanel.tsx-357-              {lang === 'ko' ? 'Tier 등급' : 'Tier Thresholds'}
+src/components/admin/WTPScorePanel.tsx:358:            </h4>
+src/components/admin/WTPScorePanel.tsx:359:            <div className="flex flex-wrap gap-3">
+src/components/admin/WTPScorePanel.tsx:360:              <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-300 rounded-lg">
+src/components/admin/WTPScorePanel.tsx:361:                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+src/components/admin/WTPScorePanel.tsx:362:                <span className="text-sm font-semibold text-green-700">High WTP: 50+</span>
+src/components/admin/WTPScorePanel.tsx:363:              </div>
+src/components/admin/WTPScorePanel.tsx:364:              <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 border border-yellow-300 rounded-lg">
+src/components/admin/WTPScorePanel.tsx:365:                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+src/components/admin/WTPScorePanel.tsx:366:                <span className="text-sm font-semibold text-yellow-700">Medium WTP: 30-49</span>
+src/components/admin/WTPScorePanel.tsx:367:              </div>
+src/components/admin/WTPScorePanel.tsx:368:              <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+src/components/admin/WTPScorePanel.tsx:369:                <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+src/components/admin/WTPScorePanel.tsx:370:                <span className="text-sm font-semibold text-gray-600">Low WTP: 0-29</span>
+src/components/admin/WTPScorePanel.tsx:371:              </div>
+src/components/admin/WTPScorePanel.tsx:372:            </div>
+src/components/admin/WTPScorePanel.tsx:373:          </div>
+src/components/admin/WTPScorePanel.tsx:374:        </div>
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-375-      )}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-376-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-377-      {/* Summary Cards */}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-378-      {stats && (
+src/components/admin/WTPScorePanel.tsx:379:        <div className="flex flex-row gap-2 overflow-x-auto pb-2">
+src/components/admin/WTPScorePanel.tsx:380:          <HeroMetricCard
+src/components/admin/WTPScorePanel.tsx-381-            title={lang === 'ko' ? 'WTP 측정 유저' : 'WTP Scored Users'}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-382-            value={`${stats.usersWithScore.toLocaleString()}명`}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-383-            change={`전체 ${stats.totalUsers}명 중`}
+src/components/admin/WTPScorePanel.tsx-384-            trend={stats.usersWithScore > 100 ? 'up' : 'neutral'}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-385-            icon={Users}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-386-          />
+src/components/admin/WTPScorePanel.tsx:387:          <HeroMetricCard
+src/components/admin/WTPScorePanel.tsx-388-            title={lang === 'ko' ? '평균 WTP' : 'Avg WTP Score'}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-389-            value={stats.avgScore.toFixed(1)}
+src/components/admin/WTPScorePanel.tsx-390-            change={lang === 'ko' ? '/70점 만점' : '/70 max'}
+src/components/admin/WTPScorePanel.tsx:391:            trend={stats.avgScore >= 30 ? 'up' : stats.avgScore >= 15 ? 'neutral' : 'down'}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-392-            icon={TrendingUp}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-393-          />
+src/components/admin/WTPScorePanel.tsx:394:          <HeroMetricCard
+src/components/admin/WTPScorePanel.tsx:395:            title={lang === 'ko' ? 'High WTP 유저' : 'High WTP Users'}
+src/components/admin/WTPScorePanel.tsx:396:            value={`${stats.tierDistribution.high}명`}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-397-            change={`${stats.topSegment.count}명 Top Segment`}
+src/components/admin/WTPScorePanel.tsx:398:            trend={stats.tierDistribution.high > 10 ? 'up' : 'neutral'}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-399-            icon={DollarSign}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-400-            changeColor="text-green-600"
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-401-          />
+src/components/admin/WTPScorePanel.tsx:402:          <HeroMetricCard
+src/components/admin/WTPScorePanel.tsx-403-            title={lang === 'ko' ? '평균 결제점수' : 'Avg Amount Score'}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-404-            value={`${stats.avgAmountScore.toFixed(1)}/30`}
+src/components/admin/WTPScorePanel.tsx-405-            change={`${stats.topSegment.avgPayments.toFixed(1)}${lang === 'ko' ? '회 평균결제' : ' avg payments'}`}
+src/components/admin/WTPScorePanel.tsx:406:            trend={stats.avgAmountScore >= 15 ? 'up' : 'neutral'}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-407-            icon={CreditCard}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-408-          />
+src/components/admin/WTPScorePanel.tsx:409:        </div>
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-410-      )}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-411-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-412-      {/* Non-Payer Analysis Section */}
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-413-      {(nonPayerStats || creditExhaustionStats) && (
+src/components/admin/WTPScorePanel.tsx:414:        <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200 shadow-sm">
+src/components/admin/WTPScorePanel.tsx:415:          <h3 className="font-bold text-base text-orange-900 mb-4 flex items-center gap-2">
+src/components/admin/WTPScorePanel.tsx:416:            <UserX className="h-5 w-5 text-orange-600" />
+src/components/admin/WTPScorePanel.tsx-417-            {lang === 'ko' ? '비결제자 분석 (P0 병목 진단)' : 'Non-Payer Analysis (P0 Bottleneck)'}
+src/components/admin/WTPScorePanel.tsx:418:          </h3>
+src/components/admin/WTPScorePanel.tsx:419:          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/admin/WTPScorePanel.tsx-420-            {nonPayerStats && (
+src/components/admin/WTPScorePanel.tsx:421:              <>
+src/components/admin/WTPScorePanel.tsx:422:                <div className="bg-white rounded-xl p-3 border border-orange-100">
+
+[Showing results with pagination = limit: 250]

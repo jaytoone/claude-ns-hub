@@ -122,13 +122,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'VD=$HOME/.local/share/claude-vault; PY=$VD/venv/bin/python; \\\nif [ -x \"$PY\" ] && $PY -c \"import sentence_transformers\" 2>/dev/null; then \\\n  python3 -c \"import socket,os; s=socket.socket(socket.AF_UNIX); s.settimeout(0.3); s.connect(os.path.expanduser(\\\"~/.local/share/claude-vault/vec-daemon.sock\\\"))\" 2>/dev/null || { rm -f $VD/vec-daemon.sock; nohup $PY $VD/vec-daemon.py > /tmp/vec-daemon.log 2>&1 & }; \\\n  if [ \"${CTX_BGE_ENABLE}\" = \"1\" ]; then python3 -c \"import socket,os; s=socket.socket(socket.AF_UNIX); s.settimeout(0.3); s.connect(os.path.expanduser(\\\"~/.local/share/claude-vault/bge-daemon.sock\\\"))\" 2>/dev/null || { rm -f $VD/bge-daemon.sock; nohup $PY $VD/bge-daemon.py > /tmp/bge-daemon.log 2>&1 & }; fi; \\\nelse \\\n  echo \"[CTX] vec-daemon venv not found — semantic layer disabled\" > /tmp/ctx-daemon-hint.txt; \\\nfi'",
+            "command": "bash -c 'VD=$HOME/.local/share/claude-vault; PY=$VD/venv/bin/python; \\\nif [ -x \"$PY\" ] && $PY -c \"import sentence_transformers\" 2>/dev/null; then \\\n  python3 -c \"import socket,os; s=socket.socket(socket.AF_UNIX); s.settimeout(0.3); s.connect(os.path.expanduser(\\\"~/.local/share/claude-vault/vec-daemon.sock\\\"))\" 2>/dev/null || { rm -f $VD/vec-daemon.sock; nohup $PY $VD/vec-daemon.py > /tmp/vec-daemon.log 2>&1 & }; \\\n  if [ \"${CTX_BGE_ENABLE}\" = \"1\" ]; then python3 -c \"import socket,os; s=socket.socket(socket.AF_UNIX); s.settimeout(0.3); s.connect(os.path.expanduser(\\\"~/.local/share/claude-vault/bge-daemon.sock\\\"))\" 2>/dev/null || { rm -f $VD/bge-daemon.sock; nohup $PY $VD/bge-daemon.py > /tmp/bge-daemon.log 2>&1 & }; fi; \\\nelse \\\n  echo \"[CTX] vec-daemon venv not found \u2014 semantic layer disabled\" > /tmp/ctx-daemon-hint.txt; \\\nfi'",
             "async": true
           },
           {
             "type": "command",
             "command": "bash -c '[ -f /tmp/wsl-expose-6901.boot ] || { /home/desk-1/.claude/bin/wsl-expose 6901 > /tmp/wsl-expose-6901.log 2>&1 && touch /tmp/wsl-expose-6901.boot; }'",
             "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/northstar-session-start.py",
+            "timeout": 5
           }
         ]
       }
@@ -172,6 +181,14 @@
             "type": "command",
             "command": "bash $HOME/.claude/hooks/close-popup.sh",
             "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/chat-memory.py"
           }
         ]
       }

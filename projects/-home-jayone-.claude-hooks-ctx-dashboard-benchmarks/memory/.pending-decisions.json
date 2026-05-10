@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-04-21T10:28:54.471987+00:00",
+  "cwd": "/home/jayone/.claude/hooks/ctx-dashboard/benchmarks",
+  "turn_count": 765,
+  "decisions": [
+    {
+      "text": "done",
+      "context": "ten** (that's Hour 4, not yet done) | | \"32.8% ±4.2pp on the same 60 deterministic pairs\" in post A | That number is from iter-3's `utility_backtest_t",
+      "tag": "impl_complete"
+    }
+  ]
+}

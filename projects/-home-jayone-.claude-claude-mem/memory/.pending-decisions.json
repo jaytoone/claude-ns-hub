@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-04-21T14:26:47.357957+00:00",
+  "cwd": "/home/jayone/.claude/claude-mem",
+  "turn_count": 837,
+  "decisions": [
+    {
+      "text": "completed",
+      "context": "l + ctx-install CLI tasks are completed; only one pending is the Hour 4 orphan-pruning from many iterations ago, which is not blocking). Ending turn h",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "resolved",
+      "context": "**All three blockers resolved empirically. The plugin marketplace distribution path is real and usable.** ## The actual answer **Claude Code plugin ma",
+      "tag": "impl_complete"
+    }
+  ]
+}

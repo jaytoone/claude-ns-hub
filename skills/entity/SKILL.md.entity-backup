@@ -1,0 +1,450 @@
+---
+name: entity
+description: EntityOS — 3-mode layered reasoning: base=/conceptual direct, -r=+external knowledge, -rd=+domain dispatch (full pipeline). Opt-in depth scaling. For autonomous execution, use /entity-live or /entity-inf.
+---
+
+# /entity — Feedback Loop Closure Infrastructure
+
+레이어 opt-in 아키텍처 — 기본은 /conceptual 직접 실행, 플래그로 외부 지식(-r)과 도메인 전문성(-rd)을 점진적으로 추가한다.
+
+```
+Mode A: /entity        → Step 0 + L1 /conceptual (직접, 재프레이밍 없음)
+Mode B: /entity -r     → Step 0 + External Knowledge + L1 /conceptual
+Mode C: /entity -rd    → Step 0 + L1(1st) reframing + L2 dispatch(RAG 강제) + L1(2nd)
+Mode D: /entity -d     → Step 0 + L1(1st) reframing + L2 dispatch(RAG 조건부) + L1(2nd)
+```
+
+**모드 선택 기준**: 일반 질문 → A | 최신/외부 정보 필요 → B | 도메인 전문 스킬 + RAG 강제 → C | 도메인 전문 스킬 (내부 캐시 우선) → D
+
+---
+
+## Activation
+
+```
+/entity [question]           ← Mode A: Step 0 + /conceptual 직접 실행 (L2 없음)
+/entity -r [question]        ← Mode B: Step 0 + External Knowledge + /conceptual
+/entity -d [question]        ← Mode D: Step 0 + L1(1st) reframing + L2 dispatch(RAG 조건부) + L1(2nd)
+/entity -rd [question]       ← Mode C: full pipeline (L1 reframing + L2 dispatch + RAG 강제 + L1)
+/entity -dr [question]       ← Mode C alias (-rd와 동일)
+/entity -l [question]        ← entity-live 단축키: /entity 후 /live handoff (max 5회)
+/entity -l -r [question]     ← entity-live + Mode B
+/entity -l -d [question]     ← entity-live + Mode D
+/entity -l -rd [question]    ← entity-live + Mode C
+/entity -i [question]        ← entity-inf 단축키: /entity 후 /live-inf (수렴까지)
+/entity -i -r [question]     ← entity-inf + Mode B
+/entity -i -d [question]     ← entity-inf + Mode D
+/entity -i -rd [question]    ← entity-inf + Mode C
+```
+
+**플래그 파서 (FIRST — 모든 프로토콜 실행 전):**
+
+```python
+# 1. 플래그를 set으로 파싱 (순서 무관)
+tokens = args.split()
+flags = set()
+question_tokens = []
+for token in tokens:
+    if token.startswith("-"):
+        flags.update(c.lower() for c in token[1:] if c.isascii() and c.isalpha())   # "-rd" → {'r', 'd'}, "-RD" → {'r', 'd'}, "-d를" → {'d'}
+    else:
+        question_tokens.append(token)
+question = " ".join(question_tokens)
+
+has_r = 'r' in flags    # External Knowledge 검색
+has_d = 'd' in flags    # Domain dispatch (L2 full)
+has_l = 'l' in flags    # entity-live handoff
+has_i = 'i' in flags    # entity-inf handoff
+# 2. Handoff 플래그 우선 처리 (mutually exclusive — -l이 -i보다 우선)
+if has_l:
+    capability_flags = ("-rd " if (has_r and has_d) else "-r " if has_r else "-d " if has_d else "")
+    → Skill('entity-live', args=capability_flags + question)
+    → STOP
+
+if has_i:
+    capability_flags = ("-rd " if (has_r and has_d) else "-r " if has_r else "-d " if has_d else "")
+    → Skill('entity-inf', args=capability_flags + question)
+    → STOP
+
+# 3. 실행 모드 결정
+if has_r and has_d:   mode = "C"   # full pipeline (RAG 강제 + domain dispatch)
+elif has_r:           mode = "B"   # external only (RAG 강제, domain 없음)
+elif has_d:           mode = "D"   # domain dispatch (RAG 조건부, Pre-check 적용)
+else:                 mode = "A"   # conceptual only
+```
+
+**마이그레이션 노트**:
+- 기존 `-rag` → `-r` (동일 동작: External Knowledge 강제 실행)
+- 기존 `-r` (구 -rag alias) → `-r` (변경 없음)
+- 도메인 dispatch 원하면 → `-rd` 명시 필요
+
+**플래그 의미**:
+- `-r`: External Knowledge를 **조건 없이 강제 실행** (WebSearch + 필요시 expert-research-v2)
+- `-d`: Domain skill/agent dispatch 활성화 (L2 full pipeline)
+- `-rd` = `-dr`: `-r` + `-d` 조합 = 현재 -rag + full L2 pipeline
+- `-l` / `-i`: handoff 플래그 — capability flag와 조합 가능
+
+자율 실행이 필요하면 별도 스킬 또는 단축키 사용:
+- `/entity -l [question]` = `/entity-live [question]` → /entity 후 /live handoff (max 5회)
+- `/entity -l -d [question]` → domain dispatch (RAG 조건부) + /live handoff
+- `/entity -l -rd [question]` → full pipeline + /live handoff
+- `/entity -i [question]` = `/entity-inf [question]` → /entity 후 /live-inf (수렴까지)
+- `/entity -i -d [question]` → domain dispatch (RAG 조건부) + /live-inf
+- `/entity -i -rd [question]` → full pipeline + /live-inf
+
+---
+
+## Protocol
+
+### Step 0 — Outward Reception (수신 레이어)
+
+**Meisner 원칙**: 응답은 상대방으로부터 온다 — 준비된 기법이 아니라 받은 것에서 나온다.
+Python regex가 한 것을 LLM 추론으로 치환. 수신 텍스트에서 화자의 패러다임 프로필을 감지한다.
+
+#### Epistemic Basis 감지
+
+| 유형 | 신호 (LLM 추론) |
+|------|----------------|
+| **data-driven** | 숫자·비율 인용, "데이터가 보여준다", "측정했다", "실험", "증거", "분석", "42% drop", "we ran N experiments" |
+| **intuition-first** | "느낌", "감", "직관", "something about", "it doesn't feel right", "I sense", "hard to explain", "I think" |
+| **authority-referencing** | "McKinsey 권고", "best practice", "업계 표준", "전문가들이", "everyone does", "studies show", "they say" |
+
+#### Causal Model 감지
+
+| 유형 | 신호 (LLM 추론) |
+|------|----------------|
+| **linear** | "if X then Y", "때문에", 순서어(first/then/next/before/after), "~하기 전에 ~해야", 단계별 서술, "leads to", "results in" |
+| **systemic** | "피드백 루프", "근본 원인", "구조적", "상호연결", "파급효과", "underlying", "root cause", "cascade" |
+| **emergent** | "it depends", "상황마다", "설명하기 어렵다", "뭔가 어긋난 느낌", "서서히 변한다", "losing its soul", "evolve", "context" |
+
+#### Locus of Control 감지
+
+| 유형 | 신호 (LLM 추론) |
+|------|----------------|
+| **internal** | "우리가 결정했다", "내가 선택했다", "I/we can", "our responsibility", "we chose", "I decided" |
+| **external** | "어쩔 수 없었다", "시장이 강요했다", "규제 때문에", "모두가 그렇게 해서", "no choice", "forced", "they say we should follow" |
+| **distributed** | "함께", "생태계", "협력", "shared responsibility", "together", "collective" |
+
+#### Gap 감지 (말하지 않은 것)
+
+화자가 명시적으로 말하지 않은 패턴을 감지:
+- **no_data_anchor**: 주장에 데이터 근거 없음 → intuition-first 또는 authority-referencing 가능성
+- **no_agency**: 1인칭 주어 없음 / 행위 주체 회피 → external locus 가능성
+- **no_feedback_loop**: 선형 인과만 사용, 피드백·순환 언급 없음 → 시스템 효과가 화자에게 보이지 않음
+
+#### 응답 적응 (Response Adaptation)
+
+**인사이트는 바뀌지 않는다 — 전달 언어만 바뀐다.**
+
+| Epistemic Basis | 오프닝 앵커 | 클로징 무브 |
+|----------------|------------|------------|
+| data-driven | "The pattern in the data points to this: {insight}" | "What does your data show on this?" |
+| intuition-first | "What I'm noticing here — {insight}" | "Does that match what you're sensing?" |
+| authority-referencing | "This maps to a well-established pattern: {insight}" | "Is that consistent with what you've seen work?" |
+| unknown | {insight} 직접 전달 | "Does that resonate?" |
+
+**인과 프레이밍**:
+- linear → 단계 체인으로 연결 ("first X, then Y leads to Z")
+- systemic → 피드백 루프로 연결 ("X affects Y which loops back to X")
+- emergent → 조건/상황으로 연결 ("the conditions that make this work are...")
+- unknown → emergent 기본값
+
+**Gap surfacing** (침묵도 수신한다):
+- no_feedback_loop + linear화자: "One thing worth adding: there's likely a feedback loop here that doesn't show up in the linear view."
+- no_data_anchor + intuition화자: "If you wanted to test that intuition, what's the smallest data point that would confirm or break it?"
+
+**내부 추론 출력 형식** (사용자 응답에 직접 노출 금지):
+```
+[Outward Profile]
+epistemic_basis: {data-driven | intuition-first | authority-referencing | unknown}
+causal_model: {linear | systemic | emergent | unknown}
+locus_of_control: {internal | external | distributed | unknown}
+gaps: [{gap_name}, ...]
+→ frame: {anchor_type} / {causation_frame} / {closing_move}
+```
+
+이 프로필은 모든 모드(A/B/C)의 최종 응답 생성에 주입된다.
+
+---
+
+### Mode Branch (Step 0 이후)
+
+```
+mode == "A" → Step 1A (conceptual direct)
+mode == "B" → Step 1B (external search → conceptual)
+mode == "C" → Step 1C → Step 2 (RAG 강제) → Step 3 → Step 4
+mode == "D" → Step 1C → Step 2 (RAG 조건부) → Step 3 → Step 4
+```
+
+Note: Mode C와 D는 동일한 파이프라인이다. 차이는 Step 2 내부의 RAG 동작 (강제 vs 조건부) 뿐이며,
+Step 2 pre-check이 `-rd` 플래그 유무로 자동 분기한다.
+
+---
+
+### Step 1A — Mode A: /conceptual 직접 실행 *(no flags)*
+
+L1 /conceptual 전체 per-message loop을 **재프레이밍 없이** 즉시 실행한다.
+
+- Mode Gate → Stage 1 Draft → Stage 2 Adversarial (6Q) → Stage 3 Deliver
+- 원 질문을 그대로 입력으로 사용 (Refined Query 없음)
+- Step 0 Outward Profile → Stage 3 Deliver에 적용
+- Announce:
+  ```
+  [entity: Mode A | /conceptual | {epistemic_basis}/{causal_model}]
+  ```
+
+---
+
+### Step 1B — Mode B: External Knowledge + /conceptual *(-r flag)*
+
+**1. External Knowledge 검색** (RAG 강제):
+
+검색 쿼리는 원 질문에서 자동 추출.
+
+```
+WebSearch (mcp__websearch__search_web) 최소 1회
++ expert-research-v2 agent (논문/심층 필요 시)
+```
+
+claim 분류(OBSERVED/INFERRED) 동일 원칙 적용 (Step 2의 원칙 2·3 참조).
+
+**2. /conceptual 실행 (external context 주입)**:
+
+검색 결과를 context로 주입한 상태에서 /conceptual 전체 실행.
+
+```
+[External Context]
+Search results: {web results}
+Blind spots: {gaps in search coverage}
+```
+
+- Stage 1 Draft는 external context 위에서 실행
+- Step 0 Outward Profile → Stage 3 Deliver에 적용
+- Announce:
+  ```
+  [entity: Mode B | /conceptual + RAG | {epistemic_basis}/{causal_model}]
+  [RAG FORCED]
+  ```
+
+---
+
+### Step 1C — L1 (1st pass) 재프레이밍 *(Mode C & D: -rd 또는 -d)*
+
+```
+Read: ~/.claude/skills/conceptual/state/paradigm.json
+Read: ~/.claude/skills/conceptual/state/nodes/{basename $PWD}.jsonl (last 20 lines)
+Read: ~/.claude/skills/conceptual/state/paradigm_history.jsonl (last 3 entries)
+```
+
+Apply /conceptual Steps 2-3 (Step 2: Measure Thinking Change, Step 3: Proactive Concept Scan).
+
+**Cold-start**: paradigm.json가 비어있으면 (첫 세션) 재프레이밍이 최소화됨. 이 경우 원 질문을 그대로 L2에 전달 — 정상 동작.
+
+**자유 추론 후 슬롯 추출** *(CRANE ICML 2025)*:
+
+1. 패러다임 신호 감지
+2. 노드 히트 체크 (반복 질문이면 새 각도 식별)
+3. 표면 질문 아래의 진짜 질문 파악
+
+추론 후 **Refined Query Slot** 추출:
+```
+[Refined Query]
+Real question: {reframed question}
+New angle: {if repeat, what's genuinely new}
+Paradigm signals: {epistemic_basis / key tension}
+```
+
+추론 흔적은 폐기 — Refined Query Slot만 L2로 전달 *(Attentional Residue 방지, Adapala 2025)*.
+
+---
+
+### Step 2 — L2: Dynamic Domain Dispatch *(Mode C & D: -rd 또는 -d)*
+
+L2는 **전문 메타스킬/에이전트를 실행하여 도메인 분석을 생산**하는 레이어다. `-d` 또는 `-rd` 플래그 없으면 실행하지 않는다.
+
+#### Pre-check: 기존 분석 결과 활용 *(Zero-Waste RAG, Semantic Cache)*
+
+에이전트 dispatch **전에** 프로젝트의 기존 분석 결과를 먼저 체크:
+
+```
+Refined Query → docs/research/*.md, nodes/{PROJECT}.jsonl 스캔
+```
+
+| 조건 | 동작 |
+|------|------|
+| **`-rd` 플래그** | **RAG_FORCED** — Pre-check 전체 건너뜀, External Knowledge 강제 실행 |
+| 기존 docs가 Refined Query와 높은 관련성 + 최신 (7일 이내) | **REUSE** — 기존 문서 읽기, 에이전트 skip |
+| 기존 docs가 부분적으로 커버 + 일부 gap 존재 | **HYBRID** — 기존 문서 읽기 + gap만 에이전트 dispatch |
+| 기존 docs 없음 / 오래됨 (7일+) / 관련성 낮음 | **DISPATCH** — 에이전트 전체 실행 |
+| Refined Query에 "최신", "현재", "2026" 등 temporal keyword | **DISPATCH** — 캐시 무시, 항상 새로 실행 |
+
+**원칙**: 이전에 생산한 분석을 무시하고 같은 에이전트를 다시 돌리는 것은 낭비다.
+**`-rd` 예외**: 외부 최신 데이터가 필요한 경우 낭비보다 정확성이 우선이다 — 캐시를 믿지 않는다.
+
+#### Selection *(RouteLLM 2024, MoA 2024)*
+
+Refined Query를 기반으로 **system-reminder에 등록된 전체 스킬/에이전트 풀에서 동적 선택**. 하드코딩된 목록 없음 — 새 스킬/에이전트가 추가되면 자동으로 선택 후보에 포함.
+
+- relevance 높은 **3~5개** 동적 선택 *(MoA: 3-5가 sweet spot)*
+- **메타스킬 우선** (내부 오케스트레이션 > 개별 에이전트)
+- 여러 도메인 → 여러 스킬 동시 활성화
+- 전체 relevance 낮음 → `/ontolo-agent` fallback + 사용자 확인
+
+#### External Knowledge *(FLARE EMNLP 2023, SecMulti-RAG 2025)*
+
+관련 지식이 부족하면 **무조건 외부 검색**:
+
+```
+OR 조건 (하나라도 → 검색):
+1. 핵심 엔티티가 내부 지식에 없음
+2. 최신 데이터 필요
+3. L1(1st)이 지식 부족 감지
+4. -r 또는 -rd 플래그 설정 (RAG_FORCED=true) — 위 조건 무관하게 항상 검색
+```
+
+**`-r` / `-rd` 강제 모드 동작** (RAG_FORCED):
+- Pre-check 단계 건너뜀 (REUSE/HYBRID 판단 없음)
+- `WebSearch` 최소 1회 + `expert-research-v2` 선택적 추가 호출
+- claim 분류(OBSERVED/INFERRED) 단계도 전부 검색으로 처리
+- Announce에 `[RAG FORCED]` 표시
+- 검색 쿼리는 Refined Query에서 자동 추출
+
+검색 방법: `WebSearch` (내장, 빠름) = `mcp__websearch__search_web` (MCP) > `expert-research-v2` agent (논문/심층)
+
+**원칙 1**: "아마 알 것 같다"는 검색 안 하는 이유가 될 수 없다. (`-rd` 모드에서 항상 적용)
+
+**원칙 2 (중요도 비례)**: 응답의 정확성 요구가 높을수록 외부 검색 의무 강도가 높아진다. 설계 결정(파라미터 값, 계수, 아키텍처 선택 등)은 코드 버그 수정보다 항상 검색 강도가 높다. 버그를 고친 직후 설계 검증으로 전환할 때는 반드시 재평가한다.
+
+**원칙 3 (L2 중간 claim 스캔)**: 실증 데이터 수집 후, synthesis 전에 각 claim을 분류한다:
+
+| 유형 | 판단 기준 | 처리 |
+|------|---------|------|
+| OBSERVED | 측정값·로그·코드에서 직접 읽힘 | 검색 불필요 |
+| INFERRED-math | 순수 산술/대수 계산 | 검색 불필요 |
+| INFERRED-design | 인과 설명·메커니즘 해석·패턴 판단 | **→ 외부 검색 후 synthesis** |
+
+트리거 키워드 (claim 내에 등장 시 INFERRED-design 의심): "때문", "원인", "가능성 높음", "추정", "정상적", "예상", "이기 때문"
+
+#### Dispatch & Synthesis
+
+```
+[L2 Domain Dispatch]
+Refined Query: {from L1(1st)}
+Task: Analyze from {skill/agent} perspective.
+Output: structured domain analysis (NOT generic advice).
+```
+
+**실행 도구**: 메타스킬 → `Skill` tool (e.g., `Skill(skill='wtp-validator', args='{Refined Query}')`). 개별 에이전트 → `Agent` tool (e.g., `Agent(subagent_type='biz-strategy', prompt='{Refined Query}')`). 여러 스킬/에이전트를 **한 턴에 병렬 호출** (Agent tool 다중 호출).
+
+결과 종합:
+
+```
+[L2 Domain Context]
+Dispatched: {skill/agent names}
+{skill_1}: {output summary}
+{skill_2}: {output summary}
+External: {web results if triggered}
+Blind spots: {cross-skill gap analysis}
+```
+
+---
+
+### Step 3 — Announce *(Mode C & D, L1(2nd) 전에 출력)*
+
+```
+entity activated.
+[entity: Mode {C|D} | /conceptual | {epistemic_basis}/{causal_model} | {N} nodes | Session {session_count}]
+[L2: {dispatched skill/agent names}]
+[RAG FORCED]  ← Mode C (-rd) 시에만 표시; Mode D (-d)는 표시 안 함
+{proactive tension if count >= 3}
+```
+
+### Step 4 — L1 (2nd pass): /conceptual with enrichment *(Mode C & D)*
+
+L2 Domain Context를 주입한 상태에서 /conceptual 전체 per-message loop 실행.
+
+- Mode Gate → Stage 1 Draft (domain context 위에서) → Stage 2 Adversarial (6Q) → Stage 3 Deliver
+
+L1의 패러다임 교차와 adversarial eval은 **에이전트가 생산한 도메인 전문성 위에서** 작동.
+
+**Outward Profile 통합**: Step 0에서 감지된 화자 프로필을 Stage 3 Deliver에 적용한다.
+Stage 1 Draft는 인사이트 우선, Stage 3에서 화자의 언어 프레임으로 최종 포장.
+화자 프로필이 unknown이면 /conceptual 기본 응답 스타일 유지.
+
+---
+
+## 모드별 실행 비교
+
+| | Mode A (no flags) | Mode B (-r) | Mode C (-rd) | Mode D (-d) |
+|--|--|--|--|--|
+| Step 0 Outward Reception | 실행 | 실행 | 실행 | 실행 |
+| L1(1st) 재프레이밍 | **안 함** | **안 함** | 실행 | 실행 |
+| External Knowledge 검색 | **안 함** | **강제 실행** | 강제 실행 | **조건부** |
+| L2 Domain Dispatch | **안 함** | **안 함** | 실행 | 실행 |
+| /conceptual Stage 2 Adversarial | 실행 | 실행 | 실행 | 실행 |
+| /conceptual Stage 3 Deliver | 실행 | 실행 | 실행 | 실행 |
+| 입력 | 원 질문 | 원 질문 + External | Refined Query + L2 Domain Context | Refined Query + L2 Domain Context |
+| 속도 | 빠름 | 중간 | 느림 | 중간 |
+| 적합 케이스 | 일반 질문, 빠른 추론 | 최신/외부 정보 필요 | 도메인 전문성 + 최신 데이터 | 도메인 전문성 (내부 캐시 우선) |
+
+Mode C/D L1(2nd) = /conceptual + L2 enrichment. 메커니즘 동일, 입력만 풍부.
+Mode C vs D 차이: External Knowledge 강제 여부만 다름 (나머지 파이프라인 동일).
+
+---
+
+## Fallback & Error Handling
+
+| 실패 모드 | 동작 |
+|-----------|------|
+| L1(1st) 재프레이밍 실패 | 원 질문 그대로 L2에 전달 |
+| L2 매칭 없음 (전체 relevance 낮음) | `/ontolo-agent` fallback + 사용자 확인 |
+| L2 에이전트 실행 실패 | 해당 에이전트 skip, 나머지 결과로 진행 |
+| L1(2nd)가 L2 결과와 충돌 | 양측 프레이밍 모두 표면화, 사용자 판단 요청 |
+
+---
+
+## Feedback Loop
+
+매 harness 세션 후 /conceptual state 업데이트:
+
+```bash
+# paradigm.json: session_count++, 새 concept_gap 추가
+# paradigm_history.jsonl: 스냅샷 추가
+# nodes/{PROJECT}.jsonl: harness 노드 추가
+```
+
+Node format (기존 /conceptual 노드 호환):
+```json
+{
+  "id": "{timestamp}",
+  "content": "{insight}",
+  "l2_bundle": "{primary dispatched skill/agent}",
+  "l2_domain_gaps": ["{L2가 L1 단독으로는 못 본 것}"],
+  "recurrence_count": 1,
+  "links": {"contradicts": [], "elaborates": [], "reveals_assumption": []},
+  "paradigm_tags": ["{tags}"]
+}
+```
+
+Cross-session learning:
+- 동일 스킬이 동일 gap을 반복 → recurring pattern으로 표면화
+- /entity-live 또는 /entity-inf 사용 시: L3 (= /live 실행 결과)를 paradigm_edge로 기록
+
+---
+
+## Example Flow
+
+**질문**: "WTP 검증 실험을 어떻게 설계해야 하나?"
+
+**L1(1st)**:
+```
+[Refined Query]
+Real question: WTP 검증에서 enthusiasm signal과 payment signal을 구분하는 실험 설계
+New angle: paradigm.json에 "enthusiastic non-buyers trap" gap 이미 존재 → 이 함정을 피하는 설계
+Paradigm signals: systemic / "what you can build vs what the market wants" (count 6)
+```
+
+**L2**: `/wtp-validator` (primary, 0.92) + `/expert-research-v2` (secondary, 0.75) 병렬 dispatch
+- wtp-validator: Van Westendorp PSM + Fake Door 실험 설계 제안
+- expert-research-v2: WTP measurement 최신 논문 3개 서치 결과
+
+**L1(2nd)**: Stage 2 Adversarial Q1 (전제 검사)에서 "enthusiasm ≠ WTP" 도메인 체크 자동 포함 → /conceptual 단독으로는 불가능했던 도메인 특화 sycophancy 감지

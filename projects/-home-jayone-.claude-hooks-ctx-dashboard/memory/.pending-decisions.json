@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-04-21T04:16:46.275357+00:00",
+  "cwd": "/home/jayone/.claude/hooks/ctx-dashboard",
+  "turn_count": 634,
+  "decisions": [
+    {
+      "text": "Recall@7 = 0.661",
+      "context": "| Retrieval quality | ✅ | G2 Recall@7 = 0.661 (academic metric, already citable) | | Product surface | ✅ | Dashboard (paper aesthetic), knowledge grap",
+      "tag": "metric"
+    },
+    {
+      "text": "completed",
+      "context": "ded — goal narrow) Sub-goals completed: P1a ✅ vis-network lazy-load (non-blocking) P1b ✅ Font subset (Fraunces 400+500, JetBrains Mono 400) P1c ✅ Crit",
+      "tag": "impl_complete"
+    }
+  ]
+}

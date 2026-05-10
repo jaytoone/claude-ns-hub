@@ -4,14 +4,15 @@ connections:
 - FreeOS
 current: —
 deadline: ''
-layer: 1
+layer: 0
 log: []
 metric: —
 milestones: []
 name: Clone
 note: SVTool — Clone project
 parent: null
-position_x: 3
+position_x: 1
+stage: unassigned
 status: paused
 target: —
 unit: ''

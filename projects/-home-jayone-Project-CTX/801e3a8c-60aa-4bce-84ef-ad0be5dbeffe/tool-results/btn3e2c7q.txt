@@ -1,0 +1,583 @@
+=== idx 0 | block=g1 ===
+PROMPT: IS this lie or exposure of negative reply that pm 10 is too late normalyy... what do you think call /entity -r
+SUBJECT: v1.4.1 20260410 postcss-tailwind-fix     - fix: @tailwindcss/postcss 설치 — Tailwind v4 utility class CSS 미생성 버그 수정 (dark
+TOKENS: ['postcss-tailwind-fix', '@tailwindcss/postcss', 'Tailwind', 'utility', 'v1.4.1']
+RESPONSE: **Entity — 김근식's "22일 저녁 10시 좋습니다" — sincere or polite deflection?**
+Mode: external RAG / generic / evidence: MEDIUM
+
+---
+
+**Step 0 — Gap detected:**
+`[GAP: HIGH-TRUST-TIME-MISMATCH]` — In Korean B2B norms, 10 PM Zoom is far outside standard business hours (9–19시). User's instinct is right: absent other signals, "좋습니다 to 10 PM" would be a yellow flag.
+
+---
+
+**Evidence FOR sincere confirmation:**
+
+1. **He unsolicited the late-evening preference** — "저녁도 되면 늦으면 늦을수록 좋습니다" came from him, not you. Self-disclosed constraints = strong signal. Polite liars don't volunteer inconvenient specifics.
+2. *
+
+=== idx 1 | block=g1 ===
+PROMPT: IS this lie or exposure of negative reply that pm 10 is too late normalyy... what do you think call /entity -r
+SUBJECT: v1.4.2 20260410 arena-ui-warm-theme     - feat: /conceptual/arena LM Arena 스타일 UI 리디자인 (dark theme + 따뜻한 stone/amber 팔레트
+TOKENS: ['arena-ui-warm-theme', '/conceptual/arena', 'stone/amber', 'v1.4.2', 'Arena']
+RESPONSE: **Entity — 김근식's "22일 저녁 10시 좋습니다" — sincere or polite deflection?**
+Mode: external RAG / generic / evidence: MEDIUM
+
+---
+
+**Step 0 — Gap detected:**
+`[GAP: HIGH-TRUST-TIME-MISMATCH]` — In Korean B2B norms, 10 PM Zoom is far outside standard business hours (9–19시). User's instinct is right: absent other signals, "좋습니다 to 10 PM" would be a yellow flag.
+
+---
+
+**Evidence FOR sincere confirmation:**
+
+1. **He unsolicited the late-evening preference** — "저녁도 되면 늦으면 늦을수록 좋습니다" came from him, not you. Self-disclosed constraints = strong signal. Polite liars don't volunteer inconvenient specifics.
+2. *
+
+=== idx 2 | block=g2_docs ===
+PROMPT: IS this lie or exposure of negative reply that pm 10 is too late normalyy... what do you think call /entity -r
+SUBJECT: MEMORY
+TOKENS: ['MEMORY.md', 'MEMORY']
+RESPONSE: **Entity — 김근식's "22일 저녁 10시 좋습니다" — sincere or polite deflection?**
+Mode: external RAG / generic / evidence: MEDIUM
+
+---
+
+**Step 0 — Gap detected:**
+`[GAP: HIGH-TRUST-TIME-MISMATCH]` — In Korean B2B norms, 10 PM Zoom is far outside standard business hours (9–19시). User's instinct is right: absent other signals, "좋습니다 to 10 PM" would be a yellow flag.
+
+---
+
+**Evidence FOR sincere confirmation:**
+
+1. **He unsolicited the late-evening preference** — "저녁도 되면 늦으면 늦을수록 좋습니다" came from him, not you. Self-disclosed constraints = strong signal. Polite liars don't volunteer inconvenient specifics.
+2. *
+
+=== idx 3 | block=g2_docs ===
+PROMPT: IS this lie or exposure of negative reply that pm 10 is too late normalyy... what do you think call /entity -r
+SUBJECT: chat v180 performance eval
+TOKENS: ['20260411-chat-api-v180-performance-eval.md', 'chat', 'v180', 'performance', 'eval']
+RESPONSE: **Entity — 김근식's "22일 저녁 10시 좋습니다" — sincere or polite deflection?**
+Mode: external RAG / generic / evidence: MEDIUM
+
+---
+
+**Step 0 — Gap detected:**
+`[GAP: HIGH-TRUST-TIME-MISMATCH]` — In Korean B2B norms, 10 PM Zoom is far outside standard business hours (9–19시). User's instinct is right: absent other signals, "좋습니다 to 10 PM" would be a yellow flag.
+
+---
+
+**Evidence FOR sincere confirmation:**
+
+1. **He unsolicited the late-evening preference** — "저녁도 되면 늦으면 늦을수록 좋습니다" came from him, not you. Self-disclosed constraints = strong signal. Polite liars don't volunteer inconvenient specifics.
+2. *
+
+=== idx 4 | block=g2_docs ===
+PROMPT: IS this lie or exposure of negative reply that pm 10 is too late normalyy... what do you think call /entity -r
+SUBJECT: conceptual skill impl spec
+TOKENS: ['20260411-conceptual-skill-gap-impl-spec.md', 'conceptual', 'skill', 'impl', 'spec']
+RESPONSE: **Entity — 김근식's "22일 저녁 10시 좋습니다" — sincere or polite deflection?**
+Mode: external RAG / generic / evidence: MEDIUM
+
+---
+
+**Step 0 — Gap detected:**
+`[GAP: HIGH-TRUST-TIME-MISMATCH]` — In Korean B2B norms, 10 PM Zoom is far outside standard business hours (9–19시). User's instinct is right: absent other signals, "좋습니다 to 10 PM" would be a yellow flag.
+
+---
+
+**Evidence FOR sincere confirmation:**
+
+1. **He unsolicited the late-evening preference** — "저녁도 되면 늦으면 늦을수록 좋습니다" came from him, not you. Self-disclosed constraints = strong signal. Polite liars don't volunteer inconvenient specifics.
+2. *
+
+=== idx 5 | block=g2_docs ===
+PROMPT: IS this lie or exposure of negative reply that pm 10 is too late normalyy... what do you think call /entity -r
+SUBJECT: sonnet system prompt optimization
+TOKENS: ['20260415-sonnet-system-prompt-optimization.md', 'sonnet', 'system', 'prompt', 'optimization']
+RESPONSE: **Entity — 김근식's "22일 저녁 10시 좋습니다" — sincere or polite deflection?**
+Mode: external RAG / generic / evidence: MEDIUM
+
+---
+
+**Step 0 — Gap detected:**
+`[GAP: HIGH-TRUST-TIME-MISMATCH]` — In Korean B2B norms, 10 PM Zoom is far outside standard business hours (9–19시). User's instinct is right: absent other signals, "좋습니다 to 10 PM" would be a yellow flag.
+
+---
+
+**Evidence FOR sincere confirmation:**
+
+1. **He unsolicited the late-evening preference** — "저녁도 되면 늦으면 늦을수록 좋습니다" came from him, not you. Self-disclosed constraints = strong signal. Polite liars don't volunteer inconvenient specifics.
+2. *
+
+=== idx 6 | block=g2_docs ===
+PROMPT: IS this lie or exposure of negative reply that pm 10 is too late normalyy... what do you think call /entity -r
+SUBJECT: validation platform spec
+TOKENS: ['20260330-wtp-validation-platform-spec.md', 'validation', 'platform', 'spec']
+RESPONSE: **Entity — 김근식's "22일 저녁 10시 좋습니다" — sincere or polite deflection?**
+Mode: external RAG / generic / evidence: MEDIUM
+
+---
+
+**Step 0 — Gap detected:**
+`[GAP: HIGH-TRUST-TIME-MISMATCH]` — In Korean B2B norms, 10 PM Zoom is far outside standard business hours (9–19시). User's instinct is right: absent other signals, "좋습니다 to 10 PM" would be a yellow flag.
+
+---
+
+**Evidence FOR sincere confirmation:**
+
+1. **He unsolicited the late-evening preference** — "저녁도 되면 늦으면 늦을수록 좋습니다" came from him, not you. Self-disclosed constraints = strong signal. Polite liars don't volunteer inconvenient specifics.
+2. *
+
+=== idx 7 | block=g2_docs ===
+PROMPT: talke in english, pls , 
+
+mail.vidraft.ne how can the other team emmeber english cowork emgial for vidraft ?
+SUBJECT: MEMORY
+TOKENS: ['MEMORY.md', 'MEMORY']
+RESPONSE: > **CM** (chat memory/hybrid): "[assistant@Clone] The domain `mail.vidraft.net` shows **"사용중..." and 2 more
+> **G1** (time memory): "feat: Telegram bridge for iPhone news Q&A (OffClaw)" and 2 more
+> **G2** (space search): `MEMORY.md`, `20260417-korea-ai-master-for-founder-credibility.md`, `20260322-ai-code-review-market.md` — found via "talke english pls"
+
+**How to add team members under `mail.vidraft.net`:**
+
+Daum SmartWork supports multiple users under one domain. Process:
+
+1. **Login to SmartWork admin** (https://mail.daum.net/smartwork/manage as you, the admin)
+2. **Click 관리 on `mail.vidra
+
+=== idx 8 | block=g2_docs ===
+PROMPT: talke in english, pls , 
+
+mail.vidraft.ne how can the other team emmeber english cowork emgial for vidraft ?
+SUBJECT: korea master founder credibility
+TOKENS: ['20260417-korea-ai-master-for-founder-credibility.md', 'korea', 'master', 'founder', 'credibility']
+RESPONSE: > **CM** (chat memory/hybrid): "[assistant@Clone] The domain `mail.vidraft.net` shows **"사용중..." and 2 more
+> **G1** (time memory): "feat: Telegram bridge for iPhone news Q&A (OffClaw)" and 2 more
+> **G2** (space search): `MEMORY.md`, `20260417-korea-ai-master-for-founder-credibility.md`, `20260322-ai-code-review-market.md` — found via "talke english pls"
+
+**How to add team members under `mail.vidraft.net`:**
+
+Daum SmartWork supports multiple users under one domain. Process:
+
+1. **Login to SmartWork admin** (https://mail.daum.net/smartwork/manage as you, the admin)
+2. **Click 관리 on `mail.vidra
+
+=== idx 9 | block=g2_docs ===
+PROMPT: yeah i got the maiil in https://mail.daum.net/top/INBOX/0000000000000E9 u send before. so what now ? go to claude ?
+SUBJECT: MEMORY
+TOKENS: ['MEMORY.md', 'MEMORY']
+RESPONSE: > **CM** (chat memory/hybrid): "[assistant@Clone] Landed on Kakao login page — session logge..." and 2 more
+> **G1** (time memory): "feat: OpenClaw gateway migration — stop bridge, use native Telegram" and 2 more
+> **G2** (space search): `20260417-korea-ai-master-for-founder-credibility.md`, `MEMORY.md`, `20260322-ai-code-review-market.md` — found via "yeah got maiil"
+
+MX validation confirmed. Updating memory and ready for Claude Team signup.
+
+=== idx 10 | block=g2_docs ===
+PROMPT: yeah i got the maiil in https://mail.daum.net/top/INBOX/0000000000000E9 u send before. so what now ? go to claude ?
+SUBJECT: openclaw adoption pipeline analysis
+TOKENS: ['20260324-openclaw-adoption-pipeline-analysis.md', 'openclaw', 'adoption', 'pipeline', 'analysis']
+RESPONSE: > **CM** (chat memory/hybrid): "[assistant@Clone] Landed on Kakao login page — session logge..." and 2 more
+> **G1** (time memory): "feat: OpenClaw gateway migration — stop bridge, use native Telegram" and 2 more
+> **G2** (space search): `20260417-korea-ai-master-for-founder-credibility.md`, `MEMORY.md`, `20260322-ai-code-review-market.md` — found via "yeah got maiil"
+
+MX validation confirmed. Updating memory and ready for Claude Team signup.
+
+=== idx 11 | block=g2_docs ===
+PROMPT: yeah i got the maiil in https://mail.daum.net/top/INBOX/0000000000000E9 u send before. so what now ? go to claude ?
+SUBJECT: korea master founder credibility
+TOKENS: ['20260417-korea-ai-master-for-founder-credibility.md', 'korea', 'master', 'founder', 'credibility']
+RESPONSE: > **CM** (chat memory/hybrid): "[assistant@Clone] Landed on Kakao login page — session logge..." and 2 more
+> **G1** (time memory): "feat: OpenClaw gateway migration — stop bridge, use native Telegram" and 2 more
+> **G2** (space search): `20260417-korea-ai-master-for-founder-credibility.md`, `MEMORY.md`, `20260322-ai-code-review-market.md` — found via "yeah got maiil"
+
+MX validation confirmed. Updating memory and ready for Claude Team signup.
+
+=== idx 12 | block=g2_docs ===
+PROMPT: yeah i got the maiil in https://mail.daum.net/top/INBOX/0000000000000E9 u send before. so what now ? go to claude ?
+SUBJECT: code review market
+TOKENS: ['20260322-ai-code-review-market.md', 'code', 'review', 'market']
+RESPONSE: > **CM** (chat memory/hybrid): "[assistant@Clone] Landed on Kakao login page — session logge..." and 2 more
+> **G1** (time memory): "feat: OpenClaw gateway migration — stop bridge, use native Telegram" and 2 more
+> **G2** (space search): `20260417-korea-ai-master-for-founder-credibility.md`, `MEMORY.md`, `20260322-ai-code-review-market.md` — found via "yeah got maiil"
+
+MX validation confirmed. Updating memory and ready for Claude Team signup.
+
+=== idx 13 | block=g2_docs ===
+PROMPT: yeah i got the maiil in https://mail.daum.net/top/INBOX/0000000000000E9 u send before. so what now ? go to claude ?
+SUBJECT: openclaw powerful features
+TOKENS: ['20260324-openclaw-powerful-features.md', 'openclaw', 'powerful', 'features']
+RESPONSE: > **CM** (chat memory/hybrid): "[assistant@Clone] Landed on Kakao login page — session logge..." and 2 more
+> **G1** (time memory): "feat: OpenClaw gateway migration — stop bridge, use native Telegram" and 2 more
+> **G2** (space search): `20260417-korea-ai-master-for-founder-credibility.md`, `MEMORY.md`, `20260322-ai-code-review-market.md` — found via "yeah got maiil"
+
+MX validation confirmed. Updating memory and ready for Claude Team signup.
+
+=== idx 14 | block=g1 ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: v1.23.211 20260309 1659 - fix customer-problem survey: DB migration(feedback_type CHECK +customer_problem_survey) + sati
+TOKENS: ['+customer_problem_survey', 'migration(feedback_type', 'customer-problem', 'v1.23.211', 'survey']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 15 | block=g1 ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: v1.23.34 20260219 2109 - add country distribution dashboard (DB migration + getCountryCode + chat country collect + admi
+TOKENS: ['getCountryCode', 'distribution', 'dashboard', 'migration', 'v1.23.34']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 16 | block=g1 ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: v1.23.60 20260220 1726 - fix OAuth token exposed in URL hash (AuthContext SIGNED_IN: window.history.replaceState removes
+TOKENS: ['window.history.replaceState', 'AuthContext', 'SIGNED_IN', 'v1.23.60', 'exposed']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 17 | block=g1 ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: v1.23.249 20260311 1554 - feat 자동화 스튜디오 전 스텝 w-44 좌측 사이드바 패턴 통일
+TOKENS: ['v1.23.249', '스튜디오', 'w-44', '사이드바']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 18 | block=g1 ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: v1.23.96 20260223 2240 - add view/play count to community feed (migration: 6 tables + increment_feed_count SQL func; API
+TOKENS: ['increment_feed_count', 'view/play', 'community', 'migration', 'v1.23.96']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 19 | block=g1 ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: v1.23.190 20260306 1314 - fix Vercel build uncaughtException: package.json build 스크립트에 VERCEL 환경에서 .next/cache 삭제 추가 → w
+TOKENS: ['uncaughtException', 'package.json', 'next/cache', 'v1.23.190', 'Vercel']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 20 | block=g1 ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: v1.23.202 20260309 1202 - refactor chat/message route.ts: remove unused imports (parameterCollector, serviceParameters,
+TOKENS: ['parameterCollector', 'serviceParameters', 'chat/message', 'v1.23.202', 'route.ts']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 21 | block=g2_docs ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: DISCORD GOVERNANCE CORPUS
+TOKENS: ['DISCORD-GOVERNANCE-CORPUS-20260420.md', 'DISCORD', 'GOVERNANCE', 'CORPUS']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 22 | block=g2_docs ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: MEMORY
+TOKENS: ['MEMORY.md', 'MEMORY']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 23 | block=g2_docs ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: playwright fullstack automation patterns
+TOKENS: ['20260401-playwright-fullstack-automation-patterns.md', 'playwright', 'fullstack', 'automation', 'patterns']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 24 | block=g2_docs ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: browser feature verification methods
+TOKENS: ['20260401-browser-feature-verification-methods.md', 'browser', 'feature', 'verification', 'methods']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 25 | block=g2_docs ===
+PROMPT: w? OAuth callback route + DB migration needed ? why ? for ?
+SUBJECT: playwright architecture
+TOKENS: ['20260401-llm-playwright-qa-architecture.md', 'playwright', 'architecture']
+RESPONSE: Both are needed because Discord and HB are separate systems that don't know about each other. Here's what each piece does:
+
+### OAuth callback route — `/api/discord/callback`
+**What**: Receives Discord's response after user authorizes the link.
+**Why needed**: When user clicks "Verify" in Discord, Discord redirects them to YOUR server with a one-time `code`. Without this route, you have no way to receive that code, exchange it for the user's Discord ID, or push their subscription status back to Discord.
+
+```
+User in Discord clicks "Link account"
+  → Discord redirects to discord.com/oauth/autho
+
+=== idx 26 | block=g1 ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: v1.0.4 20260330 live-infinite-iter96     - fix: comment-lens/CLAUDE.md 커밋 경로 수정 (../../ → ../) — comment-lens/ 기준 올바른 상대
+TOKENS: ['comment-lens/CLAUDE.md', 'live-infinite-iter96', 'comment-lens/', 'v1.0.4', '/../']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 27 | block=g1 ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: v1.7.0 20260411 conceptual-persistence-websearch     - feat: Chat API — paradigm profile persistence (session-level JSON
+TOKENS: ['conceptual-persistence-websearch', 'session-level', 'persistence', 'paradigm', 'profile']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 28 | block=g1 ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: v1.0.1 20260330 live-infinite-iter93     - fix: outreach/lead/route.ts OPTIONS handler — new Response → new NextResponse
+TOKENS: ['outreach/lead/route.ts', 'live-infinite-iter93', 'NextResponse', 'Response', 'OPTIONS']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 29 | block=g1 ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: v2.1.5 20260412 source-citation-ui     - feat: Claude 스타일 출처 카드 UI 추가 — 웹 검색 결과 출처 표시       · chat/route.ts: X-Search-So
+TOKENS: ['source-citation-ui', 'chat/route.ts', 'X-Search-So', 'v2.1.5', 'Claude']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 30 | block=g2_docs ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: conceptual persistence websearch memory
+TOKENS: ['20260411-conceptual-api-persistence-websearch-memory.md', 'conceptual', 'persistence', 'websearch', 'memory']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 31 | block=g2_docs ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: expert knowledge base
+TOKENS: ['20260330-wtp-expert-knowledge-base.md', 'expert', 'knowledge', 'base']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 32 | block=g2_docs ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: CLAUDE
+TOKENS: ['CLAUDE.md', 'CLAUDE']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 33 | block=g2_docs ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: email collection methods
+TOKENS: ['20260330-email-collection-methods.md', 'email', 'collection', 'methods']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 34 | block=g2_docs ===
+PROMPT: logined , when you have login options , may be google - be2jay67@gmail.com would be the highest loginable profile. memo it to the globale claude.md (oneline)
+SUBJECT: embedding alternatives
+TOKENS: ['20260411-embedding-api-alternatives.md', 'embedding', 'alternatives']
+RESPONSE: [tool_use: Edit] {"file_path":"/home/jayone/.claude/CLAUDE.md","new_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claude/env/shared.env && <command>`\n\n## Login Priority\n\nWhen an external site (Zoom, Notion, Figma, etc.) presents multiple SSO options, prefer **Google SSO with `be2jay67@gmail.com`** — this is the user's primary account and has the highest chance of being already authenticated.","old_string":"---\n## API Keys\n\nFull inventory and quick-reference scripts: `~/.claude/env/README.md`\nUsage: `source ~/.claud
+
+=== idx 35 | block=g2_docs ===
+PROMPT:  my eternal goal is to monetize, so which way would you suggest ?
+SUBJECT: DISCORD GOVERNANCE CORPUS
+TOKENS: ['DISCORD-GOVERNANCE-CORPUS-20260420.md', 'DISCORD', 'GOVERNANCE', 'CORPUS']
+RESPONSE: If monetization is the eternal goal, **none of A/B/C is right** — they all optimize for the wrong thing (speed/scope/cadence). Discord's monetization value comes from **visible status differentiation**, which requires Method C (Linked Roles) + Pro-exclusive structures.
+
+**Monetization-first answer: Do the 3-5 day Linked Roles sprint AND add these conversion levers.**
+
+### Why Method C is non-negotiable for monetization
+- The `@pro` badge auto-shown across Discord = passive aspiration signal every time a Pro user posts
+- Pro-only channels need role gating, which requires the role to be auto-man
+
+=== idx 36 | block=g2_docs ===
+PROMPT:  my eternal goal is to monetize, so which way would you suggest ?
+SUBJECT: ADMIN TABS REORGANIZATION
+TOKENS: ['ADMIN-TABS-REORGANIZATION-20260319.md', 'ADMIN', 'TABS', 'REORGANIZATION']
+RESPONSE: If monetization is the eternal goal, **none of A/B/C is right** — they all optimize for the wrong thing (speed/scope/cadence). Discord's monetization value comes from **visible status differentiation**, which requires Method C (Linked Roles) + Pro-exclusive structures.
+
+**Monetization-first answer: Do the 3-5 day Linked Roles sprint AND add these conversion levers.**
+
+### Why Method C is non-negotiable for monetization
+- The `@pro` badge auto-shown across Discord = passive aspiration signal every time a Pro user posts
+- Pro-only channels need role gating, which requires the role to be auto-man
+
+=== idx 37 | block=g1 ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: v2.8.1 20260220 1728     - implement session-isolated Playwright validation hook (COMPLETE)     - stop-playwright-valida
+TOKENS: ['stop-playwright-valida', 'session-isolated', 'Playwright', 'validation', 'implement']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 38 | block=g1 ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: v2.5.2 20260215 2345     - fix DDP RuntimeError in LoRA training (find_unused_parameters=True)     - resolve "Expected t
+TOKENS: ['find_unused_parameters=True', 'RuntimeError', 'training', 'Expected', 'resolve']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 39 | block=g2_docs ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: hallumaze paper draft
+TOKENS: ['20260323-hallumaze-paper-draft.md', 'hallumaze', 'paper', 'draft']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 40 | block=g2_docs ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: MEMORY
+TOKENS: ['MEMORY.md', 'MEMORY']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 41 | block=g2_docs ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: tool autonomous execution
+TOKENS: ['20260323-mcp-tool-autonomous-execution.md', 'tool', 'autonomous', 'execution']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 42 | block=g2_docs ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: related work table
+TOKENS: ['20260323-related-work-table.md', 'related', 'work', 'table']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 43 | block=g2_docs ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: NIPA MODEL ALTERNATIVE RESEARCH
+TOKENS: ['NIPA_LLM_MODEL_ALTERNATIVE_RESEARCH_20260224.md', 'NIPA', 'MODEL', 'ALTERNATIVE', 'RESEARCH']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 44 | block=g2_prefetch ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: _get_medium_pipeline_window in tests/test_skill_invocation.py
+TOKENS: ['_get_medium_pipeline_window', 'test_skill_invocation.py']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 45 | block=g2_prefetch ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: WINDOWS_NOTIFY_HOOK_DESIGN.md in docs/infrastructure/WINDOWS_NOTIFY_HOOK_DESIGN.md
+TOKENS: ['WINDOWS_NOTIFY_HOOK_DESIGN.md', 'WINDOWS_NOTIFY_HOOK_DESIGN.md']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 46 | block=g2_prefetch ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: docs/infrastructure/WINDOWS_NOTIFY_HOOK_DESIGN.md in docs/infrastructure/WINDOWS_NOTIFY_HOOK_DESIGN.md
+TOKENS: ['docs/infrastructure/WINDOWS_NOTIFY_HOOK_DESIGN.md', 'WINDOWS_NOTIFY_HOOK_DESIGN.md']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 47 | block=g2_prefetch ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: stop in monitoring-agent/src/terminal-monitor.ts
+TOKENS: ['stop', 'terminal-monitor.ts']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 48 | block=g2_prefetch ===
+PROMPT: window-stop works but window - notify doesn'nt work when proceeding the session with prompot it doesn't close (pop up)
+SUBJECT: stop_proxy in tools/start-nipa-proxy.sh
+TOKENS: ['stop_proxy', 'start-nipa-proxy.sh']
+RESPONSE: [tool_use: Bash] {"command":"echo \"현재 작업디렉토리: $(pwd)\"\necho \"basename: $(basename $(pwd))\"\necho \"---\"\necho \"현재 슬롯들:\"\nfor d in /tmp/claude-notify-stack/slot_*/; do\n    echo \"$d:\"\n    for f in $d/*; do\n        echo \"  $(basename $f) = $(cat $f 2>/dev/null)\"\n    done\ndone 2>/dev/null","description":"Check pwd and slot states"}
+
+=== idx 49 | block=g1 ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: v1.9.7 20260204 1240 - fix CompleteVideoGenerator fatal error detection (stringify entire statusError object)     - fix
+TOKENS: ['CompleteVideoGenerator', 'statusError', 'detection', 'stringify', 'v1.9.7']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+
+=== idx 50 | block=g1 ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: v1.23.193 20260306 1434 - fix AI style analysis Request Entity Too Large: handleRefImagesChange canvas 압축(max 800px, JPE
+TOKENS: ['handleRefImagesChange', 'v1.23.193', 'analysis', 'Request', 'Entity']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+
+=== idx 51 | block=g1 ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: v1.23.94 20260223 1800 - fix cardnews-submit Edge Function 500 error (Fireworks gpt-oss-120b→llama-v3p3-70b-instruct + r
+TOKENS: ['gpt-oss-120b→llama-v3p3-70b-instruct', 'cardnews-submit', 'Fireworks', 'v1.23.94', 'Function']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+
+=== idx 52 | block=g2_docs ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: DISCORD GOVERNANCE CORPUS
+TOKENS: ['DISCORD-GOVERNANCE-CORPUS-20260420.md', 'DISCORD', 'GOVERNANCE', 'CORPUS']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+
+=== idx 53 | block=g2_docs ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: ADMIN TABS REORGANIZATION
+TOKENS: ['ADMIN-TABS-REORGANIZATION-20260319.md', 'ADMIN', 'TABS', 'REORGANIZATION']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+
+=== idx 54 | block=g2_docs ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: fullstack browser verification sota
+TOKENS: ['20260401-fullstack-browser-verification-sota.md', 'fullstack', 'browser', 'verification', 'sota']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+
+=== idx 55 | block=g2_docs ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: playwright fullstack automation patterns
+TOKENS: ['20260401-playwright-fullstack-automation-patterns.md', 'playwright', 'fullstack', 'automation', 'patterns']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+
+=== idx 56 | block=g2_docs ===
+PROMPT: gather the discord entire governing strategyis corpus using /entity -r
+SUBJECT: MEMORY
+TOKENS: ['MEMORY.md', 'MEMORY']
+RESPONSE: [tool_use: Skill] {"args":"-r gather entire Discord community governing strategy corpus for an AI SaaS startup (Hugwarts Banana / Ginigen AI - AI multimedia generation platform with 37 payers, ~400 active users, key feature Automation Studio at 1.5% conversion). Cover: server structure, moderation, role hierarchy, engagement loops, feedback collection, monetization integration (Discord-paid roles/OAuth), viral growth mechanics, anti-spam, and onboarding flow. Output should be actionable for solo/small founder operating Discord without a dedicated community manager.","skill":"entity"}
+

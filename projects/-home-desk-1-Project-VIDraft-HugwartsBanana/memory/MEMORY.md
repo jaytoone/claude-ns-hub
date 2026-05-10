@@ -1,0 +1,12 @@
+- [RESOLVED] dong8680@gmail.com: 10,000원 크레딧 미지급 → 120+30(사과) 수동 지급, 사과 이메일 발송 완료 — 2026-04-30
+- [RESOLVED] VIDraft 전체 소스 E:/Desk-Home/wsl/Project/VIDraft → /home/desk-1/Project/VIDraft rsync 완료 (2026-05-01)
+- [FIXED] SevenZero 결제 실패 근본 원인: 20260124 migration이 process_payment_complete_with_logging을 service_role 전용으로 제한 → 프론트엔드 authenticated 호출 → permission denied → 크레딧 미지급
+- [FIXED] 수정: /api/payments/sevenzero/complete 라우트 신규 생성 (service_role 경유), SevenZeroPaymentModal에서 RPC 직접 호출 → 이 라우트 호출로 변경
+- [NOTE] SEVENZERO_API_KEY 플레이스홀더는 별개 이슈 (sevenzero/route.ts는 프론트에서 사용 안 함 — 데드 코드)
+- [UX] 히스토리 패널 이미지/영상 클릭 → 다운로드 아닌 확대 미리보기로 변경 예정 (2026-05-06)
+- [DONE] Paddle 결제 연동 완료 v1.23.432-436 (2026-05-07/08)
+- [DATA] M0.1 COGS 감사 결과 (2026-05-08): 실제 결제 유저 26명 (DB 기준, 37 추정치와 차이 있음), 활성 결제유저 14명/90일, 월평균 COGS 4,937 KRW/유저 ($3.40), 29,900 KRW 무제한 구독 마진 2.6x 여유 → PASS. 주요 COGS: 립싱크 47.5% + 보이스클론 25.3% = 72.8%
+- [STRATEGY] HB 핵심 병목: Activation (Automation Studio 403유저/1.5% vs Directors 71.4%). ICP: 수익화 목적 한국 쇼츠 크리에이터. 포지셔닝 후보: YouTube 2025.07 AI정책 대응 (face+voice 필수). OMTM: payers/week. 다음: M0.2 결제유저 5명 인터뷰, M0.3 경쟁사 포지셔닝 체크
+- [RULE] stop-playwright-detect hook: backend-only 파일(supabase/functions/*, API routes 등) 변경 시 E2E 건너뜀. UI 서버 실행 중 + UI 파일 변경 시에만 E2E 필수 — 2026-05-08
+- [FIXED] lipsync-worker 70% 고착 버그: reinvokeWorker()가 fire-and-forget이라 edge function 종료 시 fetch 미발송 → polling chain 중단. 수정: 200ms await 추가 (v43 배포 2026-05-08)
+- [FIXED] video-lipsync worker 미시작 버그: lipsync-worker 첫 호출도 fire-and-forget → metadata=NULL로 영구 stuck. 동일 패턴, 동일 수정 (v48 배포 2026-05-08). ginipickofficial 5개 job 345크레딧 환불 완료

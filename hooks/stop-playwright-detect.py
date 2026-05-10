@@ -77,28 +77,43 @@ def load_hook_cfg(cwd: str) -> dict:
 
 _HOOK_CFG = load_hook_cfg(CWD)
 _ALWAYS_VERIFY = _HOOK_CFG.get("alwaysVerify", False)
+_VERIFY_PLAN_URL = _HOOK_CFG.get("verifyPlanUrl")  # replaces verifyScript
 _EXTRA_REPO_PATHS = [
     str(Path(p.replace("~", str(Path.home()))).expanduser())
     for p in _HOOK_CFG.get("extraRepoPaths", [])
 ]
 
 
-def get_extra_repo_changes(repo_paths: list[str], skip_fn) -> list[str]:
-    """Check additional git repos for UI-relevant changes since session start."""
+def get_extra_repo_changes(repo_paths: list[str], skip_fn, session_hash: str) -> list[str]:
+    """Check additional git repos for UI-relevant changes since THIS session started.
+    Snapshots each repo's HEAD at first call so only new commits + uncommitted are tracked."""
     extra_changes = []
     for repo_path in repo_paths:
         rp = Path(repo_path)
         if not rp.exists():
             continue
-        def _git(*args):
-            return run(["git", "-C", str(rp), "-c", "core.quotepath=false", *args])
-        # Get uncommitted changes in this repo
+        def _git(*args, _rp=rp):
+            return run(["git", "-C", str(_rp), "-c", "core.quotepath=false", *args])
+
+        # Snapshot this repo's HEAD at session start (separate from main project snapshot)
+        snap_key = f"/tmp/pw-extra-head-{session_hash}-{rp.name}.txt"
+        current_head = _git("rev-parse", "HEAD")
+        if not Path(snap_key).exists():
+            Path(snap_key).write_text(current_head)
+            session_start_head = current_head
+        else:
+            session_start_head = Path(snap_key).read_text().strip()
+
+        # Files changed via new commits this session
+        committed_this_session = ""
+        if session_start_head and session_start_head != current_head:
+            committed_this_session = _git("diff", "--name-only", f"{session_start_head}..HEAD")
+
+        # Still-uncommitted changes
         diff = _git("diff", "HEAD", "--name-only")
-        status = _git("status", "--porcelain")
-        untracked = "\n".join(l[3:] for l in status.splitlines() if l.startswith("??"))
-        all_files = sorted(set(filter(None, (diff + "\n" + untracked).splitlines())))
+
+        all_files = sorted(set(filter(None, (diff + "\n" + committed_this_session).splitlines())))
         relevant = [f for f in all_files if not skip_fn(f)]
-        # Use bare filenames (no repo-name prefix) so skip patterns don't interfere
         extra_changes.extend(relevant)
     return extra_changes
 
@@ -236,7 +251,7 @@ changed_raw = list(set(new_files + [f for f in committed_since.splitlines() if f
 changed_raw = sorted(set(filter(None, changed_raw)))
 
 # Check extra repos (e.g. ~/.claude/hub) for UI-relevant changes
-extra_changes = get_extra_repo_changes(_EXTRA_REPO_PATHS, should_skip) if _EXTRA_REPO_PATHS else []
+extra_changes = get_extra_repo_changes(_EXTRA_REPO_PATHS, should_skip, SESSION_HASH) if _EXTRA_REPO_PATHS else []
 changed_raw = sorted(set(changed_raw + extra_changes))
 
 _no_git_hook = (Path(CWD) / ".playwright-hook.json").exists() and not git("rev-parse", "HEAD")
@@ -301,6 +316,95 @@ if not TARGETS and not _no_git_hook and not _ALWAYS_VERIFY:
     sys.exit(0)
 
 # ── Custom verifyScript runner ────────────────────────────────────────────────
+
+def run_plan_verify(plan_url: str, base_url: str) -> list[dict]:
+    """Fetch check plan from server and run Playwright checks inline — no subprocess."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(plan_url, timeout=5) as r:
+            plan_data = json.loads(r.read())
+    except Exception as e:
+        return [{"check": "verify_plan_fetch", "ok": False, "detail": str(e)[:80]}]
+
+    plan = plan_data.get("checks", [])
+    if not plan:
+        return [{"check": "verify_plan", "ok": False, "detail": "empty plan"}]
+
+    try:
+        from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+    except ImportError:
+        return [{"check": "playwright", "ok": False, "detail": "playwright not installed"}]
+
+    results = []
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True,
+                args=['--no-sandbox','--disable-setuid-sandbox','--disable-gpu','--headless=new','--disable-dev-shm-usage'])
+            ctx = browser.new_context(viewport={"width": 1280, "height": 900})
+            page = ctx.new_page()
+            console_errors = []
+            page.on("console", lambda m: console_errors.append(m.text) if m.type == "error" else None)
+            page.on("pageerror", lambda e: console_errors.append(str(e)))
+            page.goto(f"{base_url}/", wait_until="domcontentloaded", timeout=15000)
+            page.evaluate("""() => {
+                document.documentElement.setAttribute('data-theme','dark');
+                localStorage.setItem('hub-theme','dark');
+            }""")
+            page.wait_for_timeout(4000)
+
+            for chk in plan:
+                cid, ctype = chk["id"], chk["type"]
+                if ctype == "health":
+                    try:
+                        with urllib.request.urlopen(f"{base_url}{chk['url']}", timeout=3) as r2:
+                            d = json.loads(r2.read())
+                        ok = d.get("ok", False)
+                    except Exception:
+                        ok = False
+                    results.append({"check": cid, "ok": ok, "detail": "" if ok else "not ok"})
+                elif ctype == "tab_loaded":
+                    fid = chk.get("frame_id","").replace("frame-","")
+                    el = page.query_selector(f"#offline-{fid}")
+                    visible = el.is_visible() if el else False
+                    results.append({"check": cid, "ok": not visible, "detail": "offline overlay" if visible else ""})
+                elif ctype == "dark_mode_iframe":
+                    fid = chk.get("frame_id","")
+                    theme = page.evaluate(f"""() => {{
+                        const f=document.getElementById('{fid}');
+                        try{{return f.contentDocument.documentElement.getAttribute('data-theme');}}
+                        catch(e){{return 'cross-origin';}}
+                    }}""")
+                    results.append({"check": cid, "ok": theme=="dark", "detail": "" if theme=="dark" else f"theme={theme}"})
+                elif ctype == "dark_mode_listener":
+                    svc = chk.get("svc","")
+                    try:
+                        cfg_data = {}
+                        with urllib.request.urlopen(f"{base_url}/config", timeout=3) as r3:
+                            cfg_data = json.loads(r3.read())
+                        svc_url = cfg_data.get(f"{svc}_url","")
+                        html = urllib.request.urlopen(svc_url, timeout=3).read().decode()
+                        ok = "hub-theme" in html and "data-theme" in html
+                    except Exception:
+                        ok = False
+                    results.append({"check": cid, "ok": ok, "detail": "" if ok else "missing listener"})
+                elif ctype == "selector":
+                    sel = chk.get("selector","")
+                    fid = chk.get("frame_id")
+                    min_c = chk.get("min", 1)
+                    count = page.evaluate(f"""() => {{
+                        const root={'document.getElementById("'+fid+'")?.contentDocument' if fid else 'document'};
+                        return root ? root.querySelectorAll('{sel}').length : 0;
+                    }}""")
+                    ok = count >= min_c
+                    results.append({"check": cid, "ok": ok, "detail": f"{count} found" if ok else f"only {count}"})
+                elif ctype == "no_js_errors":
+                    ok = len(console_errors) == 0
+                    results.append({"check": cid, "ok": ok, "detail": " | ".join(console_errors[:2]) if console_errors else ""})
+            browser.close()
+    except Exception as e:
+        results.append({"check": "playwright", "ok": False, "detail": str(e)[:100]})
+    return results
+
 
 def run_custom_verify(script: str) -> list[dict]:
     """Run a project-specific verify script (full command) and parse its structured output."""
@@ -410,8 +514,17 @@ url_to_check = check_url  # kept for compat with check_results usage below
 n_targets = len(TARGETS)
 changed_summary = "\n".join(TARGETS[:8]) + ("\n..." if n_targets > 8 else "")
 
-# Run custom E2E verify script if configured, otherwise generic checks
-if VERIFY_SCRIPT:
+# Adaptive E2E: run verifyScript only if its owner files are in TARGETS
+# Otherwise fall back to generic 4-check — verifyScript is project-specific, not always needed
+_verify_script_paths = _HOOK_CFG.get("verifyScriptPaths", [])
+_files_match = (not _verify_script_paths or
+    any(any(pat in t for t in TARGETS) for pat in _verify_script_paths))
+
+if _VERIFY_PLAN_URL and _files_match:
+    # Fetch dynamic check plan from server and run inline — no subprocess
+    check_results = run_plan_verify(_VERIFY_PLAN_URL, check_url)
+elif VERIFY_SCRIPT and _files_match:
+    # Legacy: run external script
     check_results = run_custom_verify(VERIFY_SCRIPT)
 elif UI_URL:
     check_results = run_ui_check(url_to_check)

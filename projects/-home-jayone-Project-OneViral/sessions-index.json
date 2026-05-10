@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "f4cdc11a-ff98-4d46-9c7b-b26868b51079",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/f4cdc11a-ff98-4d46-9c7b-b26868b51079.jsonl",
+      "fileMtime": 1770874798075,
+      "firstPrompt": "UI에서 다시 테스트 너가 해 ,",
+      "summary": "다중 참조 이미지 키프레임 생성 프롬프트 최적화",
+      "messageCount": 43,
+      "created": "2026-02-10T15:53:37.033Z",
+      "modified": "2026-02-11T05:08:01.548Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "64f38820-f5cf-4ba5-ac1e-0e4679302899",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/64f38820-f5cf-4ba5-ac1e-0e4679302899.jsonl",
+      "fileMtime": 1770874799655,
+      "firstPrompt": "일단 기존 dwm4 에서 처럼 키프레임 1 -> i2v 로 반복 영상으로 할거고 트랙수만 채우면 되는데 6개 트랙 (음악) 반복해서 1시간으로 맞추는 내용으로 문서 업데이트하는게 좋을거같고, 그러면 요지는 온톨로지 관점에서 어떤 음악, 어떤 키프레임 을 사용할만 구체적으로 설정하면 될 듯, 트랙간에는 느낌이 비슷한게 낫지 않나 ? 온톨로지  ?롱폼 음악 비…",
+      "summary": "온톨로지 기반 6곡 1시간 Lo-Fi 음악 생성 계획",
+      "messageCount": 22,
+      "created": "2026-02-11T12:54:37.603Z",
+      "modified": "2026-02-11T13:25:33.073Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "568e6406-f702-4dfb-99b0-028254057e60",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/568e6406-f702-4dfb-99b0-028254057e60.jsonl",
+      "fileMtime": 1770874800811,
+      "firstPrompt": "onotolo 서비스에서  장시간 들을수 있는 (음악 컨텐츠로 조회수 / 유튜브 광고 수익 챙기기) 좋은 컨텐츠 / 장르 / 방법을 온톨로문서로 저장하기 위한 방법 리서치",
+      "summary": "장시간 음악 컨텐츠 온톨로지 문서 생성",
+      "messageCount": 32,
+      "created": "2026-02-11T05:46:05.338Z",
+      "modified": "2026-02-11T07:42:58.280Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "1c48bae9-a5f8-4847-8b7f-d1dd8ec7e33d",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/1c48bae9-a5f8-4847-8b7f-d1dd8ec7e33d.jsonl",
+      "fileMtime": 1770874803583,
+      "firstPrompt": "No prompt",
+      "summary": "대화 기록 초기화 요청",
+      "messageCount": 2,
+      "created": "2026-02-11T07:42:46.023Z",
+      "modified": "2026-02-11T07:42:48.619Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "7000b340-7350-40fc-a723-902453bb0fcb",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/7000b340-7350-40fc-a723-902453bb0fcb.jsonl",
+      "fileMtime": 1770874805287,
+      "firstPrompt": "시나리오 내용 공유해봐",
+      "summary": "Luna AI S-Tier 버그 수정 및 트렌드 시나리오 생성",
+      "messageCount": 11,
+      "created": "2026-02-12T00:28:08.994Z",
+      "modified": "2026-02-12T00:55:49.161Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "481074df-594b-4e33-b1c1-b197d53d49d7",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/481074df-594b-4e33-b1c1-b197d53d49d7.jsonl",
+      "fileMtime": 1770889933833,
+      "firstPrompt": "http://localhost:3001/luna-ai/scenario 서비스에서 왜 온톨로지 개념 114개중 10개만사용한거야 ? 시나리오 생성시, 개선적용 내용 : docs/IMPLEMENTATION-scenario-studio-v2.1-phase3.md 참조 ,",
+      "summary": "Luna AI 시나리오 온톨로지 개념 필터링 버그 수정",
+      "messageCount": 20,
+      "created": "2026-02-12T05:38:22.736Z",
+      "modified": "2026-02-12T06:22:25.813Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "8f57a977-5bd9-48fa-b4eb-2e08140ac5df",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/8f57a977-5bd9-48fa-b4eb-2e08140ac5df.jsonl",
+      "fileMtime": 1770947102692,
+      "firstPrompt": "<task-notification> <task-id>bc3001a</task-id> <output-file>/tmp/claude-1000/-home-jayone-Project-OneViral/tasks/bc3001a.output</output-file> <status>failed</status> <summary>Background command \"Stage…",
+      "summary": "비즈니스 온톨로 문서 자동 생성 및 중복 방지",
+      "messageCount": 8,
+      "created": "2026-02-13T01:04:27.327Z",
+      "modified": "2026-02-13T01:25:59.262Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "5836a1bd-b507-4775-8f8f-bcb3a07b42d0",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-OneViral/5836a1bd-b507-4775-8f8f-bcb3a07b42d0.jsonl",
+      "fileMtime": 1770947509760,
+      "firstPrompt": "<task-notification> <task-id>b91451b</task-id> <output-file>/tmp/claude-1000/-home-jayone-Project-OneViral/tasks/b91451b.output</output-file> <status>completed</status> <summary>Background command \"St…",
+      "summary": "로컬 GPU로 1시간 lofi 음악 비디오 생성 및 유튜브 최적화",
+      "messageCount": 20,
+      "created": "2026-02-13T01:19:32.505Z",
+      "modified": "2026-02-13T01:51:27.648Z",
+      "gitBranch": "master",
+      "projectPath": "/home/jayone/Project/OneViral",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone/Project/OneViral"
+}

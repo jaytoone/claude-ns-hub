@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "16075d36-69a2-4e9a-90c9-5a9991007199",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone/16075d36-69a2-4e9a-90c9-5a9991007199.jsonl",
+      "fileMtime": 1769742297721,
+      "firstPrompt": "최적의 Proejct 작업 폴더 위치는 어디인가 ?    그리고 현재 claude-code 를 최신 버버전으로 업데이트하기 바람,",
+      "summary": "Claude Code setup and project folder optimization",
+      "messageCount": 5,
+      "created": "2026-01-30T03:02:36.126Z",
+      "modified": "2026-01-30T03:04:07.770Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone"
+}

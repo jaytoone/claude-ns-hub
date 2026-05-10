@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-05-10T10:00:21.270814+00:00",
+  "cwd": "/home/desk-1/.claude",
+  "turn_count": 2044,
+  "decisions": [
+    {
+      "text": "done",
+      "context": "⏵ ✓` 아이콘 → `pending` `queue` `done` 텍스트 pill로 교체:",
+      "tag": "impl_complete"
+    }
+  ]
+}

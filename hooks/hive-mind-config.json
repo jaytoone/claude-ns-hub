@@ -1,0 +1,32 @@
+{
+  "enabled": true,
+  "autoDetectComplexity": true,
+  "minComplexity": "LOW",
+  "workerCountByComplexity": {
+    "LOW": 1,
+    "MEDIUM": 2,
+    "HIGH": 3
+  },
+  "byzantineConsensus": {
+    "enabled": true,
+    "minAgreement": 0.67,
+    "timeout": 5000
+  },
+  "fallback": {
+    "onError": "single-agent",
+    "maxRetries": 1
+  },
+  "experimentalFeatures": {
+    "sharedMemory": true,
+    "dynamicWorkerScaling": false,
+    "mlComplexityDetection": false
+  },
+  "performance": {
+    "maxInitTime": 100,
+    "workerSpawnTimeout": 3000
+  },
+  "logging": {
+    "level": "info",
+    "file": "$HOME/.claude-flow/logs/hive-mind.log"
+  }
+}

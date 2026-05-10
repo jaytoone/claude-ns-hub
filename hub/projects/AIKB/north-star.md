@@ -2,7 +2,7 @@
 category: Vertical
 current: PoC 8/8 PASS (ADB-simulated)
 deadline: '2026-06-20'
-layer: 0
+layer: 2
 log:
 - date: '2026-05-07'
   text: PoC Day 1 — HW validated on Huawei WAS-LX2J + GK104 BT1
@@ -27,8 +27,8 @@ milestones:
   text: Release APK
 name: AIKB
 note: BT HID keyboard → Android content controller. K1/K2/K3 = NUMPAD_1/2/3 confirmed.
-parent: null
-position_x: 4
+parent: FromScratch
+position_x: 0
 repo_path: ''
 status: on-track
 target: 98/100 on 3 real devices × 2 keyboards

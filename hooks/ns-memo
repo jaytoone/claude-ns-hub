@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Instant northstar memo — Notion-like: one line, immediate file patch.
+
+Usage:
+  ns-memo "오늘 ST+OBV 백테스트 완료. US Tier2 avg EV +1.5%"
+  ns-memo FRWP "마일스톤 M1,M2 완료 확인"
+"""
+import sys, yaml, re
+from datetime import date
+from pathlib import Path
+
+args = sys.argv[1:]
+if not args:
+    print("Usage: ns-memo [PROJECT] 'memo text'")
+    sys.exit(1)
+
+# Detect if first arg is a project ID
+PROJECTS_DIR = Path.home() / ".claude/hub/projects"
+proj_id = None
+text    = None
+
+if len(args) >= 2:
+    candidate = args[0]
+    ns_path = PROJECTS_DIR / candidate / "north-star.md"
+    if ns_path.exists():
+        proj_id = candidate
+        text    = " ".join(args[1:])
+
+if proj_id is None:
+    # Auto-detect from CWD
+    import os
+    cwd_parts = Path(os.getcwd()).parts
+    for part in reversed(cwd_parts):
+        ns_path = PROJECTS_DIR / part / "north-star.md"
+        if ns_path.exists():
+            proj_id = part
+            break
+    if proj_id is None:
+        # Try matching any project whose name appears in CWD
+        for p in PROJECTS_DIR.iterdir():
+            if p.is_dir() and p.name.lower() in os.getcwd().lower():
+                proj_id = p.name
+                break
+    text = " ".join(args)
+
+if proj_id is None:
+    print(f"No northstar project found for CWD. Use: ns-memo PROJECT 'text'")
+    sys.exit(1)
+
+ns_path = PROJECTS_DIR / proj_id / "north-star.md"
+raw = ns_path.read_text()
+parts = raw.split("---", 2)
+front = yaml.safe_load(parts[1])
+body  = parts[2]
+
+today = date.today().isoformat()
+entry = {"date": today, "text": text}
+
+log = front.get("log", [])
+# Insert at front (most recent first), limit to 20 entries
+log.insert(0, entry)
+front["log"] = log[:20]
+
+ns_path.write_text("---\n" + yaml.dump(front, allow_unicode=True,
+    default_flow_style=False, sort_keys=False) + "---" + body)
+
+print(f"✓ [{proj_id}] {today}: {text[:60]}")
+
+# Notify hub if running
+try:
+    import requests, subprocess
+    r = subprocess.run(["ss","-tlnp"], capture_output=True, text=True, timeout=2)
+    for line in r.stdout.splitlines():
+        if ":9000" in line and "LISTEN" in line:
+            import re as _re
+            m = _re.search(r"(\d+\.\d+\.\d+\.\d+):9000", line)
+            if m:
+                requests.post(f"http://{m.group(1)}:9000/api/northstar/{proj_id}/reload",
+                    timeout=1, json={})
+            break
+except Exception:
+    pass

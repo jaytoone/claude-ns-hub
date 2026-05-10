@@ -379,6 +379,32 @@ def _is_decision(subject):
     return any(kw.lower() in sl for kw in _DECISION_KEYWORDS)
 
 
+# ── query_type classification (for retrieval_event schema v1.1) ──────────────
+_TEMPORAL_KW = frozenset([
+    "when", "history", "timeline", "progression", "what happened", "progress",
+    "previously", "before", "after", "last time", "since", "ago", "recent",
+    "changed", "evolution", "how long", "session", "yesterday", "last week",
+    "진행", "역사", "이전", "지난", "타임라인", "최근", "변경", "이번",
+])
+
+def _classify_query_type(prompt: str) -> str:
+    """Classify prompt into TEMPORAL / KEYWORD / SEMANTIC.
+
+    TEMPORAL  — query is about history/timeline/progression
+    KEYWORD   — short technical lookup (≤60 chars) or pure symbol/identifier
+    SEMANTIC  — natural language conceptual query (default)
+    """
+    if not prompt:
+        return "KEYWORD"
+    pl = prompt.lower()
+    if any(kw in pl for kw in _TEMPORAL_KW):
+        return "TEMPORAL"
+    words = pl.split()
+    if len(words) <= 6:
+        return "KEYWORD"
+    return "SEMANTIC"
+
+
 def get_git_head(project_dir):
     try:
         r = subprocess.run(
@@ -550,7 +576,7 @@ def rrf_merge(list_a, list_b, k_rrf=60):
         scores[k] = scores.get(k, 0.0) + 1.0 / (k_rrf + rank)
         hash_to_item[k] = item
 
-    merged_keys = sorted(scores.keys(), key=lambda h: -scores[h])
+    merged_keys = sorted(scores.keys(), key=lambda h: (-scores[h], h))
     return [hash_to_item[h] for h in merged_keys]
 
 
@@ -599,7 +625,7 @@ def bm25_rank_decisions(corpus, query, top_k=7, min_score=0.5,
     top_score = float(max(scores))
     adaptive_floor = max(min_score, top_score * adaptive_floor_ratio)
 
-    ranked_idx = sorted(range(len(corpus)), key=lambda i: scores[i], reverse=True)
+    ranked_idx = sorted(range(len(corpus)), key=lambda i: (-scores[i], i))
 
     # Cluster signature: normalizes "live-infinite iter N/∞: goal_vM" boilerplate
     # so different iter-numbers don't escape MMR dedup (MEMORY.md: "live-inf iter
@@ -734,14 +760,16 @@ def build_docs_bm25(project_dir):
     vs header-chunked approach (0.758 vs 0.667 on 33 paraphrase pairs).
     Full-doc wins on temporal/open-set/perf queries where answers span multiple sections.
     """
-    all_units = []
+    # Name-keyed dict: root extras (README/CLAUDE/MEMORY) win on collision
+    # Prevents duplicate entries when docs/research/ has same-name placeholders
+    units_by_name = {}
     docs_dir = Path(project_dir) / "docs" / "research"
     if docs_dir.exists():
         for md_file in sorted(docs_dir.glob("*.md")):
             try:
                 text = f"{md_file.name}\n{md_file.read_text()}"
                 if len(text) > 50:
-                    all_units.append(text)
+                    units_by_name.setdefault(md_file.name, text)
             except Exception:
                 pass
 
@@ -750,9 +778,11 @@ def build_docs_bm25(project_dir):
             p = Path(fpath)
             text = f"{p.name}\n{p.read_text()}"
             if len(text) > 50:
-                all_units.append(text)
+                units_by_name[p.name] = text  # root always wins
         except Exception:
             pass
+
+    all_units = list(units_by_name.values())
 
     if not all_units or not HAS_BM25:
         return None, []
@@ -1382,6 +1412,7 @@ def main():
         pass
     lines = []
     _blocks_fired = []  # for final hook_invoked telemetry summary
+    _retrieval_meta = {"ts": _time.time(), "blocks": {}}  # retrieval_event telemetry
 
     # 0a. Pending decisions from previous session (Stop hook → queue file)
     pending = consume_pending_decisions(project_dir)
@@ -1423,6 +1454,13 @@ def main():
                 "duration_ms": int((_time.perf_counter() - _t_g1) * 1000),
             })
             _blocks_fired.append("g1")
+            _retrieval_meta["blocks"]["g1_decisions"] = {
+                "candidates": len(corpus),
+                "returned": len(relevant),
+                "retrieval_method": "HYBRID" if (_VEC_SOCK.exists() and not _VEC_DISABLED) else "BM25",
+                "duration_ms": int((_time.perf_counter() - _t_g1) * 1000),
+                "query_type": _classify_query_type(prompt),
+            }
             # Citation probe: log G1 retrieved nodes
             log_retrieved_nodes(project_dir, _session_id, prompt, "g1_decisions", [
                 {"id": c.get("hash", c["subject"][:20]), "text": c["subject"], "date": c.get("date", "")}
@@ -1460,6 +1498,13 @@ def main():
                 "duration_ms": int((_time.perf_counter() - _t_g2d) * 1000),
             })
             _blocks_fired.append("g2_docs")
+            _retrieval_meta["blocks"]["g2_docs"] = {
+                "candidates": None,
+                "returned": len(doc_chunks),
+                "retrieval_method": "HYBRID" if (_VEC_SOCK.exists() and not _VEC_DISABLED) else "BM25",
+                "duration_ms": int((_time.perf_counter() - _t_g2d) * 1000),
+                "query_type": _classify_query_type(prompt),
+            }
             # Citation probe: log G2-DOCS retrieved nodes
             log_retrieved_nodes(project_dir, _session_id, prompt, "g2_docs", [
                 {"id": chunk.strip().split("\n")[0].split(" §")[0].strip(), "text": chunk.strip().split("\n")[0][:80]}
@@ -1543,6 +1588,14 @@ def main():
             kw_str = " ".join(g2_keywords[:3]) if g2_keywords else ""
             via_str = f' — found via "{kw_str}"' if kw_str else ""
             header_lines.append(f"> **G2** (space search): {files_str}{via_str}")
+        # Daemon degradation warnings — shown only when socket is absent
+        _daemon_warns = []
+        if not _VEC_DISABLED and not _VEC_SOCK.exists():
+            _daemon_warns.append("vec-daemon down — BM25-only mode (semantic rerank disabled)")
+        if _USE_CROSS_ENCODER and not _BGE_SOCK.exists():
+            _daemon_warns.append("bge-daemon down — cross-encoder rerank disabled")
+        if _daemon_warns:
+            header_lines.append("> **⚠ Semantic layer**: " + " | ".join(_daemon_warns))
         if header_lines:
             lines = header_lines + [""] + lines
 
@@ -1684,6 +1737,16 @@ def main():
                         pass
             Path(os.path.expanduser("~/.claude/last-injection.json")).write_text(
                 json.dumps(injection)
+            )
+            # Write retrieval metadata for utility-rate.py → retrieval_event schema
+            _retrieval_meta["vec_daemon_up"] = _VEC_SOCK.exists() and not _VEC_DISABLED
+            _retrieval_meta["bge_daemon_up"] = _BGE_SOCK.exists() and bool(
+                os.environ.get("CTX_CROSS_ENCODER", "1") != "0"
+            )
+            _retrieval_meta["query_char_count"] = len(prompt) if prompt else 0
+            _retrieval_meta["session_id"] = _session_id or ""
+            Path(os.path.expanduser("~/.claude/last-retrieval-meta.json")).write_text(
+                json.dumps(_retrieval_meta)
             )
         except Exception:
             pass

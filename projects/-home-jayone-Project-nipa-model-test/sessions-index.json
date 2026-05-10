@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "24ec40f7-2afb-4730-9cdd-fdf19459e0e5",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-nipa-model-test/24ec40f7-2afb-4730-9cdd-fdf19459e0e5.jsonl",
+      "fileMtime": 1769917477379,
+      "firstPrompt": "hi",
+      "summary": "API Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"NotFoundError\",\"message\":\"The model `claude-haiku-4-5-20251001` does not exist.\"}}",
+      "messageCount": 2,
+      "created": "2026-02-01T03:34:30.636Z",
+      "modified": "2026-02-01T03:35:55.001Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/nipa-model-test",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "162c09dd-e659-4ddc-ac02-eeaa41d5d479",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-nipa-model-test/162c09dd-e659-4ddc-ac02-eeaa41d5d479.jsonl",
+      "fileMtime": 1769918266287,
+      "firstPrompt": "너는 어떤 학습 모델이니",
+      "summary": "API Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"NotFoundError\",\"message\":\"The model `claude-haiku-4-5-20251001` does not exist.\"}}",
+      "messageCount": 1,
+      "created": "2026-02-01T03:44:52.290Z",
+      "modified": "2026-02-01T03:45:04.286Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/nipa-model-test",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "e7201b24-035f-41f4-83d8-41c53e94640b",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-nipa-model-test/e7201b24-035f-41f4-83d8-41c53e94640b.jsonl",
+      "fileMtime": 1769918266335,
+      "firstPrompt": "너는 어떤 llm 모델이니 ?",
+      "summary": "API Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"NotFoundError\",\"message\":\"The model `claude-haiku-4-5-20251001` does not exist.\"}}",
+      "messageCount": 4,
+      "created": "2026-02-01T03:46:17.983Z",
+      "modified": "2026-02-01T03:46:26.467Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/nipa-model-test",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "307627cf-d538-45d2-849f-1b67a1635a4d",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-nipa-model-test/307627cf-d538-45d2-849f-1b67a1635a4d.jsonl",
+      "fileMtime": 1769918951263,
+      "firstPrompt": "무슨일이지",
+      "summary": "API Error: 404 {\"type\":\"error\",\"error\":{\"type\":\"NotFoundError\",\"message\":\"The model `claude-haiku-4-5-20251001` does not exist.\"}}",
+      "messageCount": 2,
+      "created": "2026-02-01T03:57:36.200Z",
+      "modified": "2026-02-01T03:57:50.991Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/nipa-model-test",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone/Project/nipa-model-test"
+}

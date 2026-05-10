@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-04-17T08:06:48.425736+00:00",
+  "cwd": "/tmp/test-hook-val",
+  "turn_count": 6,
+  "decisions": [
+    {
+      "text": "score = 0.94.",
+      "context": "irmed. iter 12 completed with score = 0.94.",
+      "tag": "metric"
+    },
+    {
+      "text": "Recall@10 = 0.87",
+      "context": "che implementation completed. Recall@10 = 0.87 achieved.",
+      "tag": "metric"
+    },
+    {
+      "text": "achieved",
+      "context": "n completed. Recall@10 = 0.87 achieved.",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Rollback confirmed",
+      "context": "Rollback confirmed. iter 12 completed with score = 0.94.",
+      "tag": "rollback"
+    },
+    {
+      "text": "Cache implementation",
+      "context": "Cache implementation completed. Recall@10 = 0.87 achieved.",
+      "tag": "cache_impl"
+    }
+  ]
+}

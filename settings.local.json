@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm update:*)",
+      "Bash(mkdir -p /home/desk-1/.local/share/claude-vault)",
+      "Bash(cp /home/desk-1/.claude/plugins/marketplaces/jaytoone/src/hooks/vec-daemon.py /home/desk-1/.local/share/claude-vault/)",
+      "Bash(cp /home/desk-1/.claude/plugins/marketplaces/jaytoone/src/hooks/bge-daemon.py /home/desk-1/.local/share/claude-vault/)",
+      "Bash(echo \"\")",
+      "Bash(echo \"alias celi='~/scripts/zellij-csk.sh'\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

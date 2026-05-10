@@ -1,0 +1,121 @@
+[
+  {
+    "name": "CTX",
+    "metric": "Plugin active installs",
+    "current": "—",
+    "target": "500",
+    "unit": "installs",
+    "status": "on-track",
+    "deadline": "2026-09-30",
+    "note": "Claude Code memory + context retrieval plugin. Measures real adoption, not downloads.",
+    "milestones": [
+      {
+        "text": "Publish to Claude Code plugin marketplace",
+        "done": false
+      },
+      {
+        "text": "Reach 50 installs",
+        "done": false
+      },
+      {
+        "text": "Reach 100 installs",
+        "done": false
+      },
+      {
+        "text": "Reach 500 installs",
+        "done": false
+      }
+    ],
+    "log": [],
+    "id": "CTX",
+    "file_path": "/home/desk-1/.claude/hub/projects/CTX/north-star.md",
+    "links": "",
+    "last_updated": 1778072943.3058846,
+    "stale": false
+  },
+  {
+    "name": "FromScratch",
+    "metric": "GPQA Diamond single-model score",
+    "current": "45%",
+    "target": "93.9%",
+    "unit": "%",
+    "status": "behind",
+    "deadline": "2026-06-30",
+    "note": "OR-Ensemble distillation → darwin36b v2 plan (FFN-only selective merge + LoRA KD)",
+    "milestones": [
+      {
+        "text": "Phase 2 v2: FFN-only DARE-TIES merge baseline >80%",
+        "done": false
+      },
+      {
+        "text": "Phase 3 v3: LoRA KD → 87-91% CoT target",
+        "done": false
+      },
+      {
+        "text": "Phase 4: Chemistry/Biology domain injection (+2-3pp)",
+        "done": false
+      },
+      {
+        "text": "Phase 5: GRPO on-policy (+2-3pp)",
+        "done": false
+      },
+      {
+        "text": "Final: ≥90% single-model GPQA Diamond",
+        "done": false
+      }
+    ],
+    "log": [
+      {
+        "date": "2026-05-06",
+        "text": "PIVOT v2: darwin36b base + FFN-only selective merge (DARE-TIES on gate/up/down_proj)"
+      },
+      {
+        "date": "2026-05-06",
+        "text": "Phase 3 v2b: 45% greedy (step_200 best), GPU5 format collapse (0/6). FLA O(T²) issue."
+      },
+      {
+        "date": "2026-05-05",
+        "text": "NCCL deadlock fixed: no_sync() + expandable_segments + 1800s init timeout"
+      }
+    ],
+    "id": "FromScratch",
+    "file_path": "/home/desk-1/.claude/hub/projects/FromScratch/north-star.md",
+    "links": "",
+    "last_updated": 1778072963.9980714,
+    "stale": false
+  },
+  {
+    "name": "MOAT",
+    "metric": "YouTube subscriber count",
+    "current": "0",
+    "target": "1,000",
+    "unit": "subscribers",
+    "status": "behind",
+    "deadline": "2026-12-31",
+    "note": "AI tech channel — Korean audience, Shorts + longform strategy",
+    "milestones": [
+      {
+        "text": "Upload first 5 Shorts (메바 캐릭터)",
+        "done": false
+      },
+      {
+        "text": "Reach 100 subscribers",
+        "done": false
+      },
+      {
+        "text": "Publish first longform (CTX or DARWIN V5)",
+        "done": false
+      },
+      {
+        "text": "Reach 1,000 subscribers",
+        "done": false
+      }
+    ],
+    "log": [],
+    "id": "MOAT",
+    "file_path": "/home/desk-1/.claude/hub/projects/MOAT/north-star.md",
+    "links": "",
+    "last_updated": 1778072931.1844819,
+    "stale": false
+  }
+]

@@ -1,0 +1,622 @@
+=====================================
+AETHER-1T Launch (B200-only)
+  nodes: 1 × 8 GPU
+  master: 127.0.0.1:29500
+  phase: 2 | output: /NHNHOME/WORKSPACE/aether_1t/checkpoints/mid_orig_params
+  seed:  /NHNHOME/WORKSPACE/0426030024_A/kimi_seed.safetensors
+  kd:    weight=-1 dir=none
+=====================================
+W0416 19:00:20.187000 722562 torch/distributed/run.py:852] 
+W0416 19:00:20.187000 722562 torch/distributed/run.py:852] *****************************************
+W0416 19:00:20.187000 722562 torch/distributed/run.py:852] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0416 19:00:20.187000 722562 torch/distributed/run.py:852] *****************************************
+[W416 19:00:33.135403116 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+NCCL version 2.27.5+cuda12.9
+[W416 19:00:33.450752096 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:00:33.633062865 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:00:34.884028704 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:00:34.905876671 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:00:34.932523022 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:00:34.933652747 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:00:34.937848683 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank0]:     train(args)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank0]:     model = AETHER1TForCausalLM(cfg)
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank0]:     f(module, *args, **kwargs)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank0]:     self.model  = AETHER1TModel(cfg)
+[rank0]:                   ^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank0]:     f(module, *args, **kwargs)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank0]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank0]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank0]:     f(module, *args, **kwargs)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank0]:     self.moe = SparseMoE(cfg)
+[rank0]:                ^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank0]:     f(module, *args, **kwargs)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank0]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank0]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank0]:     f(module, *args, **kwargs)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank0]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank0]:                                   ^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank0]:     f(module, *args, **kwargs)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank0]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank0]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank0]:     f(module, *args, **kwargs)
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank0]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank0]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank0]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 0 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank1]:     train(args)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank1]:     model = AETHER1TForCausalLM(cfg)
+[rank1]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank1]:     f(module, *args, **kwargs)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank1]:     self.model  = AETHER1TModel(cfg)
+[rank1]:                   ^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank1]:     f(module, *args, **kwargs)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank1]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank1]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank1]:     f(module, *args, **kwargs)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank1]:     self.moe = SparseMoE(cfg)
+[rank1]:                ^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank1]:     f(module, *args, **kwargs)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank1]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank1]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank1]:     f(module, *args, **kwargs)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank1]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank1]:                                   ^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank1]:     f(module, *args, **kwargs)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank1]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank1]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank1]:     f(module, *args, **kwargs)
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank1]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank1]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank1]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 1 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank2]:     train(args)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank2]:     model = AETHER1TForCausalLM(cfg)
+[rank2]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank2]:     f(module, *args, **kwargs)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank2]:     self.model  = AETHER1TModel(cfg)
+[rank2]:                   ^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank2]:     f(module, *args, **kwargs)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank2]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank2]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank2]:     f(module, *args, **kwargs)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank2]:     self.moe = SparseMoE(cfg)
+[rank2]:                ^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank2]:     f(module, *args, **kwargs)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank2]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank2]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank2]:     f(module, *args, **kwargs)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank2]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank2]:                                   ^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank2]:     f(module, *args, **kwargs)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank2]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank2]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank2]:     f(module, *args, **kwargs)
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank2]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank2]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank2]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 2 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank6]:     train(args)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank6]:     model = AETHER1TForCausalLM(cfg)
+[rank6]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank6]:     f(module, *args, **kwargs)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank6]:     self.model  = AETHER1TModel(cfg)
+[rank6]:                   ^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank6]:     f(module, *args, **kwargs)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank6]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank6]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank6]:     f(module, *args, **kwargs)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank6]:     self.moe = SparseMoE(cfg)
+[rank6]:                ^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank6]:     f(module, *args, **kwargs)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank6]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank6]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank6]:     f(module, *args, **kwargs)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank6]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank6]:                                   ^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank6]:     f(module, *args, **kwargs)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank6]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank6]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank6]:     f(module, *args, **kwargs)
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank6]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank6]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank6]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 6 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank7]:     train(args)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank7]:     model = AETHER1TForCausalLM(cfg)
+[rank7]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank7]:     f(module, *args, **kwargs)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank7]:     self.model  = AETHER1TModel(cfg)
+[rank7]:                   ^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank7]:     f(module, *args, **kwargs)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank7]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank7]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank7]:     f(module, *args, **kwargs)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank7]:     self.moe = SparseMoE(cfg)
+[rank7]:                ^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank7]:     f(module, *args, **kwargs)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank7]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank7]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank7]:     f(module, *args, **kwargs)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank7]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank7]:                                   ^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank7]:     f(module, *args, **kwargs)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank7]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank7]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank7]:     f(module, *args, **kwargs)
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank7]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank7]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank7]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 7 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank4]:     train(args)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank4]:     model = AETHER1TForCausalLM(cfg)
+[rank4]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank4]:     f(module, *args, **kwargs)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank4]:     self.model  = AETHER1TModel(cfg)
+[rank4]:                   ^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank4]:     f(module, *args, **kwargs)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank4]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank4]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank4]:     f(module, *args, **kwargs)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank4]:     self.moe = SparseMoE(cfg)
+[rank4]:                ^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank4]:     f(module, *args, **kwargs)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank4]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank4]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank4]:     f(module, *args, **kwargs)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank4]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank4]:                                   ^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank4]:     f(module, *args, **kwargs)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank4]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank4]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank4]:     f(module, *args, **kwargs)
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank4]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank4]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank4]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 4 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank5]:     train(args)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank5]:     model = AETHER1TForCausalLM(cfg)
+[rank5]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank5]:     f(module, *args, **kwargs)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank5]:     self.model  = AETHER1TModel(cfg)
+[rank5]:                   ^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank5]:     f(module, *args, **kwargs)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank5]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank5]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank5]:     f(module, *args, **kwargs)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank5]:     self.moe = SparseMoE(cfg)
+[rank5]:                ^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank5]:     f(module, *args, **kwargs)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank5]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank5]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank5]:     f(module, *args, **kwargs)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank5]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank5]:                                   ^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank5]:     f(module, *args, **kwargs)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank5]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank5]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank5]:     f(module, *args, **kwargs)
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank5]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank5]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank5]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 5 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+[rank3]:     train(args)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 349, in train
+[rank3]:     model = AETHER1TForCausalLM(cfg)
+[rank3]:             ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank3]:     f(module, *args, **kwargs)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 610, in __init__
+[rank3]:     self.model  = AETHER1TModel(cfg)
+[rank3]:                   ^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank3]:     f(module, *args, **kwargs)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 571, in __init__
+[rank3]:     DoubleHamiltonianLayer(cfg, i) for i in range(cfg.num_hidden_layers)
+[rank3]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank3]:     f(module, *args, **kwargs)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 525, in __init__
+[rank3]:     self.moe = SparseMoE(cfg)
+[rank3]:                ^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank3]:     f(module, *args, **kwargs)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 437, in __init__
+[rank3]:     self.expert_chunks.append(ExpertChunk(cfg, cs))
+[rank3]:                               ^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank3]:     f(module, *args, **kwargs)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 361, in __init__
+[rank3]:     self.experts = nn.ModuleList([ExpertFFN(cfg) for _ in range(chunk_size)])
+[rank3]:                                   ^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank3]:     f(module, *args, **kwargs)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/model.py", line 344, in __init__
+[rank3]:     self.gate_proj = nn.Linear(c.hidden_size, c.intermediate_size, bias=False)
+[rank3]:                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 535, in wrapper
+[rank3]:     f(module, *args, **kwargs)
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/nn/modules/linear.py", line 109, in __init__
+[rank3]:     torch.empty((out_features, in_features), **factory_kwargs)
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/zero/partition_parameters.py", line 257, in wrapped_fn
+[rank3]:     tensor.data = tensor.data.to(target_fp_dtype)
+[rank3]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 28.00 MiB. GPU 3 has a total capacity of 178.35 GiB of which 39.00 MiB is free. Including non-PyTorch memory, this process has 178.30 GiB memory in use. Of the allocated memory 176.62 GiB is allocated by PyTorch, and 8.13 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+[rank0]:[W416 19:00:59.843992008 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0416 19:01:00.556000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 722651 closing signal SIGTERM
+W0416 19:01:00.557000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 722652 closing signal SIGTERM
+W0416 19:01:00.557000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 722654 closing signal SIGTERM
+W0416 19:01:00.557000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 722655 closing signal SIGTERM
+W0416 19:01:00.558000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 722656 closing signal SIGTERM
+W0416 19:01:00.558000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 722657 closing signal SIGTERM
+W0416 19:01:00.558000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 722658 closing signal SIGTERM
+E0416 19:01:05.517000 722562 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 2 (pid: 722653) of binary: /usr/bin/python
+[W416 19:01:13.027471530 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:01:14.864579752 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:01:14.879824092 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:01:14.880530365 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:01:14.881497858 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:01:14.915435922 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:01:14.923452916 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:01:14.927086724 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+NCCL version 2.27.5+cuda12.9
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+---
+9
+
+[2026-04-16 19:02:13] DCTN-0413110535-1:723280:723578 [5] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:02:14] DCTN-0413110535-1:723277:723610 [2] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:02:14] DCTN-0413110535-1:723281:723616 [6] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:02:14] DCTN-0413110535-1:723279:723615 [4] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:02:14] DCTN-0413110535-1:723278:723619 [3] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:02:14] DCTN-0413110535-1:723276:723624 [1] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:02:14] DCTN-0413110535-1:723282:723623 [7] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+Traceback (most recent call last):
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    train(args)
+    return func(*args, **kwargs)
+           ^^^^^^^^^  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^    ^default_pg, _ = _new_process_group_helper(^
+^^^  ^ ^ ^  ^ ^ ^ ^^ ^ ^ ^ ^  ^ ^ ^ ^ ^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                 eager_backend.eager_connect_single_device(device_id) 
+    ^^^^^^^^^^^^^^^^^torch.distributed^.^DistBackendError^^: 
+NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 538, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<59435> returned Connection refused, exceeded error retry count after 35 attempts
+W0416 19:02:14.866000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 723275 closing signal SIGTERM
+W0416 19:02:14.866000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 723276 closing signal SIGTERM
+W0416 19:02:14.867000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 723277 closing signal SIGTERM
+W0416 19:02:14.868000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 723278 closing signal SIGTERM
+W0416 19:02:14.868000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 723279 closing signal SIGTERM
+W0416 19:02:14.868000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 723281 closing signal SIGTERM
+W0416 19:02:14.869000 722562 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 723282 closing signal SIGTERM
+E0416 19:02:15.555000 722562 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 5 (pid: 723280) of binary: /usr/bin/python
+[W416 19:02:23.261229029 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:02:23.709982745 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:02:23.712071539 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:02:24.719408419 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:02:24.778922900 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:02:24.790555935 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+NCCL version 2.27.5+cuda12.9
+[W416 19:02:24.801155160 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:02:24.820007470 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+aether_1t/launch_b200.sh: line 95: 722562 Killed                  torchrun --nproc_per_node="$NPROC_PER_NODE" --nnodes="$NNODES" --node_rank="$NODE_RANK" --master_addr="$MASTER_ADDR" --master_port="$MASTER_PORT" --max_restarts=3 aether_1t/train.py --data_path "$DATA_PATH" --output_dir "$OUTPUT_DIR" --phase "$PHASE" --micro_batch_size "$MICRO_BATCH" --log_interval "$LOG_INTERVAL" --save_interval "$SAVE_INTERVAL" ${MODEL_PATH:+--model_path "$MODEL_PATH"} ${SEED_WEIGHTS:+--seed_weights "$SEED_WEIGHTS"} ${LOGIT_DIR:+--logit_dir "$LOGIT_DIR"} --kd_weight "$KD_WEIGHT" --deepspeed aether_1t/configs/ds_zero3_b200.json

@@ -1,0 +1,383 @@
+Retrieving project…
+Deploying cutechicken99s-projects/hugwarts-banana
+Uploading [--------------------] (0.0B/4MB)
+Uploading [=====---------------] (1.0MB/4MB)
+Uploading [==========----------] (2.0MB/4MB)
+Uploading [===============-----] (3.0MB/4MB)
+Uploading [====================] (4.0MB/4MB)
+Inspect: https://vercel.com/cutechicken99s-projects/hugwarts-banana/CFva47Uw8TUTGqeAu72aSuQJGmBs [10s]
+Production: https://hugwarts-banana-obqczb25g-cutechicken99s-projects.vercel.app [10s]
+Building...
+Building...
+Building: Running build in Washington, D.C., USA (East) – iad1
+Building: Build machine configuration: 4 cores, 8 GB
+Building: Retrieving list of deployment files...
+Building: Downloading 3922 deployment files...
+Building: Restored build cache from previous deployment (CYVChS6JHn7vbztMxwX8XXt65QMR)
+Building: Running "vercel build"
+Building: Vercel CLI 51.6.1
+Building: Installing dependencies...
+Building: up to date in 2s
+Building: 273 packages are looking for funding
+Building: run `npm fund` for details
+Building: Detected Next.js version: 15.3.8
+Building: Running "npm run build"
+Building: > hugwarts-banana@0.1.0 build
+Building: > node -e "if(process.env.VERCEL){const{rmSync}=require('fs');try{rmSync('.next/cache',{recursive:true,force:true})}catch(e){}}" && next build
+Building: Attention: Next.js now collects completely anonymous telemetry regarding usage.
+Building: This information is used to shape Next.js' roadmap and prioritize features.
+Building: You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+Building: https://nextjs.org/telemetry
+Building: ▲ Next.js 15.3.8
+Building: - Environments: .env.production
+Building: - Experiments (use with caution):
+Building: · clientTraceMetadata
+Building: Creating an optimized production build ...
+Building: <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (108kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+Building: <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (189kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+Building: <w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (139kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+Building: ⚠ Compiled with warnings in 68s
+Building: ./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+Building: A Node.js API is used (process.versions at line: 34) which is not supported in the Edge Runtime.
+Building: Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+Building: Import trace for requested module:
+Building: ./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+Building: ./node_modules/@supabase/realtime-js/dist/module/index.js
+Building: ./node_modules/@supabase/supabase-js/dist/module/index.js
+Building: ./src/lib/supabaseAdminClient.ts
+Building: ./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+Building: A Node.js API is used (process.versions at line: 35) which is not supported in the Edge Runtime.
+Building: Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+Building: Import trace for requested module:
+Building: ./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+Building: ./node_modules/@supabase/realtime-js/dist/module/index.js
+Building: ./node_modules/@supabase/supabase-js/dist/module/index.js
+Building: ./src/lib/supabaseAdminClient.ts
+Building: ./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+Building: A Node.js API is used (process.versions at line: 36) which is not supported in the Edge Runtime.
+Building: Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+Building: Import trace for requested module:
+Building: ./node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js
+Building: ./node_modules/@supabase/realtime-js/dist/module/index.js
+Building: ./node_modules/@supabase/supabase-js/dist/module/index.js
+Building: ./src/lib/supabaseAdminClient.ts
+Building: ./node_modules/@supabase/supabase-js/dist/module/index.js
+Building: A Node.js API is used (process.version at line: 24) which is not supported in the Edge Runtime.
+Building: Learn more: https://nextjs.org/docs/api-reference/edge-runtime
+Building: Import trace for requested module:
+Building: ./node_modules/@supabase/supabase-js/dist/module/index.js
+Building: ./src/lib/supabaseAdminClient.ts
+Building: Skipping linting
+Building: Checking validity of types ...
+Building: Collecting page data ...
+Building: 🍌 HugwartsBanana Database Service initialized
+Building: ⚠ Using edge runtime on a page currently disables static generation for that page
+Building: 🚀 WebSocket 서버가 포트 8080에서 시작되었습니다.
+Building: Generating static pages (0/101) ...
+Building: Generating static pages (25/101)
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/activation-rate couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at f (.next/server/app/api/admin/activation-rate/route.js:1:5807) {
+Building: description: "Route /api/admin/activation-rate couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/analytics couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at m (.next/server/app/api/admin/analytics/route.js:1:7663) {
+Building: description: "Route /api/admin/analytics couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/credit-exhaustion-conversion couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at f (.next/server/app/api/admin/credit-exhaustion-conversion/route.js:1:7666) {
+Building: description: "Route /api/admin/credit-exhaustion-conversion couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/aha-moment couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at f (.next/server/app/api/admin/aha-moment/route.js:1:1293) {
+Building: description: "Route /api/admin/aha-moment couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/funnel-stats couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at g (.next/server/app/api/admin/funnel-stats/route.js:1:1883) {
+Building: description: "Route /api/admin/funnel-stats couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/kpi couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at m (.next/server/app/api/admin/kpi/route.js:1:1340) {
+Building: description: "Route /api/admin/kpi couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/ltv-cac couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at f (.next/server/app/api/admin/ltv-cac/route.js:1:2788) {
+Building: description: "Route /api/admin/ltv-cac couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/non-payer-cohort couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at m (.next/server/app/api/admin/non-payer-cohort/route.js:1:2202) {
+Building: description: "Route /api/admin/non-payer-cohort couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/onboarding-survey couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at x (.next/server/app/api/admin/onboarding-survey/route.js:1:5793) {
+Building: description: "Route /api/admin/onboarding-survey couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/power-users couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at g (.next/server/app/api/admin/power-users/route.js:1:965) {
+Building: description: "Route /api/admin/power-users couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/psm-analysis couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at g (.next/server/app/api/admin/psm-analysis/route.js:1:2798) {
+Building: description: "Route /api/admin/psm-analysis couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/rejection-interviews couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at g (.next/server/app/api/admin/rejection-interviews/route.js:1:2427) {
+Building: description: "Route /api/admin/rejection-interviews couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: Generating static pages (50/101)
+Building: Generating static pages (75/101)
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/unified-dashboard couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at _ (.next/server/app/api/admin/unified-dashboard/route.js:1:9370) {
+Building: description: "Route /api/admin/unified-dashboard couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: [API_AUTH] Error verifying auth: Error: Dynamic server usage: Route /api/admin/wtp-score couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+Building: at n (.next/server/app/api/admin/activation-rate/route.js:1:2524)
+Building: at o (.next/server/app/api/admin/activation-rate/route.js:1:3971)
+Building: at h (.next/server/app/api/admin/wtp-score/route.js:1:5982) {
+Building: description: "Route /api/admin/wtp-score couldn't be rendered statically because it used `request.headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+Building: digest: 'DYNAMIC_SERVER_USAGE'
+Building: }
+Building: ✓ Generating static pages (101/101)
+Building: Finalizing page optimization ...
+Building: Collecting build traces ...
+Building: Route (app)                                     Size  First Load JS
+Building: ┌ ƒ /                                          612 B         178 kB
+Building: ├ ○ /_not-found                              1.14 kB         179 kB
+Building: ├ ƒ /[lang]                                   227 kB         841 kB
+Building: ├ ƒ /[lang]/ai-services                      6.17 kB         232 kB
+Building: ├ ƒ /[lang]/audio-video-test                 12.8 kB         331 kB
+Building: ├ ƒ /[lang]/automation-studio                7.47 kB         344 kB
+Building: ├ ƒ /[lang]/automation-studio/test           11.2 kB         191 kB
+Building: ├ ƒ /[lang]/cardnews                         4.84 kB         329 kB
+Building: ├ ƒ /[lang]/cardtoon                         1.08 kB         312 kB
+Building: ├ ƒ /[lang]/color-test                       2.75 kB         181 kB
+Building: ├ ƒ /[lang]/debug-referral                   1.32 kB         237 kB
+Building: ├ ƒ /[lang]/design-preview                   10.8 kB         189 kB
+Building: ├ ƒ /[lang]/dev-test                           750 B         179 kB
+Building: ├ ƒ /[lang]/diagram                          9.85 kB         315 kB
+Building: ├ ƒ /[lang]/directors                        2.96 kB         301 kB
+Building: ├ ƒ /[lang]/festa                            5.42 kB         282 kB
+Building: ├ ƒ /[lang]/festa/leaderboard                 4.9 kB         281 kB
+Building: ├ ƒ /[lang]/home-feed-test                   6.96 kB         190 kB
+Building: ├ ƒ /[lang]/landing-test                     11.8 kB         227 kB
+Building: ├ ƒ /[lang]/login                            2.44 kB         277 kB
+Building: ├ ƒ /[lang]/media-editor                     4.27 kB         296 kB
+Building: ├ ƒ /[lang]/roulette-test                     4.2 kB         184 kB
+Building: ├ ƒ /[lang]/scenario                         4.83 kB         330 kB
+Building: ├ ƒ /[lang]/scenario-test                    10.9 kB         295 kB
+Building: ├ ƒ /[lang]/shortform                        3.44 kB         305 kB
+Building: ├ ƒ /[lang]/shortform/history                6.49 kB         281 kB
+Building: ├ ƒ /[lang]/shorttoon                        4.27 kB         304 kB
+Building: ├ ƒ /[lang]/shorttoon/history                8.22 kB         283 kB
+Building: ├ ƒ /[lang]/simplevideo                       4.3 kB         299 kB
+Building: ├ ƒ /[lang]/spinner-test                     4.14 kB         182 kB
+Building: ├ ƒ /[lang]/storyboard                       4.29 kB         301 kB
+Building: ├ ƒ /[lang]/studio-preview                   6.47 kB         184 kB
+Building: ├ ƒ /[lang]/test-cardtoon                      844 B         311 kB
+Building: ├ ƒ /[lang]/test-cardtoon-video              9.17 kB         227 kB
+Building: ├ ƒ /[lang]/test-chatbot                     2.29 kB         257 kB
+Building: ├ ƒ /[lang]/test-error-modal                 4.11 kB         221 kB
+Building: ├ ƒ /[lang]/test-kid-friendly-shortform       6.7 kB         185 kB
+Building: ├ ƒ /[lang]/test-onboarding                  7.48 kB         282 kB
+Building: ├ ƒ /[lang]/test-payment                      3.4 kB         221 kB
+Building: ├ ƒ /[lang]/test-pmf                         12.1 kB         286 kB
+Building: ├ ƒ /[lang]/test-viral-templates             8.04 kB         282 kB
+Building: ├ ƒ /[lang]/test-voice-page                  10.3 kB         285 kB
+Building: ├ ƒ /[lang]/test/cardnews                    5.23 kB         331 kB
+Building: ├ ƒ /[lang]/videoedit                         2.6 kB         326 kB
+Building: ├ ƒ /api/admin/activation-rate                 610 B         178 kB
+Building: ├ ƒ /api/admin/aha-moment                      610 B         178 kB
+Building: ├ ƒ /api/admin/analytics                       610 B         178 kB
+Building: ├ ƒ /api/admin/api-balances                    611 B         178 kB
+Building: ├ ƒ /api/admin/api-logs                        613 B         178 kB
+Building: ├ ƒ /api/admin/banner-settings                 612 B         178 kB
+Building: ├ ƒ /api/admin/challenge-credit-bulk-grant     611 B         178 kB
+Building: ├ ƒ /api/admin/check-code-conflict             612 B         178 kB
+Building: ├ ƒ /api/admin/credit-exhaustion-conversion    613 B         178 kB
+Building: ├ ƒ /api/admin/force-video-error               611 B         178 kB
+Building: ├ ƒ /api/admin/funnel-stats                    612 B         178 kB
+Building: ├ ƒ /api/admin/group-commissions               610 B         178 kB
+Building: ├ ƒ /api/admin/group-members                   612 B         178 kB
+Building: ├ ƒ /api/admin/handle-generation-timeout       612 B         178 kB
+Building: ├ ƒ /api/admin/kpi                             612 B         178 kB
+Building: ├ ƒ /api/admin/ltv-cac                         611 B         178 kB
+Building: ├ ƒ /api/admin/marketing-spend                 611 B         178 kB
+Building: ├ ƒ /api/admin/marketing-spend/[id]            611 B         178 kB
+Building: ├ ƒ /api/admin/monthly-dashboard               612 B         178 kB
+Building: ├ ƒ /api/admin/new-users                       610 B         178 kB
+Building: ├ ƒ /api/admin/non-payer-cohort                612 B         178 kB
+Building: ├ ƒ /api/admin/nps                             613 B         178 kB
+Building: ├ ƒ /api/admin/onboarding-survey               610 B         178 kB
+Building: ├ ƒ /api/admin/pmf-analysis                    611 B         178 kB
+Building: ├ ƒ /api/admin/power-users                     613 B         178 kB
+Building: ├ ƒ /api/admin/promo-expire                    612 B         178 kB
+Building: ├ ƒ /api/admin/psm-analysis                    613 B         178 kB
+Building: ├ ƒ /api/admin/referral-analytics              614 B         178 kB
+Building: ├ ƒ /api/admin/referral-groups                 611 B         178 kB
+Building: ├ ƒ /api/admin/referral-hub-stats              612 B         178 kB
+Building: ├ ƒ /api/admin/rejection-interviews            611 B         178 kB
+Building: ├ ƒ /api/admin/send-retention-email            612 B         178 kB
+Building: ├ ƒ /api/admin/signup-event                    611 B         178 kB
+Building: ├ ƒ /api/admin/survey-responses                611 B         178 kB
+Building: ├ ƒ /api/admin/unified-dashboard               611 B         178 kB
+Building: ├ ƒ /api/admin/users                           612 B         178 kB
+Building: ├ ƒ /api/admin/verify-refund                   611 B         178 kB
+Building: ├ ƒ /api/admin/wtp-score                       611 B         178 kB
+Building: ├ ƒ /api/banner-settings/[key]                 613 B         178 kB
+Building: ├ ƒ /api/cardnews/generate                     611 B         178 kB
+Building: ├ ƒ /api/cardnews/regenerate                   611 B         178 kB
+Building: ├ ƒ /api/chat/feedback                         610 B         178 kB
+Building: ├ ƒ /api/chat/generation-status                611 B         178 kB
+Building: ├ ƒ /api/chat/generation-timeout               612 B         178 kB
+Building: ├ ƒ /api/chat/message                          612 B         178 kB
+Building: ├ ƒ /api/chat/sessions                         613 B         178 kB
+Building: ├ ƒ /api/chat/sessions/[sessionId]/messages    611 B         178 kB
+Building: ├ ƒ /api/chat/upload                           613 B         178 kB
+Building: ├ ƒ /api/credit/daily-free                     611 B         178 kB
+Building: ├ ƒ /api/cron/retention-triggers               611 B         178 kB
+Building: ├ ƒ /api/debug/db-test                         611 B         178 kB
+Building: ├ ƒ /api/debug/referral                        613 B         178 kB
+Building: ├ ƒ /api/diagrams/[id]                         611 B         178 kB
+Building: ├ ƒ /api/diagrams/feed                         612 B         178 kB
+Building: ├ ƒ /api/diagrams/render                       610 B         178 kB
+Building: ├ ƒ /api/download-video                        613 B         178 kB
+Building: ├ ƒ /api/email/test                            613 B         178 kB
+Building: ├ ƒ /api/feed/hide                             611 B         178 kB
+Building: ├ ƒ /api/feed/increment                        612 B         178 kB
+Building: ├ ƒ /api/feed/view-counts                      610 B         178 kB
+Building: ├ ƒ /api/feedback/psm-pricing                  612 B         178 kB
+Building: ├ ƒ /api/feedback/rejection-interview          613 B         178 kB
+Building: ├ ƒ /api/forms/claim-challenge-credit          610 B         178 kB
+Building: ├ ƒ /api/forms/google-challenge-webhook        611 B         178 kB
+Building: ├ ƒ /api/image/augment-prompt                  611 B         178 kB
+Building: ├ ƒ /api/missions/claim                        610 B         178 kB
+Building: ├ ƒ /api/missions/daily                        612 B         178 kB
+Building: ├ ƒ /api/missions/select                       613 B         178 kB
+Building: ├ ƒ /api/missions/track                        612 B         178 kB
+Building: ├ ƒ /api/missions/verify-from-history          610 B         178 kB
+Building: ├ ƒ /api/nps/submit                            611 B         178 kB
+Building: ├ ƒ /api/payments/korean-pg                    613 B         178 kB
+Building: ├ ƒ /api/payments/mock-test                    611 B         178 kB
+Building: ├ ƒ /api/payments/paypal-webhook               611 B         178 kB
+Building: ├ ƒ /api/payments/paypal/capture               612 B         178 kB
+Building: ├ ƒ /api/payments/sevenzero                    610 B         178 kB
+Building: ├ ƒ /api/payments/sevenzero/callback           611 B         178 kB
+Building: ├ ƒ /api/payments/sevenzero/webhook            613 B         178 kB
+Building: ├ ƒ /api/promo/redeem                          611 B         178 kB
+Building: ├ ƒ /api/push/send                             614 B         178 kB
+Building: ├ ƒ /api/referral/validate                     611 B         178 kB
+Building: ├ ƒ /api/refund-credit                         610 B         178 kB
+Building: ├ ƒ /api/report-error                          610 B         178 kB
+Building: ├ ƒ /api/roulette/spin                         612 B         178 kB
+Building: ├ ƒ /api/scenario/active-job                   612 B         178 kB
+Building: ├ ƒ /api/shortform/migrate-to-storage          612 B         178 kB
+Building: ├ ƒ /api/storyboard/upload-images              613 B         178 kB
+Building: ├ ƒ /api/streaks/check-in                      611 B         178 kB
+Building: ├ ƒ /api/streaks/status                        610 B         178 kB
+Building: ├ ƒ /api/supabase/audio-preprocess             611 B         178 kB
+Building: ├ ƒ /api/survey/customer-problem               611 B         178 kB
+Building: ├ ƒ /api/survey/submit                         612 B         178 kB
+Building: ├ ƒ /api/test-auth                             611 B         178 kB
+Building: ├ ƒ /api/test-auto-reporter                    611 B         178 kB
+Building: ├ ƒ /api/test-error-reporting                  615 B         178 kB
+Building: ├ ƒ /api/test-roulette-event                   612 B         178 kB
+Building: ├ ƒ /api/test-sentry                           613 B         178 kB
+Building: ├ ƒ /api/test-sentry-edge                      613 B         178 kB
+Building: ├ ƒ /api/test-sentry-node                      613 B         178 kB
+Building: ├ ƒ /api/test/cancel                           612 B         178 kB
+Building: ├ ƒ /api/test/payment                          610 B         178 kB
+Building: ├ ƒ /api/test/payment/callback                 611 B         178 kB
+Building: ├ ƒ /api/test/sevenzero                        613 B         178 kB
+Building: ├ ƒ /api/trigger-error                         611 B         178 kB
+Building: ├ ƒ /api/user/send-welcome-email               613 B         178 kB
+Building: ├ ƒ /api/user/signup-bonus                     609 B         178 kB
+Building: ├ ƒ /api/user/sync-country                     610 B         178 kB
+Building: ├ ƒ /api/websocket                             613 B         178 kB
+Building: ├ ○ /community/diagrams                      3.16 kB         188 kB
+Building: ├ ƒ /diagrams/[id]                             660 B         184 kB
+Building: ├ ○ /sitemap.xml                               610 B         178 kB
+Building: └ ○ /zero-threat                               612 B         178 kB
+Building: + First Load JS shared by all                 178 kB
+Building: ├ chunks/4bd1b696-d9694d1b8f6fa4b3.js      53.4 kB
+Building: ├ chunks/502-05421141a536aa24.js            120 kB
+Building: └ other shared chunks (total)              4.21 kB
+Building: ƒ Middleware                                 73.4 kB
+Building: ○  (Static)   prerendered as static content
+Building: ƒ  (Dynamic)  server-rendered on demand
+Building: Traced Next.js server files in: 69.95ms
+Building: Created all serverless functions in: 971.288ms
+Building: Collected static files (public/, static/, .next/static): 31.357ms
+Building: Build Completed in /vercel/output [2m]
+Building: Deploying outputs...
+Building: Deployment completed
+Building: Creating build cache...
+[2K[1A[2K[GProduction: https://hugwarts-banana-obqczb25g-cutechicken99s-projects.vercel.app [3m]
+Completing...
+Aliased: https://www.ginigen.ai [3m]
+{
+  "status": "ok",
+  "deployment": {
+    "id": "dpl_CFva47Uw8TUTGqeAu72aSuQJGmBs",
+    "url": "https://hugwarts-banana-obqczb25g-cutechicken99s-projects.vercel.app",
+    "inspectorUrl": "https://vercel.com/cutechicken99s-projects/hugwarts-banana/CFva47Uw8TUTGqeAu72aSuQJGmBs",
+    "readyState": "READY",
+    "target": "production",
+    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_CFva47Uw8TUTGqeAu72aSuQJGmBs"
+  },
+  "message": "Deployment hugwarts-banana-obqczb25g-cutechicken99s-projects.vercel.app ready.",
+  "next": [
+    {
+      "command": "vercel inspect hugwarts-banana-obqczb25g-cutechicken99s-projects.vercel.app",
+      "when": "Inspect deployment"
+    },
+    {
+      "command": "vercel deploy --prod",
+      "when": "Promote to production"
+    }
+  ]
+}
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                     Update available! v50.35.0 ≫ v51.4.0                     │
+│   Changelog: https://github.com/vercel/vercel/releases/tag/vercel%4051.4.0   │
+│                   Run `npm i -g vercel@latest` to update.                    │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯

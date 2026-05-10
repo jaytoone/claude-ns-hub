@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-04-22T02:00:01.290756+00:00",
+  "cwd": "/home/jayone/Project/Sales/wtp-dashboard",
+  "turn_count": 467,
+  "decisions": [
+    {
+      "text": "Done",
+      "context": "**Done. Summary:** **Task 1:** 분석 과정 panel removed from both Chat and Arena. - `conceptual/chat/page.tsx` — collapsible block + expand div gone - `con",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Fixed",
+      "context": "Fixed. **Corrected schedule:** - **Wed Apr 22, 22:00 KST** — 김근식 Zoom (tomorrow night) - **Thu Apr 23, 13:00 KST** — 류태섭 Zoom (day after) Date labels ",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "done",
+      "context": "**All done:** - ✅ Zoom time verified: **Apr 23, 2026 1:00 PM Seoul** (same link) - ✅ DM sent to 류태섭 confirming reschedule - ✅ MEMORY.md updated **Fina",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Reverted to",
+      "context": "Reverted to a single-line rule. Kept the two essential qualifiers (overrides skills, quote exception) but no pane/examples.",
+      "tag": "rollback"
+    }
+  ]
+}

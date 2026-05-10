@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-04-26T03:22:54.227995+00:00",
+  "cwd": "/home/jayone/Project/CTX/hf_space_dashboard",
+  "turn_count": 2192,
+  "decisions": [
+    {
+      "text": "score = 0.4861",
+      "context": "n't surface it) ✅ - `hybrid score = 0.4861` with bar ✅ - **Summary**: \"Retrieved by chat",
+      "tag": "metric"
+    },
+    {
+      "text": "fixed",
+      "context": "The detail pane is fixed-height and scroll isn't moving. Let me scroll the page window further down to reveal the CM scoring table below the fold:",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "roll back to",
+      "context": "odes and the legend. Let me scroll back to the graph:",
+      "tag": "rollback"
+    }
+  ]
+}

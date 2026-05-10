@@ -1,0 +1,1271 @@
+=== upload log ===
+HF user: ginigen-ai
+Repo: ginigen-ai/Rogue-27B-KR-v2
+Applying fingerprint removal...
+  config.json patched: ['model_type', 'architectures', 'mtp_num_hidden_layers(removed)']
+  chat_template.jinja: text-only template written (1014 chars)
+README.md written
+  Deleted: optimizer.bin
+  Deleted: pytorch_model_fsdp.bin
+  Deleted: training_args.bin
+Uploading /home/gmail_gini/sft_workspace/Rogue-27B-KR-v2-orpo/checkpoint-94 -> ginigen-ai/Rogue-27B-KR-v2 ...
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...0002-of-00003.safetensors:   0%|          | 25.4kB / 49.7GB            [A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 25.4kB / 49.7GB            [A[AProcessing Files (0 / 1)      :   0%|          | 25.4kB /  104GB, 9.78kB/s  
+
+  ...0002-of-00003.safetensors:   0%|          | 25.4kB / 49.7GB            [A[A
+
+  ...0002-of-00003.safetensors:   0%|          |  580kB / 49.7GB            [A[AProcessing Files (0 / 1)      :   0%|          |  580kB /  104GB,  193kB/s  
+New Data Upload               :   0%|          |  555kB /  201MB,  185kB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  580kB / 49.7GB            [A[A
+
+  ...0002-of-00003.safetensors:   0%|          |  580kB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 1.14MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 21.1MB /  104GB, 5.87MB/s  
+New Data Upload               :   0%|          | 1.11MB /  268MB,  308kB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 2.80MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 22.8MB /  104GB, 6.00MB/s  
+New Data Upload               :   1%|          | 2.77MB /  268MB,  730kB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 4.46MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 24.5MB /  104GB, 6.11MB/s  
+New Data Upload               :   2%|▏         | 4.44MB /  268MB, 1.11MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 5.57MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 25.6MB /  104GB, 6.09MB/s  
+New Data Upload               :   2%|▏         | 5.55MB /  268MB, 1.32MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 7.24MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 27.2MB /  104GB, 6.19MB/s  
+New Data Upload               :   3%|▎         | 7.21MB /  268MB, 1.64MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 12.2MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 32.2MB /  104GB, 7.00MB/s  
+New Data Upload               :   5%|▍         | 12.2MB /  268MB, 2.65MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 15.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 35.6MB /  104GB, 7.41MB/s  
+New Data Upload               :   6%|▌         | 15.5MB /  268MB, 3.24MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 18.9MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 38.9MB /  104GB, 7.78MB/s  
+New Data Upload               :   7%|▋         | 18.9MB /  268MB, 3.77MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 21.7MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 41.7MB /  104GB, 8.01MB/s  
+New Data Upload               :   8%|▊         | 21.6MB /  268MB, 4.16MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 25.0MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 45.0MB /  104GB, 8.33MB/s  
+New Data Upload               :   9%|▉         | 25.0MB /  268MB, 4.62MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 28.3MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 48.3MB /  104GB, 8.63MB/s  
+New Data Upload               :  11%|█         | 28.3MB /  268MB, 5.05MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 31.7MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 51.6MB /  104GB, 8.90MB/s  
+New Data Upload               :  12%|█▏        | 31.6MB /  268MB, 5.45MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 35.0MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 55.0MB /  104GB, 9.16MB/s  
+New Data Upload               :  13%|█▎        | 35.0MB /  268MB, 5.83MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 37.8MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 57.8MB /  104GB, 9.31MB/s  
+New Data Upload               :  14%|█▍        | 37.7MB /  268MB, 6.09MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 44.4MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 64.4MB /  104GB, 10.1MB/s  
+New Data Upload               :  17%|█▋        | 44.4MB /  268MB, 6.94MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 47.7MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 67.7MB /  104GB, 10.3MB/s  
+New Data Upload               :  18%|█▊        | 47.7MB /  268MB, 7.23MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 51.1MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 71.1MB /  104GB, 10.5MB/s  
+New Data Upload               :  19%|█▉        | 51.1MB /  268MB, 7.51MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 54.4MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 74.4MB /  104GB, 10.6MB/s  
+New Data Upload               :  20%|██        | 54.4MB /  268MB, 7.77MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 57.7MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 77.7MB /  104GB, 10.8MB/s  
+New Data Upload               :  22%|██▏       | 57.7MB /  268MB, 8.02MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 61.1MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 81.1MB /  104GB, 11.0MB/s  
+New Data Upload               :  23%|██▎       | 61.0MB /  268MB, 8.25MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 64.4MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 84.4MB /  104GB, 11.1MB/s  
+New Data Upload               :  24%|██▍       | 64.4MB /  268MB, 8.47MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 66.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 86.6MB /  104GB, 11.1MB/s  
+New Data Upload               :  25%|██▍       | 66.6MB /  268MB, 8.54MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 66.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 66.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 66.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 66.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 67.0MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[AProcessing Files (1 / 2)      :   0%|          | 87.0MB /  104GB, 9.89MB/s  
+New Data Upload               :  25%|██▍       | 67.0MB /  268MB, 7.61MB/s  [A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          |  556kB / 3.90GB            [A[A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 67.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          |  556kB / 3.90GB            [A[A[A[AProcessing Files (1 / 3)      :   0%|          | 88.1MB /  104GB, 9.79MB/s  
+New Data Upload               :  17%|█▋        | 68.1MB /  402MB, 7.57MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 67.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          |  556kB / 3.90GB            [A[A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 68.7MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 1.11MB / 3.90GB            [A[A[A[AProcessing Files (1 / 3)      :   0%|          | 89.8MB /  104GB, 9.55MB/s  
+New Data Upload               :  17%|█▋        | 69.8MB /  402MB, 7.42MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 69.2MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 2.22MB / 3.90GB            [A[A[A[AProcessing Files (1 / 3)      :   0%|          | 91.4MB /  104GB, 9.53MB/s  
+New Data Upload               :  15%|█▌        | 71.4MB /  469MB, 7.44MB/s  [A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  556kB / 49.9GB            [A[A[A[A[A
+
+  ...0002-of-00003.safetensors:   0%|          | 70.9MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 3.89MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  556kB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          | 95.3MB /  104GB, 9.73MB/s  
+New Data Upload               :  16%|█▌        | 75.3MB /  469MB, 7.69MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 72.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 5.00MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  556kB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          | 98.1MB /  104GB, 9.81MB/s  
+New Data Upload               :  17%|█▋        | 78.1MB /  469MB, 7.81MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 74.2MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 6.67MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 1.11MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  102MB /  104GB, 10.0MB/s  
+New Data Upload               :  17%|█▋        | 82.0MB /  469MB, 8.04MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 77.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 10.6MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 2.78MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  111MB /  104GB, 10.9MB/s  
+New Data Upload               :  19%|█▉        | 90.9MB /  469MB, 8.91MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 80.9MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 13.9MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 4.45MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  119MB /  104GB, 11.7MB/s  
+New Data Upload               :  18%|█▊        | 99.2MB /  536MB, 9.73MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 83.7MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   0%|          | 17.2MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 4.45MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  125MB /  104GB, 12.3MB/s  
+New Data Upload               :  20%|█▉        |  105MB /  536MB, 10.3MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 87.0MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   1%|          | 20.6MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 7.23MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  135MB /  104GB, 13.2MB/s  
+New Data Upload               :  21%|██▏       |  115MB /  536MB, 11.3MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 90.9MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   1%|          | 25.0MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 10.6MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  146MB /  104GB, 14.4MB/s  
+New Data Upload               :  21%|██        |  126MB /  603MB, 12.4MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 94.2MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   1%|          | 29.5MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 13.9MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  158MB /  104GB, 15.5MB/s  
+New Data Upload               :  23%|██▎       |  138MB /  603MB, 13.5MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          | 97.6MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   1%|          | 37.8MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 17.2MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  173MB /  104GB, 16.9MB/s  
+New Data Upload               :  25%|██▌       |  153MB /  603MB, 15.0MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  103MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   1%|          | 46.1MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 24.5MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  193MB /  104GB, 18.9MB/s  
+New Data Upload               :  29%|██▊       |  173MB /  603MB, 17.0MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  109MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   1%|▏         | 52.3MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 31.2MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  213MB /  104GB, 20.8MB/s  
+New Data Upload               :  29%|██▊       |  193MB /  671MB, 18.9MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  115MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   2%|▏         | 58.9MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 33.9MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  228MB /  104GB, 22.4MB/s  
+New Data Upload               :  31%|███       |  208MB /  671MB, 20.4MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  120MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   2%|▏         | 65.0MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 37.3MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  242MB /  104GB, 23.7MB/s  
+New Data Upload               :  33%|███▎      |  222MB /  671MB, 21.8MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  126MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   2%|▏         | 71.7MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 40.6MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  259MB /  104GB, 25.4MB/s  
+New Data Upload               :  32%|███▏      |  239MB /  738MB, 23.4MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  133MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   2%|▏         | 80.1MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 45.6MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  279MB /  104GB, 27.3MB/s  
+New Data Upload               :  35%|███▌      |  259MB /  738MB, 25.4MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  140MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   2%|▏         | 86.2MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 50.1MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  296MB /  104GB, 29.0MB/s  
+New Data Upload               :  37%|███▋      |  276MB /  738MB, 27.1MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  149MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   2%|▏         | 92.3MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 56.8MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  318MB /  104GB, 31.1MB/s  
+New Data Upload               :  40%|████      |  298MB /  738MB, 29.2MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  156MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   3%|▎         |  100MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 63.4MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  339MB /  104GB, 33.2MB/s  
+New Data Upload               :  40%|███▉      |  319MB /  805MB, 31.3MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  162MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   3%|▎         |  107MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 72.3MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  362MB /  104GB, 35.4MB/s  
+New Data Upload               :  42%|████▏     |  342MB /  805MB, 33.4MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  167MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   3%|▎         |  116MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 79.0MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  382MB /  104GB, 35.3MB/s  
+New Data Upload               :  45%|████▍     |  362MB /  805MB, 35.3MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  170MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   3%|▎         |  124MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 85.1MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  399MB /  104GB, 36.9MB/s  
+New Data Upload               :  47%|████▋     |  379MB /  805MB, 36.9MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  175MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   3%|▎         |  130MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          | 95.2MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  421MB /  104GB, 38.8MB/s  
+New Data Upload               :  46%|████▌     |  401MB /  872MB, 38.8MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  180MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   4%|▎         |  137MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  100MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  437MB /  104GB, 40.3MB/s  
+New Data Upload               :  48%|████▊     |  417MB /  872MB, 40.3MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  188MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   4%|▎         |  144MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  104MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  456MB /  104GB, 42.0MB/s  
+New Data Upload               :  46%|████▋     |  436MB /  939MB, 42.0MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  194MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   4%|▍         |  155MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  112MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  481MB /  104GB, 44.0MB/s  
+New Data Upload               :  46%|████▌     |  461MB / 1.01GB, 44.0MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  205MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   4%|▍         |  163MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  120MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   0%|          |  507MB /  104GB, 46.2MB/s  
+New Data Upload               :  45%|████▌     |  487MB / 1.07GB, 46.2MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  211MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   4%|▍         |  170MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  126MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  527MB /  104GB, 47.9MB/s  
+New Data Upload               :  45%|████▍     |  507MB / 1.14GB, 47.9MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  217MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   5%|▍         |  178MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  134MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  549MB /  104GB, 49.8MB/s  
+New Data Upload               :  46%|████▋     |  529MB / 1.14GB, 49.8MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  227MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   5%|▍         |  187MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  142MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  576MB /  104GB, 52.0MB/s  
+New Data Upload               :  46%|████▌     |  556MB / 1.21GB, 52.0MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  233MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   5%|▌         |  201MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  151MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  605MB /  104GB, 54.6MB/s  
+New Data Upload               :  46%|████▌     |  585MB / 1.27GB, 54.6MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  236MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   5%|▌         |  213MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  162MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  631MB /  104GB, 56.8MB/s  
+New Data Upload               :  46%|████▌     |  611MB / 1.34GB, 56.8MB/s  [A
+
+  ...0002-of-00003.safetensors:   0%|          |  249MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   6%|▌         |  229MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  173MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  671MB /  104GB, 60.4MB/s  
+New Data Upload               :  49%|████▊     |  651MB / 1.34GB, 60.4MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  257MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   6%|▌         |  241MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  181MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  700MB /  104GB, 62.9MB/s  
+New Data Upload               :  48%|████▊     |  679MB / 1.41GB, 62.9MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  266MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   7%|▋         |  259MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  189MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  734MB /  104GB, 65.6MB/s  
+New Data Upload               :  51%|█████     |  714MB / 1.41GB, 65.6MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  275MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   7%|▋         |  273MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  196MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  764MB /  104GB, 68.2MB/s  
+New Data Upload               :  50%|█████     |  744MB / 1.48GB, 68.2MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  292MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   7%|▋         |  286MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  205MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  803MB /  104GB, 71.7MB/s  
+New Data Upload               :  49%|████▊     |  783MB / 1.61GB, 71.7MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  307MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   8%|▊         |  300MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  214MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  841MB /  104GB, 75.1MB/s  
+New Data Upload               :  51%|█████     |  821MB / 1.61GB, 75.1MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  326MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   8%|▊         |  315MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  225MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  886MB /  104GB, 79.2MB/s  
+New Data Upload               :  54%|█████▍    |  866MB / 1.61GB, 79.2MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  345MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   8%|▊         |  328MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  236MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  929MB /  104GB, 83.1MB/s  
+New Data Upload               :  52%|█████▏    |  909MB / 1.74GB, 83.1MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  362MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   9%|▉         |  342MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   0%|          |  247MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          |  971MB /  104GB, 87.0MB/s  
+New Data Upload               :  55%|█████▍    |  951MB / 1.74GB, 87.0MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  382MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   9%|▉         |  355MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  258MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          | 1.02GB /  104GB, 91.1MB/s  
+New Data Upload               :  57%|█████▋    |  996MB / 1.74GB, 91.1MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  402MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:   9%|▉         |  369MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  273MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          | 1.06GB /  104GB, 95.9MB/s  
+New Data Upload               :  60%|█████▉    | 1.04GB / 1.74GB, 95.9MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  421MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  10%|▉         |  389MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  291MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          | 1.12GB /  104GB,  101MB/s  
+New Data Upload               :  61%|██████    | 1.10GB / 1.81GB,  101MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  438MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  10%|█         |  404MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  304MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          | 1.17GB /  104GB,  106MB/s  
+New Data Upload               :  63%|██████▎   | 1.15GB / 1.81GB,  106MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  461MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  11%|█         |  416MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  319MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          | 1.22GB /  104GB,  111MB/s  
+New Data Upload               :  61%|██████▏   | 1.20GB / 1.94GB,  111MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  477MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  11%|█         |  427MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  338MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|          | 1.26GB /  104GB,  115MB/s  
+New Data Upload               :  64%|██████▍   | 1.24GB / 1.94GB,  115MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  494MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  11%|█▏        |  441MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  351MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|▏         | 1.31GB /  104GB,  119MB/s  
+New Data Upload               :  64%|██████▍   | 1.29GB / 2.01GB,  119MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  511MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  12%|█▏        |  455MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  365MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|▏         | 1.35GB /  104GB,  124MB/s  
+New Data Upload               :  64%|██████▍   | 1.33GB / 2.08GB,  124MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  531MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  12%|█▏        |  466MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  377MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|▏         | 1.39GB /  104GB,  128MB/s  
+New Data Upload               :  64%|██████▍   | 1.37GB / 2.15GB,  128MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  550MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  12%|█▏        |  472MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  392MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|▏         | 1.43GB /  104GB,  132MB/s  
+New Data Upload               :  66%|██████▌   | 1.41GB / 2.15GB,  132MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  579MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  12%|█▏        |  483MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  411MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|▏         | 1.49GB /  104GB,  137MB/s  
+New Data Upload               :  65%|██████▍   | 1.47GB / 2.28GB,  137MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|          |  600MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  13%|█▎        |  496MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  428MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   1%|▏         | 1.54GB /  104GB,  142MB/s  
+New Data Upload               :  67%|██████▋   | 1.52GB / 2.28GB,  142MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|▏         |  624MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  13%|█▎        |  508MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  456MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 1.61GB /  104GB,  148MB/s  
+New Data Upload               :  66%|██████▌   | 1.59GB / 2.41GB,  148MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|▏         |  647MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  13%|█▎        |  525MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  476MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 1.67GB /  104GB,  153MB/s  
+New Data Upload               :  63%|██████▎   | 1.65GB / 2.62GB,  153MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|▏         |  670MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  14%|█▍        |  539MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  495MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 1.72GB /  104GB,  157MB/s  
+New Data Upload               :  64%|██████▎   | 1.70GB / 2.68GB,  157MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|▏         |  693MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  14%|█▍        |  554MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  511MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 1.78GB /  104GB,  162MB/s  
+New Data Upload               :  66%|██████▌   | 1.76GB / 2.68GB,  162MB/s  [A
+
+  ...0002-of-00003.safetensors:   1%|▏         |  722MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  15%|█▍        |  572MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  529MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 1.84GB /  104GB,  167MB/s  
+New Data Upload               :  65%|██████▍   | 1.82GB / 2.82GB,  167MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  748MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  15%|█▌        |  586MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  544MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 1.90GB /  104GB,  172MB/s  
+New Data Upload               :  67%|██████▋   | 1.88GB / 2.82GB,  172MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  764MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  15%|█▌        |  600MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  563MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 1.95GB /  104GB,  176MB/s  
+New Data Upload               :  67%|██████▋   | 1.93GB / 2.88GB,  176MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  785MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  16%|█▌        |  618MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  578MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.00GB /  104GB,  179MB/s  
+New Data Upload               :  67%|██████▋   | 1.98GB / 2.95GB,  179MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  811MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  16%|█▌        |  634MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  600MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.06GB /  104GB,  184MB/s  
+New Data Upload               :  68%|██████▊   | 2.04GB / 3.02GB,  184MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  837MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  17%|█▋        |  658MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|          |  620MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.14GB /  104GB,  189MB/s  
+New Data Upload               :  66%|██████▌   | 2.12GB / 3.22GB,  189MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  863MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  17%|█▋        |  678MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|▏         |  640MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.20GB /  104GB,  193MB/s  
+New Data Upload               :  68%|██████▊   | 2.18GB / 3.22GB,  193MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  893MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  18%|█▊        |  699MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|▏         |  670MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.28GB /  104GB,  200MB/s  
+New Data Upload               :  69%|██████▉   | 2.26GB / 3.29GB,  200MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  924MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  19%|█▊        |  728MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|▏         |  685MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.36GB /  104GB,  206MB/s  
+New Data Upload               :  70%|██████▉   | 2.34GB / 3.35GB,  206MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  958MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  19%|█▉        |  753MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|▏         |  710MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.44GB /  104GB,  212MB/s  
+New Data Upload               :  71%|███████   | 2.42GB / 3.42GB,  212MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         |  995MB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  20%|█▉        |  777MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   1%|▏         |  730MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   2%|▏         | 2.52GB /  104GB,  218MB/s  
+New Data Upload               :  72%|███████▏  | 2.50GB / 3.49GB,  218MB/s  [A
+
+  ...0002-of-00003.safetensors:   2%|▏         | 1.03GB / 49.7GB            [A[A
+
+
+  ...ckpoint-94/tokenizer.json: 100%|██████████| 20.0MB / 20.0MB            [A[A[A
+
+
+
+  ...0003-of-00003.safetensors:  20%|██        |  799MB / 3.90GB            [A[A[A[A
+
+
+
+
+  ...0001-of-00003.safetensors:   2%|▏         |  755MB / 49.9GB            [A[A[A[A[AProcessing Files (1 / 4)      :   3%|▎         | 2.60GB /  104GB,  224MB/s  
+New Data Upload               :  74%|███████▍  | 2.58GB / 3.49GB,  224MB/s  [A=== upload PID alive ===
+153758 python3

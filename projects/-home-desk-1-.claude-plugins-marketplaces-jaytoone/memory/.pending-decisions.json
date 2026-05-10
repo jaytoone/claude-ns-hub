@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-04-29T11:25:49.955497+00:00",
+  "cwd": "/home/desk-1/.claude/plugins/marketplaces/jaytoone",
+  "turn_count": 66,
+  "decisions": [
+    {
+      "text": "done",
+      "context": "Based on what we've done, here's the full status: **Restored ✅** - `~/.claude/` — full setup (settings, hooks, skills, CLAUDE.md, history, projects) -",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Done",
+      "context": "Done. Added to `~/.bashrc`: ```bash alias csk='claude --dangerously-skip-permissions' ``` It's active in any new terminal. For the current session, ru",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Done",
+      "context": "Done. `~/.claude.json` is now fully restored with all 9 MCP servers, and your current auth (`oauthAccount`, `userID`) was preserved so login stays val",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "excluded",
+      "context": "over (probably gitignored or excluded since it's a generated file). The one we just built is actually **better** though: the incremental script just s",
+      "tag": "exclusion"
+    }
+  ]
+}

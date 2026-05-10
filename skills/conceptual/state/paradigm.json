@@ -1,0 +1,15 @@
+{
+  "epistemic_basis": "authority-referencing",
+  "locus_of_control": "internal",
+  "causal_model": "linear",
+  "recurring_tensions": [
+    {"tension": "ameva critique = 모듈인가 vs. corpus emergent property인가", "count": 1}
+  ],
+  "concept_gaps": [
+    "Stage 2 Adversarial = AI 자기 검증 / corpus gap_patterns = user strategy critique — 이 둘은 다른 것",
+    "generic mode에서 corpus 없으면 critique가 사라짐 — 명시적 devil's advocate 스텝 부재"
+  ],
+  "paradigm_edges": [],
+  "last_updated": "2026-04-14T00:00:00Z",
+  "session_count": 1
+}

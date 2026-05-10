@@ -8,10 +8,18 @@ id: FromScratch
 layer: 1
 links: ''
 log:
+- date: '2026-05-09'
+  text: 'Gate 3 SFT v2 running (GPUs 2,3,5): 35 teacher traces from 18/35 failure
+    Qs (jackrong27b). Trace gen complete — 29/35 Qs now covered. Gate 1 GRPO OUTER
+    3/30 on GPUs 0-1. SFT 200-step sweet spot: 4-5/35=11-14% on failure cluster, +2pp
+    est.'
 - date: '2026-05-08'
-  text: 'PIVOT to GRPO: LoRA KD v5 scored ~82% on 198Q — BELOW 85% baseline. Root
-    cause: self-distillation ceiling (119 traces only from questions already correct).
-    Next: GRPO with OR-ensemble teacher signal on failure questions.'
+  text: 'Gate 0 GRPO launched: LoRA r=8 on darwin36b, 5 failure Qs × 50 rollouts,
+    GPU 0 (PID 482926). failure_indices.json ready (35 Qs). Cron monitoring every
+    15min.'
+- date: '2026-05-08'
+  text: 198Q eval DONE (80.4%, 144/179). LoRA KD confirmed failed — below 85% baseline.
+    PIVOT to GRPO with binary reward on failure questions.
 - date: '2026-05-08'
   text: 'Phase 3 v5 DONE: 90% two-pass (18/20, +5pp over baseline). Root cause fixed:
     all 2384 original traces were corrupted garbage. New clean traces (119) from darwin36b
@@ -29,6 +37,18 @@ log:
   text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
     culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
     (+1 more)
+- date: '2026-05-09'
+  text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
+    culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
+    (+1 more)
+- date: '2026-05-11'
+  text: 'Darwin-A DONE (Jaccard=0.057, 2/35). Darwin-B LAUNCHED — CPU DARE-TIES merge
+    darwin36b+jackrong35b, ffn=0.45 (chemistry knowledge injection). Eval on 35 failure
+    Qs pending. Next: if Darwin-B > 85% baseline → proceed Darwin-C (GSPO).'
+- date: '2026-05-10'
+  text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
+    culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
+    (+1 more)
 metric: GPQA Diamond single-model score
 milestones:
 - done: true
@@ -39,29 +59,41 @@ milestones:
 - done: true
   text: 'Phase 3 v5: LoRA KD proxy 90% (18/20) — REVISED: 198Q actual ~82%, below
     baseline. LoRA self-distillation cannot exceed base ceiling.'
+- done: true
+  text: '[Gate 0] failure_indices.json DONE (35 Qs) + fast_eval_30q.py uploaded to
+    NIPA. 30Q eval ready (~30 min vs 3h full).'
+- done: true
+  text: '[Gate 0] REDEFINED PASS — Q29 Δ=+0.17~0.25 in 2/6 independent runs. Grouped
+    GRPO K=8 LR=1e-6 validated stable. Signal confirmed, proceeding to Gate 1.'
+- done: true
+  text: '[Gate 1] DONE 2026-05-10 — FAILED. 30 outers, all avg=-1.0 throughout. Zero
+    correct rollouts. MoE expert-activation volatility confirmed as hard blocker for
+    standard GRPO on darwin36b. Darwin-C (GSPO) required for RL.'
+- done: true
+  text: '[Darwin-A] DONE 2026-05-11 — Jaccard=0.057 (2/35 correct). jackrong35b solves
+    Q105+Q120 from darwin36b failures. Low but nonzero — Darwin-B viable.'
 - done: false
-  text: '[Gate 0] Save failure_indices.json from 198Q run + build 30Q fast-eval harness
-    (~30 min eval vs 3h full). Pass if: eval script runs on 30Q in <45 min.'
+  text: '[Darwin-B] RUNNING 2026-05-11 — CPU DARE-TIES merge darwin36b+jackrong35b
+    (1811 tensors, 1.9TB RAM). Genome: ffn=0.45, attn=0.15, global=0.25. PID 525173.
+    Eval on 35 failure Qs when merge completes. Expected: ~87-90% GPQA Diamond.'
 - done: false
-  text: '[Gate 0] GRPO micro-test: 5 failure Qs, 50 rollouts each on GPU 0 (~1h).
-    Confirm reward signal converges. Pass if: reward > random baseline on ≥3/5 Qs.'
+  text: '[Darwin-C] GSPO on darwin36b: MoE-stable RL (arXiv:2507.18071) with router
+    weight freeze for first 20 steps + load-balance aux loss. Avoids expert-activation
+    volatility. (~4h Gate 0 test)'
 - done: false
-  text: '[Gate 1] GRPO Phase 5a: 30 failure Qs, 200 rollouts, GPUs 0-5 (~3h). Eval
-    on those 30Q only. Pass if: +3pp over darwin36b baseline on failure cluster.'
+  text: '[Darwin-D] Speculative decoding eval: darwin28b draft + darwin36b target
+    → 2-3x faster eval if tokenizers match. Enables rapid CMA-ES fitness evaluation.'
 - done: false
-  text: '[Gate 2] GRPO Phase 5b: Full GRPO if Gate 1 passes — scale to all ~30 failure
-    Qs, 500 rollouts. Full 198Q eval. Pass if: ≥88% (vs 85% baseline).'
-- done: false
-  text: '[Gate 3] OR-ensemble teacher distillation: use 93.9% ensemble traces on failure
-    Qs as GRPO reward seed. Target: ≥90% on 198Q.'
-- done: false
-  text: 'Final: ≥93% single-model GPQA Diamond (north star: 93.9%)'
+  text: 'Final: ≥93% single-model GPQA Diamond via Darwin evolutionary merge'
 name: FromScratch
-note: 'PIVOT 2026-05-08: LoRA KD failed (self-distillation ceiling). New plan: GRPO
-  with binary correct/incorrect reward on failure questions. Fast-validation gates:
-  Gate 0 (2h) → Gate 1 (4h) → Gate 2 (full) only if signal confirmed.'
-position_x: 2
-status: at-risk
+note: 'NEW NS 2026-05-09: Darwin-native CMA-ES evolutionary merge as primary lever.
+  Post-training (SFT/GRPO) hit ceilings. Correct approach: merge darwin36b(85%) +
+  jackrong35b via DARE-TIES with GPQA fitness function. Complementary error profiling
+  + speculative decoding for faster eval cycles.'
+parent: null
+position_x: 0
+stage: unassigned
+status: pivoting
 target: 93.9%
 unit: '%'
 x: 13

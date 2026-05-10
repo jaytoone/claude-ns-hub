@@ -1,0 +1,870 @@
+'use client';
+
+import StoryboardGenerator from '@/components/storyboard/StoryboardGenerator';
+import { ServicePageHeader } from '@/components/shared/ServicePageHeader';
+
+export default function StoryboardPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-banana-cream to-white">
+      <ServicePageHeader serviceName="AI 콘티" />
+      <div className="py-8 px-4">
+        <StoryboardGenerator />
+      </div>
+    </div>
+  );
+}
+'use client';
+
+import SimpleVideoGenerator from '@/components/simplevideo/SimpleVideoGenerator';
+import { ServicePageHeader } from '@/components/shared/ServicePageHeader';
+
+export default function SimpleVideoPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+      <ServicePageHeader serviceName="비디오 V2 + 음성" />
+      <div className="py-8 px-4">
+        <SimpleVideoGenerator />
+      </div>
+    </div>
+  );
+}
+'use client';
+
+import CardNewsGenerator from '@/components/cardnews/CardNewsGenerator';
+import { ServicePageHeader } from '@/components/shared/ServicePageHeader';
+
+export default function CardNewsPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ServicePageHeader serviceName="AI 카드뉴스" />
+      <div className="py-8 px-4">
+        <CardNewsGenerator />
+      </div>
+    </div>
+  );
+}
+'use client';
+
+import ShorttoonGenerator from '@/components/shorttoon/ShorttoonGenerator';
+import { ServicePageHeader } from '@/components/shared/ServicePageHeader';
+
+export default function ShorttoonPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ServicePageHeader serviceName="AI 숏툰" />
+      <div className="py-8 px-4">
+        <ShorttoonGenerator />
+      </div>
+    </div>
+  );
+}
+'use client'
+
+import { useState } from 'react'
+import { Sparkles, Code, FileText, Palette, Info } from 'lucide-react'
+import { DiagramGenerator } from '@/components/diagram/DiagramGenerator'
+import { useTranslation } from '@/lib/i18n/useTranslation'
+import { toast } from 'sonner'
+import { ServicePageHeader } from '@/components/shared/ServicePageHeader'
+
+type TabType = 'generator' | 'templates' | 'editor' | 'comparison'
+
+export default function DiagramPage() {
+  const { t } = useTranslation()
+  const [activeTab, setActiveTab] = useState<TabType>('generator')
+  const [selectedTemplate, setSelectedTemplate] = useState<{
+    id: string
+    prompt: string
+    type: 'flowchart' | 'sequence'
+  } | null>(null)
+
+  return (
+    <div className="min-h-screen">
+      <ServicePageHeader serviceName="다이어그램" />
+    <div className="container mx-auto px-4 py-8 space-y-8">
+
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-banana-border">
+        {/* Tab Headers */}
+        <div className="border-b-2 border-gray-200 dark:border-gray-700">
+          <div className="flex overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('generator')}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'generator'
+                  ? 'text-gray-900 dark:text-white bg-banana-cream dark:bg-banana-dark/20 border-b-4 border-banana-bright'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <Sparkles className={`h-5 w-5 ${activeTab === 'generator' ? 'text-banana-bright' : ''}`} />
+              🤖 AI Generator
+            </button>
+
+            <button
+              onClick={() => setActiveTab('templates')}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'templates'
+                  ? 'text-gray-900 dark:text-white bg-banana-cream dark:bg-banana-dark/20 border-b-4 border-banana-bright'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <FileText className={`h-5 w-5 ${activeTab === 'templates' ? 'text-banana-bright' : ''}`} />
+              📋 Templates
+            </button>
+
+            <button
+              onClick={() => setActiveTab('editor')}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'editor'
+                  ? 'text-gray-900 dark:text-white bg-banana-cream dark:bg-banana-dark/20 border-b-4 border-banana-bright'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <Code className={`h-5 w-5 ${activeTab === 'editor' ? 'text-banana-bright' : ''}`} />
+              ✏️ Code Editor
+            </button>
+
+            <button
+              onClick={() => setActiveTab('comparison')}
+              className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'comparison'
+                  ? 'text-gray-900 dark:text-white bg-banana-cream dark:bg-banana-dark/20 border-b-4 border-banana-bright'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <Palette className={`h-5 w-5 ${activeTab === 'comparison' ? 'text-banana-bright' : ''}`} />
+              🎨 Theme Comparison
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-6 bg-banana-yellow-50">
+          {activeTab === 'generator' && (
+            <div className="space-y-6">
+              <DiagramGenerator
+                initialPrompt={selectedTemplate?.prompt}
+                initialDiagramType={selectedTemplate?.type}
+              />
+            </div>
+          )}
+
+          {activeTab === 'templates' && (
+            <DiagramTemplatesTab
+              onUseTemplate={(template) => {
+                setSelectedTemplate(template)
+                setActiveTab('generator')
+                toast.success(`${template.name} 템플릿이 적용되었습니다!`)
+              }}
+            />
+          )}
+
+          {activeTab === 'editor' && (
+            <DiagramCodeEditorTab />
+          )}
+
+          {activeTab === 'comparison' && (
+            <DiagramComparisonTab />
+          )}
+        </div>
+      </div>
+
+      {/* Feature Showcase Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <FeatureCard
+          icon="📁"
+          title="File Upload"
+          description="Upload PDF, DOCX, CSV and more"
+          status="planned"
+        />
+        <FeatureCard
+          icon="🎨"
+          title="5 Themes"
+          description="Default, Dark, Forest, Neutral, Base"
+          status="planned"
+        />
+        <FeatureCard
+          icon="📊"
+          title="11 Diagram Types"
+          description="From flowcharts to mindmaps"
+          status="planned"
+        />
+        <FeatureCard
+          icon="🔧"
+          title="Auto-Fix"
+          description="AI-powered syntax correction"
+          status="planned"
+        />
+        <FeatureCard
+          icon="💾"
+          title="Multi-Format Export"
+          description="SVG, PNG, PDF downloads"
+          status="planned"
+        />
+        <FeatureCard
+          icon="⚡"
+          title="Real-time Preview"
+          description="Instant diagram rendering"
+          status="active"
+        />
+      </div>
+
+      {/* Development Roadmap */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-banana-border">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+          🗺️ Development Roadmap
+        </h2>
+        <div className="space-y-4">
+          <RoadmapItem
+            sprint="Sprint 1"
+            title="Core Feature Enhancement"
+            tasks={[
+              'Expand diagram type support (9 new types)',
+              'Add file upload UI component',
+              'Implement theme & format selectors',
+              'Update translations (ko/en)'
+            ]}
+            status="in-progress"
+          />
+          <RoadmapItem
+            sprint="Sprint 2"
+            title="Backend Integration"
+            tasks={[
+              'Update Edge Function for new diagram types',
+              'Implement file processing service',
+              'Add auto-correction logic',
+              'Error handling and retry logic'
+            ]}
+            status="planned"
+          />
+          <RoadmapItem
+            sprint="Sprint 3"
+            title="Test Page Components"
+            tasks={[
+              'Build DiagramTemplates component',
+              'Build DiagramCodeEditor component',
+              'Build DiagramComparison component',
+              'Add export functionality'
+            ]}
+            status="planned"
+          />
+          <RoadmapItem
+            sprint="Sprint 4"
+            title="Testing & Polish"
+            tasks={[
+              'End-to-end testing',
+              'Cross-browser testing',
+              'Performance optimization',
+              'Accessibility audit'
+            ]}
+            status="planned"
+          />
+        </div>
+      </div>
+    </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Tab Components
+// ============================================================================
+
+interface TemplateData {
+  id: string
+  icon: string
+  name: string
+  desc: string
+  prompt: string
+  type: 'flowchart' | 'sequence'
+  mermaidCode: string
+}
+
+interface DiagramTemplatesTabProps {
+  onUseTemplate: (template: { id: string; name: string; prompt: string; type: 'flowchart' | 'sequence' }) => void
+}
+
+function DiagramTemplatesTab({ onUseTemplate }: DiagramTemplatesTabProps) {
+  const { t } = useTranslation()
+
+  // Helper function to generate preview URL from Mermaid code
+  const generatePreviewUrl = (mermaidCode: string): string => {
+    try {
+      const encoded = btoa(unescape(encodeURIComponent(mermaidCode)))
+      return `https://mermaid.ink/img/${encoded}`
+    } catch (error) {
+      console.error('Error generating preview URL:', error)
+      return ''
+    }
+  }
+
+  const templates: TemplateData[] = [
+    {
+      id: 'flowchart',
+      icon: '📊',
+      name: t('diagram.types.flowchart'),
+      desc: '프로세스 흐름도',
+      prompt: '사용자 로그인 프로세스 순서도를 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'graph TD\nA[시작] --> B[로그인]\nB --> C{인증}\nC -->|성공| D[완료]\nC -->|실패| B'
+    },
+    {
+      id: 'sequence',
+      icon: '🔄',
+      name: t('diagram.types.sequence'),
+      desc: '시퀀스 다이어그램',
+      prompt: 'API 요청/응답 시퀀스 다이어그램을 작성해주세요',
+      type: 'sequence',
+      mermaidCode: 'sequenceDiagram\nClient->>Server: Request\nServer->>DB: Query\nDB-->>Server: Data\nServer-->>Client: Response'
+    },
+    {
+      id: 'class',
+      icon: '📦',
+      name: t('diagram.types.class'),
+      desc: '클래스 구조',
+      prompt: '쇼핑몰 시스템 클래스 다이어그램을 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'classDiagram\nUser --> Order\nOrder --> Product\nclass User{\n+name\n+email\n}\nclass Order{\n+total\n+date\n}'
+    },
+    {
+      id: 'state',
+      icon: '⚡',
+      name: t('diagram.types.state'),
+      desc: '상태 전이도',
+      prompt: '주문 상태 전환 다이어그램을 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'stateDiagram-v2\n[*] --> 주문접수\n주문접수 --> 결제완료\n결제완료 --> 배송중\n배송중 --> 배송완료\n배송완료 --> [*]'
+    },
+    {
+      id: 'gantt',
+      icon: '📅',
+      name: t('diagram.types.gantt'),
+      desc: '일정 관리',
+      prompt: '프로젝트 일정 간트차트를 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'gantt\ntitle 프로젝트 일정\nsection 개발\n기획 :a1, 2024-01-01, 7d\n개발 :a2, after a1, 14d\n테스트 :a3, after a2, 7d'
+    },
+    {
+      id: 'pie',
+      icon: '🥧',
+      name: t('diagram.types.pie'),
+      desc: '비율 표현',
+      prompt: '매출 비중 파이차트를 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'pie title 매출 비중\n"제품 A" : 45\n"제품 B" : 30\n"제품 C" : 25'
+    },
+    {
+      id: 'er',
+      icon: '🗄️',
+      name: t('diagram.types.er'),
+      desc: '데이터베이스 설계',
+      prompt: '블로그 시스템 ER 다이어그램을 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'erDiagram\nUSER ||--o{ POST : writes\nUSER ||--o{ COMMENT : writes\nPOST ||--o{ COMMENT : has\nUSER {\nint id\nstring name\n}\nPOST {\nint id\nstring title\n}'
+    },
+    {
+      id: 'journey',
+      icon: '🚶',
+      name: t('diagram.types.journey'),
+      desc: '사용자 여정',
+      prompt: '온라인 쇼핑 사용자 여정을 작성해주세요',
+      type: 'sequence',
+      mermaidCode: 'journey\ntitle 쇼핑 여정\nsection 탐색\n제품 검색: 5: 사용자\n상세 보기: 4: 사용자\nsection 구매\n장바구니: 3: 사용자\n결제: 5: 사용자'
+    },
+    {
+      id: 'mindmap',
+      icon: '🧠',
+      name: t('diagram.types.mindmap'),
+      desc: '마인드맵',
+      prompt: 'AI 프로젝트 마인드맵을 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'mindmap\nroot((AI 프로젝트))\n데이터\n수집\n전처리\n모델\n학습\n평가\n배포\nAPI\n모니터링'
+    },
+    {
+      id: 'timeline',
+      icon: '⏰',
+      name: t('diagram.types.timeline'),
+      desc: '시간순 이벤트',
+      prompt: '회사 발전 타임라인을 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'timeline\ntitle 회사 발전사\n2020 : 창업\n2021 : 첫 제품 출시\n2022 : 시리즈 A 투자\n2023 : 글로벌 진출\n2024 : 상장'
+    },
+    {
+      id: 'git',
+      icon: '🌿',
+      name: t('diagram.types.git'),
+      desc: 'Git 브랜치',
+      prompt: 'Feature 브랜치 전략을 작성해주세요',
+      type: 'flowchart',
+      mermaidCode: 'gitGraph\ncommit\nbranch develop\ncheckout develop\ncommit\nbranch feature\ncheckout feature\ncommit\ncommit\ncheckout develop\nmerge feature\ncheckout main\nmerge develop'
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          📋 템플릿 라이브러리
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          총 {templates.length}개의 다이어그램 템플릿
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {templates.map((template) => {
+          const previewUrl = generatePreviewUrl(template.mermaidCode)
+
+          return (
+            <div
+              key={template.id}
+              className="bg-white rounded-xl overflow-hidden border-2 border-banana-border hover:border-banana-bright transition-all group"
+            >
+              {/* Preview Image */}
+              <div className="bg-gray-50 p-4 flex items-center justify-center min-h-[200px] border-b-2 border-banana-border">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={`${template.name} preview`}
+                    className="max-w-full h-auto max-h-[180px] object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      target.nextElementSibling?.classList.remove('hidden')
+                    }}
+                  />
+                ) : null}
+                <div className="hidden text-center text-gray-500 dark:text-gray-400">
+                  <div className="text-4xl mb-2">{template.icon}</div>
+                  <p className="text-sm">미리보기 로드 실패</p>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{template.icon}</span>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {template.name}
+                  </h4>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {template.desc}
+                </p>
+                <button
+                  onClick={() => onUseTemplate({
+                    id: template.id,
+                    name: template.name,
+                    prompt: template.prompt,
+                    type: template.type
+                  })}
+                  className="w-full bg-gradient-to-r from-banana-bright to-banana-golden text-gray-900 py-2 rounded-lg font-medium group-hover:shadow-lg transition-all"
+                >
+                  템플릿 사용하기
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function DiagramCodeEditorTab() {
+  const initialCode = `graph TD
+    A[시작] --> B[처리]
+    B --> C{조건}
+    C -->|예| D[완료]
+    C -->|아니오| B`
+
+  const [code, setCode] = useState(initialCode)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [isRendering, setIsRendering] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code)
+      toast.success('코드가 클립보드에 복사되었습니다')
+    } catch (error) {
+      toast.error('복사에 실패했습니다')
+    }
+  }
+
+  const handleReset = () => {
+    setCode(initialCode)
+    setPreviewUrl(null)
+    toast.success('코드가 초기화되었습니다')
+  }
+
+  const handleRender = async () => {
+    if (!code.trim()) {
+      toast.error('코드를 입력해주세요')
+      return
+    }
+
+    setIsRendering(true)
+    try {
+      // Encode Mermaid code for mermaid.ink API
+      const encoded = btoa(unescape(encodeURIComponent(code)))
+      const url = `https://mermaid.ink/img/${encoded}`
+      setPreviewUrl(url)
+      toast.success('다이어그램이 렌더링되었습니다')
+    } catch (error) {
+      toast.error('렌더링에 실패했습니다')
+      console.error('Rendering error:', error)
+    } finally {
+      setIsRendering(false)
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Editor */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            ✏️ Mermaid 코드 에디터
+          </h3>
+          <button
+            onClick={handleRender}
+            disabled={isRendering}
+            className="px-4 py-2 bg-gradient-to-r from-banana-bright to-banana-golden text-gray-900 rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRendering ? '렌더링 중...' : '렌더링'}
+          </button>
+        </div>
+        <textarea
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          className="w-full h-96 rounded-lg border-2 border-gray-300 bg-white p-4 font-mono text-sm text-gray-900 focus:ring-2 focus:ring-banana-bright focus:border-transparent resize-none"
+          placeholder="Mermaid 코드를 입력하세요..."
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={handleCopy}
+            className="flex-1 px-4 py-2 border-2 border-banana-bright text-banana-dark dark:text-banana-bright rounded-lg hover:bg-banana-cream dark:hover:bg-banana-dark/20 transition-all font-medium"
+          >
+            코드 복사
+          </button>
+          <button
+            onClick={handleReset}
+            className="flex-1 px-4 py-2 border-2 border-banana-bright text-banana-dark dark:text-banana-bright rounded-lg hover:bg-banana-cream dark:hover:bg-banana-dark/20 transition-all font-medium"
+          >
+            초기화
+          </button>
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="bg-white rounded-xl p-6 border-2 border-banana-border">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+          👁️ 실시간 미리보기
+        </h3>
+        <div className="bg-gray-50 rounded-lg p-8 min-h-96 flex items-center justify-center">
+          {previewUrl ? (
+            <img
+              src={previewUrl}
+              alt="Diagram preview"
+              className="max-w-full h-auto"
+              onError={() => {
+                toast.error('다이어그램 렌더링에 실패했습니다')
+                setPreviewUrl(null)
+              }}
+            />
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400 text-center">
+              렌더링 버튼을 클릭하여<br />다이어그램을 생성하세요
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DiagramComparisonTab() {
+  const sampleDiagram = `graph TD
+    A[시작] --> B[처리]
+    B --> C{조건}
+    C -->|예| D[완료]
+    C -->|아니오| B`
+
+  const themes = [
+    { id: 'default', name: 'Default', color: 'bg-white', mermaidTheme: 'default' },
+    { id: 'dark', name: 'Dark', color: 'bg-gray-900', mermaidTheme: 'dark' },
+    { id: 'forest', name: 'Forest', color: 'bg-green-100', mermaidTheme: 'forest' },
+    { id: 'neutral', name: 'Neutral', color: 'bg-gray-100', mermaidTheme: 'neutral' },
+    { id: 'base', name: 'Base', color: 'bg-blue-50', mermaidTheme: 'base' },
+  ]
+
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({})
+  const [fallbackUrls, setFallbackUrls] = useState<Record<string, string>>({})
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  const generateThemePreview = (themeId: string, mermaidTheme: string) => {
+    try {
+      const themedCode = `%%{init: {'theme':'${mermaidTheme}'}}%%\n${sampleDiagram}`
+      const encoded = btoa(unescape(encodeURIComponent(themedCode)))
+
+      // Try mermaid.ink first, but we'll add Kroki.io as fallback in the rendering
+      return {
+        primary: `https://mermaid.ink/img/${encoded}`,
+        fallback: `https://kroki.io/mermaid/svg/${encoded}`
+      }
+    } catch (error) {
+      console.error(`Error generating preview for ${themeId}:`, error)
+      return null
+    }
+  }
+
+  const handleGenerateAll = () => {
+    setIsGenerating(true)
+    const urls: Record<string, string> = {}
+    const fallbacks: Record<string, string> = {}
+
+    themes.forEach(theme => {
+      const urlObj = generateThemePreview(theme.id, theme.mermaidTheme)
+      if (urlObj) {
+        urls[theme.id] = urlObj.primary
+        fallbacks[theme.id] = urlObj.fallback
+      }
+    })
+
+    setPreviewUrls(urls)
+    setFallbackUrls(fallbacks)
+    setIsGenerating(false)
+    toast.success('모든 테마가 생성되었습니다')
+  }
+
+  const handleDownloadSingle = async (themeName: string, themeId: string) => {
+    const url = previewUrls[themeId]
+    if (!url) {
+      toast.error('먼저 테마를 생성해주세요')
+      return
+    }
+
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `${themeName}-theme.svg`
+      link.click()
+
+      toast.success(`${themeName} 테마가 다운로드되었습니다`)
+    } catch (error) {
+      console.error(`Download error for ${themeName}:`, error)
+      toast.error('다운로드에 실패했습니다')
+    }
+  }
+
+  const handleDownloadAll = async () => {
+    if (Object.keys(previewUrls).length === 0) {
+      toast.error('먼저 테마를 생성해주세요')
+      return
+    }
+
+    try {
+      const JSZip = (await import('jszip')).default
+      const zip = new JSZip()
+
+      // Fetch all images and add to zip
+      const promises = themes.map(async (theme) => {
+        const url = previewUrls[theme.id]
+        if (!url) return
+
+        try {
+          const response = await fetch(url)
+          const blob = await response.blob()
+          zip.file(`${theme.name}-theme.svg`, blob)
+        } catch (error) {
+          console.error(`Failed to download ${theme.name}:`, error)
+        }
+      })
+
+      await Promise.all(promises)
+
+      // Generate zip file
+      const content = await zip.generateAsync({ type: 'blob' })
+
+      // Download
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(content)
+      link.download = `diagram-themes-${Date.now()}.zip`
+      link.click()
+
+      toast.success('모든 테마가 다운로드되었습니다')
+    } catch (error) {
+      console.error('Download error:', error)
+      toast.error('다운로드에 실패했습니다')
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          🎨 테마 비교
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={handleGenerateAll}
+            disabled={isGenerating}
+            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50"
+          >
+            {isGenerating ? '생성 중...' : '모든 테마 생성'}
+          </button>
+          <button
+            onClick={handleDownloadAll}
+            className="px-6 py-2 bg-gradient-to-r from-banana-bright to-banana-golden text-gray-900 rounded-lg font-medium hover:shadow-lg transition-all"
+          >
+            전체 다운로드
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {themes.map((theme) => (
+          <div
+            key={theme.id}
+            className="bg-white rounded-xl p-4 border-2 border-banana-border"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold text-gray-900 dark:text-white">
+                {theme.name} 테마
+              </h4>
+              {previewUrls[theme.id] && (
+                <button
+                  onClick={() => handleDownloadSingle(theme.name, theme.id)}
+                  className="px-3 py-1 text-xs bg-gradient-to-r from-banana-bright to-banana-golden text-gray-900 rounded-lg font-medium hover:shadow-lg transition-all"
+                >
+                  다운로드
+                </button>
+              )}
+            </div>
+            <div className={`${theme.color} rounded-lg p-8 min-h-48 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700`}>
+              {previewUrls[theme.id] ? (
+                <img
+                  src={previewUrls[theme.id]}
+                  alt={`${theme.name} theme preview`}
+                  className="max-w-full h-auto"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    // Try fallback URL if available
+                    if (fallbackUrls[theme.id] && target.src !== fallbackUrls[theme.id]) {
+                      console.log(`Trying fallback for ${theme.name}: ${fallbackUrls[theme.id]}`)
+                      target.src = fallbackUrls[theme.id]
+                    } else {
+                      console.error(`Both primary and fallback failed for ${theme.name}`)
+                      toast.error(`${theme.name} 테마 렌더링 실패`)
+                    }
+                  }}
+                />
+              ) : (
+                <p className="text-gray-500 text-center text-sm">
+                  {theme.name}<br />테마 미리보기
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Sub-components
+// ============================================================================
+
+interface FeatureCardProps {
+  icon: string
+  title: string
+  description: string
+  status?: 'active' | 'planned' | 'coming-soon'
+}
+
+function FeatureCard({ icon, title, description, status = 'active' }: FeatureCardProps) {
+  return (
+    <div className={`bg-white rounded-xl p-6 border-2 transition-all ${
+      status === 'active'
+        ? 'border-banana-bright shadow-lg'
+        : 'border-gray-200'
+    }`}>
+      <div className="text-4xl mb-3">{icon}</div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+        {title}
+        {status === 'planned' && (
+          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded-full">
+            Planned
+          </span>
+        )}
+        {status === 'active' && (
+          <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">
+            Active
+          </span>
+        )}
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        {description}
+      </p>
+    </div>
+  )
+}
+
+interface RoadmapItemProps {
+  sprint: string
+  title: string
+  tasks: string[]
+  status: 'completed' | 'in-progress' | 'planned'
+}
+
+function RoadmapItem({ sprint, title, tasks, status }: RoadmapItemProps) {
+  const statusConfig = {
+    completed: {
+      bg: 'bg-green-100 dark:bg-green-900',
+      text: 'text-green-800 dark:text-green-200',
+      border: 'border-green-500',
+      icon: '✅'
+    },
+    'in-progress': {
+      bg: 'bg-blue-100 dark:bg-blue-900',
+      text: 'text-blue-800 dark:text-blue-200',
+      border: 'border-blue-500',
+      icon: '🔄'
+    },
+    planned: {
+      bg: 'bg-gray-100 dark:bg-gray-700',
+      text: 'text-gray-800 dark:text-gray-200',
+      border: 'border-gray-400',
+      icon: '📋'
+    }
+  }
+
+  const config = statusConfig[status]
+
+  return (
+    <div className={`rounded-lg border-l-4 ${config.border} bg-gray-50 p-4`}>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="font-semibold text-gray-900 dark:text-white">
+            {sprint}: {title}
+          </h3>
+        </div>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
+          {config.icon} {status.replace('-', ' ').toUpperCase()}
+        </span>
+      </div>
+      <ul className="space-y-2">
+        {tasks.map((task, index) => (
+          <li key={index} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-banana-bright mt-0.5">▸</span>
+            {task}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

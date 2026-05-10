@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-05-08T07:39:55.591998+00:00",
+  "cwd": "/home/desk-1/Project/Driller",
+  "turn_count": 207,
+  "decisions": [
+    {
+      "text": "score:   5",
+      "context": "riller/docs/research/ quality_score: 5/6 ``` **Now active.** Next time you run `/entity -c [anything about vertical selection, PLG by vertical, attrib",
+      "tag": "metric"
+    },
+    {
+      "text": "Done",
+      "context": "Done. CTX North Star in the hub now shows: **4/9 milestones done:** - [x] Cold-start fix (vault seed) - [x] Sharing trigger - [x] Channel manager in h",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "done",
+      "context": "now shows: **4/9 milestones done:** - [x] Cold-start fix (vault seed) - [x] Sharing trigger - [x] Channel manager in hub - [x] ctx-dashboard CLI in wh",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Fixed",
+      "context": "Fixed. The issue was a leftover \"coming soon\" stub route registered before the real one — FastAPI picks the first match. `http://100.119.82.4:9000/` →",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Done",
+      "context": "Done. Hub Market tab (`http://100.119.82.4:9000` → Market) is now a CTX channel manager: | Channel | Live metric | Method | |---|---|---| | GitHub | ★",
+      "tag": "impl_complete"
+    }
+  ]
+}

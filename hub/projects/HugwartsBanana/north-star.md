@@ -2,7 +2,7 @@
 category: Vertical
 current: ~0 new payers/week (37 total as of 2026-04-08)
 deadline: ''
-layer: 0
+layer: 2
 log:
 - date: '2026-05-08'
   text: 'be6627b v1.23.396 20260416 - fix 립싱크 타임아웃 에러 메시지 개선 (일시적 혼잡 안내 + 13초 이하 짧은
@@ -387,57 +387,63 @@ log:
   text: b254e7e v1.23.438 20260508 - fix video-lipsync worker 미시작 버그 (fire-and-forget
     → 200ms await 추가); b3652a7 v1.23.437 20260508 - fix lipsync-worker 70% 고착 버그 (reinvokeWorker
     fire-and-forget → 200ms await 추가) (+1 more)
+- date: '2026-05-09'
+  text: b254e7e v1.23.438 20260508 - fix video-lipsync worker 미시작 버그 (fire-and-forget
+    → 200ms await 추가); b3652a7 v1.23.437 20260508 - fix lipsync-worker 70% 고착 버그 (reinvokeWorker
+    fire-and-forget → 200ms await 추가) (+1 more)
 metric: Weekly new payers
 milestones:
 - claude_ack: null
-  done: false
+  done: true
   id: M0
   layer: 0
   text: 'Phase 0: Diagnostic — COGS audit + 5x payer interviews + competitor check'
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M0.1
   layer: 1
   parent_id: M0
+  status: pending
   text: Pull credit_logs for 37 payers → median COGS/user/month (pass if <7,000 KRW)
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M0.2
   layer: 1
   parent_id: M0
+  status: pending
   text: Interview 5x Directors/Shortform payers — extract purchase trigger language
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M0.3
   layer: 1
   parent_id: M0
   text: Competitive check — does Vrew/TypeCast own "YouTube policy compliance" angle?
 - claude_ack: null
-  done: false
+  done: true
   id: M1
   layer: 0
   text: 'Phase 1: Fix — Activation + pricing + positioning'
 - claude_ack: null
-  done: false
+  done: true
   id: M1.1
   layer: 1
   parent_id: M1
   text: Automation Studio first-session → pre-built template (output in <5 min, not
     blank canvas)
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M1.2
   layer: 1
   parent_id: M1
   text: Instrument first_output_completed event per feature
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M1.3
   layer: 1
   parent_id: M1
   text: Launch subscription tiers (9,900/29,900/79,900 KRW + Shorts cap) — credits
     become overage
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M1.4
   layer: 1
@@ -445,34 +451,29 @@ milestones:
   text: Landing page rewrite — policy compliance angle (or "10-min Shorts" if interviews
     reject compliance)
 - claude_ack: null
-  done: false
+  done: true
   id: M2
   layer: 0
-  text: 'Phase 2: Acquire — inbound channel validated (3+ new payers/week x 2 weeks)'
+  text: 'Phase 2: Acqdfuire — inbound channel validated (3+ new payers/week x 2 weeks)'
 - claude_ack: null
-  done: false
+  done: true
   id: M2.1
   layer: 1
   parent_id: M2
   text: Collect 3-5 before/after Shorts videos from paying Directors/Shortform users
-- claude_ack: null
-  done: false
-  id: M2.2
-  layer: 1
-  parent_id: M2
-  text: Disquiet.io founder post with before/after video + honest numbers
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M2.3
   layer: 1
   parent_id: M2
+  status: pending
   text: Korean creator community seeding — 3-5 communities (Naver cafe, creator Discords)
 - claude_ack: null
-  done: false
+  done: true
   id: M3
   layer: 0
   text: 37 → 120 payers (3x)
-- claude_ack: null
+- claude_ack: 2026-05-09T23:09
   done: false
   id: M4
   layer: 0
@@ -499,14 +500,32 @@ milestones:
   id: M_DONE4
   layer: 0
   text: Paddle global payment integration added (v1.23.432-436, 2026-05-07/08)
+- claude_ack: null
+  done: true
+  id: M2.4
+  layer: 1
+  parent_id: M2
+  text: New milestone
+- claude_ack: 2026-05-09T23:09
+  done: false
+  id: M1.6
+  layer: 1
+  parent_id: M1
+  text: New milestone
+- claude_ack: 2026-05-09T23:09
+  done: false
+  id: M10
+  layer: 0
+  parent_id: null
+  text: Playwright MCP + Stop Hook research notes
 name: HugwartsBanana
 note: 'Korean Shorts monetization compliance pipeline. OMTM: payers/week. Core bottleneck:
   Activation (wrong Aha path — Automation Studio 403 users/1.5% vs Directors 10 users/71.4%).
   ICP: Korean Shorts creator with income urgency (personal card buyer, no procurement).
   COGS floor: 3x rule → 29,900 KRW tier requires <30 lipsync Shorts/month cap. Next
   action: M0 diagnostic sprint this week.'
-parent: null
-position_x: 0
+parent: FromScratch
+position_x: 1
 repo_path: ''
 status: behind
 target: 5 new payers/week by Week 10

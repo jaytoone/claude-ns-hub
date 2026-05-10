@@ -1,0 +1,1388 @@
+=== Node-1 log ===
+W0415 00:27:25.208000 253615 torch/distributed/run.py:844] 
+W0415 00:27:25.208000 253615 torch/distributed/run.py:844] *****************************************
+W0415 00:27:25.208000 253615 torch/distributed/run.py:844] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0415 00:27:25.208000 253615 torch/distributed/run.py:844] *****************************************
+[rank 2] Starting on DCTN-0413110535-1 local_rank=2
+[rank 6] Starting on DCTN-0413110535-1 local_rank=6
+[rank 4] Starting on DCTN-0413110535-1 local_rank=4
+[rank 5] Starting on DCTN-0413110535-1 local_rank=5
+[rank 7] Starting on DCTN-0413110535-1 local_rank=7
+[rank 1] Starting on DCTN-0413110535-1 local_rank=1
+[rank 3] Starting on DCTN-0413110535-1 local_rank=3
+[rank 0] Starting on DCTN-0413110535-1 local_rank=0
+[rank 2] init_process_group done
+[rank 7] init_process_group done
+[rank 0] init_process_group done
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Comm config Blocking set to 1
+[rank 5] init_process_group done
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Comm config Blocking set to 1
+[rank 4] init_process_group done
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Comm config Blocking set to 1
+[rank 6] init_process_group done
+[rank 3] init_process_group done
+[rank 1] init_process_group done
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Bootstrap: Using bond0:10.50.6.73<0>
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO DMA-BUF is available on GPU device 2
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO ncclCommInitRankConfig comm 0x16f21ac0 rank 2 nranks 16 cudaDev 2 nvmlDev 2 busId 64000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO DMA-BUF is available on GPU device 0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO ncclCommInitRankConfig comm 0x2bd08e70 rank 0 nranks 16 cudaDev 0 nvmlDev 0 busId 4000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO DMA-BUF is available on GPU device 7
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO ncclCommInitRankConfig comm 0x13203a60 rank 7 nranks 16 cudaDev 7 nvmlDev 7 busId f6000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.73<0>
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Using network IBext_v11
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO DMA-BUF is available on GPU device 5
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO ncclCommInitRankConfig comm 0x27790bb0 rank 5 nranks 16 cudaDev 5 nvmlDev 5 busId 94000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO DMA-BUF is available on GPU device 3
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO ncclCommInitRankConfig comm 0x3d15d9c0 rank 3 nranks 16 cudaDev 3 nvmlDev 3 busId 77000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO DMA-BUF is available on GPU device 4
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO ncclCommInitRankConfig comm 0x2ad53960 rank 4 nranks 16 cudaDev 4 nvmlDev 4 busId 84000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO DMA-BUF is available on GPU device 1
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO ncclCommInitRankConfig comm 0x45636ca0 rank 1 nranks 16 cudaDev 1 nvmlDev 1 busId 14000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO DMA-BUF is available on GPU device 6
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO ncclCommInitRankConfig comm 0x32e45710 rank 6 nranks 16 cudaDev 6 nvmlDev 6 busId e4000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Bootstrap timings total 0.542506 (create 0.000030, send 0.000075, recv 0.433565, ring 0.010691, delay 0.000001)
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Bootstrap timings total 0.109125 (create 0.000052, send 0.000107, recv 0.000139, ring 0.092970, delay 0.000000)
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Bootstrap timings total 0.578671 (create 0.000050, send 0.000104, recv 0.468631, ring 0.092421, delay 0.000001)
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Bootstrap timings total 0.110146 (create 0.000042, send 0.000097, recv 0.000719, ring 0.093486, delay 0.000001)
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Bootstrap timings total 0.109547 (create 0.000043, send 0.000104, recv 0.000107, ring 0.092161, delay 0.000001)
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Bootstrap timings total 0.535821 (create 0.000033, send 0.000083, recv 0.000067, ring 0.093620, delay 0.000001)
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Bootstrap timings total 0.108913 (create 0.000052, send 0.000086, recv 0.000109, ring 0.093057, delay 0.000001)
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Bootstrap timings total 0.146183 (create 0.000045, send 0.000103, recv 0.037368, ring 0.093034, delay 0.000001)
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO MNNVL busId 0x14000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO MNNVL busId 0x64000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO MNNVL busId 0x77000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO MNNVL busId 0x84000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO MNNVL busId 0xe4000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO MNNVL busId 0xf6000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO MNNVL busId 0x94000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO MNNVL busId 0x4000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 5 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 6 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 7 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 2 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 4 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 3 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 1 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO comm 0x27790bb0 rank 5 nRanks 16 nNodes 2 localRanks 8 localRank 5 MNNVL 0
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO comm 0x32e45710 rank 6 nRanks 16 nNodes 2 localRanks 8 localRank 6 MNNVL 0
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO comm 0x13203a60 rank 7 nRanks 16 nNodes 2 localRanks 8 localRank 7 MNNVL 0
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Trees [0] 0/-1/-1->5->7 [1] 0/-1/-1->5->7 [2] 0/-1/-1->5->7 [3] 0/-1/-1->5->7 [4] 0/-1/-1->5->7 [5] 0/-1/-1->5->7 [6] 0/-1/-1->5->7 [7] 0/-1/-1->5->7 [8] 0/-1/-1->5->7 [9] 0/-1/-1->5->7 [10] 0/-1/-1->5->7 [11] 0/-1/-1->5->7 [12] 0/-1/-1->5->7 [13] 0/-1/-1->5->7 [14] 0/-1/-1->5->7 [15] 0/-1/-1->5->7 [16] 0/-1/-1->5->7 [17] 0/-1/-1->5->7 [18] 0/-1/-1->5->7 [19] 0/-1/-1->5->7
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO comm 0x3d15d9c0 rank 3 nRanks 16 nNodes 2 localRanks 8 localRank 3 MNNVL 0
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO comm 0x2ad53960 rank 4 nRanks 16 nNodes 2 localRanks 8 localRank 4 MNNVL 0
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Trees [0] 7/-1/-1->6->4 [1] 7/-1/-1->6->4 [2] 7/-1/-1->6->4 [3] 7/14/-1->6->-1 [4] 7/-1/-1->6->4 [5] -1/-1/-1->6->4 [6] 7/-1/-1->6->4 [7] 7/-1/-1->6->4 [8] 7/-1/-1->6->4 [9] 7/14/-1->6->-1 [10] 7/-1/-1->6->4 [11] 7/-1/-1->6->4 [12] 7/-1/-1->6->4 [13] 7/-1/-1->6->14 [14] 7/-1/-1->6->4 [15] -1/-1/-1->6->4 [16] 7/-1/-1->6->4 [17] 7/-1/-1->6->4 [18] 7/-1/-1->6->4 [19] 7/-1/-1->6->14
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Trees [0] 5/-1/-1->7->6 [1] 5/-1/-1->7->6 [2] 5/-1/-1->7->6 [3] 5/-1/-1->7->6 [4] 5/-1/-1->7->6 [5] 5/15/-1->7->-1 [6] 5/-1/-1->7->6 [7] 5/-1/-1->7->6 [8] 5/-1/-1->7->6 [9] 5/-1/-1->7->6 [10] 5/-1/-1->7->6 [11] 5/-1/-1->7->6 [12] 5/-1/-1->7->6 [13] 5/-1/-1->7->6 [14] 5/-1/-1->7->6 [15] 5/-1/-1->7->15 [16] 5/-1/-1->7->6 [17] 5/-1/-1->7->6 [18] 5/-1/-1->7->6 [19] 5/-1/-1->7->6
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Trees [0] 4/-1/-1->3->2 [1] 4/-1/-1->3->2 [2] -1/-1/-1->3->2 [3] 4/-1/-1->3->2 [4] 4/11/-1->3->-1 [5] 4/-1/-1->3->2 [6] 4/-1/-1->3->2 [7] 4/-1/-1->3->2 [8] -1/-1/-1->3->2 [9] 4/-1/-1->3->2 [10] 4/-1/-1->3->2 [11] 4/-1/-1->3->2 [12] -1/-1/-1->3->2 [13] 4/-1/-1->3->2 [14] 4/-1/-1->3->11 [15] 4/-1/-1->3->2 [16] 4/-1/-1->3->2 [17] 4/-1/-1->3->2 [18] -1/-1/-1->3->2 [19] 4/-1/-1->3->2
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Trees [0] 6/-1/-1->4->3 [1] 6/-1/-1->4->3 [2] 6/12/-1->4->-1 [3] -1/-1/-1->4->3 [4] 6/-1/-1->4->3 [5] 6/-1/-1->4->3 [6] 6/-1/-1->4->3 [7] 6/-1/-1->4->3 [8] 6/12/-1->4->-1 [9] -1/-1/-1->4->3 [10] 6/-1/-1->4->3 [11] 6/-1/-1->4->3 [12] 6/-1/-1->4->12 [13] -1/-1/-1->4->3 [14] 6/-1/-1->4->3 [15] 6/-1/-1->4->3 [16] 6/-1/-1->4->3 [17] 6/-1/-1->4->3 [18] 6/-1/-1->4->12 [19] -1/-1/-1->4->3
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO comm 0x16f21ac0 rank 2 nRanks 16 nNodes 2 localRanks 8 localRank 2 MNNVL 0
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO comm 0x45636ca0 rank 1 nRanks 16 nNodes 2 localRanks 8 localRank 1 MNNVL 0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO comm 0x2bd08e70 rank 0 nRanks 16 nNodes 2 localRanks 8 localRank 0 MNNVL 0
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Trees [0] 3/-1/-1->2->1 [1] 3/10/-1->2->-1 [2] 3/-1/-1->2->1 [3] 3/-1/-1->2->1 [4] -1/-1/-1->2->1 [5] 3/-1/-1->2->1 [6] 3/-1/-1->2->1 [7] 3/10/-1->2->-1 [8] 3/-1/-1->2->1 [9] 3/-1/-1->2->1 [10] 3/-1/-1->2->1 [11] 3/-1/-1->2->10 [12] 3/-1/-1->2->1 [13] 3/-1/-1->2->1 [14] -1/-1/-1->2->1 [15] 3/-1/-1->2->1 [16] 3/-1/-1->2->1 [17] 3/-1/-1->2->10 [18] 3/-1/-1->2->1 [19] 3/-1/-1->2->1
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 00/20 :  0  5  7  6  4  3  2 10 11 12 14 15 13  8  9  1
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Trees [0] 2/9/-1->1->-1 [1] -1/-1/-1->1->0 [2] 2/-1/-1->1->0 [3] 2/-1/-1->1->0 [4] 2/-1/-1->1->0 [5] 2/-1/-1->1->0 [6] 2/9/-1->1->-1 [7] -1/-1/-1->1->0 [8] 2/-1/-1->1->0 [9] 2/-1/-1->1->0 [10] 2/-1/-1->1->9 [11] -1/-1/-1->1->0 [12] 2/-1/-1->1->0 [13] 2/-1/-1->1->0 [14] 2/-1/-1->1->0 [15] 2/-1/-1->1->0 [16] 2/-1/-1->1->9 [17] -1/-1/-1->1->0 [18] 2/-1/-1->1->0 [19] 2/-1/-1->1->0
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 01/20 :  0  1  9  8 13 15 14 12 11 10  2  3  4  6  7  5
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 02/20 :  0  5  7  6 14 15 13  8  9 10 11 12  4  3  2  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 03/20 :  0  1  2  3  4 12 11 10  9  8 13 15 14  6  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 04/20 :  0  5  7  6  4 12 14 15 13  8  9 10 11  3  2  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 05/20 :  0  1  2  3 11 10  9  8 13 15 14 12  4  6  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 06/20 :  0  1  2  3  4  6 14 12 11 10  9  8 13 15  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 07/20 :  0  5  7 15 13  8  9 10 11 12 14  6  4  3  2  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 08/20 :  0  1  9  8 13 15 14 12 11 10  2  3  4  6  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 09/20 :  0  5  7  6  4  3  2 10 11 12 14 15 13  8  9  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 10/20 :  0  5  7  6  4  3  2 10 11 12 14 15 13  8  9  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 11/20 :  0  1  9  8 13 15 14 12 11 10  2  3  4  6  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 12/20 :  0  5  7  6 14 15 13  8  9 10 11 12  4  3  2  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 13/20 :  0  1  2  3  4 12 11 10  9  8 13 15 14  6  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 14/20 :  0  5  7  6  4 12 14 15 13  8  9 10 11  3  2  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 15/20 :  0  1  2  3 11 10  9  8 13 15 14 12  4  6  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 16/20 :  0  1  2  3  4  6 14 12 11 10  9  8 13 15  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 17/20 :  0  5  7 15 13  8  9 10 11 12 14  6  4  3  2  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 18/20 :  0  1  9  8 13 15 14 12 11 10  2  3  4  6  7  5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 19/20 :  0  5  7  6  4  3  2 10 11 12 14 15 13  8  9  1
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Trees [0] -1/-1/-1->0->5 [1] 1/-1/-1->0->5 [2] 1/-1/-1->0->5 [3] 1/-1/-1->0->5 [4] 1/-1/-1->0->5 [5] 1/-1/-1->0->5 [6] -1/-1/-1->0->5 [7] 1/-1/-1->0->5 [8] 1/-1/-1->0->5 [9] 1/-1/-1->0->5 [10] -1/-1/-1->0->5 [11] 1/-1/-1->0->5 [12] 1/-1/-1->0->5 [13] 1/-1/-1->0->5 [14] 1/-1/-1->0->5 [15] 1/-1/-1->0->5 [16] -1/-1/-1->0->5 [17] 1/-1/-1->0->5 [18] 1/-1/-1->0->5 [19] 1/-1/-1->0->5
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253693:253838 [0] NCCL INFO [Proxy Service] Device 0 CPU core 8
+DCTN-0413110535-1:253693:253839 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 19
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253698:253840 [0] NCCL INFO [Proxy Service] Device 5 CPU core 67
+DCTN-0413110535-1:253698:253841 [0] NCCL INFO [Proxy Service UDS] Device 5 CPU core 41
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253696:253842 [0] NCCL INFO [Proxy Service] Device 3 CPU core 19
+DCTN-0413110535-1:253696:253843 [0] NCCL INFO [Proxy Service UDS] Device 3 CPU core 9
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253700:253844 [0] NCCL INFO [Proxy Service] Device 7 CPU core 67
+DCTN-0413110535-1:253700:253845 [0] NCCL INFO [Proxy Service UDS] Device 7 CPU core 41
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253699:253846 [0] NCCL INFO [Proxy Service] Device 6 CPU core 42
+DCTN-0413110535-1:253699:253847 [0] NCCL INFO [Proxy Service UDS] Device 6 CPU core 50
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253695:253848 [0] NCCL INFO [Proxy Service] Device 2 CPU core 0
+DCTN-0413110535-1:253695:253849 [0] NCCL INFO [Proxy Service UDS] Device 2 CPU core 19
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253697:253850 [0] NCCL INFO [Proxy Service] Device 4 CPU core 61
+DCTN-0413110535-1:253697:253851 [0] NCCL INFO [Proxy Service UDS] Device 4 CPU core 41
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-1:253694:253852 [0] NCCL INFO [Proxy Service] Device 1 CPU core 12
+DCTN-0413110535-1:253694:253853 [0] NCCL INFO [Proxy Service UDS] Device 1 CPU core 33
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO CC Off, workFifoBytes 1048576
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO ncclCommInitRankConfig comm 0x3d15d9c0 rank 3 nranks 16 cudaDev 3 nvmlDev 3 busId 77000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO ncclCommInitRankConfig comm 0x13203a60 rank 7 nranks 16 cudaDev 7 nvmlDev 7 busId f6000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Init timings - ncclCommInitRankConfig: rank 3 nranks 16 total 2.53 (kernels 0.31, alloc 0.42, bootstrap 0.11, allgathers 0.05, topo 1.15, graphs 0.42, connections 0.05, rest 0.03)
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO ncclCommInitRankConfig comm 0x16f21ac0 rank 2 nranks 16 cudaDev 2 nvmlDev 2 busId 64000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO ncclCommInitRankConfig comm 0x2ad53960 rank 4 nranks 16 cudaDev 4 nvmlDev 4 busId 84000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO ncclCommInitRankConfig comm 0x45636ca0 rank 1 nranks 16 cudaDev 1 nvmlDev 1 busId 14000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Init timings - ncclCommInitRankConfig: rank 7 nranks 16 total 2.72 (kernels 0.20, alloc 0.30, bootstrap 0.54, allgathers 0.06, topo 1.15, graphs 0.41, connections 0.04, rest 0.03)
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Init timings - ncclCommInitRankConfig: rank 2 nranks 16 total 2.72 (kernels 0.19, alloc 0.26, bootstrap 0.58, allgathers 0.05, topo 1.15, graphs 0.42, connections 0.04, rest 0.03)
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO ncclCommInitRankConfig comm 0x32e45710 rank 6 nranks 16 cudaDev 6 nvmlDev 6 busId e4000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 16 total 2.53 (kernels 0.31, alloc 0.42, bootstrap 0.11, allgathers 0.01, topo 1.15, graphs 0.46, connections 0.04, rest 0.03)
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Init timings - ncclCommInitRankConfig: rank 4 nranks 16 total 2.55 (kernels 0.33, alloc 0.42, bootstrap 0.11, allgathers 0.05, topo 1.15, graphs 0.43, connections 0.04, rest 0.03)
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO ncclCommInitRankConfig comm 0x27790bb0 rank 5 nranks 16 cudaDev 5 nvmlDev 5 busId 94000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Init timings - ncclCommInitRankConfig: rank 6 nranks 16 total 2.53 (kernels 0.31, alloc 0.42, bootstrap 0.11, allgathers 0.05, topo 1.15, graphs 0.42, connections 0.04, rest 0.03)
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO ncclCommInitRankConfig comm 0x2bd08e70 rank 0 nranks 16 cudaDev 0 nvmlDev 0 busId 4000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 16 total 2.72 (kernels 0.19, alloc 0.29, bootstrap 0.54, allgathers 0.05, topo 1.15, graphs 0.42, connections 0.05, rest 0.03)
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Init timings - ncclCommInitRankConfig: rank 5 nranks 16 total 2.59 (kernels 0.36, alloc 0.39, bootstrap 0.15, allgathers 0.05, topo 1.15, graphs 0.42, connections 0.05, rest 0.03)
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 00/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 01/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 02/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 02/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 03/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 00/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 03/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 01/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 04/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 05/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 02/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 04/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 03/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 06/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 07/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 04/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 08/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 09/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 05/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 08/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 11/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 06/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 09/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 07/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 00/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 10/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 01/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 11/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 12/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 08/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 02/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 12/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 13/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 03/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 14/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 13/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 09/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 14/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 10/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 15/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 17/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 11/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 05/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 16/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 18/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 17/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 12/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 18/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 06/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 19/0 : 0[0] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 13/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 19/0 : 6[6] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 07/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 14/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 15/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 08/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 16/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 00/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 17/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 09/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 10/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 02/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 18/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 11/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 12/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 00/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 19/0 : 5[5] -> 7[7] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 03/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 01/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 04/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 13/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 15/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 05/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 03/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 06/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 16/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 17/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 08/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 04/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 18/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 09/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 10/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 05/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 19/0 : 2[2] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 12/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 06/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 13/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 07/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 14/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 15/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 09/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 16/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 10/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 18/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 11/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 19/0 : 1[1] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 13/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 00/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 14/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 01/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 15/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 02/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 16/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 03/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 17/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 04/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 19/0 : 3[3] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 05/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 00/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 06/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 01/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 07/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 02/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 04/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 08/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 05/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 09/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 10/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 11/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 06/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 12/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 07/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 13/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 08/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 14/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 10/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 11/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 12/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 15/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 14/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 16/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 15/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 17/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 16/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 18/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 17/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Channel 19/0 : 0[0] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 18/0 : 4[4] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 00/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 01/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 02/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 03/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 04/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 05/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 06/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 07/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 08/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 09/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 10/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 11/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 12/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 13/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253694:253854 [0] NCCL INFO [Proxy Progress] Device 1 CPU core 24
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 00/0 : 9[1] -> 1[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 06/0 : 9[1] -> 1[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 14/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 10/0 : 9[1] -> 1[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 16/0 : 9[1] -> 1[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 00/0 : 1[1] -> 9[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 06/0 : 1[1] -> 9[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 15/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 10/0 : 1[1] -> 9[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 16/0 : 1[1] -> 9[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 16/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 17/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 18/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Channel 19/0 : 5[5] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253855 [0] NCCL INFO [Proxy Progress] Device 7 CPU core 67
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 05/0 : 15[7] -> 7[7] [receive] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-1:253695:253856 [0] NCCL INFO [Proxy Progress] Device 2 CPU core 32
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 01/0 : 10[2] -> 2[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 15/0 : 15[7] -> 7[7] [receive] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 07/0 : 10[2] -> 2[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 05/0 : 7[7] -> 15[7] [send] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-1:253696:253857 [0] NCCL INFO [Proxy Progress] Device 3 CPU core 8
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 11/0 : 10[2] -> 2[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 15/0 : 7[7] -> 15[7] [send] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 17/0 : 10[2] -> 2[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 01/0 : 2[2] -> 10[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 00/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 07/0 : 2[2] -> 10[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 04/0 : 11[3] -> 3[3] [receive] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 11/0 : 2[2] -> 10[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 17/0 : 2[2] -> 10[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 14/0 : 11[3] -> 3[3] [receive] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 04/0 : 3[3] -> 11[3] [send] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 14/0 : 3[3] -> 11[3] [send] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 01/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 02/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 03/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 04/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 05/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 06/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 01/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 07/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253697:253858 [0] NCCL INFO [Proxy Progress] Device 4 CPU core 67
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 02/0 : 12[4] -> 4[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253699:253859 [0] NCCL INFO [Proxy Progress] Device 6 CPU core 68
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 08/0 : 12[4] -> 4[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 03/0 : 14[6] -> 6[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 12/0 : 12[4] -> 4[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 09/0 : 14[6] -> 6[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 18/0 : 12[4] -> 4[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 13/0 : 14[6] -> 6[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 02/0 : 4[4] -> 12[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 19/0 : 14[6] -> 6[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 08/0 : 4[4] -> 12[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 03/0 : 6[6] -> 14[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 12/0 : 4[4] -> 12[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 09/0 : 6[6] -> 14[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 18/0 : 4[4] -> 12[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 08/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 13/0 : 6[6] -> 14[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 19/0 : 6[6] -> 14[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 00/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 02/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 09/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 03/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 10/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 11/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 01/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 04/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 12/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 02/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 13/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 14/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 05/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 04/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 15/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 05/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 16/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 07/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 17/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 06/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 08/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 18/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 09/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 07/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 11/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 08/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 12/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 10/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 19/0 : 7[7] -> 5[5] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 11/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 13/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 12/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 00/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 14/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 01/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 14/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 00/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 15/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 15/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 02/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 01/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 16/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 03/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 02/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 17/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 17/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 03/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 05/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 06/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 04/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Channel 18/0 : 6[6] -> 4[4] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 18/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 07/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 00/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 06/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Channel 19/0 : 1[1] -> 0[0] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 00/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 01/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 02/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 07/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 08/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 03/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 09/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 08/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 10/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 04/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 03/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 09/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 05/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 11/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 06/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 10/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 12/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 04/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 11/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 05/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 07/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 12/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 06/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 13/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 09/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 08/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 13/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 15/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 10/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 14/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 09/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 16/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 16/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 10/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 17/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 11/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 12/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 17/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 13/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 18/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 13/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 18/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Channel 19/0 : 7[7] -> 6[6] via P2P/CUMEM
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Channel 19/0 : 3[3] -> 2[2] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 14/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 14/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 15/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 15/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 16/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 18/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 16/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Channel 19/0 : 2[2] -> 1[1] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 17/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Channel 19/0 : 4[4] -> 3[3] via P2P/CUMEM
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Connected all trees
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Connected all trees
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Connected all trees
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Connected all trees
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Connected all trees
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Connected all trees
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Connected all trees
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Connected all trees
+[rank 3] all_reduce done: 16 (expected 16)
+[rank 1] all_reduce done: 16 (expected 16)
+[rank 4] all_reduce done: 16 (expected 16)[rank 6] all_reduce done: 16 (expected 16)
+
+[rank 5] all_reduce done: 16 (expected 16)
+[rank 7] all_reduce done: 16 (expected 16)[rank 0] all_reduce done: 16 (expected 16)
+
+[rank 2] all_reduce done: 16 (expected 16)
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO comm 0x2bd08e70 rank 0 nranks 16 cudaDev 0 busId 4000 - Destroy COMPLETE
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO Unloading plugin libnccl-net.so
+[rank 0] NCCL test PASSED
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO comm 0x27790bb0 rank 5 nranks 16 cudaDev 5 busId 94000 - Destroy COMPLETE
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO Unloading plugin libnccl-net.so
+[rank 5] NCCL test PASSED
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO comm 0x16f21ac0 rank 2 nranks 16 cudaDev 2 busId 64000 - Destroy COMPLETE
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO Unloading plugin libnccl-net.so
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO comm 0x3d15d9c0 rank 3 nranks 16 cudaDev 3 busId 77000 - Destroy COMPLETE
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO Unloading plugin libnccl-net.so
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO comm 0x2ad53960 rank 4 nranks 16 cudaDev 4 busId 84000 - Destroy COMPLETE
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO Unloading plugin libnccl-net.so
+[rank 2] NCCL test PASSED
+[rank 3] NCCL test PASSED
+[rank 4] NCCL test PASSED
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO comm 0x45636ca0 rank 1 nranks 16 cudaDev 1 busId 14000 - Destroy COMPLETE
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO Unloading plugin libnccl-net.so
+[rank 1] NCCL test PASSED
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO comm 0x32e45710 rank 6 nranks 16 cudaDev 6 busId e4000 - Destroy COMPLETE
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO Unloading plugin libnccl-net.so
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO comm 0x13203a60 rank 7 nranks 16 cudaDev 7 busId f6000 - Destroy COMPLETE
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO Unloading plugin libnccl-net.so
+[rank 6] NCCL test PASSED
+[rank 7] NCCL test PASSED
+DCTN-0413110535-1:253693:253693 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-1:253698:253698 [5] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-1:253697:253697 [4] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-1:253695:253695 [2] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-1:253699:253699 [6] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-1:253696:253696 [3] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-1:253700:253700 [7] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-1:253694:253694 [1] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+
+=== Node-2 log ===
+W0414 15:27:18.343000 202794 torch/distributed/run.py:844] 
+W0414 15:27:18.343000 202794 torch/distributed/run.py:844] *****************************************
+W0414 15:27:18.343000 202794 torch/distributed/run.py:844] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0414 15:27:18.343000 202794 torch/distributed/run.py:844] *****************************************
+[rank 8] Starting on DCTN-0413110535-2 local_rank=0
+[rank 15] Starting on DCTN-0413110535-2 local_rank=7
+[rank 9] Starting on DCTN-0413110535-2 local_rank=1
+[rank 13] Starting on DCTN-0413110535-2 local_rank=5
+[rank 10] Starting on DCTN-0413110535-2 local_rank=2
+[rank 14] Starting on DCTN-0413110535-2 local_rank=6
+[rank 11] Starting on DCTN-0413110535-2 local_rank=3
+[rank 12] Starting on DCTN-0413110535-2 local_rank=4
+[rank 8] init_process_group done
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Comm config Blocking set to 1
+[rank 11] init_process_group done
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Comm config Blocking set to 1
+[rank 10] init_process_group done
+[rank 12] init_process_group done
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Comm config Blocking set to 1
+[rank 15] init_process_group done
+[rank 9] init_process_group done
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Comm config Blocking set to 1
+[rank 13] init_process_group done
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+[rank 14] init_process_group done
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO cudaDriverVersion 13010
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Bootstrap: Using bond0:10.50.6.74<0>
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NCCL version 2.28.9+cuda13.0
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Comm config Blocking set to 1
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO DMA-BUF is available on GPU device 0
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO ncclCommInitRankConfig comm 0x3968b3f0 rank 8 nranks 16 cudaDev 0 nvmlDev 0 busId 4000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO DMA-BUF is available on GPU device 3
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO ncclCommInitRankConfig comm 0x23b300b0 rank 11 nranks 16 cudaDev 3 nvmlDev 3 busId 77000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NET/Plugin: Loaded net plugin NCCL RDMA Plugin v11 (v11)
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NET/Plugin: Loaded collnet plugin SHARP (v11)
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Successfully loaded external network plugin /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Plugin Path : /opt/hpcx/nccl_rdma_sharp_plugin/lib/libnccl-net.so
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO P2P plugin v11 IBext_v11
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NCCL_SOCKET_IFNAME set by environment to bond0
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB/SHARP [1]mlx5_1:1/IB/SHARP [2]mlx5_2:1/IB/SHARP [3]mlx5_3:1/IB/SHARP [4]mlx5_4:1/IB/SHARP [5]mlx5_5:1/IB/SHARP [6]mlx5_6:1/IB/SHARP [7]mlx5_7:1/IB/SHARP [8]mlx5_8:1/IB/SHARP [9]mlx5_9:1/IB/SHARP [RO]; OOB bond0:10.50.6.74<0>
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Initialized NET plugin IBext_v11
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Assigned NET plugin IBext_v11 to comm
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Using network IBext_v11
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO DMA-BUF is available on GPU device 2
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO ncclCommInitRankConfig comm 0x31c202f0 rank 10 nranks 16 cudaDev 2 nvmlDev 2 busId 64000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO DMA-BUF is available on GPU device 4
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO ncclCommInitRankConfig comm 0x3ef0d1b0 rank 12 nranks 16 cudaDev 4 nvmlDev 4 busId 84000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO DMA-BUF is available on GPU device 7
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO ncclCommInitRankConfig comm 0x275de290 rank 15 nranks 16 cudaDev 7 nvmlDev 7 busId f6000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO DMA-BUF is available on GPU device 1
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO ncclCommInitRankConfig comm 0x180402f0 rank 9 nranks 16 cudaDev 1 nvmlDev 1 busId 14000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO DMA-BUF is available on GPU device 5
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO ncclCommInitRankConfig comm 0x26efd280 rank 13 nranks 16 cudaDev 5 nvmlDev 5 busId 94000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO DMA-BUF is available on GPU device 6
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO ncclCommInitRankConfig comm 0x17763110 rank 14 nranks 16 cudaDev 6 nvmlDev 6 busId e4000 commId 0x20df7aa5035d5efc - Init START
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO RAS client listening socket at ::1<28028>
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Bootstrap timings total 0.021203 (create 0.000027, send 0.000105, recv 0.000128, ring 0.002126, delay 0.000001)
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Bootstrap timings total 0.018705 (create 0.000031, send 0.000084, recv 0.000165, ring 0.002187, delay 0.000000)
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Bootstrap timings total 0.019330 (create 0.000034, send 0.000086, recv 0.000709, ring 0.003154, delay 0.000001)
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Bootstrap timings total 0.038776 (create 0.000028, send 0.000099, recv 0.019533, ring 0.003044, delay 0.000001)
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Bootstrap timings total 0.553313 (create 0.000046, send 0.000148, recv 0.514620, ring 0.021941, delay 0.000001)
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Bootstrap timings total 0.071833 (create 0.000055, send 0.000149, recv 0.000177, ring 0.003333, delay 0.000000)
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Bootstrap timings total 0.020091 (create 0.000023, send 0.000086, recv 0.000178, ring 0.011560, delay 0.000000)
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Bootstrap timings total 0.598442 (create 0.000064, send 0.000166, recv 0.578391, ring 0.000475, delay 0.000000)
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO MNNVL busId 0xe4000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO MNNVL busId 0xf6000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO MNNVL busId 0x94000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO MNNVL busId 0x84000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO MNNVL busId 0x77000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO MNNVL busId 0x14000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO MNNVL busId 0x64000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO MNNVL busId 0x4000 fabric UUID 0.0 cliqueId 0x0 state 3 healthMask 0x80
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NCCL_P2P_LEVEL set by environment to NVL
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 1 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 7 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 2 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 3 is 0-35. (GPU affinity = 0-35 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 6 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 5 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 4 is 36-71. (GPU affinity = 36-71 ; CPU affinity = 0-71).
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO NCCL_NVLS_ENABLE set by environment to 0.
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO comm 0x23b300b0 rank 11 nRanks 16 nNodes 2 localRanks 8 localRank 3 MNNVL 0
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO comm 0x26efd280 rank 13 nRanks 16 nNodes 2 localRanks 8 localRank 5 MNNVL 0
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO comm 0x31c202f0 rank 10 nRanks 16 nNodes 2 localRanks 8 localRank 2 MNNVL 0
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Trees [0] 12/-1/-1->11->10 [1] 12/-1/-1->11->10 [2] -1/-1/-1->11->10 [3] 12/-1/-1->11->10 [4] 12/-1/-1->11->3 [5] 12/-1/-1->11->10 [6] 12/-1/-1->11->10 [7] 12/-1/-1->11->10 [8] -1/-1/-1->11->10 [9] 12/-1/-1->11->10 [10] 12/-1/-1->11->10 [11] 12/-1/-1->11->10 [12] -1/-1/-1->11->10 [13] 12/-1/-1->11->10 [14] 12/3/-1->11->-1 [15] 12/-1/-1->11->10 [16] 12/-1/-1->11->10 [17] 12/-1/-1->11->10 [18] -1/-1/-1->11->10 [19] 12/-1/-1->11->10
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Trees [0] 8/-1/-1->13->15 [1] 8/-1/-1->13->15 [2] 8/-1/-1->13->15 [3] 8/-1/-1->13->15 [4] 8/-1/-1->13->15 [5] 8/-1/-1->13->15 [6] 8/-1/-1->13->15 [7] 8/-1/-1->13->15 [8] 8/-1/-1->13->15 [9] 8/-1/-1->13->15 [10] 8/-1/-1->13->15 [11] 8/-1/-1->13->15 [12] 8/-1/-1->13->15 [13] 8/-1/-1->13->15 [14] 8/-1/-1->13->15 [15] 8/-1/-1->13->15 [16] 8/-1/-1->13->15 [17] 8/-1/-1->13->15 [18] 8/-1/-1->13->15 [19] 8/-1/-1->13->15
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO comm 0x3ef0d1b0 rank 12 nRanks 16 nNodes 2 localRanks 8 localRank 4 MNNVL 0
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Trees [0] 11/-1/-1->10->9 [1] 11/-1/-1->10->2 [2] 11/-1/-1->10->9 [3] 11/-1/-1->10->9 [4] -1/-1/-1->10->9 [5] 11/-1/-1->10->9 [6] 11/-1/-1->10->9 [7] 11/-1/-1->10->2 [8] 11/-1/-1->10->9 [9] 11/-1/-1->10->9 [10] 11/-1/-1->10->9 [11] 11/2/-1->10->-1 [12] 11/-1/-1->10->9 [13] 11/-1/-1->10->9 [14] -1/-1/-1->10->9 [15] 11/-1/-1->10->9 [16] 11/-1/-1->10->9 [17] 11/2/-1->10->-1 [18] 11/-1/-1->10->9 [19] 11/-1/-1->10->9
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO comm 0x3968b3f0 rank 8 nRanks 16 nNodes 2 localRanks 8 localRank 0 MNNVL 0
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO comm 0x180402f0 rank 9 nRanks 16 nNodes 2 localRanks 8 localRank 1 MNNVL 0
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO comm 0x17763110 rank 14 nRanks 16 nNodes 2 localRanks 8 localRank 6 MNNVL 0
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO comm 0x275de290 rank 15 nRanks 16 nNodes 2 localRanks 8 localRank 7 MNNVL 0
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Trees [0] -1/-1/-1->8->13 [1] 9/-1/-1->8->13 [2] 9/-1/-1->8->13 [3] 9/-1/-1->8->13 [4] 9/-1/-1->8->13 [5] 9/-1/-1->8->13 [6] -1/-1/-1->8->13 [7] 9/-1/-1->8->13 [8] 9/-1/-1->8->13 [9] 9/-1/-1->8->13 [10] -1/-1/-1->8->13 [11] 9/-1/-1->8->13 [12] 9/-1/-1->8->13 [13] 9/-1/-1->8->13 [14] 9/-1/-1->8->13 [15] 9/-1/-1->8->13 [16] -1/-1/-1->8->13 [17] 9/-1/-1->8->13 [18] 9/-1/-1->8->13 [19] 9/-1/-1->8->13
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Trees [0] 14/-1/-1->12->11 [1] 14/-1/-1->12->11 [2] 14/-1/-1->12->4 [3] -1/-1/-1->12->11 [4] 14/-1/-1->12->11 [5] 14/-1/-1->12->11 [6] 14/-1/-1->12->11 [7] 14/-1/-1->12->11 [8] 14/-1/-1->12->4 [9] -1/-1/-1->12->11 [10] 14/-1/-1->12->11 [11] 14/-1/-1->12->11 [12] 14/4/-1->12->-1 [13] -1/-1/-1->12->11 [14] 14/-1/-1->12->11 [15] 14/-1/-1->12->11 [16] 14/-1/-1->12->11 [17] 14/-1/-1->12->11 [18] 14/4/-1->12->-1 [19] -1/-1/-1->12->11
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Trees [0] 13/-1/-1->15->14 [1] 13/-1/-1->15->14 [2] 13/-1/-1->15->14 [3] 13/-1/-1->15->14 [4] 13/-1/-1->15->14 [5] 13/-1/-1->15->7 [6] 13/-1/-1->15->14 [7] 13/-1/-1->15->14 [8] 13/-1/-1->15->14 [9] 13/-1/-1->15->14 [10] 13/-1/-1->15->14 [11] 13/-1/-1->15->14 [12] 13/-1/-1->15->14 [13] 13/-1/-1->15->14 [14] 13/-1/-1->15->14 [15] 13/7/-1->15->-1 [16] 13/-1/-1->15->14 [17] 13/-1/-1->15->14 [18] 13/-1/-1->15->14 [19] 13/-1/-1->15->14
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Trees [0] 15/-1/-1->14->12 [1] 15/-1/-1->14->12 [2] 15/-1/-1->14->12 [3] 15/-1/-1->14->6 [4] 15/-1/-1->14->12 [5] -1/-1/-1->14->12 [6] 15/-1/-1->14->12 [7] 15/-1/-1->14->12 [8] 15/-1/-1->14->12 [9] 15/-1/-1->14->6 [10] 15/-1/-1->14->12 [11] 15/-1/-1->14->12 [12] 15/-1/-1->14->12 [13] 15/6/-1->14->-1 [14] 15/-1/-1->14->12 [15] -1/-1/-1->14->12 [16] 15/-1/-1->14->12 [17] 15/-1/-1->14->12 [18] 15/-1/-1->14->12 [19] 15/6/-1->14->-1
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Trees [0] 10/-1/-1->9->1 [1] -1/-1/-1->9->8 [2] 10/-1/-1->9->8 [3] 10/-1/-1->9->8 [4] 10/-1/-1->9->8 [5] 10/-1/-1->9->8 [6] 10/-1/-1->9->1 [7] -1/-1/-1->9->8 [8] 10/-1/-1->9->8 [9] 10/-1/-1->9->8 [10] 10/1/-1->9->-1 [11] -1/-1/-1->9->8 [12] 10/-1/-1->9->8 [13] 10/-1/-1->9->8 [14] 10/-1/-1->9->8 [15] 10/-1/-1->9->8 [16] 10/1/-1->9->-1 [17] -1/-1/-1->9->8 [18] 10/-1/-1->9->8 [19] 10/-1/-1->9->8
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO P2P Chunksize set to 131072
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202882:203026 [0] NCCL INFO [Proxy Service] Device 0 CPU core 29
+DCTN-0413110535-2:202882:203027 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 16
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202887:203028 [0] NCCL INFO [Proxy Service] Device 5 CPU core 61
+DCTN-0413110535-2:202887:203029 [0] NCCL INFO [Proxy Service UDS] Device 5 CPU core 70
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202885:203030 [0] NCCL INFO [Proxy Service] Device 3 CPU core 32
+DCTN-0413110535-2:202885:203031 [0] NCCL INFO [Proxy Service UDS] Device 3 CPU core 29
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202886:203032 [0] NCCL INFO [Proxy Service] Device 4 CPU core 54
+DCTN-0413110535-2:202886:203033 [0] NCCL INFO [Proxy Service UDS] Device 4 CPU core 61
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202883:203034 [0] NCCL INFO [Proxy Service] Device 1 CPU core 11
+DCTN-0413110535-2:202884:203035 [0] NCCL INFO [Proxy Service] Device 2 CPU core 13
+DCTN-0413110535-2:202883:203036 [0] NCCL INFO [Proxy Service UDS] Device 1 CPU core 29
+DCTN-0413110535-2:202884:203037 [0] NCCL INFO [Proxy Service UDS] Device 2 CPU core 32
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202888:203038 [0] NCCL INFO [Proxy Service] Device 6 CPU core 40
+DCTN-0413110535-2:202888:203039 [0] NCCL INFO [Proxy Service UDS] Device 6 CPU core 54
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+DCTN-0413110535-2:202889:203040 [0] NCCL INFO [Proxy Service] Device 7 CPU core 66
+DCTN-0413110535-2:202889:203041 [0] NCCL INFO [Proxy Service UDS] Device 7 CPU core 64
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO threadThresholds 8/8/64 | 128/8/64 | 512 | 512
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO 20 coll channels, 20 collnet channels, 0 nvls channels, 32 p2p channels, 2 p2p channels per peer
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO ncclCommInitRankConfig comm 0x31c202f0 rank 10 nranks 16 cudaDev 2 nvmlDev 2 busId 64000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO ncclCommInitRankConfig comm 0x3968b3f0 rank 8 nranks 16 cudaDev 0 nvmlDev 0 busId 4000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO ncclCommInitRankConfig comm 0x17763110 rank 14 nranks 16 cudaDev 6 nvmlDev 6 busId e4000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO ncclCommInitRankConfig comm 0x26efd280 rank 13 nranks 16 cudaDev 5 nvmlDev 5 busId 94000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO ncclCommInitRankConfig comm 0x3ef0d1b0 rank 12 nranks 16 cudaDev 4 nvmlDev 4 busId 84000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO ncclCommInitRankConfig comm 0x180402f0 rank 9 nranks 16 cudaDev 1 nvmlDev 1 busId 14000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 8 nranks 16 total 2.72 (kernels 0.25, alloc 0.17, bootstrap 0.60, allgathers 0.01, topo 1.19, graphs 0.42, connections 0.05, rest 0.03)
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Init timings - ncclCommInitRankConfig: rank 10 nranks 16 total 2.53 (kernels 0.29, alloc 0.48, bootstrap 0.07, allgathers 0.01, topo 1.19, graphs 0.42, connections 0.04, rest 0.03)
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Init timings - ncclCommInitRankConfig: rank 14 nranks 16 total 2.45 (kernels 0.22, alloc 0.52, bootstrap 0.02, allgathers 0.01, topo 1.19, graphs 0.42, connections 0.04, rest 0.03)
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Init timings - ncclCommInitRankConfig: rank 13 nranks 16 total 2.46 (kernels 0.23, alloc 0.52, bootstrap 0.02, allgathers 0.00, topo 1.19, graphs 0.43, connections 0.04, rest 0.03)
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO ncclCommInitRankConfig comm 0x275de290 rank 15 nranks 16 cudaDev 7 nvmlDev 7 busId f6000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Init timings - ncclCommInitRankConfig: rank 12 nranks 16 total 2.52 (kernels 0.28, alloc 0.51, bootstrap 0.04, allgathers 0.02, topo 1.19, graphs 0.41, connections 0.04, rest 0.03)
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Init timings - ncclCommInitRankConfig: rank 9 nranks 16 total 2.47 (kernels 0.24, alloc 0.52, bootstrap 0.02, allgathers 0.01, topo 1.19, graphs 0.42, connections 0.04, rest 0.03)
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO ncclCommInitRankConfig comm 0x23b300b0 rank 11 nranks 16 cudaDev 3 nvmlDev 3 busId 77000 commId 0x20df7aa5035d5efc - Init COMPLETE
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Init timings - ncclCommInitRankConfig: rank 15 nranks 16 total 2.48 (kernels 0.24, alloc 0.52, bootstrap 0.02, allgathers 0.01, topo 1.19, graphs 0.42, connections 0.04, rest 0.03)
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Init timings - ncclCommInitRankConfig: rank 11 nranks 16 total 2.63 (kernels 0.18, alloc 0.20, bootstrap 0.55, allgathers 0.00, topo 1.19, graphs 0.42, connections 0.05, rest 0.03)
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 00/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 01/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 01/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 02/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 02/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 03/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 03/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 04/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 00/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 04/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 05/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 05/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 01/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 06/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 02/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 07/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 07/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 08/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 03/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 09/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 08/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 04/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 06/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 07/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 10/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 09/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 11/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 08/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 11/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 09/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 12/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 12/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 13/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 10/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 14/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 11/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 12/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 15/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 13/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 13/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 14/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 16/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 15/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 17/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 17/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 14/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 00/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 18/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 19/0 : 13[5] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 01/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 00/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 18/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 02/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 16/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 02/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 19/0 : 8[0] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 17/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 03/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 03/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 04/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 00/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 05/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 18/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 19/0 : 14[6] -> 15[7] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 05/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 01/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 06/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 03/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 06/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 07/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 04/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 08/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 05/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 09/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 08/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 06/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 09/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 10/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 07/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 11/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 09/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 10/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 10/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 12/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 12/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 11/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 13/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 13/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 13/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 15/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 14/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 15/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 16/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 14/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 15/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 16/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 17/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 18/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 16/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 18/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 19/0 : 10[2] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 19/0 : 9[1] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 00/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 17/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 01/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 19/0 : 11[3] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 02/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 03/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 00/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 04/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 01/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 05/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 02/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 06/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 04/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 07/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 05/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 08/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 06/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 09/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 07/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 08/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 10/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 11/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 10/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 12/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 11/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 14/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 12/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 15/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 13/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 16/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 14/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 17/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 15/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 18/0 : 12[4] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 16/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 17/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 18/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Channel 19/0 : 8[0] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 00/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 01/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 02/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 03/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 04/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 05/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:203042 [0] NCCL INFO [Proxy Progress] Device 1 CPU core 23
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 06/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 00/0 : 1[1] -> 9[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 07/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 06/0 : 1[1] -> 9[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 10/0 : 1[1] -> 9[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 16/0 : 1[1] -> 9[1] [receive] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 08/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 00/0 : 9[1] -> 1[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 06/0 : 9[1] -> 1[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 10/0 : 9[1] -> 1[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 16/0 : 9[1] -> 1[1] [send] via NET/IBext_v11/2/GDRDMA
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 09/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 10/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202884:203043 [0] NCCL INFO [Proxy Progress] Device 2 CPU core 24
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 11/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 01/0 : 2[2] -> 10[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 07/0 : 2[2] -> 10[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202885:203044 [0] NCCL INFO [Proxy Progress] Device 3 CPU core 11
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 12/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 11/0 : 2[2] -> 10[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 04/0 : 3[3] -> 11[3] [receive] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 17/0 : 2[2] -> 10[2] [receive] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 14/0 : 3[3] -> 11[3] [receive] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 13/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:203045 [0] NCCL INFO [Proxy Progress] Device 7 CPU core 50
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 05/0 : 7[7] -> 15[7] [receive] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 01/0 : 10[2] -> 2[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 04/0 : 11[3] -> 3[3] [send] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 15/0 : 7[7] -> 15[7] [receive] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 05/0 : 15[7] -> 7[7] [send] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 07/0 : 10[2] -> 2[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 15/0 : 15[7] -> 7[7] [send] via NET/IBext_v11/3/GDRDMA
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 14/0 : 11[3] -> 3[3] [send] via NET/IBext_v11/0/GDRDMA
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 14/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 11/0 : 10[2] -> 2[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 17/0 : 10[2] -> 2[2] [send] via NET/IBext_v11/1/GDRDMA
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 15/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 16/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 17/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 18/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Channel 19/0 : 13[5] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 00/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202888:203046 [0] NCCL INFO [Proxy Progress] Device 6 CPU core 46
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 03/0 : 6[6] -> 14[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 09/0 : 6[6] -> 14[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202886:203047 [0] NCCL INFO [Proxy Progress] Device 4 CPU core 70
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 02/0 : 4[4] -> 12[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 13/0 : 6[6] -> 14[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 08/0 : 4[4] -> 12[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 01/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 12/0 : 4[4] -> 12[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 19/0 : 6[6] -> 14[6] [receive] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 18/0 : 4[4] -> 12[4] [receive] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 02/0 : 12[4] -> 4[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 03/0 : 14[6] -> 6[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 08/0 : 12[4] -> 4[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 12/0 : 12[4] -> 4[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 09/0 : 14[6] -> 6[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 18/0 : 12[4] -> 4[4] [send] via NET/IBext_v11/4/GDRDMA
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 13/0 : 14[6] -> 6[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 19/0 : 14[6] -> 6[6] [send] via NET/IBext_v11/9/GDRDMA
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 02/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 03/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 04/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 05/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 06/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 07/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 08/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 09/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 10/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 00/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 11/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 01/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 02/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 01/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 12/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 02/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 03/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 04/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 13/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 05/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 04/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 05/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 06/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 00/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 07/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 14/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 07/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 15/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 08/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 10/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 01/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 08/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 16/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 09/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 11/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 17/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 11/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 12/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 12/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 18/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 02/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 00/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 14/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 03/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 19/0 : 15[7] -> 13[5] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 02/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 13/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 05/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 14/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 00/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 15/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 03/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 06/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 15/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 01/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 16/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 07/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 02/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 04/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 08/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 03/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 04/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 17/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 09/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 05/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 17/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 18/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 06/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Channel 18/0 : 14[6] -> 12[4] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 10/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 06/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 08/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Channel 19/0 : 9[1] -> 8[0] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 11/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 00/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 01/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 07/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 08/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 12/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 09/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 03/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 09/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 13/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 04/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 10/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 15/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 12/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 10/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 05/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 11/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 16/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 06/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 12/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 17/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 13/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 13/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 07/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 09/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 14/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 14/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 18/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 15/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Channel 19/0 : 11[3] -> 10[2] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 10/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 16/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 16/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 18/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 17/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 11/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Channel 19/0 : 10[2] -> 9[1] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 18/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 13/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Channel 19/0 : 15[7] -> 14[6] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 14/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 15/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 16/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 17/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Channel 19/0 : 12[4] -> 11[3] via P2P/CUMEM
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Connected all trees
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Connected all trees
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Connected all trees
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Connected all trees
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Connected all trees
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Connected all trees
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Connected all trees
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Connected all trees
+[rank 9] all_reduce done: 16 (expected 16)
+[rank 13] all_reduce done: 16 (expected 16)
+[rank 15] all_reduce done: 16 (expected 16)[rank 11] all_reduce done: 16 (expected 16)
+
+[rank 10] all_reduce done: 16 (expected 16)
+[rank 14] all_reduce done: 16 (expected 16)
+[rank 12] all_reduce done: 16 (expected 16)
+[rank 8] all_reduce done: 16 (expected 16)
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO comm 0x3968b3f0 rank 8 nranks 16 cudaDev 0 busId 4000 - Destroy COMPLETE
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO Unloading plugin libnccl-net.so
+[rank 8] NCCL test PASSED
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO comm 0x26efd280 rank 13 nranks 16 cudaDev 5 busId 94000 - Destroy COMPLETE
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO Unloading plugin libnccl-net.so
+[rank 13] NCCL test PASSED
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO comm 0x23b300b0 rank 11 nranks 16 cudaDev 3 busId 77000 - Destroy COMPLETE
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO Unloading plugin libnccl-net.so
+[rank 11] NCCL test PASSED
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO comm 0x31c202f0 rank 10 nranks 16 cudaDev 2 busId 64000 - Destroy COMPLETE
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO Unloading plugin libnccl-net.so
+[rank 10] NCCL test PASSED
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO comm 0x3ef0d1b0 rank 12 nranks 16 cudaDev 4 busId 84000 - Destroy COMPLETE
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO Unloading plugin libnccl-net.so
+[rank 12] NCCL test PASSED
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO comm 0x180402f0 rank 9 nranks 16 cudaDev 1 busId 14000 - Destroy COMPLETE
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO Unloading plugin libnccl-net.so
+[rank 9] NCCL test PASSED
+DCTN-0413110535-2:202887:202887 [5] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO comm 0x17763110 rank 14 nranks 16 cudaDev 6 busId e4000 - Destroy COMPLETE
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO Unloading plugin libnccl-net.so
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO comm 0x275de290 rank 15 nranks 16 cudaDev 7 busId f6000 - Destroy COMPLETE
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO Unloading plugin libnccl-net.so
+[rank 14] NCCL test PASSED
+[rank 15] NCCL test PASSED
+DCTN-0413110535-2:202882:202882 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-2:202885:202885 [3] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-2:202884:202884 [2] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-2:202883:202883 [1] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-2:202886:202886 [4] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-2:202888:202888 [6] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+DCTN-0413110535-2:202889:202889 [7] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault

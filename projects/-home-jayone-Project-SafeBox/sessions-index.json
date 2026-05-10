@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "9c0fd48d-e6f0-4a11-84e0-763a077cbaf9",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-SafeBox/9c0fd48d-e6f0-4a11-84e0-763a077cbaf9.jsonl",
+      "fileMtime": 1770948570548,
+      "firstPrompt": "B. AI Training 플랫폼 지원 시작",
+      "summary": "SafeBox AI Training 플랫폼 지원 가이드 작성 및 DataAnnotation 지원 시작",
+      "messageCount": 28,
+      "created": "2026-02-12T13:07:58.980Z",
+      "modified": "2026-02-12T15:24:17.816Z",
+      "gitBranch": "main",
+      "projectPath": "/home/jayone/Project/SafeBox",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone/Project/SafeBox"
+}

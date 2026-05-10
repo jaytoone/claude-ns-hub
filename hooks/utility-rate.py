@@ -125,6 +125,54 @@ def _from_transcript(transcript_path: str) -> str:
     return text
 
 
+_TEMPORAL_KW = frozenset([
+    "when", "history", "timeline", "progression", "what happened", "progress",
+    "previously", "before", "after", "last time", "since", "ago", "recent",
+    "changed", "evolution", "how long", "session", "yesterday", "last week",
+    "진행", "역사", "이전", "지난", "타임라인", "최근", "변경", "이번",
+])
+
+def _classify_query(prompt: str) -> str:
+    if not prompt:
+        return "KEYWORD"
+    pl = prompt.lower()
+    if any(kw in pl for kw in _TEMPORAL_KW):
+        return "TEMPORAL"
+    if len(pl.split()) <= 6:
+        return "KEYWORD"
+    return "SEMANTIC"
+
+
+def _last_user_prompt_from_transcript(transcript_path: str) -> str:
+    """Extract the last user message text from transcript for query classification."""
+    if not transcript_path or not os.path.exists(transcript_path):
+        return ""
+    last_user = ""
+    try:
+        with open(transcript_path, encoding="utf-8") as f:
+            for line in f:
+                try:
+                    d = json.loads(line.strip())
+                except Exception:
+                    continue
+                if d.get("type") != "user":
+                    continue
+                msg = d.get("message", {})
+                content = msg.get("content", "")
+                if isinstance(content, str):
+                    last_user = content
+                elif isinstance(content, list):
+                    parts = []
+                    for c in content:
+                        if isinstance(c, dict) and c.get("type") == "text":
+                            parts.append(c.get("text", ""))
+                    if parts:
+                        last_user = " ".join(parts)
+    except Exception:
+        pass
+    return last_user[:500]
+
+
 # Tool-use parameter keys whose string values carry meaningful content the
 # assistant "referenced" via action. We flatten these into a single searchable
 # text blob per turn and substring-match CTX-item tokens against it — this
@@ -244,6 +292,381 @@ def _read_stop_stdin() -> dict:
         return {}
 
 
+# ── retrieval_event schema (data flywheel — privacy-safe, local-first) ──────
+_RETRIEVAL_EVENTS_LOG = HOME / ".claude" / "ctx-retrieval-events.jsonl"
+_RETRIEVAL_META_PATH = HOME / ".claude" / "last-retrieval-meta.json"
+_RETRIEVAL_EVENT_SCHEMA = "v1.6"
+_USER_ID_CACHE = HOME / ".claude" / "ctx-user-id.hash"
+
+
+def _get_user_id_hash() -> str:
+    """Stable, non-reversible machine-level user_id for flywheel aggregation.
+
+    Computed once, cached to ctx-user-id.hash.
+    Source: SHA256(machine_id + install_month_epoch).
+    - machine_id from /etc/machine-id (Linux) or /var/lib/dbus/machine-id or hostname fallback
+    - install_month: mtime of ~/.claude truncated to 1st of month (prevents daily re-tracking)
+    Privacy: not linkable to email/name; hash changes on reinstall.
+    """
+    try:
+        if _USER_ID_CACHE.exists():
+            cached = _USER_ID_CACHE.read_text().strip()
+            if len(cached) == 16:
+                return cached
+    except Exception:
+        pass
+    try:
+        import hashlib
+        machine_id = ""
+        for mid_path in ["/etc/machine-id", "/var/lib/dbus/machine-id"]:
+            try:
+                machine_id = open(mid_path).read().strip()
+                break
+            except Exception:
+                pass
+        if not machine_id:
+            import socket
+            machine_id = socket.gethostname()
+        # install_month: mtime of ~/.claude truncated to month boundary
+        claude_dir = HOME / ".claude"
+        install_ts = int(claude_dir.stat().st_mtime) if claude_dir.exists() else 0
+        # Truncate to month: set day=1, hour=0
+        from datetime import datetime, timezone
+        d = datetime.fromtimestamp(install_ts, tz=timezone.utc).replace(day=1, hour=0, minute=0, second=0)
+        install_month_epoch = str(int(d.timestamp()))
+        uid = hashlib.sha256(f"{machine_id}:{install_month_epoch}".encode()).hexdigest()[:16]
+        _USER_ID_CACHE.write_text(uid)
+        return uid
+    except Exception:
+        return "unknown"
+
+_HOOK_SOURCE_MAP = {
+    "g1_decisions": "G1",
+    "g2_docs": "G2_DOCS",
+    "g2_prefetch": "G2_CODE",
+    "chat_memory": "CM",
+}
+
+# Block → injected node type (inferred from block semantics — no content tracking)
+_NODE_TYPE_MAP = {
+    "g1_decisions": "commit",   # G1 injects git commit subjects (decision corpus)
+    "g2_docs": "doc",           # G2-DOCS injects markdown doc/research chunks
+    "g2_prefetch": "code",      # G2-CODE injects codebase-memory-mcp code nodes
+    "chat_memory": "chat",      # CM injects past conversation vault entries
+}
+
+
+def _get_vault_stats() -> tuple:
+    """Return (vault_entry_count, index_staleness_hours) for session_aggregate schema v1.4."""
+    vault_count = None
+    index_staleness = None
+    try:
+        if VAULT_DB.exists():
+            import sqlite3 as _sqlite3
+            conn = _sqlite3.connect(str(VAULT_DB))
+            vault_count = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+            conn.close()
+    except Exception:
+        pass
+    try:
+        # codebase-memory-mcp db (G2 freshness signal)
+        for candidate in [
+            HOME / ".local" / "share" / "codebase-memory" / "code-graph.db",
+            HOME / ".local" / "share" / "codebase-memory-mcp" / "code-graph.db",
+        ]:
+            if candidate.exists():
+                import time as _t
+                age_s = _t.time() - candidate.stat().st_mtime
+                index_staleness = int(age_s / 3600)
+                break
+    except Exception:
+        pass
+    return vault_count, index_staleness
+
+
+def _write_retrieval_events(session_id, by_block, hits_by_mode, semantic_available, inj):
+    """Write one retrieval_event record per active block to ctx-retrieval-events.jsonl.
+
+    Privacy contract: no text, no query content, no file names — only numeric +
+    categorical fields. Follows flywheel research schema (20260427-ctx-user-data-flywheel).
+    """
+    import hashlib
+    try:
+        meta = {}
+        if _RETRIEVAL_META_PATH.exists():
+            try:
+                meta = json.loads(_RETRIEVAL_META_PATH.read_text())
+            except Exception:
+                pass
+
+        ts_now = time.time()
+        ts_unix_hour = int(ts_now / 3600)
+        # Anonymize session_id — keep local correlation but non-reversible
+        sid_hash = hashlib.sha256(session_id.encode()).hexdigest()[:16] if session_id else "unknown"
+        user_id = _get_user_id_hash()
+
+        # session_turn_index: read current turn count before this turn is accumulated
+        session_turn_index = 0
+        try:
+            if _SESSION_STATE_PATH.exists():
+                st = json.loads(_SESSION_STATE_PATH.read_text())
+                current_sid_hash = hashlib.sha256(session_id.encode()).hexdigest()[:16] if session_id else ""
+                if st.get("session_id_hash") == current_sid_hash:
+                    session_turn_index = st.get("turns", 0)
+        except Exception:
+            pass
+
+        for block, counts in by_block.items():
+            hook_source = _HOOK_SOURCE_MAP.get(block, block.upper())
+            block_meta = meta.get("blocks", {}).get(block, {})
+            # CM has no entry in last-retrieval-meta.json (separate hook); merge from saved cm_block_meta
+            if block == "chat_memory" and not block_meta:
+                block_meta = cm_block_meta
+            # g2_prefetch/g2_grep use codebase-memory-mcp (BM25-only, no meta block written)
+            if block in ("g2_prefetch", "g2_grep") and not block_meta.get("retrieval_method"):
+                block_meta = {**block_meta, "retrieval_method": "BM25"}
+            total = counts.get("total", 0)
+            cited = counts.get("referenced", 0)
+            node_type = _NODE_TYPE_MAP.get(block, "unknown")
+
+            # "UNKNOWN" is truthy — explicitly exclude it so fallback always fires for unknown values
+            _qt_raw = block_meta.get("query_type")
+            _rm_raw = block_meta.get("retrieval_method")
+
+            record = {
+                "schema_version": _RETRIEVAL_EVENT_SCHEMA,
+                "ts_unix_hour": ts_unix_hour,
+                "user_id": user_id,
+                "session_id_hash": sid_hash,
+                "hook_source": hook_source,
+                "query_type": (_qt_raw if _qt_raw and _qt_raw != "UNKNOWN" else _classify_query(_last_user_prompt)),
+                "query_char_count": meta.get("query_char_count", inj.get("prompt_len", 0)),
+                "candidates_returned": block_meta.get("candidates"),
+                "retrieval_method": (_rm_raw if _rm_raw and _rm_raw != "UNKNOWN" else "UNKNOWN"),
+                "duration_ms": block_meta.get("duration_ms"),
+                "total_injected": total,
+                "total_cited": cited,
+                "utility_rate": round(cited / total, 4) if total > 0 else 0.0,
+                "node_type_dist": {node_type: total} if total > 0 else {},
+                "session_turn_index": session_turn_index,
+                "vec_daemon_up": meta.get("vec_daemon_up", semantic_available),
+                "bge_daemon_up": meta.get("bge_daemon_up", False),
+                "top_score_bm25": block_meta.get("top_score_bm25"),
+                "top_score_dense": block_meta.get("top_score_dense"),
+            }
+            with open(_RETRIEVAL_EVENTS_LOG, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
+    except Exception:
+        pass
+
+
+_SESSION_STATE_PATH = HOME / ".claude" / "ctx-session-state.json"
+_SESSION_AGGREGATES_LOG = HOME / ".claude" / "ctx-session-aggregates.jsonl"
+
+
+_TURSO_DB_URL = "https://frwp-jaytoone.aws-us-west-2.turso.io"
+_TURSO_WRITE_TOKEN = (
+    "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3NzYxMzQ4MjksImlkIjoiMDE5Y2VjYzIt"
+    "MWMwMS03MGNjLWJjMzktMTA2NjlhODhlOTgxIiwicmlkIjoiNTgwNzNiZjgtNDc4My00YjhiLWI4ZjAt"
+    "ZDY0ZWU2ZDRkYzcxIn0.AjxxxM0v4fcz0mONEdpI2t6ulp1NvUM87FLMUuWyvFa0wx0qavjzBGf6HnS9B"
+    "--DepuT0EbhwRRuc9HHRTGXAA"
+)
+_REVOKE_FILE = Path.home() / ".claude" / "ctx-telemetry-revoke"
+_UPLOAD_STATE = Path.home() / ".claude" / "ctx-telemetry-upload-state.json"
+
+_TURSO_FIELDS = [
+    "schema_version", "user_id", "session_id_hash", "ts_date",
+    "total_turns", "total_injections", "mean_utility_rate",
+    "hook_source_hist", "retrieval_method_hist", "session_outcome",
+    "vault_entry_count", "index_staleness_hours", "mean_top_score_bm25",
+    "query_type_hist", "node_type_hist",
+    # v1.7 additions — moat/monetization value
+    "project_type_id",   # stack fingerprint (python_ml/nextjs_react/etc.) — enables Pro tier segmentation
+    "ctx_version",       # package version — tracks improvement across releases
+    "utility_by_qtype",  # {KEYWORD: rate, SEMANTIC: rate} cross-table — proves routing works
+]
+
+
+def _auto_upload_row(row: dict) -> None:
+    """Silently upload one session_aggregate row to Turso.
+
+    Opt-out: create ~/.claude/ctx-telemetry-revoke to disable.
+    Sends numeric+categorical stats only — no code, text, or paths.
+    """
+    if _REVOKE_FILE.exists():
+        return
+    try:
+        import urllib.request as _req
+        import hashlib as _hl
+
+        # Build INSERT args
+        cols = [f for f in _TURSO_FIELDS if f in row]
+        placeholders = ", ".join("?" for _ in cols)
+        sql = f"INSERT INTO ctx_session_aggregates ({', '.join(cols)}) VALUES ({placeholders})"
+        args = []
+        for c in cols:
+            v = row[c]
+            if isinstance(v, dict):
+                v = json.dumps(v)
+            if v is None:
+                args.append({"type": "null"})
+            elif isinstance(v, float):
+                args.append({"type": "float", "value": v})
+            elif isinstance(v, int):
+                args.append({"type": "integer", "value": str(v)})
+            else:
+                args.append({"type": "text", "value": str(v)})
+
+        payload = json.dumps({"requests": [
+            {"type": "execute", "stmt": {"sql": sql, "args": args}}
+        ]}).encode()
+        token = _TURSO_WRITE_TOKEN.replace("\n", "")
+        req = _req.Request(
+            f"{_TURSO_DB_URL}/v2/pipeline", data=payload,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with _req.urlopen(req, timeout=8) as resp:
+            json.load(resp)
+    except Exception:
+        pass  # silent — never break the hook on upload failure
+
+
+def _accumulate_session_aggregate(session_id, by_block, utility_rate):
+    """Accumulate per-turn metrics into a running session state.
+
+    On session_id change: flush previous session to ctx-session-aggregates.jsonl
+    and start a fresh state for the new session.
+
+    Privacy: session_id hashed, dates truncated to day, no content.
+    """
+    import hashlib
+    from datetime import date as _date
+
+    try:
+        state = {}
+        if _SESSION_STATE_PATH.exists():
+            try:
+                state = json.loads(_SESSION_STATE_PATH.read_text())
+            except Exception:
+                pass
+
+        current_sid = session_id or "unknown"
+        current_sid_hash = hashlib.sha256(current_sid.encode()).hexdigest()[:16]
+
+        prev_sid_hash = state.get("session_id_hash", "")
+        if prev_sid_hash and prev_sid_hash != current_sid_hash:
+            # New session — flush aggregate for old session
+            turns = state.get("turns", 0)
+            agg = {
+                "schema_version": _RETRIEVAL_EVENT_SCHEMA,
+                "user_id": _get_user_id_hash(),
+                "session_id_hash": prev_sid_hash,
+                "ts_date": state.get("ts_date", str(_date.today())),
+                "total_turns": turns,
+                "total_injections": state.get("total_injections", 0),
+                "mean_utility_rate": round(state.get("utility_rate_sum", 0) / turns, 4) if turns > 0 else 0.0,
+                "hook_source_hist": state.get("hook_source_hist", {}),
+                "retrieval_method_hist": state.get("retrieval_method_hist", {}),
+                "session_outcome": "SHORT" if turns <= 2 else "NORMAL",
+            }
+            vault_count, index_staleness = _get_vault_stats()
+            if vault_count is not None:
+                agg["vault_entry_count"] = vault_count
+            if index_staleness is not None:
+                agg["index_staleness_hours"] = index_staleness
+            bm25_sum = state.get("top_score_bm25_sum", 0.0)
+            bm25_count = state.get("top_score_bm25_count", 0)
+            if bm25_count > 0:
+                agg["mean_top_score_bm25"] = round(bm25_sum / bm25_count, 4)
+            qt_hist = state.get("query_type_hist", {})
+            if qt_hist:
+                agg["query_type_hist"] = qt_hist
+            node_type_hist = state.get("node_type_hist", {})
+            if node_type_hist:
+                agg["node_type_hist"] = node_type_hist
+            # v1.7: project_type_id from ctx-auto-tune.json (run ctx-telemetry cluster to populate)
+            try:
+                auto_tune = Path.home() / ".claude" / "ctx-auto-tune.json"
+                if auto_tune.exists():
+                    tune = json.loads(auto_tune.read_text())
+                    pt = tune.get("project_type_id") or tune.get("project_type_hint")
+                    if pt:
+                        agg["project_type_id"] = str(pt)
+            except Exception:
+                pass
+            # v1.7: ctx_version from installed package
+            try:
+                import importlib.metadata as _meta
+                agg["ctx_version"] = _meta.version("ctx-retriever")
+            except Exception:
+                pass
+            # v1.7: utility_by_qtype — utility_rate breakdown per query type
+            uq = state.get("utility_by_qtype", {})
+            if uq:
+                agg["utility_by_qtype"] = {qt: round(v["sum"] / v["n"], 4) for qt, v in uq.items() if v["n"] > 0}
+            with open(_SESSION_AGGREGATES_LOG, "a", encoding="utf-8") as f:
+                f.write(json.dumps(agg) + "\n")
+            _auto_upload_row(agg)
+            state = {}
+
+        # Accumulate current turn
+        state["session_id_hash"] = current_sid_hash
+        state.setdefault("ts_date", str(_date.today()))
+        state["turns"] = state.get("turns", 0) + 1
+        state["utility_rate_sum"] = state.get("utility_rate_sum", 0.0) + utility_rate
+
+        # Total injections
+        turn_injections = sum(v.get("total", 0) for v in by_block.values())
+        state["total_injections"] = state.get("total_injections", 0) + turn_injections
+
+        # Hook source histogram + node type histogram
+        src_hist = state.get("hook_source_hist", {})
+        nt_hist = state.get("node_type_hist", {})
+        for block, counts in by_block.items():
+            src = _HOOK_SOURCE_MAP.get(block, block.upper())
+            src_hist[src] = src_hist.get(src, 0) + 1
+            ntype = _NODE_TYPE_MAP.get(block, "unknown")
+            injected = counts.get("total", 0)
+            if injected > 0:
+                nt_hist[ntype] = nt_hist.get(ntype, 0) + injected
+        state["hook_source_hist"] = src_hist
+        state["node_type_hist"] = nt_hist
+
+        # Retrieval method histogram + query_type histogram + mean_top_score_bm25
+        try:
+            meta = json.loads(_RETRIEVAL_META_PATH.read_text()) if _RETRIEVAL_META_PATH.exists() else {}
+            meth_hist = state.get("retrieval_method_hist", {})
+            qt_hist = state.get("query_type_hist", {})
+            for bdata in meta.get("blocks", {}).values():
+                method = bdata.get("retrieval_method", "UNKNOWN")
+                meth_hist[method] = meth_hist.get(method, 0) + 1
+                qt = bdata.get("query_type")
+                if qt and qt != "UNKNOWN":
+                    qt_hist[qt] = qt_hist.get(qt, 0) + 1
+                    # v1.7: track utility_rate per query_type for cross-table
+                    uq = state.setdefault("utility_by_qtype", {})
+                    if qt not in uq:
+                        uq[qt] = {"sum": 0.0, "n": 0}
+                    uq[qt]["sum"] += utility_rate
+                    uq[qt]["n"] += 1
+                top_bm25 = bdata.get("top_score_bm25")
+                if top_bm25 is not None:
+                    state["top_score_bm25_sum"] = state.get("top_score_bm25_sum", 0.0) + top_bm25
+                    state["top_score_bm25_count"] = state.get("top_score_bm25_count", 0) + 1
+            state["retrieval_method_hist"] = meth_hist
+            state["query_type_hist"] = qt_hist
+        except Exception:
+            pass
+
+        _SESSION_STATE_PATH.write_text(json.dumps(state))
+    except Exception:
+        pass
+
+
+_CM_INJECT_PATH = HOME / ".claude" / "last-cm-injection.json"
+
+
 def main():
     if not LAST_INJECT.exists():
         return
@@ -252,6 +675,23 @@ def main():
     except Exception:
         return
     items = inj.get("items", [])
+
+    # Merge CM items from chat-memory.py (separate injection file)
+    # Also capture CM block metadata (retrieval_method) before unlinking.
+    cm_block_meta: dict = {}
+    try:
+        if _CM_INJECT_PATH.exists():
+            cm_inj = json.loads(_CM_INJECT_PATH.read_text())
+            # Age guard: same 10-min window as main injection
+            if time.time() - cm_inj.get("ts", 0) <= 600:
+                items = items + cm_inj.get("items", [])
+                cm_block_meta = {
+                    "retrieval_method": cm_inj.get("retrieval_method", "UNKNOWN"),
+                }
+                _CM_INJECT_PATH.unlink(missing_ok=True)
+    except Exception:
+        pass
+
     if not items:
         return
 
@@ -266,6 +706,7 @@ def main():
     # vault.db BEFORE incremental finished writing the current turn.
     stop_input = _read_stop_stdin()
     transcript_path = stop_input.get("transcript_path", "")
+    _last_user_prompt = _last_user_prompt_from_transcript(transcript_path)
     response, tool_params = _from_transcript_with_tools(transcript_path)
     if not response:
         # Fall back to vault (no tool-param recovery in this path — vault.db
@@ -400,6 +841,15 @@ def main():
         "semantic_available": semantic_available,
     })
 
+    # ── retrieval_event: structured telemetry schema (flywheel data asset) ──
+    _write_retrieval_events(
+        session_id=stop_input.get("session_id", ""),
+        by_block=by_block,
+        hits_by_mode=hits_by_mode,
+        semantic_available=semantic_available,
+        inj=inj,
+    )
+
     # ── Wow-trigger: specific-old-recall + high-utility, fired once ever ──
     if total > 0:
         rate = referenced / total
@@ -444,6 +894,13 @@ def main():
                 }))
             except Exception:
                 pass
+
+    # ── session_aggregate: per-session rollup (Stage 1 flywheel, second half) ──
+    _accumulate_session_aggregate(
+        session_id=stop_input.get("session_id", ""),
+        by_block=by_block,
+        utility_rate=referenced / total if total > 0 else 0.0,
+    )
 
     # Consume the injection file so we don't double-count it on a second Stop
     try:

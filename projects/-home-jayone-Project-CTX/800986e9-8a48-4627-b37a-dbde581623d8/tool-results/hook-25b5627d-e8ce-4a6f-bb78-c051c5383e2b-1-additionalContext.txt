@@ -1,0 +1,271 @@
+<graphprompt>
+[GraphPrompt 자동 증강] 태스크: coding | 조건: F | 근거: coding pass@1 +24%p (p=0.000126)
+아래 증강된 프롬프트를 출력하고 이를 기반으로 답변하세요:
+────────────────────────────────────────────────
+[L1: 역할] 당신은 Python 시니어 개발자입니다.
+
+[L3: 제약사항]
+- Python 코드로 구현
+- 함수 형태로 작성
+- 마지막 줄에 print()로 결과 출력
+- 코드만 출력
+
+[L4: 예시]
+[예시 1]
+문제: 리스트의 최댓값을 반환하는 함수를 작성하시오.
+입력: [3, 1, 4, 1, 5, 9]
+출력: 9
+답변:
+def solution(nums):
+    return max(nums)
+print(solution([3, 1, 4, 1, 5, 9]))
+
+[예시 2]
+문제: 문자열을 뒤집는 함수를 작성하시오.
+입력: "hello"
+출력: "olleh"
+답변:
+def solution(s):
+    return s[::-1]
+print(solution("hello"))
+
+[L5: 질문] <task-notification>
+<task-id>aaac0bc235c8da328</task-id>
+<tool-use-id>toolu_01SWDwWG9xzvsvwWMpiMUB97</tool-use-id>
+<output-file>/tmp/claude-1000/-home-jayone-Project-CTX/c9b96fd3-0bbe-40db-bac5-56affa905bdb/tasks/aaac0bc235c8da328.output</output-file>
+<status>completed</status>
+<summary>Agent "Fact Finder: commit memory 범용화 외부 자료 수집" completed</summary>
+<result>Now I have enough data to synthesize a comprehensive, well-cited answer.
+
+---
+
+## Research: BM25 기반 git commit memory의 범용 프로젝트 적용 방법
+
+---
+
+### Collected Facts
+
+**[FACT-1]** Conventional Commits 자동 분류 (ICSE 2025): CodeLlama fine-tuned 모델이 10개 CCS 타입 분류에서 macro F1 = 0.7641 달성. 가장 어려운 카테고리는 `chore` (F1=0.5397). 입력으로 commit message + git diff 함께 사용 시 성능 향상. 88,704개 commits (116 repositories) 데이터셋 사용.
+[S1] Source: [A First Look at Conventional Commits Classification — ICSE 2025](https://dl.acm.org/doi/10.1109/ICSE55347.2025.00011), [GitHub repo](https://github.com/0x404/conventional-commit-classification)
+
+**[FACT-2]** Linux 커널 commit message 내 rationale 분류 연구: 4개 카테고리 — Decision, Rationale, Supporting Facts, Inapplicable. **98.9%의 commit**에 rationale 정보 존재. Decision 문장 시그널 단어: `add`, `use`, `remove`, `kill`, `introduce`, `check` (각 18-28회). Rationale 시그널: `might`, `fixes`, `help`, `will`. 경험 있는 개발자는 commit 길이와 무관하게 ~60% rationale density 유지.
+[S1] Source: [Rationale Dataset for Linux Kernel OOM Killer Commits — arXiv 2403.18832](https://arxiv.org/html/2403.18832v1)
+
+**[FACT-3]** Lore Protocol (2026-03): git trailers를 이용한 structured decision knowledge 프로토콜 제안. 8개 머신-파싱 가능 트레일러 정의: `Constraint:`, `Rejected:`, `Confidence:`, `Scope-risk:`, `Reversibility:`, `Directive:`, `Tested:`, `Not-tested:`. CLI 쿼리: `lore context <path>`, `lore constraints <path>` 등. **실증 벤치마크 없음** (프로토콜 제안 수준).
+[S1] Source: [Lore: Repurposing Git Commit Messages as Structured Knowledge for AI Agents — arXiv 2603.15566](https://arxiv.org/html/2603.15566)
+
+**[FACT-4]** CoMRAT (MSR 2025): commit message rationale 분석 도구. GitHub 저장소의 commit message에서 rationale 정보 검출 및 레벨 측정. 개발자가 자신의 commit message rationale 수준 체크 가능.
+[S2] Source: [CoMRAT — MSR 2025](https://2025.msrconf.org/details/msr-2025-data-and-tool-showcase-track/3/CoMRAT-Commit-Message-Rationale-Analysis-Tool)
+
+**[FACT-5]** GitHub Copilot Memory (2026-03 GA): **저장소 단위 스코프**로 구현. 각 memory entry는 subject, fact, citations (코드 위치 포인터) 포함. 세션 시작 시 가장 최근 memories를 프롬프트에 포함 → citation 코드 위치 검증 → 불일치 시 갱신. 만료: 28일 (사용 시 갱신). **cross-project 없음** — "memories about a repository stay within that repository." cross-agent (code review ↔ coding agent ↔ CLI)는 가능.
+[S2] Source: [Building an Agentic Memory System for GitHub Copilot — GitHub Blog](https://github.blog/ai-and-ml/github-copilot/building-an-agentic-memory-system-for-github-copilot/), [Copilot Memory Docs](https://docs.github.com/en/copilot/concepts/agents/copilot-memory)
+
+**[FACT-6]** Cursor Memory 변화 (2025): mid-2025에 project-level Memories 기능 도입 → 2025 v2.1.x에서 제거. 현재 대체 방식: `.cursor/rules/*.mdc` Rules + MCP 서버 연결. organization-wide memory는 미구현 — "future goal"로만 언급됨.
+[S3] Source: [Cursor Community Forum — Persistent Memory](https://forum.cursor.com/t/persistent-ai-memory-for-cursor/145660), [Cursor AI Complete Guide 2025](https://medium.com/@hilalkara.dev/cursor-ai-complete-guide-2025-real-experiences-pro-tips-mcps-rules-context-engineering-6de1a776a8af)
+
+**[FACT-7]** Aider repo-map 알고리즘: tree-sitter (130+ 언어)로 AST 파싱 → symbol definitions/references 추출 → 파일 간 의존성 directed graph 생성 → NetworkX PageRank (personalized, self-loop weight=0.1) → token budget 내 binary search로 최적 포함. **cross-session memory 없음** — 매 세션 fresh repo scan. diskcache로 파싱 결과 캐시.
+[S2] Source: [Building a Better Repository Map with Tree-sitter — Aider Blog](https://aider.chat/2023/10/22/repomap.html), [Repository Mapping System — DeepWiki](https://deepwiki.com/Aider-AI/aider/4.1-repository-mapping)
+
+**[FACT-8]** Zed AI: 네이티브 cross-project memory 없음. MCP 서버(ByteRover 등) 연결로 외부 memory 주입 가능. 각 Agent thread는 독립 context window 유지. External agent (Claude Code, Codex CLI, Gemini CLI) via Agent Client Protocol (ACP) 지원.
+[S2] Source: [Zed Agent Panel Docs](https://zed.dev/docs/ai/agent-panel), [Zed AI 2026 Review](https://www.builder.io/blog/zed-ai-2026)
+
+**[FACT-9]** BM25 open-domain recall 한계: BM25 top-1 passage recall = 22.1%, hybrid pipeline = 53.4% (+31.3%p). 핵심 문제: vocabulary mismatch — BM25는 exact term matching만 수행, "pasta" 검색으로 "spaghetti" 문서 미매칭. 기술 문서에서 특히 심각 — embedding 모델도 error codes, API paths를 "weird tokens"로 무시.
+[S3] Source: [BM25 vs Dense Retrieval for RAG Engineers](https://ranjankumar.in/bm25-vs-dense-retrieval-for-rag-engineers)
+
+**[FACT-10]** SPLADE의 out-of-domain 일반화 한계: MS MARCO 학습 후 BEIR 평가 시 "many sparse neural retrievers show good results on MS MARCO but when it comes to generalisation, they could perform worse than BM25." SPLADE의 internal expansion 메커니즘이 vocabulary mismatch를 해결하지만, **도메인 외 데이터에서는 BM25보다 나쁠 수 있음**.
+[S2] Source: [Modern Sparse Neural Retrieval — Qdrant](https://qdrant.tech/articles/modern-sparse-neural-retrieval/)
+
+**[FACT-11]** Hybrid retrieval 효과: BM25 + dense 각각 top-20 취합 후 fusion이 "single method 대비 recall 15-30% 향상." 기술 문서 최적 가중치: BM25 0.6 / Dense 0.4. Reranking으로 hallucination 23% → 11% 감소, 지연 130-250ms (CPU).
+[S3] Source: [Building Hybrid Search — Ranjan Kumar](https://ranjankumar.in/building-a-full-stack-hybrid-search-system-bm25-vectors-cross-encoders-with-docker)
+
+**[FACT-12]** Claude Code의 context 철학 (Anthropic): "Just-in-time context, not pre-inference RAG — maintain lightweight identifiers, dynamically load data at runtime using tools." Conversation compaction 시 architectural decisions, unresolved bugs, implementation details 보존.
+[S2] Source: [AI Coding Agents 2026: Coherence Through Orchestration — Mike Mason](https://mikemason.ca/writing/ai-coding-agents-jan-2026/)
+
+**[FACT-13]** BM25 subword extension: tiktoken (GPT-4 tokenization) 기반 subword BM25가 OOV 문제 완화. trade-off: raw text coverage 일부 손실 vs. 구현 단순성.
+[S3] Source: [Extending BM25 with Subwords — Medium](https://medium.com/@emitchellh/extending-bm25-with-subwords-30b334728ebd)
+
+---
+
+### Synthesized Findings by Question
+
+#### 1. 다양한 commit 스타일에서 "중요한 결정 커밋" 자동 인식
+
+현재 연구 기반으로 3-tier 접근이 가장 실용적이다:
+
+**Tier 1 — 규칙 기반 (deterministic, zero-cost)**
+
+Conventional Commits 타입 존재 시: `feat`, `fix`, `refactor`, `perf`는 decision signal이 높음. `chore`, `style`, `ci`는 noise 확률 높음. 단, ICSE 2025 연구에 따르면 `chore`가 가장 분류 어렵고 실제로는 significant change를 담기도 함 [FACT-1].
+
+비-CC 저장소에서: Linux 커널 데이터 기준 decision-signal 동사 목록 사용 [FACT-2]:
+
+```python
+DECISION_VERBS = {"add", "use", "remove", "introduce", "replace", "switch",
+                  "migrate", "refactor", "drop", "implement", "redesign"}
+NOISE_INDICATORS = {"fix typo", "bump version", "merge branch",
+                    "update changelog", "revert", "wip"}
+```
+
+**Tier 2 — 구조적 시그널 (Lore Protocol 기반)**
+
+git trailer 존재 여부로 decision commit 식별 [FACT-3]:
+
+```bash
+git log --format="%H %s" | xargs -I{} git show -s --format="%B" {} | \
+  grep -E "^(Constraint|Rejected|Directive|Scope-risk):" 
+```
+
+**Tier 3 — LLM 분류 (고비용, 고정밀)**
+
+ICSE 2025 결과: CodeLlama fine-tuned (message + diff 동시 입력) macro F1=0.7641 [FACT-1]. "decision vs noise" 이진 분류는 10-타입 분류보다 쉬우므로 실제로는 더 높은 F1 기대 가능.
+
+---
+
+#### 2. 코딩 에이전트별 cross-project memory 구현 현황
+
+| 도구 | Cross-project memory | 구현 방식 | 한계 |
+|------|---------------------|----------|------|
+| **GitHub Copilot** | 없음 (저장소 단위) | citation-verified in-prompt injection | 28일 만료, 저장소 외 유출 방지 설계 |
+| **Cursor** | 없음 | .cursor/rules/*.mdc + MCP | v2.1.x에서 Memories 기능 제거됨 |
+| **Aider** | 없음 | tree-sitter PageRank repo-map, session마다 fresh | 디스크 캐시만 유지 |
+| **Zed** | 없음 (native) | MCP 서버 외부 연결로 가능 | ByteRover 등 third-party 의존 |
+| **Claude Code (CTX)** | **있음** | git-memory hook (G1: git log 기반) | 현재 유일한 cross-session+cross-project git 기반 메모리 |
+
+주요 패턴 차이: Copilot/Cursor는 **curation-based** (저장된 facts), Aider는 **fresh-computation** (매 세션 repo-map 재생성), CTX는 **commit-log-based** (git history가 영구 저장소 역할).
+
+---
+
+#### 3. BM25의 open-set recall 저하 이유와 개선 방법
+
+**근본 원인 3가지:**
+
+1. **Vocabulary mismatch** [FACT-9]: 쿼리와 문서가 다른 용어 사용 시 완전 miss. git commit의 경우 저장소마다 도메인 특수어(함수명, 라이브러리명)가 다름 → open-set에서 IDF가 새 저장소에 맞지 않음.
+
+2. **IDF corpus 불일치** [FACT-1, CTX CLAUDE.md]: BM25Okapi는 학습 코퍼스 IDF에 의존. 소규모 새 저장소(commit 수 100-500개)에서 도메인 핵심 용어가 multiple docs에 출현 → IDF 낮아짐 → 정작 중요한 용어가 하향 랭크.
+
+3. **SPLADE의 out-of-domain 역효과** [FACT-10]: 학습된 sparse model을 미지 저장소에 적용 시 BM25보다 나쁠 수 있음.
+
+**개선 방법 (효과 순):**
+
+```
+1. Per-repository BM25 재학습
+   - 새 저장소 clone 시 해당 저장소 commits만으로 BM25 index 재생성
+   - CTX가 이미 이 방식 사용 — 문제는 소규모 코퍼스에서 IDF 왜곡
+
+2. TF-only BM25 (IDF 없는 버전) — 소규모 코퍼스 특화
+   - rank_bm25의 BM25L 또는 직접 TF-only 구현
+   - CTX CLAUDE.md: keyword R@3 0.379 → 0.724 (IDF 제거 후)
+
+3. Hybrid BM25 + dense embedding [FACT-11]
+   - 각 top-20 취합 후 RRF (Reciprocal Rank Fusion)
+   - 기술 문서 가중치: BM25 0.6 / dense 0.4
+   - 새 저장소: BM25 비중 높임 (embedding OOV 더 심각)
+
+4. Subword-level BM25 [FACT-13]
+   - tiktoken으로 tokenize → camelCase/snake_case 함수명 분해
+   - "getUserById" → ["get", "user", "by", "id"] matching 가능
+
+5. Query/Doc expansion (Doc2Query)
+   - commit message → plausible queries 생성 후 index에 추가
+   - 고비용이지만 recall 개선 효과 큼
+```
+
+---
+
+#### 4. Commit message 품질 자동 분류 (decision vs noise)
+
+연구 기반 scoring 시스템:
+
+**Signal-positive 지표:**
+- Decision-type 동사 존재: `add`, `introduce`, `replace`, `migrate`, `switch` [FACT-2]
+- Lore trailers 존재: `Constraint:`, `Rejected:`, `Directive:` [FACT-3]
+- commit body 존재 (subject only vs. subject + body)
+- CC 타입이 `feat`/`refactor`/`perf`이고 scope 명시됨 [FACT-1]
+- 문장 수 ≥ 2 (rationale density 연구상 ~60%는 >= 2문장) [FACT-2]
+
+**Noise 지표:**
+- "merge", "revert", "bump", "wip", "typo" 키워드
+- 단일 단어 or 10자 미만 subject
+- CC 타입 `style`, `ci`, `chore` + scope 없음
+- "[skip ci]" 또는 bot 커밋 (dependabot, renovate)
+
+**실용적 scoring 예시:**
+
+```python
+def score_commit_decision(message: str, diff_stat: dict) -> float:
+    score = 0.0
+    msg_lower = message.lower()
+    
+    # Lore trailers (강한 signal)
+    if any(t in message for t in ["Constraint:", "Rejected:", "Directive:"]):
+        score += 0.4
+    
+    # Decision verbs in subject line
+    DECISION_VERBS = {"introduce", "migrate", "replace", "redesign", "implement",
+                      "switch", "refactor", "add", "remove"}
+    subject = message.split("\n")[0].lower()
+    if any(v in subject for v in DECISION_VERBS):
+        score += 0.2
+    
+    # Has body (not just subject)
+    if "\n\n" in message and len(message.split("\n\n")[1].strip()) > 20:
+        score += 0.2
+    
+    # Noise signals
+    NOISE = {"merge branch", "bump", "wip:", "typo", "revert", "[skip ci]"}
+    if any(n in msg_lower for n in NOISE):
+        score -= 0.5
+    
+    # Bot commits
+    if any(bot in msg_lower for bot in ["dependabot", "renovate", "github-actions"]):
+        score = 0.0
+    
+    return max(0.0, min(1.0, score))
+```
+
+---
+
+### Latest Trends (2025-2026)
+
+1. **Lore Protocol (2026-03)**: git trailers를 AI agent용 structured decision storage로 사용하는 표준화 시도. 실증 검증 미완이나 방향성은 유효 [S1].
+
+2. **Copilot Memory GA (2026-03)**: citation-verified, 저장소 단위 지식 persistence가 상용 수준으로 구현됨. Cross-project는 명시적으로 설계에서 제외 (보안 이유).
+
+3. **"Just-in-time context" 패러다임**: pre-embedded RAG에서 agent가 직접 grep/read하는 방향으로 전환 (Anthropic 공식 가이드).
+
+4. **ICSE 2025 commit classification**: 10-타입 CC 분류 문제가 공식 연구 과제로 등장. CodeLlama + diff가 GPT-4보다 우수 — LLM size보다 domain fine-tuning이 중요.
+
+5. **Hybrid retrieval 표준화**: BM25 단독 사용은 점차 deprecated. production system은 BM25 + dense + cross-encoder reranker 3단계 파이프라인.
+
+---
+
+### Conflicting Information
+
+- **SPLADE vs BM25 out-of-domain**: Qdrant 기사는 SPLADE가 BM25보다 낫다고 주장하지만, 동시에 MS MARCO 외 데이터에서 BM25보다 나쁠 수 있음을 인정. 소규모 특수 코퍼스(git commits)에서는 BM25가 여전히 competitive할 수 있음.
+- **Cursor Memory**: community에서는 mid-2025까지 사용 가능했으나 v2.1.x에서 제거됐다고 보고. 공식 changelog에서 확인 어려움.
+
+---
+
+### Community Consensus
+
+1. **Cross-project memory는 모든 도구에서 미구현** — 저장소 단위가 현실적 경계. 유일한 예외가 CTX의 git-memory hook (git log 기반 cross-session 기억).
+2. **BM25 단독 open-set 사용의 한계 인정** — hybrid가 de facto standard.
+3. **Commit message 품질 분류는 어렵다** — ICSE 2025: `chore` F1=0.5397이 가장 낮음. LLM + diff 동시 입력이 현재 최선.
+4. **Decision commits의 특성**: 경험 있는 개발자 commit일수록 rationale density 높고, 짧은 commits에 rationale 더 집중됨 [FACT-2].
+
+---
+
+### Additional Sources
+
+- [A First Look at Conventional Commits Classification](https://dl.acm.org/doi/10.1109/ICSE55347.2025.00011) — ICSE 2025, 10-타입 분류, CodeLlama macro F1=0.7641
+- [Lore Protocol — arXiv 2603.15566](https://arxiv.org/html/2603.15566) — git trailers를 AI agent knowledge로 사용하는 구조화 프로토콜
+- [Rationale in Linux Kernel Commits — arXiv 2403.18832](https://arxiv.org/html/2403.18832v1) — decision/rationale 문장 분류, keyword 패턴 실증
+- [GitHub Copilot Memory Architecture](https://github.blog/ai-and-ml/github-copilot/building-an-agentic-memory-system-for-github-copilot/) — citation-verified just-in-time injection 방식
+- [GitHub Copilot Memory Docs](https://docs.github.com/en/copilot/concepts/agents/copilot-memory) — 저장소 스코프, 28일 만료, cross-agent 공유
+- [Aider Repository Map Blog](https://aider.chat/2023/10/22/repomap.html) — tree-sitter + PageRank, cross-session memory 없음
+- [CoMRAT — MSR 2025](https://2025.msrconf.org/details/msr-2025-data-and-tool-showcase-track/3/CoMRAT-Commit-Message-Rationale-Analysis-Tool) — commit rationale 분석 도구
+- [BM25 vs Dense Retrieval for RAG](https://ranjankumar.in/bm25-vs-dense-retrieval-for-rag-engineers) — 기술 문서 가중치 BM25:0.6 / dense:0.4 권고
+- [Modern Sparse Neural Retrieval — Qdrant](https://qdrant.tech/articles/modern-sparse-neural-retrieval/) — SPLADE out-of-domain 한계
+- [Extending BM25 with Subwords](https://medium.com/@emitchellh/extending-bm25-with-subwords-30b334728ebd) — tiktoken 기반 subword BM25</result>
+<usage><total_tokens>46968</total_tokens><tool_uses>28</tool_uses><duration_ms>244234</duration_ms></usage>
+</task-notification>
+</graphprompt>

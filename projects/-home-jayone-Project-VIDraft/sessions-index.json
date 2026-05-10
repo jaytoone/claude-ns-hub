@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "9e44fef9-1734-44e7-8f39-0c89ce029fd4",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-VIDraft/9e44fef9-1734-44e7-8f39-0c89ce029fd4.jsonl",
+      "fileMtime": 1769912612167,
+      "firstPrompt": "ㅗㅑ ?",
+      "summary": "API 오류 발생 및 요청 실패",
+      "messageCount": 2,
+      "created": "2026-02-01T02:12:14.812Z",
+      "modified": "2026-02-01T02:14:42.732Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/VIDraft",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone/Project/VIDraft"
+}

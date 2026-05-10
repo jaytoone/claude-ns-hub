@@ -1,0 +1,1344 @@
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+extglob.Name : 'extglob.Name' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니
+다. 이름이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:1 문자:33
++ Get-AppxPackage | Where-Object {extglob.Name -like '*Claude*'} | Sele ...
++                                 ~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (extglob.Name:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+---
+---
+
+Source                               
+------                               
+C:\Users\Jayone\.local\bin\claude.exe
+
+

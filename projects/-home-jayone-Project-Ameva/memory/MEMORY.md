@@ -1,0 +1,2 @@
+- [entity-live/entity-inf rewrite](ameva-loop-rewrite.md) — thin wrapper → standalone swarm loop (2026-04-15)
+- [ameva → entity rename](ameva-to-entity-rename.md) — all ameva skill names renamed to entity (2026-04-16)

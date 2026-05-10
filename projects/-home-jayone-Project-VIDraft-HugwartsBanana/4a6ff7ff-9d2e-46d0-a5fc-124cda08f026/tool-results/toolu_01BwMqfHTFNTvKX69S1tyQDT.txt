@@ -1,0 +1,252 @@
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-multi/index.ts-252-      .insert({
+supabase/functions/generate-video-multi/index.ts-253-        user_id: userId,
+supabase/functions/generate-video-multi/index.ts:254:        user_email: userData.email,
+supabase/functions/generate-video-multi/index.ts-255-        generation_type: 'video',
+supabase/functions/generate-video-multi/index.ts-256-        prompt: motionPrompt,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-128-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-129-  // 사용자 정보 조회
+supabase/functions/cardnews-regenerate-card/index.ts:130:  const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-131-    .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-132-    .select('credits')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-134-    .single()
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-135-
+supabase/functions/cardnews-regenerate-card/index.ts:136:  if (userError || !userData) {
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-137-    throw new Error('사용자 정보를 찾을 수 없습니다')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-138-  }
+--
+supabase/functions/cardnews-regenerate-card/index.ts-140-  / 재생성 비용: 1 바나나
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-141-  const regenerateCost = 1
+supabase/functions/cardnews-regenerate-card/index.ts:142:  if (userData.credits < regenerateCost) {
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-143-    throw new Error('바나나가 부족합니다')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-144-  }
+--
+supabase/functions/cardnews-regenerate-card/index.ts-147-  const { error: creditError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-148-    .from('users')
+supabase/functions/cardnews-regenerate-card/index.ts:149:    .update({ credits: userData.credits - regenerateCost })
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-150-    .eq('id', user.id)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-151-
+--
+supabase/functions/cardnews-regenerate-card/index.ts-165-      transaction_type: 'usage',
+supabase/functions/cardnews-regenerate-card/index.ts-166-      description: `카드뉴스 개별 카드 재생성: ${card_data.title}`,
+supabase/functions/cardnews-regenerate-card/index.ts:167:      balance_after: userData.credits - regenerateCost
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-168-    })
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-regenerate-card/index.ts-169-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-65-    if (userId) {
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-66-      // 사용자 정보 조회
+supabase/functions/cardtoon-video-submit/index.ts:67:      const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-68-        .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-69-        .select('id, email, credits')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-71-        .single()
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-72-
+supabase/functions/cardtoon-video-submit/index.ts:73:      if (userError || !userData) {
+supabase/functions/cardtoon-video-submit/index.ts-74-        console.error('[Cardtoon Video Submit] 사용자 조회 실패:', userError)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-75-        throw new Error('사용자 정보를 찾을 수 없습니다')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-76-      }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-77-
+supabase/functions/cardtoon-video-submit/index.ts:78:      console.log(`[Cardtoon Video Submit] 사용자: ${userData.email}, 크레딧: ${userData.credits}`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-79-
+supabase/functions/cardtoon-video-submit/index.ts-80-      / 비용 계산: 클립당 5초=40바나나(4,000원), 10초=70바나나(7,000원)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-85-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-86-      // 크레딧 확인
+supabase/functions/cardtoon-video-submit/index.ts:87:      if ((userData.credits || 0) < totalCost) {
+supabase/functions/cardtoon-video-submit/index.ts:88:        throw new Error(`바나나가 부족합니다. 필요: ${totalCost}, 보유: ${userData.credits || 0}`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-89-      }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-90-
+--
+supabase/functions/cardtoon-video-submit/index.ts-92-      const { error: deductError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-93-        .from('users')
+supabase/functions/cardtoon-video-submit/index.ts:94:        .update({ credits: (userData.credits || 0) - totalCost })
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-95-        .eq('id', userId)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-video-submit/index.ts-96-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-83-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-84-    // Get user email from userId
+supabase/functions/generate-video-fal/index.ts:85:    const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-86-      .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-87-      .select('email')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-89-      .single()
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-90-
+supabase/functions/generate-video-fal/index.ts:91:    if (userError || !userData) {
+supabase/functions/generate-video-fal/index.ts-92-      console.error('[FAL Wan 2.6] 사용자 조회 오류:', userError)
+supabase/functions/generate-video-fal/index.ts-93-      throw new Error(`사용자 조회 실패: ${userError?.message || 'User not found'}`)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-140-      .insert({
+supabase/functions/generate-video-fal/index.ts-141-        user_id: userId,
+supabase/functions/generate-video-fal/index.ts:142:        user_email: userData.email,
+supabase/functions/generate-video-fal/index.ts-143-        generation_type: 'video',
+supabase/functions/generate-video-fal/index.ts-144-        prompt: motionPrompt,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video-fal/index.ts-192-      .insert({
+supabase/functions/generate-video-fal/index.ts-193-        user_id: userId,
+supabase/functions/generate-video-fal/index.ts:194:        user_email: userData.email,
+supabase/functions/generate-video-fal/index.ts-195-        api_provider: 'fal',
+supabase/functions/generate-video-fal/index.ts-196-        api_endpoint: '/wan/v2.6/image-to-video',
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-seedream/index.ts-112-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-seedream/index.ts-113-      // Get user email
+supabase/functions/generate-seedream/index.ts:114:      const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-seedream/index.ts-115-        .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-seedream/index.ts-116-        .select('email')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-seedream/index.ts-118-        .single()
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-seedream/index.ts-119-
+supabase/functions/generate-seedream/index.ts:120:      if (userError || !userData) {
+supabase/functions/generate-seedream/index.ts-121-        console.error('[SeeDBream] 사용자 조회 오류:', userError)
+supabase/functions/generate-seedream/index.ts-122-        throw new Error(`사용자 조회 실패: ${userError?.message || 'User not found'}`)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-seedream/index.ts-128-        .insert({
+supabase/functions/generate-seedream/index.ts-129-          user_id: userId,
+supabase/functions/generate-seedream/index.ts:130:          user_email: userData.email,
+supabase/functions/generate-seedream/index.ts-131-          generation_type: 'seedream',
+supabase/functions/generate-seedream/index.ts-132-          prompt: prompt,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/scenario-submit/index.ts-83-  const creditsRequired = CREDITS_MAP[screenplayType]
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/scenario-submit/index.ts-84-
+supabase/functions/scenario-submit/index.ts:85:  const { data: userData, error: creditError } = await supabaseClient
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/scenario-submit/index.ts-86-    .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/scenario-submit/index.ts-87-    .select('credits')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/scenario-submit/index.ts-94-  }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/scenario-submit/index.ts-95-
+supabase/functions/scenario-submit/index.ts:96:  const currentCredits = userData?.credits || 0
+supabase/functions/scenario-submit/index.ts-97-  console.log(`[scenario-submit] Credits: ${currentCredits} / ${creditsRequired}`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/scenario-submit/index.ts-98-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-nano-banana/index.ts-79-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-nano-banana/index.ts-80-    // Get user email
+supabase/functions/generate-nano-banana/index.ts:81:    const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-nano-banana/index.ts-82-      .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-nano-banana/index.ts-83-      .select('email')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-nano-banana/index.ts-85-      .single()
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-nano-banana/index.ts-86-
+supabase/functions/generate-nano-banana/index.ts:87:    if (userError || !userData) {
+supabase/functions/generate-nano-banana/index.ts-88-      console.error('[Nano-Banana] 사용자 조회 오류:', userError)
+supabase/functions/generate-nano-banana/index.ts-89-      throw new Error(`사용자 조회 실패: ${userError?.message || 'User not found'}`)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-nano-banana/index.ts-95-      .insert({
+supabase/functions/generate-nano-banana/index.ts-96-        user_id: userId,
+supabase/functions/generate-nano-banana/index.ts:97:        user_email: userData.email,
+supabase/functions/generate-nano-banana/index.ts-98-        generation_type: 'nano_banana',
+supabase/functions/generate-nano-banana/index.ts-99-        prompt: prompt,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-221-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-222-    // 크레딧 확인
+supabase/functions/cardnews-submit/index.ts:223:    const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-224-      .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-225-      .select('credits')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-228-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-229-    if (userError) throw new Error('사용자 정보 조회 실패')
+supabase/functions/cardnews-submit/index.ts:230:    if ((userData.credits || 0) < cost) {
+supabase/functions/cardnews-submit/index.ts:231:      throw new Error(`바나나가 부족합니다 (필요: ${cost}개, 보유: ${userData.credits || 0}개)`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-232-    }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-233-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-235-    await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-236-      .from('users')
+supabase/functions/cardnews-submit/index.ts:237:      .update({ credits: (userData.credits || 0) - cost })
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-238-      .eq('id', user.id)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardnews-submit/index.ts-239-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-206-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-207-    // 크레딧 확인
+supabase/functions/cardtoon-submit/index.ts:208:    const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-209-      .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-210-      .select('credits')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-213-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-214-    if (userError) throw new Error('사용자 정보 조회 실패')
+supabase/functions/cardtoon-submit/index.ts:215:    if ((userData.credits || 0) < cost) {
+supabase/functions/cardtoon-submit/index.ts:216:      throw new Error(`바나나가 부족합니다 (필요: ${cost}개, 보유: ${userData.credits || 0}개)`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-217-    }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-218-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-220-    await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-221-      .from('users')
+supabase/functions/cardtoon-submit/index.ts:222:      .update({ credits: (userData.credits || 0) - cost })
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-223-      .eq('id', user.id)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-submit/index.ts-224-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video/index.ts-80-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video/index.ts-81-    // Get user email from userId
+supabase/functions/generate-video/index.ts:82:    const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video/index.ts-83-      .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video/index.ts-84-      .select('email')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video/index.ts-86-      .single()
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video/index.ts-87-
+supabase/functions/generate-video/index.ts:88:    if (userError || !userData) {
+supabase/functions/generate-video/index.ts-89-      console.error('[SeeDANCE] 사용자 조회 오류:', userError)
+supabase/functions/generate-video/index.ts-90-      throw new Error(`사용자 조회 실패: ${userError?.message || 'User not found'}`)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/generate-video/index.ts-134-      .insert({
+supabase/functions/generate-video/index.ts-135-        user_id: userId,
+supabase/functions/generate-video/index.ts:136:        user_email: userData.email,
+supabase/functions/generate-video/index.ts-137-        generation_type: 'video',
+supabase/functions/generate-video/index.ts-138-        prompt: motionPrompt,
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-67-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-68-  // 크레딧 확인
+supabase/functions/storyboard-regenerate/index.ts:69:  const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-70-    .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-71-    .select('credits')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-74-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-75-  if (userError) throw new Error('사용자 정보 조회 실패')
+supabase/functions/storyboard-regenerate/index.ts:76:  if ((userData.credits || 0) < regenerateCost) {
+supabase/functions/storyboard-regenerate/index.ts:77:    throw new Error(`바나나가 부족합니다 (필요: ${regenerateCost}개, 보유: ${userData.credits || 0}개)`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-78-  }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-79-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-81-  await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-82-    .from('users')
+supabase/functions/storyboard-regenerate/index.ts:83:    .update({ credits: (userData.credits || 0) - regenerateCost })
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-84-    .eq('id', user.id)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/storyboard-regenerate/index.ts-85-
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/festa-engagement-reward/index.ts-192-  if (creditError) {
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/festa-engagement-reward/index.ts-193-    // If RPC doesn't exist, do manual update
+supabase/functions/festa-engagement-reward/index.ts:194:    const { data: userData, error: fetchError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/festa-engagement-reward/index.ts-195-      .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/festa-engagement-reward/index.ts-196-      .select('banana_balance')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/festa-engagement-reward/index.ts-202-    }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/festa-engagement-reward/index.ts-203-
+supabase/functions/festa-engagement-reward/index.ts:204:    const newBalance = (userData.banana_balance || 0) + creditsToAward
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/festa-engagement-reward/index.ts-205-
+supabase/functions/festa-engagement-reward/index.ts-206-    const { error: updateError } = await supabase
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-71-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-72-    // 3. 사용자 정보 조회
+supabase/functions/cardtoon-generate/index.ts:73:    const { data: userData, error: userError } = await supabase
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-74-      .from('users')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-75-      .select('id, email, credits')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-77-      .single()
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-78-
+supabase/functions/cardtoon-generate/index.ts:79:    if (userError || !userData) {
+supabase/functions/cardtoon-generate/index.ts-80-      console.error('[Cardtoon Generate] 사용자 조회 실패:', userError)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-81-      throw new Error('사용자 정보를 찾을 수 없습니다')
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-82-    }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-83-
+supabase/functions/cardtoon-generate/index.ts:84:    console.log(`[Cardtoon Generate] 사용자: ${userData.email}, 크레딧: ${userData.credits}`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-85-
+supabase/functions/cardtoon-generate/index.ts-86-    / 4. 비용 계산: 컷당 5바나나, 4K 해상도 시 2배
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-92-
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-93-    // 5. 크레딧 확인
+supabase/functions/cardtoon-generate/index.ts:94:    if ((userData.credits || 0) < cost) {
+supabase/functions/cardtoon-generate/index.ts:95:      throw new Error(`바나나가 부족합니다. 필요: ${cost}, 보유: ${userData.credits || 0}`)
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-96-    }
+/home/jayone/Project/VIDraft/HugwartsBanana/supabase/functions/cardtoon-generate/index.ts-97-
+--
+supabase/functions/cardtoon-generate/index.ts-99-    const { error: deductError } = await supabase
+
+[Showing results with pagination = limit: 250]

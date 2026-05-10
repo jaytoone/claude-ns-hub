@@ -1,0 +1,106 @@
+{
+  "version": 2,
+  "plugins": {
+    "typescript-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/claude-plugins-official/typescript-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-01-30T03:32:29.809Z",
+        "lastUpdated": "2026-01-30T03:32:29.809Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "frontend-design@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/claude-plugins-official/frontend-design/cd3ffe967b3e",
+        "version": "cd3ffe967b3e",
+        "installedAt": "2026-02-05T16:06:57.185Z",
+        "lastUpdated": "2026-04-27T10:45:30.919Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "context7@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/claude-plugins-official/context7/cd3ffe967b3e",
+        "version": "cd3ffe967b3e",
+        "installedAt": "2026-02-05T16:08:30.423Z",
+        "lastUpdated": "2026-04-27T10:45:30.927Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "ralph-loop@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/claude-plugins-official/ralph-loop/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-02-05T16:08:54.231Z",
+        "lastUpdated": "2026-03-29T07:06:47.681Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "feature-dev@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/claude-plugins-official/feature-dev/cd3ffe967b3e",
+        "version": "cd3ffe967b3e",
+        "installedAt": "2026-02-05T16:09:16.962Z",
+        "lastUpdated": "2026-04-27T10:45:30.933Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "security-guidance@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/claude-plugins-official/security-guidance/cd3ffe967b3e",
+        "version": "cd3ffe967b3e",
+        "installedAt": "2026-02-05T16:10:25.447Z",
+        "lastUpdated": "2026-04-27T10:45:30.912Z",
+        "gitCommitSha": "27d2b86d72da27c64585150857cee8472ad47abb"
+      }
+    ],
+    "superpowers@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/desk-1/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0",
+        "version": "5.1.0",
+        "installedAt": "2026-03-12T03:50:08.761Z",
+        "lastUpdated": "2026-05-05T02:45:30.246Z",
+        "gitCommitSha": "5ef73d25b71e69e63a74eae359fb26c7a6ac8fc0"
+      }
+    ],
+    "telegram@claude-plugins-official": [],
+    "claude-mem@thedotmack": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/thedotmack/claude-mem/12.3.8",
+        "version": "12.3.8",
+        "installedAt": "2026-04-22T08:27:39.218Z",
+        "lastUpdated": "2026-04-22T08:27:39.218Z",
+        "gitCommitSha": "49ab404c083b3a5c51a2e810912c63f512364ff3"
+      }
+    ],
+    "ctx@jaytoone": [
+      {
+        "scope": "user",
+        "installPath": "/home/jayone/.claude/plugins/cache/jaytoone/ctx/0.2.0",
+        "version": "0.2.0",
+        "installedAt": "2026-04-27T06:07:46.944Z",
+        "lastUpdated": "2026-04-27T06:07:46.944Z",
+        "gitCommitSha": "88ceff8cb09c681049dcf756ce68194cd31ade86"
+      }
+    ],
+    "vercel@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/desk-1/.claude/plugins/cache/claude-plugins-official/vercel/0.42.1",
+        "version": "0.42.1",
+        "installedAt": "2026-05-06T03:14:01.617Z",
+        "lastUpdated": "2026-05-07T02:48:19.211Z",
+        "gitCommitSha": "b4803caa71cf3277f1178f35f7189f9b8d20f6bb"
+      }
+    ]
+  }
+}

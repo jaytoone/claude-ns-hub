@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-04-24T09:00:27.620105+00:00",
+  "cwd": "/home/jayone/Project/CTX/hf_space_dashboard/snapshots",
+  "turn_count": 1774,
+  "decisions": [
+    {
+      "text": "fixed",
+      "context": "es we counted ### Root cause fixed **Before**: Gate 2 required `cone[target] >= 0.05` for ALL topic/temporal expansions — but depth-2/3 targets reach ",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Fixed",
+      "context": "**Fixed.** Cascade now builds 31 edges spanning all 3 depths: | Depth | Edge count | What it represents | |---|---|---| | 1 | **10** | direct prompt→t",
+      "tag": "impl_complete"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "9aa229c4-b326-448c-8e1f-766da7bba5fe",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-Ontology/9aa229c4-b326-448c-8e1f-766da7bba5fe.jsonl",
+      "fileMtime": 1769755453842,
+      "firstPrompt": "+서칭 + 전문가 고용으로 + 메타 인지 점검으로 더 좋은 타깃 / 감정/ 페인포인트가 있는지 점검하기 바람,",
+      "summary": "AI 쇼츠 론칭: 외로움 타깃 실행 가이드",
+      "messageCount": 17,
+      "created": "2026-01-30T05:01:27.585Z",
+      "modified": "2026-01-30T06:23:59.016Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/Ontology",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone/Project/Ontology"
+}

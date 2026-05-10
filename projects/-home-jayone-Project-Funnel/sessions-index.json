@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "49cf0ce4-46f1-4cbb-b87f-63086ff31c44",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-Funnel/49cf0ce4-46f1-4cbb-b87f-63086ff31c44.jsonl",
+      "fileMtime": 1770687764172,
+      "firstPrompt": "No prompt",
+      "summary": "재개할 대화 없음",
+      "messageCount": 2,
+      "created": "2026-02-10T00:52:11.630Z",
+      "modified": "2026-02-10T00:53:10.106Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/Funnel",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "3601fa7f-836d-4344-a76f-4bfe477ea718",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-Funnel/3601fa7f-836d-4344-a76f-4bfe477ea718.jsonl",
+      "fileMtime": 1770688457732,
+      "firstPrompt": "가장 최근에 작성된 문서 확인 (새로운 세션에서 작업을 이어 진행하기 위한 컨텍스트 가담긴 문서일 거)",
+      "summary": "**Volume Profile zero-volume 필터링 이슈 해결**",
+      "messageCount": 19,
+      "created": "2026-02-10T01:36:04.710Z",
+      "modified": "2026-02-10T01:53:25.816Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/Funnel",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "69be8953-5ca6-43fa-9700-f29e1e26680e",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-Funnel/69be8953-5ca6-43fa-9700-f29e1e26680e.jsonl",
+      "fileMtime": 1770947906436,
+      "firstPrompt": "그 가격 차트 확장하거나 축소 할 때 뭐 마우스로 줌 이용해서 줌 기능 이용해서 아무튼 가격 차트를 확정하거나 축소 할 때 오 B의 가격 차트 위에 있는 오 B V 차트도 같이 움직여야 되는데 같이 확대되거나 축소가 돼야 되는데 그 좌우로 움직이는 거는 지금 싱크가 막거든얼마 전에 그거 기능을 추가 했잖아 근데 줌 확대 축소가 싱크가 안 돼 싱크가 안 되고…",
+      "summary": "차트 줌 동기화 및 저장 기능 수정",
+      "messageCount": 6,
+      "created": "2026-02-12T15:51:24.248Z",
+      "modified": "2026-02-13T00:30:05.757Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/Funnel/stock-chart-ui",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone/Project/Funnel"
+}

@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "sessionId": "2045971d-d61b-40a0-bf87-3138fb5970bc",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-PacketAnal/2045971d-d61b-40a0-bf87-3138fb5970bc.jsonl",
+      "fileMtime": 1770713731549,
+      "firstPrompt": "No prompt",
+      "summary": "패킷 분석 및 DPI 엔진 구현",
+      "messageCount": 2,
+      "created": "2026-02-10T08:38:11.962Z",
+      "modified": "2026-02-10T08:41:39.658Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/PacketAnal",
+      "isSidechain": false
+    },
+    {
+      "sessionId": "7b1a00d2-6c0d-4523-ae55-169ef1d4bcd0",
+      "fullPath": "/home/jayone/.claude/projects/-home-jayone-Project-PacketAnal/7b1a00d2-6c0d-4523-ae55-169ef1d4bcd0.jsonl",
+      "fileMtime": 1770901324269,
+      "firstPrompt": "실제 트래픽 분석에서 어떤 패킷 내용 확인 가능 ? 예를 들어 내부망에서 카카오톡 전송 데이터를 확인 가능 ?",
+      "summary": "PacketAnal HTTPS 복호화 구현 및 세션 전환",
+      "messageCount": 33,
+      "created": "2026-02-11T02:57:54.023Z",
+      "modified": "2026-02-11T06:27:33.984Z",
+      "gitBranch": "",
+      "projectPath": "/home/jayone/Project/PacketAnal",
+      "isSidechain": false
+    }
+  ],
+  "originalPath": "/home/jayone/Project/PacketAnal"
+}

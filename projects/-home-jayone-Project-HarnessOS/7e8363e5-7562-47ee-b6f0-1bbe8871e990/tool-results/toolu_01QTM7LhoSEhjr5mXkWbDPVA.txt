@@ -1,0 +1,439 @@
+1----
+2-name: live
+3:description: Fully autonomous self-evolving outer loop orchestrator — loads past episodes, manages goal tree, drives autopilot inner loops, and continuously redefines goals until no further improvement is possible (self-evolution mode)
+4-# Updated: 2026-03-30 — critique-based improvements (P0-P1)
+5-#   P0-1: evaluator_mode config (self/cross_prompt/oracle_only)
+6-#   P0-2: plateau_k 2→3, score_uncertain_threshold 0.10, gray zone protection
+--
+11-#   P3: Autonomous Skill Router (Step 3e) — task-type-based skill/agent auto-selection
+12-#       Research: RouteLLM (Berkeley 2024, arXiv:2406.18665), ReAct (Yao et al. 2022),
+13-#       Mixture-of-Agents (Wang et al. 2024, arXiv:2406.04692)
+14:#   P4: DISPATCH Layer (Step 3e) — DELEGATE/FAN_OUT/AUTOPILOT modes, ORCHESTRATOR_MAP
+15:#   P5: 2-Wave Architecture (Step 3f) — Wave 1: expert strategy consultation (once)
+16:#       Wave 2: execution loop seeded by Wave 1 plan
+17----
+18-
+19-<Purpose>
+--
+58-- evolve_mode: true              (enable self-evolving goal redefinition on YES)
+59-- epsilon: 0.05                  (minimum score improvement to continue evolving; 0.0–1.0)
+60-- plateau_k: 3                   (consecutive iterations below epsilon → declare convergence)
+61:                                 (raised from 2: LLM scoring variance at 0.05-0.10 makes k=2 statistically
+62-                                  unreliable. k=3 requires 3 consecutive below-epsilon iterations.
+63-                                  Source: 20260330-omc-live-critique P0-2)
+64:- max_evolution_depth: 3         (max number of goal evolutions before forced stop)
+65-- score_dimensions: ["quality", "completeness", "efficiency", "impact", "goal_fidelity"]
+66-                                 (evaluation axes; score = average across dimensions, 0.0–1.0 each)
+67-                                 goal_fidelity: semantic alignment between current_goal and original_goal
+68-                                 — prevents Goodhart drift where evolved goals diverge from user intent
+69:- goal_fidelity_min: 0.7         (minimum goal_fidelity to allow goal evolution; below → skip EVOLVE, log WARNING)
+70:- cumulative_fidelity_min: 0.50  (NEW — P2-8: minimum cumulative goal_fidelity across all evolutions)
+71-                                   Per-step minimum is goal_fidelity_min=0.7
+72-                                   Cumulative: product of all per-step fidelities
+73-                                   Example: 0.7 × 0.8 × 0.9 = 0.504 → just passes
+--
+83-                                   score_variance > 0.15 → rate × 0.5  (high variance = unstable → exploit more)
+84-                                   else → rate unchanged
+85-                                 Clamped to [0.05, 0.6]. 0.0 = pure exploitation, 1.0 = full random exploration.
+86:                                 Research basis: Agent0 co-evolution (arXiv:2511.16043, +18-24%);
+87-                                 SSP self-play (arXiv:2510.18821) — exploitation-only leads to local optima
+88-- score_uncertain_threshold: 0.10 (NEW — lowered from implicit 0.15: protect "gray zone" variance 0.10-0.14
+89-                                  from false convergence. At variance 0.10-0.15, plateau_count
+90-                                  increments by 0.5 instead of 1.0. Source: 20260330-omc-live-critique P0-2)
+91-- evaluator_mode: "self"         (NEW — controls how SCORE PROMPT is evaluated.
+92:                                  "self": default — same session self-scoring, identical to current behavior.
+93:                                  "cross_prompt": system prompt reset to skeptical reviewer before scoring.
+94:                                  "oracle_only": auto-oracle results only, LLM scoring disabled — requires oracle.
+95-                                  Source: 20260330-omc-live-critique P0-1, Anthropic Generator/Evaluator separation)
+96-- context_budget_pct: 70         (trigger early handoff when estimated context usage reaches this %)
+97-                                 Research basis: agents consume 4–15× standard chat tokens (Oracle/LangChain 2025);
+--
+99-
+100-Domain Specialization (optional):
+101-- domain_profile: null           (path to domain profile file, e.g., ".omc/domain-profile.md")
+102:                                 When set, overrides score_dimensions and injects domain scoring oracle.
+103-                                 null = generic mode (default). Set to file path to enable domain mode.
+104-                                 Template: .omc/domain-profile.md (see PRE-LOOP step 2.5 for format)
+105-</Configuration>
+--
+123-   - This recombines failure trajectories into actionable avoidance hints for the current run
+124-   - If no failed episodes → skip silently (no message)
+125-
+126:   **Co-evolution input** (Research basis: Agent0, arXiv:2511.16043, +18-24%):
+127-   - From successful episodes: extract "task types where autopilot succeeded" as `success_patterns`
+128-   - Format: "Previously succeeded at: [task_type_1, task_type_2, ...]"
+129-   - Store in working context as `{success_patterns}` — used in Step 6b to calibrate goal elevation
+--
+139-       "original_goal": "<user's task description>",
+140-       "level": 0,
+141-       "sub_goals": [],
+142:       "evolution_count": 0,
+143:       "evolution_history": [],
+144-       "reward_spec": {"primary_metric": "task completion", "threshold": "all acceptance criteria met"},
+145-       "history": []
+146-     }
+147-     ```
+148-     Note: `original_goal` is set ONCE at init and NEVER overwritten — it is the immutable reference
+149:     for alignment checks and goal_fidelity scoring throughout the entire run.
+150-   - Display: "Outer goal: [root_goal]. Starting iteration 1/{max_outer_iterations}."
+151-
+152-2.5. **Load domain profile** (skip if `domain_profile: null`):
+--
+182-   # Alignment Check runs from iteration 2+ because: (FIX-2)
+183-   # - Iteration 1: root_goal == original_goal by definition (no drift possible yet)
+184-   # - Iteration 2+: goal may have evolved from Step 6b in prior iter → drift check needed
+185:   # Exception: if first iteration itself triggers goal evolution (early_evolve flag),
+186:   #            alignment check runs before that evolution is committed.
+187-   Verify `root_goal` still aligns with `original_goal` BEFORE invoking autopilot:
+188-   ```
+189-   ALIGNMENT CHECK PROMPT (1 call, goal_check_model):
+190-   Original user goal: {original_goal}
+191-   Current goal (may be evolved): {root_goal}
+192:   Evolution depth: {evolution_count}
+193-
+194-   Rate semantic alignment (0.0 to 1.0):
+195-   1.0 = same intent, just more specific
+--
+344-   - Never invoke skills that are already part of the standard omc-live loop (omc-episode-memory, omc-goal-tree, omc-autopilot, omc-failure-router).
+345-   - If routing produces no match and Tier 2 is uncertain: skip router, continue to autopilot as normal.
+346-
+347:   **DISPATCH Layer** (P4 — replaces "RECOMMENDATIONS" passive injection):
+348-   ```
+349-   # ORCHESTRATOR MAP: task_type → dedicated orchestrator skill
+350:   # When a task_type has an orchestrator, omc-live DELEGATES directly — skips omc-autopilot.
+351-   ORCHESTRATOR_MAP = {
+352-       "business":  "biz-autopilot",       # 6-phase biz cycle (researcher/marketer/content-writer/sales/ops)
+353-       "research":  "expert-research-v2",   # 3-agent research pipeline
+--
+358-       # code / debug / ui → no orchestrator → AUTOPILOT mode (omc-autopilot)
+359-   }
+360-
+361:   # DISPATCH MODE DECISION
+362-   def determine_dispatch_mode(task_type, selected_skills):
+363-       if task_type in ORCHESTRATOR_MAP:
+364-           # Verify orchestrator skill actually exists in available_skills
+365-           orch = ORCHESTRATOR_MAP[task_type]
+366-           if orch in available_skills:
+367:               return "DELEGATE", orch
+368-       if len(selected_skills) >= 2 and task_type not in ["code", "debug", "ui"]:
+369-           return "FAN_OUT", selected_skills[:2]
+370-       return "AUTOPILOT", None
+371-
+372-   dispatch_mode, dispatch_target = determine_dispatch_mode(task_type, selected_skills)
+373:   emit: "[DISPATCH] mode={dispatch_mode} | target={dispatch_target}"
+374-
+375-   # USER CONSENT GATE — required before any external publish/post action
+376-   # Fire ONLY when: dispatch_target is biz-autopilot AND goal contains publish/post keywords
+377:   if dispatch_mode == "DELEGATE" and any(kw in root_goal.lower()
+378-       for kw in ["publish", "post", "submit", "게시", "홍보", "제출"]):
+379-       emit: "[CONSENT] About to execute external publish action via {dispatch_target}."
+380-       emit: "         Confirm: Y=proceed / N=skip external publish / S=stop loop"
+381-       wait_for_user_consent()   # pause here; resume on Y
+382-
+383:   if dispatch_mode == "DELEGATE":
+384-       # Invoke the orchestrator skill directly — omc-autopilot is SKIPPED this iteration
+385-       result = invoke Skill(name=dispatch_target, args=root_goal + "\n\nContext:\n" + context_primer)
+386-       autopilot_summary = result.summary or f"Delegated to {dispatch_target}. Goal: {root_goal[:60]}"
+--
+414-
+415-### WAVE 1: Strategy Phase (runs ONCE per omc-live invocation)
+416-
+417:3f. **Wave 1 — Expert Strategy Consultation** (P5 — 2-Wave Architecture):
+418:   Wave 1 runs ONCE at the start of a fresh omc-live run to produce an optimized
+419:   execution plan before any implementation begins. Wave 2 (Steps 4+) is seeded with
+420:   this plan. On resume (live-state.json exists), Wave 1 is skipped and the saved plan
+421-   is loaded directly.
+422-
+423-   ```
+424:   # Check if Wave 1 already completed (resume guard)
+425-   if live_state.get("wave1_complete"):
+426-       wave1_plan = live_state["wave1_plan"]
+427-       emit: "[WAVE1 LOADED] Resuming with existing strategy plan"
+428-       → skip to WAVE 2 (Step 4)
+429-
+430:   # ── Wave 1 Execution ──────────────────────────────────────────
+431-   emit: "[WAVE1 START] Consulting specialist agents for: {root_goal[:60]}"
+432-
+433:   # WAVE 1 SPECIALIST MAP (task_type → strategy agents to call in parallel)
+434-   # These agents produce PLAN/STRATEGY, not implementation.
+435:   WAVE1_SPECIALISTS = {
+436-       "business":  ["biz-researcher", "biz-marketer"],          # ICP + channel strategy
+437-       "research":  ["expert-research-v2"],                       # 3-agent research pipeline
+438-       "code":      ["research-explore", "ops-planner"],          # codebase recon + approach
+--
+445-   }
+446-
+447-   # Select specialists (fallback: first 2 from available_skills if map empty)
+448:   specialists = WAVE1_SPECIALISTS.get(task_type, [])
+449-   specialists = [s for s in specialists if s in available_skills]
+450-   if not specialists:
+451-       specialists = [s for s in available_skills if s not in
+--
+465-   METHOD: <step-by-step approach, 3-5 steps>
+466-   KEY_DECISIONS: <2-3 critical choices that will determine success>
+467-   ANTI_PATTERNS: <2-3 common mistakes to avoid>
+468:   RECOMMENDED_TOOLS: <specific skills/agents to use in Wave 2>
+469-   CONSTRAINTS: <hard limits or non-negotiables>
+470-   """
+471-
+--
+499-   live_state["wave1_specialists"] = specialists
+500-   save_live_state()
+501-
+502:   emit: "[WAVE1 COMPLETE] Strategy plan ready. Entering Wave 2 execution."
+503-   emit: "  Approach: {wave1_plan['approach']}"
+504-   emit: "  Specialists consulted: {specialists}"
+505-   ```
+506-
+507:   **Wave 1 → Wave 2 handoff** (inject plan into all subsequent iterations):
+508-   ```
+509:   # Prepend wave1_plan to context_primer for every Wave 2 iteration
+510-   wave1_context_block = f"""
+511-   [WAVE 1 STRATEGY PLAN — do not override, use as execution guide]
+512-   Approach: {wave1_plan['approach']}
+--
+520-   context_primer = wave1_context_block + context_primer
+521-   ```
+522-
+523:   **Wave 1 budget**: max 2 specialist calls per task_type (cost guard).
+524-   If token estimate > 20% of context_budget → use only top-1 specialist.
+525-
+526----
+527-
+528:### WAVE 2: Execution Loop (seeded by Wave 1 plan)
+529-
+530:4. **Execute one autopilot cycle** (AUTOPILOT dispatch_mode only — skipped for DELEGATE/FAN_OUT):
+531-   - Invoke `omc-autopilot` with current goal context from GoalTree
+532-   - Pass episode context as additional instructions to Phase 0
+533-   - Track: which phase completed, outcome (success/failure/partial)
+--
+557-   Run after live-state.json is written:
+558-   ```bash
+559-   git add -u   # tracked files only — avoids staging untracked secrets (.env, credentials)
+560:   git commit -m "omc-live iter {N}/{max_outer_iterations}: {last_outcome} | goal_v{evolution_count}: {root_goal[:60]}"
+561-   ```
+562-
+563-   **Commit message format**:
+--
+656-
+657-   **Auto Oracle Detection** (runs BEFORE domain oracle check, if `domain_oracle_cmd` is null):
+658-   ```
+659:   # Self-scoring problem: LLM evaluating own work has systematic bias.
+660-   # Solution: auto-detect standard project tooling → use as ground truth oracle.
+661:   # Detected oracle scores replace LLM scoring for measurable dimensions.
+662-
+663-   auto_oracle_scores = {}
+664-
+--
+687-
+688-   # No tooling found
+689-   else:
+690:       log: "[AUTO ORACLE] No standard test tooling detected — falling back to LLM scoring"
+691-
+692-   # Extended Oracle Detection (NEW — P0-3, Source: 20260330-omc-live-critique):
+693-   # Expand deterministic oracle coverage beyond test_pass_rate and coverage.
+--
+725-           if ":" in line → parse as key: float_value
+726-       # Map oracle keys → score_dimensions (exact name match; unmapped dims → LLM fallback)
+727-       log: "[ORACLE] scores={oracle_scores}"
+728:       # For dimensions with oracle values: use as ground truth (skip LLM scoring for those dims)
+729-       # For remaining dimensions (e.g., goal_fidelity): still run LLM SCORE PROMPT
+730-   ```
+731:   If oracle exits non-zero → log "[ORACLE] command failed (exit {code}) — falling back to full LLM scoring"
+732-
+733-   **SCORE PROMPT construction** (dimension list is dynamic):
+734-   ```
+--
+761-   # Current behavior — same session scores its own work.
+762-   ```
+763-
+764:   Run this scoring prompt (llm_dims only) with goal_check_model:
+765-   ```
+766-   SCORE PROMPT:
+767-   Original user goal: {original_goal}
+768-   Current goal (may be evolved): {root_goal}
+769-   Current state description: {autopilot_summary}
+770:   Evolution depth so far: {evolution_count} / {max_evolution_depth}
+771-
+772-   {oracle_ground_truth_block}
+773-   (Dimensions above are already scored by external oracle — treat as ground truth, do not re-score.)
+--
+840-   - Cross-model diversity is NOT needed for bias correction (research shows p=0.12 non-significant);
+841-     ensemble of same model reduces variance without the cost of cross-model coordination.
+842-
+843:   **Preferred scoring hierarchy** (reduces self-scoring bias):
+844-   ```
+845-   1. domain_oracle_cmd (explicit)   → highest trust (external, deterministic)
+846-   2. auto_oracle (pytest/npm test)  → high trust (deterministic, objective)
+847-   3. LLM SCORE PROMPT               → fallback only (subjective, bias-prone)
+848-   ```
+849:   LLM scoring should cover ONLY non-measurable dimensions (goal_fidelity, quality aesthetics).
+850-   Measurable dimensions (test_pass_rate, coverage, build_success) MUST use oracle or auto-oracle.
+851-
+852-   **Goal Fidelity Gate** (applied before EVOLVE decision):
+--
+896-   **Decide: CONVERGED or EVOLVE?**
+897-   ```
+898-   if plateau_count >= plateau_k:             → CONVERGED (check min_convergence_score)
+899:   if evolution_count >= max_evolution_depth: → CONVERGED (depth limit, check min_convergence_score)
+900-   if delta >= epsilon AND budget remains:    → EVOLVE (continue with elevated goal)
+901-   if delta < epsilon (plateau_count < plateau_k): → continue loop (same goal, wait for plateau)
+902-   ```
+--
+918-   **Progressive tree-search** (Research basis: AI Scientist-v2, Nature 2026, arXiv:2504.08066):
+919-   Generate 3 candidate evolved goals in parallel, then prune to the best 1 before executing.
+920-
+921:   Run this goal evolution prompt:
+922-   ```
+923-   GOAL EVOLUTION PROMPT:
+924-   Original goal: {root_goal}
+--
+926-   Score breakdown: quality={q}, completeness={c}, efficiency={e}, impact={i}
+927-   Weakest dimension: {min_dimension} = {min_score:.2f}
+928-   Past successful strategies (from episodes): {success_patterns}
+929:   Past failure patterns (from loaded episodes — may be empty on first evolution): {failure_patterns|default:"none"}
+930-   Current run failure patterns (this session so far): {current_run_failures|default:"none"}
+931-
+932-   The current goal has been achieved. Generate 3 DISTINCT candidate next-level goals.
+--
+965-       effective_exploration_rate = max(exploration_rate * 0.5, 0.05)
+966-       log: "[EXPLORE] High variance ({score_variance:.2f}) — reducing exploration to {effective_exploration_rate:.2f}"
+967-
+968:   if evolution_count >= 1 AND random_roll() < effective_exploration_rate:
+969-       # 20% probability: override CANDIDATE_3 to explore beyond weakest dimension
+970:       explore_dim = first dimension from score_dimensions NOT already targeted in evolution_history
+971-       if all dimensions targeted → explore a NEW sub-goal scope not in goal tree
+972-       Replace CANDIDATE_3 generation instruction with:
+973-           "Generate a goal that explores {explore_dim} or a wholly new scope,
+--
+975-            This is the exploration branch — surprise is allowed."
+976-       log: "[EVOLVE] Exploration branch activated — CANDIDATE_3 targets {explore_dim}"
+977-   ```
+978:   Prevents pure exploitation trap (weakest-dimension-always → local optimum after 2-3 evolutions).
+979-
+980-   **Look-ahead pruning** (replaces 1-sentence assessment — Research: AI Scientist-v2 arXiv:2504.08066):
+981-   ```
+--
+984-   LOOK-AHEAD PROMPT (1 call, all 3 candidates in same prompt):
+985-   Remaining iterations: {max_outer_iterations - current_iteration}
+986-   Current score breakdown: {score_breakdown}
+987:   evolution_history: {evolution_history[-3:]}  # last 3 goals
+988-
+989-   For each candidate goal below, rate (0.0–1.0):
+990-   - dimension_fit: how directly does this goal improve {min_dimension}?
+991:   - novelty: how distinct is this from previous evolution_history goals? (1.0 = completely new direction)
+992-   - feasibility: achievable within {remaining_iterations} autopilot cycle(s)?
+993-
+994-   CANDIDATE_1: {candidate_1_goal}
+--
+1017-
+1018-   ```
+1019-   # Cumulative fidelity tracking (NEW — P2-8):
+1020:   # Prevent gradual goal drift through multiple evolution steps
+1021-   new_goal_fidelity = evaluate_fidelity(new_goal, original_goal)
+1022-   cumulative_fidelity *= new_goal_fidelity  # running product since run start
+1023-
+--
+1041-     ```json
+1042-     {
+1043-       "root_goal": "<evolved goal>",
+1044:       "evolution_history": [
+1045-         {"iteration": N, "goal": "<previous goal>", "score": X.XX, "rationale": "..."}
+1046-       ]
+1047-     }
+1048-     ```
+1049:   - Increment `evolution_count` in live-state
+1050-   - Report: `[EVOLVE iter {N}] Score: {current_score:.2f} (+{delta:.2f}). New goal: {evolved_goal}`
+1051-   - Go to Step 4 (run another autopilot cycle with elevated goal)
+1052-
+1053-7. **Branch on evaluation result**:
+1054-
+1055:   **CONVERGED** (self-evolution complete — plateau or depth limit reached):
+1056-
+1057-   First, check quality gate:
+1058-   ```
+--
+1094-   - Delete `.omc/live-state.json`
+1095-   - Report convergence summary:
+1096-     ```
+1097:     omc-live CONVERGED after {N} iterations ({evolution_count} goal evolutions)
+1098-     Final goal: {root_goal}
+1099-     Best score: {best_score:.2f} / 1.00
+1100-     Score trajectory: {iter1=score, iter2=score, ...}
+--
+1114-     ```
+1115-     ## omc-live CONVERGED_STALE — Quality Below Threshold
+1116-     Best score achieved: {best_score:.2f} / min required: {min_convergence_score:.2f}
+1117:     Iterations: {N} | Evolutions: {evolution_count}
+1118-     Final goal: {root_goal}
+1119-
+1120-     The system converged but could not reach minimum quality.
+--
+1131-     4. Rollback to best iteration above and continue manually
+1132-     ```
+1133-
+1134:   **ACHIEVED (evolve_mode=false)** (classic termination — outer goal met, no evolution):
+1135-   - Call `omc-episode-memory` (save) with outcome=success, high_quality=true
+1136-   - Delete `.omc/live-state.json`
+1137-   - Report completion summary with stats:
+--
+1215-   Level 3: goal substitution (root_goal category change) — REQUIRES user approval
+1216-             Example: "write tests" → "rewrite the module" = Level 3
+1217-   ```
+1218:   Note: Level 3 is semantically distinct from max_evolution_depth.
+1219:   - max_evolution_depth: limits voluntary self-evolution cycles
+1220-   - Level 3: triggers on involuntary Fatal failure → omc-goal-tree upgrade
+1221-
+1222-   Handling:
+1223-   - Present to user: "Goal fundamentally changed (Level 3). New goal: [new_goal]. Continue? [Y/N]"
+1224-   - If stop_on_fatal_escalation=true AND user not responding → save + stop
+1225:   - If approved → reset iteration counter (NOT evolution_count), continue with new goal
+1226-
+1227----
+1228-
+--
+1286-| File | Purpose | Lifecycle |
+1287-|------|---------|-----------|
+1288-| `.omc/episodes.jsonl` | Execution history (all runs) | Never deleted by omc-live |
+1289:| `.omc/goal-tree.json` | Current GoalTree + evolution history | Preserved between iterations; deleted on convergence |
+1290:| `.omc/live-state.json` | Iteration counter + evolution state | Deleted on convergence; preserved on partial/failure |
+1291-| `.omc/failure-history.json` | Per-error backoff counters | Managed by omc-failure-router |
+1292-| `.omc/live-progress.log` | Per-iteration JSONL progress log (NEW — P1-5) | Append-only; never deleted |
+1293-
+--
+1303-  "current_goal_fidelity": 1.0,
+1304-  "score_variance": 0.0,
+1305-  "plateau_count": 0,
+1306:  "evolution_count": 0,
+1307-  "score_history": [
+1308-    {"iteration": 1, "score": 0.72, "goal_fidelity": 1.0, "goal_version": 0, "score_variance": 0.05},
+1309-    {"iteration": 2, "score": 0.81, "goal_fidelity": 0.85, "goal_version": 1, "score_variance": 0.02}
+--
+1316-```
+1317-**Compliance**: All required fields MUST be present. Missing fields are filled with defaults and logged (see P1-3 compliance check in CONVERGED_SUCCESS).
+1318-
+1319:**goal-tree.json evolution extension**:
+1320-```json
+1321-{
+1322-  "root_goal": "<current goal (may be evolved)>",
+1323-  "original_goal": "<user's initial task description>",
+1324:  "evolution_history": [
+1325-    {"iteration": N, "goal": "<prev goal>", "score": 0.XX, "rationale": "..."}
+1326-  ],
+1327-  "level": 0,
+--
+1354-    │               │
+1355-    │               ├── NO → GoalTree Level 1 update → loop again
+1356-    │               ├── UNCERTAIN → human escalation
+1357:    │               └── YES → [SCORE] multi-dimensional scoring (Step 6a)
+1358-    │                             │
+1359-    │                             ├── delta >= epsilon → [EVOLVE] goal elevation (Step 6b)
+1360-    │                             │       └── goal-tree updated → loop again (elevated goal)
+--
+1362-    │                             └── delta < epsilon for plateau_k → CONVERGED
+1363-    │
+1364-    └─[END]──► omc-episode-memory (save, high_quality) + live-state cleanup
+1365:               + convergence summary with score trajectory + evolution history
+1366-```
+1367-</Integration_Map>
+1368-

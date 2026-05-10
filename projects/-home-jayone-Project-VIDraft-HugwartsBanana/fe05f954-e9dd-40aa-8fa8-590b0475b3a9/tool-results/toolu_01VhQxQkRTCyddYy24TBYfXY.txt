@@ -1,0 +1,195 @@
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1013-        if (dbError) {
+src/components/banana/SimpleBananaGenerator.tsx-1014-          console.error('[SimpleBananaGenerator] DB 레코드 생성 실패:', dbError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1015-
+src/components/banana/SimpleBananaGenerator.tsx:1016:          // 크레딧 환불 (Plan B: Direct Edge Function call with user token)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1017-          try {
+src/components/banana/SimpleBananaGenerator.tsx-1018-            const { data: { session } } = await supabase.auth.getSession()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1019-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1020-            if (!session) {
+src/components/banana/SimpleBananaGenerator.tsx:1021:              console.error('[SimpleBananaGenerator] 세션이 없어서 환불 불가')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1022-            } else {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1023-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1024-              const response = await fetch(`${supabaseUrl}/functions/v1/refund-credit`, {
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1037-              const refundData = await response.json()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1038-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1039-              if (!response.ok) {
+src/components/banana/SimpleBananaGenerator.tsx:1040:                console.error('[SimpleBananaGenerator] 환불 실패:', refundData)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1041-              } else {
+src/components/banana/SimpleBananaGenerator.tsx:1042:                console.log(`[SimpleBananaGenerator] ✅ 크레딧 환불 성공: ${refundData.refunded} 바나나`)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1043-              }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1044-            }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1045-          } catch (refundError) {
+src/components/banana/SimpleBananaGenerator.tsx:1046:            console.error('[SimpleBananaGenerator] 크레딧 환불 API 호출 실패:', refundError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1047-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1048-
+src/components/banana/SimpleBananaGenerator.tsx-1049-          throw new Error(`DB 레코드 생성 실패: ${dbError.message}`)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1215-        })
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1216-
+src/components/banana/SimpleBananaGenerator.tsx-1217-        } catch (error: any) {
+src/components/banana/SimpleBananaGenerator.tsx:1218:          // nano_banana_pro 생성 실패 시 DB 업데이트 및 크레딧 반환
+src/components/banana/SimpleBananaGenerator.tsx-1219-          console.error('[SimpleBananaGenerator] nano_banana_pro 생성 실패:', error)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1220-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1221-          if (transformationId) {
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1228-              .eq('id', transformationId)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1229-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1230-
+src/components/banana/SimpleBananaGenerator.tsx:1231:          // 크레딧 환불 (Plan B: Direct Edge Function call with user token)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1232-          try {
+src/components/banana/SimpleBananaGenerator.tsx-1233-            const { data: { session } } = await supabase.auth.getSession()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1234-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1235-            if (!session) {
+src/components/banana/SimpleBananaGenerator.tsx:1236:              console.error('[SimpleBananaGenerator] 세션이 없어서 환불 불가')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1237-            } else {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1238-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1239-              const response = await fetch(`${supabaseUrl}/functions/v1/refund-credit`, {
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1252-              const refundData = await response.json()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1253-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1254-              if (!response.ok) {
+src/components/banana/SimpleBananaGenerator.tsx:1255:                console.error('[SimpleBananaGenerator] 크레딧 반환 실패:', refundData)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1256-              } else {
+src/components/banana/SimpleBananaGenerator.tsx:1257:                console.log(`[SimpleBananaGenerator] ✅ 크레딧 반환 성공: ${refundData.refunded} 바나나`)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1258-              }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1259-            }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1260-          } catch (refundError) {
+src/components/banana/SimpleBananaGenerator.tsx:1261:            console.error('[SimpleBananaGenerator] 크레딧 환불 API 호출 실패:', refundError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1262-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1263-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1264-          throw error
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1341-        if (dbError) {
+src/components/banana/SimpleBananaGenerator.tsx-1342-          console.error('[SimpleBananaGenerator] DB 레코드 생성 실패:', dbError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1343-
+src/components/banana/SimpleBananaGenerator.tsx:1344:          // 크레딧 환불 (Plan B: Direct Edge Function call with user token)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1345-          try {
+src/components/banana/SimpleBananaGenerator.tsx-1346-            const { data: { session } } = await supabase.auth.getSession()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1347-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1348-            if (!session) {
+src/components/banana/SimpleBananaGenerator.tsx:1349:              console.error('[SimpleBananaGenerator] 세션이 없어서 환불 불가')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1350-            } else {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1351-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1352-              const response = await fetch(`${supabaseUrl}/functions/v1/refund-credit`, {
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1365-              const refundData = await response.json()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1366-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1367-              if (!response.ok) {
+src/components/banana/SimpleBananaGenerator.tsx:1368:                console.error('[SimpleBananaGenerator] 환불 실패:', refundData)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1369-              } else {
+src/components/banana/SimpleBananaGenerator.tsx:1370:                console.log(`[SimpleBananaGenerator] ✅ 크레딧 환불 성공: ${refundData.refunded} 바나나`)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1371-              }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1372-            }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1373-          } catch (refundError) {
+src/components/banana/SimpleBananaGenerator.tsx:1374:            console.error('[SimpleBananaGenerator] 크레딧 환불 API 호출 실패:', refundError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1375-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1376-
+src/components/banana/SimpleBananaGenerator.tsx-1377-          throw new Error(`DB 레코드 생성 실패: ${dbError.message}`)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1517-        })
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1518-
+src/components/banana/SimpleBananaGenerator.tsx-1519-        } catch (error: any) {
+src/components/banana/SimpleBananaGenerator.tsx:1520:          // nano_banana 생성 실패 시 DB 업데이트 및 크레딧 반환
+src/components/banana/SimpleBananaGenerator.tsx-1521-          console.error('[SimpleBananaGenerator] nano_banana 생성 실패:', error)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1522-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1523-          // DB 레코드를 failed로 업데이트
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1531-              .eq('id', transformationId)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1532-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1533-
+src/components/banana/SimpleBananaGenerator.tsx:1534:          // 크레딧 환불 (Plan B: Direct Edge Function call with user token)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1535-          if (shouldRefund) {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1536-            try {
+src/components/banana/SimpleBananaGenerator.tsx-1537-              const { data: { session } } = await supabase.auth.getSession()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1538-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1539-              if (!session) {
+src/components/banana/SimpleBananaGenerator.tsx:1540:                console.error('[SimpleBananaGenerator] 세션이 없어서 환불 불가')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1541-              } else {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1542-                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1543-                const response = await fetch(`${supabaseUrl}/functions/v1/refund-credit`, {
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1556-                const refundData = await response.json()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1557-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1558-                if (!response.ok) {
+src/components/banana/SimpleBananaGenerator.tsx:1559:                  console.error('[SimpleBananaGenerator] 크레딧 반환 실패:', refundData)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1560-                } else {
+src/components/banana/SimpleBananaGenerator.tsx:1561:                  console.log(`[SimpleBananaGenerator] ✅ 크레딧 반환 성공: ${refundData.refunded} 바나나`)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1562-                  addNotification({
+src/components/banana/SimpleBananaGenerator.tsx-1563-                    type: 'info',
+src/components/banana/SimpleBananaGenerator.tsx-1564-                    message: t('image.refund_on_failure')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1566-                }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1567-              }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1568-            } catch (refundError) {
+src/components/banana/SimpleBananaGenerator.tsx:1569:              console.error('[SimpleBananaGenerator] 크레딧 환불 API 호출 실패:', refundError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1570-            }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1571-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1572-          throw error // 에러를 다시 throw해서 아래 catch로 전달
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1625-      if (dbError2) {
+src/components/banana/SimpleBananaGenerator.tsx-1626-        console.error('[SimpleBananaGenerator] DB 레코드 생성 실패:', dbError2)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1627-
+src/components/banana/SimpleBananaGenerator.tsx:1628:        // 크레딧 환불 (Plan B: Direct Edge Function call with user token)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1629-        try {
+src/components/banana/SimpleBananaGenerator.tsx-1630-          const { data: { session } } = await supabase.auth.getSession()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1631-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1632-          if (!session) {
+src/components/banana/SimpleBananaGenerator.tsx:1633:            console.error('[SimpleBananaGenerator] 세션이 없어서 환불 불가')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1634-          } else {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1635-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1636-            const response = await fetch(`${supabaseUrl}/functions/v1/refund-credit`, {
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1649-            const refundData = await response.json()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1650-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1651-            if (!response.ok) {
+src/components/banana/SimpleBananaGenerator.tsx:1652:              console.error('[SimpleBananaGenerator] 환불 실패:', refundData)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1653-            } else {
+src/components/banana/SimpleBananaGenerator.tsx:1654:              console.log(`[SimpleBananaGenerator] ✅ 크레딧 환불 성공: ${refundData.refunded} 바나나`)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1655-            }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1656-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1657-        } catch (refundError) {
+src/components/banana/SimpleBananaGenerator.tsx:1658:          console.error('[SimpleBananaGenerator] 크레딧 환불 API 호출 실패:', refundError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1659-        }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1660-
+src/components/banana/SimpleBananaGenerator.tsx-1661-        throw new Error(`DB 레코드 생성 실패: ${dbError2.message}`)
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1779-      })
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1780-
+src/components/banana/SimpleBananaGenerator.tsx-1781-      } catch (generalError: any) {
+src/components/banana/SimpleBananaGenerator.tsx:1782:        // seedream 생성 실패 시 DB 업데이트 및 크레딧 반환
+src/components/banana/SimpleBananaGenerator.tsx-1783-        console.error('[SimpleBananaGenerator] seedream 생성 실패:', generalError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1784-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1785-        // DB 레코드를 failed로 업데이트
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1793-            .eq('id', transformationId)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1794-        }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1795-
+src/components/banana/SimpleBananaGenerator.tsx:1796:        // 크레딧 환불 (Plan B: Direct Edge Function call with user token)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1797-        if (shouldRefundGeneral) {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1798-          try {
+src/components/banana/SimpleBananaGenerator.tsx-1799-            const { data: { session } } = await supabase.auth.getSession()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1800-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1801-            if (!session) {
+src/components/banana/SimpleBananaGenerator.tsx:1802:              console.error('[SimpleBananaGenerator] 세션이 없어서 환불 불가')
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1803-            } else {
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1804-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1805-              const response = await fetch(`${supabaseUrl}/functions/v1/refund-credit`, {
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1818-              const refundData = await response.json()
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1819-
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1820-              if (!response.ok) {
+src/components/banana/SimpleBananaGenerator.tsx:1821:                console.error('[SimpleBananaGenerator] 크레딧 반환 실패:', refundData)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1822-              } else {
+src/components/banana/SimpleBananaGenerator.tsx:1823:                console.log(`[SimpleBananaGenerator] ✅ 크레딧 반환 성공: ${refundData.refunded} 바나나`)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1824-                addNotification({
+src/components/banana/SimpleBananaGenerator.tsx-1825-                  type: 'info',
+src/components/banana/SimpleBananaGenerator.tsx-1826-                  message: t('image.refund_on_failure')
+--
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1828-              }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1829-            }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1830-          } catch (refundError) {
+src/components/banana/SimpleBananaGenerator.tsx:1831:            console.error('[SimpleBananaGenerator] 크레딧 환불 API 호출 실패:', refundError)
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1832-          }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1833-        }
+/home/jayone/Project/VIDraft/HugwartsBanana/src/components/banana/SimpleBananaGenerator.tsx-1834-        throw generalError // 에러를 다시 throw해서 아래 catch로 전달

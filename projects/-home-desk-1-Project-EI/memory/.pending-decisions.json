@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-05-05T08:06:16.369930+00:00",
+  "cwd": "/home/desk-1/Project/EI",
+  "turn_count": 23,
+  "decisions": [
+    {
+      "text": "Done",
+      "context": "Done. Here's what was built: --- **T1** — `ei-cognitive-agency-surrender-theory.md` (134 lines) Digest of arxiv 2603.21735. Key content: the zero-fric",
+      "tag": "impl_complete"
+    }
+  ]
+}

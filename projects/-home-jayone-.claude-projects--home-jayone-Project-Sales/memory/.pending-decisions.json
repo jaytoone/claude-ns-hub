@@ -1,0 +1,22 @@
+{
+  "captured_at": "2026-04-15T02:34:31.399417+00:00",
+  "cwd": "/home/jayone/.claude/projects/-home-jayone-Project-Sales",
+  "turn_count": 2085,
+  "decisions": [
+    {
+      "text": "score=3.0",
+      "context": "G2-HOOKS**: `chat-memory.py` (score=3.0), `bm25-memory.py` (score=1.1) 맞습니다. CM hook이 JSONL을 직접 인덱싱하는 구조라면 JSONL을 옮기면 작동할 수 있습니다. hook 구현을 확인합니다.",
+      "tag": "metric"
+    },
+    {
+      "text": "score=1.1",
+      "context": "score=3.0), `bm25-memory.py` (score=1.1) 맞습니다. CM hook이 JSONL을 직접 인덱싱하는 구조라면 JSONL을 옮기면 작동할 수 있습니다. hook 구현을 확인합니다.",
+      "tag": "metric"
+    },
+    {
+      "text": "구현됨",
+      "context": "로덕션 배포 | | 투표 후 Chat CTA | 이미 구현됨 (발견) | | LinkedIn 공유 버튼 | 투표 후 존재 | | **LinkedIn 포스팅 (P1)** | 초안 완료, 실행 대기 | **즉시 실행 가능한 것:** 아래 포스팅을 LinkedIn에 올리면 ",
+      "tag": "impl_complete"
+    }
+  ]
+}

@@ -4,13 +4,13 @@ connections:
 - Driller
 current: —
 deadline: ''
-layer: 1
+layer: 0
 log: []
 metric: —
 milestones: []
 name: EI
 note: SVTool EI — External Intelligence / cognitive sovereignty tools
-position_x: 2
+position_x: 0
 status: paused
 target: —
 unit: ''

@@ -1389,6 +1389,11 @@ def _get_graph_cached() -> dict:
 
 
 # ── Routes ────────────────────────────────────────────────────────────
+@app.get("/ping")
+async def ping():
+    from fastapi.responses import JSONResponse as _JR
+    return _JR({"ok": True, "service": "ctx-dashboard"})
+
 @app.get("/")
 async def root():
     return FileResponse(STATIC / "index.html")

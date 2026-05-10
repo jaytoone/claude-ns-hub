@@ -1,0 +1,62 @@
+---
+name: entity-inf
+description: "Runs /entity then routes the insight output to /live-inf for unbounded autonomous execution (convergence-only termination). Use when deep autonomous problem-solving is needed. Supports -r (RAG+external knowledge), -d (domain dispatch), -rd (full pipeline) flags."
+---
+
+# /entity-inf — Harness + Unbounded Execution
+
+## Activation
+
+```
+/entity-inf [question]           ← 기본: Mode A (/conceptual only) + /live-inf
+/entity-inf -r [question]        ← Mode B: External Knowledge + /conceptual + /live-inf
+/entity-inf -d [question]        ← Mode D: L1 reframing + L2 dispatch(RAG 조건부) + /live-inf
+/entity-inf -rd [question]       ← Mode C: full pipeline (L1→L2→L1, RAG 강제) + /live-inf
+/entity-inf -dr [question]       ← -rd alias
+```
+
+**플래그 파서:**
+```python
+tokens = args.split()
+flags = set()
+question_tokens = []
+for token in tokens:
+    if token.startswith("-"):
+        flags.update(c.lower() for c in token[1:] if c.isascii() and c.isalpha())
+    else:
+        question_tokens.append(token)
+question = " ".join(question_tokens)
+
+has_r = 'r' in flags
+has_d = 'd' in flags
+
+if has_r and has_d:   mode = "C"
+elif has_r:           mode = "B"
+elif has_d:           mode = "D"
+else:                 mode = "A"
+```
+
+**마이그레이션**: `-rag` → `-r`, 도메인 dispatch만 원하면 `-d`, 도메인 + 최신데이터는 `-rd`
+
+## Protocol
+
+### Step 1: /entity 인라인 실행
+
+entity SKILL.md의 Mode Branch에 따라 실행:
+- Mode A: Step 0 + /conceptual 직접 실행
+- Mode B: Step 0 + External Knowledge + /conceptual
+- Mode C: Step 0 + L1(1st) → L2 Dispatch(RAG 강제) → Announce → L1(2nd)
+- Mode D: Step 0 + L1(1st) → L2 Dispatch(RAG 조건부) → Announce → L1(2nd)
+
+**플래그 전달**: 결정된 mode를 entity 실행에 그대로 적용.
+Mode C → Announce에 `[RAG FORCED]` 표시.
+
+### Step 2: /live-inf 전달
+
+L1 결과를 goal로 구성하여 실행:
+
+```
+Skill(skill='live-inf', args='Goal: {L1 핵심 통찰 + 구체적 next action}')
+```
+
+나머지 (world model, scoring, evolution, convergence, context rotation)는 /live-inf가 처리한다.

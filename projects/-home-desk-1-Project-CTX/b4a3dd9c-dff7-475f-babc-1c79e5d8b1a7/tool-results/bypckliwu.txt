@@ -1,0 +1,684 @@
+ M .claude-plugin/marketplace.json
+ M .github/workflows/publish.yml
+ M .gitignore
+ M .omc/episodes.jsonl
+ M .omc/goal-tree.json
+ M .omc/infinite-state.archive.jsonl
+ M .omc/infinite-state.json
+ M .omc/live-state.json
+ M .omc/session-decisions.md
+ M .omc/world-model.json
+ M CONTRIBUTING.md
+ M LICENSE
+ M benchmarks/eval/aggregated_stat_report.py
+ M benchmarks/eval/citation_probe.py
+ M benchmarks/eval/claude_sonnet_ctx_eval.py
+ M benchmarks/eval/coir_repobench_integrated_eval.py
+ M benchmarks/eval/cross_session_recall.py
+ M benchmarks/eval/decide_bench.py
+ M benchmarks/eval/decision_drr.py
+ M benchmarks/eval/doc_retrieval_eval_v2.py
+ M benchmarks/eval/downstream_llm_eval.py
+ M benchmarks/eval/expand_mab_templates.py
+ M benchmarks/eval/g1_changelog_eval.py
+ M benchmarks/eval/g1_cross_domain_generalization.py
+ M benchmarks/eval/g1_docs_bm25_eval.py
+ M benchmarks/eval/g1_docs_memory_eval.py
+ M benchmarks/eval/g1_fair_eval.py
+ M benchmarks/eval/g1_final_eval.py
+ M benchmarks/eval/g1_financebench_bm25_eval.py
+ M benchmarks/eval/g1_format_ablation_eval.py
+ M benchmarks/eval/g1_hybrid_rrf_eval.py
+ M benchmarks/eval/g1_longterm_baseline_eval.py
+ M benchmarks/eval/g1_longterm_eval.py
+ M benchmarks/eval/g1_longterm_metrics.py
+ M benchmarks/eval/g1_pageindex_eval.py
+ M benchmarks/eval/g1_regression_ctx_v2.py
+ M benchmarks/eval/g1_spiral_eval.py
+ M benchmarks/eval/g1_temporal_retention_eval.py
+ M benchmarks/eval/g2_docs_ab_test.py
+ M benchmarks/eval/g2_docs_eval.py
+ M benchmarks/eval/g2_docs_goldset.json
+ M benchmarks/eval/g2_docs_paraphrase_eval.py
+ M benchmarks/eval/g2_goldset.json
+ M benchmarks/eval/g2_goldset_scorer.py
+ M benchmarks/eval/homograph_audit.py
+ M benchmarks/eval/hook_comparison_eval.py
+ M benchmarks/eval/instruction_grounding_eval.py
+ M benchmarks/eval/latency_profiler.py
+ M benchmarks/eval/mab_n50_with_ci.py
+ M benchmarks/eval/mab_real_eval.py
+ M benchmarks/eval/mcnemar_bonferroni.py
+ M benchmarks/eval/multi_dataset_cross_session_eval.py
+ M benchmarks/eval/nemotron_ctx_eval.py
+ M benchmarks/eval/nemotron_ctx_eval_v2.py
+ M benchmarks/eval/nemotron_ctx_eval_v3.py
+ M benchmarks/eval/nemotron_ctx_eval_v4.py
+ M benchmarks/eval/project_understanding_g1_eval.py
+ M benchmarks/eval/puac_eval.py
+ M benchmarks/eval/real_codebase_downstream_eval.py
+ M benchmarks/eval/recency_rerank.py
+ M benchmarks/eval/reeval_external.py
+ M benchmarks/eval/retrieve_claudemem_faithful.py
+ M benchmarks/eval/retrieve_ctx_v2.py
+ M benchmarks/eval/retrieve_ctx_v3.py
+ M benchmarks/eval/tier1_longmemeval.py
+ M benchmarks/eval/tier1_memoryagentbench.py
+ M benchmarks/eval/trigger_surfacing_g1_eval.py
+ M benchmarks/eval/unified_g2v4_eval.py
+ M benchmarks/eval/zero_storage_g1_eval.py
+ M benchmarks/results/RESULTS_INDEX.md
+ M benchmarks/results/ablation_results.md
+ M benchmarks/results/aggregated_stat_report.md
+ M benchmarks/results/bench_comparison_summary.txt
+ M benchmarks/results/coir_ctx_vs_bm25.json
+ M benchmarks/results/coir_evaluation.json
+ M benchmarks/results/coir_evaluation.md
+ M benchmarks/results/coir_format_analysis.md
+ M benchmarks/results/coir_repobench_integrated.md
+ M benchmarks/results/coir_standard_eval.json
+ M benchmarks/results/ctx_vs_bm25_complete.json
+ M benchmarks/results/decision_recall_eval.md
+ M benchmarks/results/differentiation_analysis.md
+ M benchmarks/results/doc_retrieval_eval.md
+ M benchmarks/results/doc_retrieval_eval_v2.md
+ M benchmarks/results/drb_questions.json
+ M benchmarks/results/drb_results.json
+ M benchmarks/results/error_analysis.md
+ M benchmarks/results/external_codebase_eval.md
+ M benchmarks/results/final_bench_summary.txt
+ M benchmarks/results/final_report.md
+ M benchmarks/results/final_report_v10.md
+ M benchmarks/results/final_report_v2.md
+ M benchmarks/results/final_report_v3.md
+ M benchmarks/results/final_report_v4.md
+ M benchmarks/results/final_report_v5.md
+ M benchmarks/results/final_report_v6.md
+ M benchmarks/results/final_report_v7.md
+ M benchmarks/results/final_report_v8.md
+ M benchmarks/results/final_report_v9.md
+ M benchmarks/results/g1_gitlog_hook_test.json
+ M benchmarks/results/g1_hybrid_rrf_eval.md
+ M benchmarks/results/g1_iter4_synonym_temporal_results.json
+ M benchmarks/results/g1_longterm_eval_report.md
+ M benchmarks/results/g1_openset_qa_pairs.json
+ M benchmarks/results/g1_openset_report.md
+ M benchmarks/results/g1_openset_results.json
+ M benchmarks/results/g2_prefetch_benchmark.json
+ M benchmarks/results/g2_prefetch_results.json
+ M benchmarks/results/g2v4_minimax_20260329_115254.json
+ M benchmarks/results/g2v4_nemotron_20260329.json
+ M benchmarks/results/g2v4_unified_comparison.json
+ M benchmarks/results/hook_effectiveness_eval.md
+ M benchmarks/results/hybrid_evaluation.md
+ M benchmarks/results/llm_quality_openrouter.md
+ M benchmarks/results/llm_quality_opensource.md
+ M benchmarks/results/llm_quality_report.md
+ M benchmarks/results/llm_quality_report_v2.md
+ M benchmarks/results/mcp_code_search_headtohead.md
+ M benchmarks/results/multi_dataset_cross_session_eval.md
+ M benchmarks/results/ndcg_tes_correlation.json
+ M benchmarks/results/project_understanding_g1_results.json
+ M benchmarks/results/ranger_comparison.md
+ M benchmarks/results/reeval_external_iter11.json
+ M benchmarks/results/repobench_eval.md
+ M benchmarks/results/report_ablation_real_AgentNode.txt
+ M benchmarks/results/report_ablation_real_GraphPrompt.txt
+ M benchmarks/results/report_ablation_real_OneViral.txt
+ M benchmarks/results/report_ablation_small.txt
+ M benchmarks/results/report_medium.txt
+ M benchmarks/results/report_real_AgentNode.txt
+ M benchmarks/results/report_real_GraphPrompt.txt
+ M benchmarks/results/report_real_OneViral.txt
+ M benchmarks/results/report_real_eval_fastapi.txt
+ M benchmarks/results/report_real_eval_flask.txt
+ M benchmarks/results/report_real_eval_requests.txt
+ M benchmarks/results/report_real_fastapi.txt
+ M benchmarks/results/report_real_flask.txt
+ M benchmarks/results/report_real_requests.txt
+ M benchmarks/results/report_small.txt
+ M benchmarks/results/sonnet_ctx_g1g2_results.json
+ M benchmarks/results/trigger_accuracy.md
+ M benchmarks/results/trigger_surfacing_g1_results.json
+ M benchmarks/results/trigger_token_analysis.md
+ M benchmarks/results/zero_storage_g1_results.json
+ M commit_tree.txt
+ M compute_ndcg_correlation.py
+ M docs/ARCHITECTURE.md
+ M docs/CTX_SPEC_v1.0.md
+ M docs/DOC_INDEX.md
+ M docs/SOYA_DEPLOYMENT_GUIDE.md
+ M docs/benchmark/g1-longterm-eval-design.md
+ M docs/benchmark/g1_g2_publication_framework.md
+ M docs/claude_code_integration.md
+ M docs/decisions/20260326-concept-extraction-sema-conc.md
+ M docs/decisions/20260326-import-bfs-over-ast.md
+ M docs/decisions/20260326-non-symbols-frozenset.md
+ M docs/decisions/20260326-path-derived-module-to-file.md
+ M docs/decisions/20260326-unified-doc-code-indexing.md
+ M docs/infra/20260423-client-onboarding-north-star.md
+ M docs/infra/20260423-wsl2-remote-tailscale-tunneling.md
+ M docs/paper/CTX_paper.tex
+ M docs/paper/CTX_paper_draft.md
+ M docs/paper/README.md
+ M docs/paper/paper2_ctx_vs_claudemem_draft.md
+ M docs/paper/references.bib
+ M docs/paper_draft_outline.md
+ M docs/research/20260324-ctx-methodology-critique-top-tier.md
+ M docs/research/20260324-ctx-paper-worthiness.md
+ M docs/research/20260325-ctx-paper-tier-evaluation.md
+ M docs/research/20260325-long-session-context-management.md
+ M docs/research/20260326-ctx-achievement-review.md
+ M docs/research/20260326-ctx-benchmark-validation-roadmap.md
+ M docs/research/20260326-ctx-final-sota-comparison.md
+ M docs/research/20260326-ctx-methodology-comparison.md
+ M docs/research/20260326-ctx-results-review.md
+ M docs/research/20260326-ctx-sota-final-v2.md
+ M docs/research/20260326-ctx-vs-claudecode-tools.md
+ M docs/research/20260326-ctx-vs-industry-comparison.md
+ M docs/research/20260326-ctx-vs-sota-comparison.md
+ M docs/research/20260327-ctx-downstream-eval.md
+ M docs/research/20260327-ctx-nemotron-comparison.md
+ M docs/research/20260327-ctx-nemotron-g1g2-comparison.md
+ M docs/research/20260327-ctx-paper-numbers-critique.md
+ M docs/research/20260327-ctx-real-project-self-eval.md
+ M docs/research/20260328-adaptive-trigger-generalization-fix.md
+ M docs/research/20260328-ctx-downstream-eval-complete.md
+ M docs/research/20260328-ctx-downstream-eval-nemotron-final.md
+ M docs/research/20260328-ctx-downstream-minimax-eval.md
+ M docs/research/20260328-ctx-downstream-nemotron-eval-v2.md
+ M docs/research/20260328-ctx-downstream-nemotron-eval.md
+ M docs/research/20260328-ctx-real-codebase-g2-eval.md
+ M docs/research/20260328-trigger-classifier-semantic-fix.md
+ M docs/research/20260329-ctx-corrected-results-summary.md
+ M docs/research/20260329-ctx-hook-improvement-report.md
+ M docs/research/20260329-ctx-paper-gap-analysis.md
+ M docs/research/20260330-ctx-academic-critique-web-grounded.md
+ M docs/research/20260402-g2-evaluation-methods-research-summary.md
+ M docs/research/20260402-g2-evaluation-methods-research.md
+ M docs/research/20260402-omc-live-infinite-progress-report.md
+ M docs/research/20260402-project-understanding-evaluation-framework.md
+ M docs/research/20260407-g1-final-eval-benchmark.md
+ M docs/research/20260407-g1-spiral-eval-results.md
+ M docs/research/20260407-g1-temporal-eval-results.md
+ M docs/research/20260407-g1-temporal-evaluation-framework.md
+ M docs/research/20260407-g1g2-established-benchmarks.md
+ M docs/research/20260407-global-claude-md-critical-review.md
+ M docs/research/20260407-hook-vs-claudemd-redundancy.md
+ M docs/research/20260408-g1-format-ablation-results.md
+ M docs/research/20260408-g1-longterm-eval-initial-results.md
+ M docs/research/20260408-g1-longterm-memory-evaluation-framework.md
+ M docs/research/20260408-g1-temporal-retention-eval.md
+ M docs/research/20260408-original-intent-gap-analysis.md
+ M docs/research/20260409-bm25-memory-generalization-research.md
+ M docs/research/20260409-g1-fulleval-sota-comparison.md
+ M docs/research/20260409-g1g2-critique-and-verification.md
+ M docs/research/20260410-claude-vault-research.md
+ M docs/research/20260410-g1-fair-eval-bm25-bias.md
+ M docs/research/20260410-session-6c4f589e-chat-memory.md
+ M docs/research/20260410-vault-vector-migration-and-benchmark.md
+ M docs/research/20260411-auto-index-necessity-analysis.md
+ M docs/research/20260411-chat-memory-threshold-principled.md
+ M docs/research/20260411-g1-g2-architecture-improvements.md
+ M docs/research/20260411-g1-generalization-validation.md
+ M docs/research/20260411-hook-comparison-auto-index-vs-chat-memory.md
+ M docs/research/20260411-hook-memory-ceiling-experiment.md
+ M docs/research/20260412-semantic-gap-keyword-vs-contextual.md
+ M docs/research/20260417-ctx-semantic-search-upgrade-sota.md
+ M docs/research/20260419-ctx-report-visibility-research.md
+ M docs/research/20260421-ctx-distribution-research-replay.md
+ M docs/research/20260421-ctx-monetization-session-summary.md
+ M docs/research/20260423-ctx-vs-claudemem-evaluation-rubric-v2-paper-tier.md
+ M docs/research/20260424-claude-client-bootstrap-session-summary.md
+ M docs/research/20260424-common-port-fanout-tailscale-vs-ssh.md
+ M docs/research/20260424-mab-recency-tokenization-gap.md
+ M docs/research/20260424-memory-experiential-eval-protocol.md
+ M docs/research/20260424-memory-retrieval-benchmark-landscape.md
+ M docs/research/20260424-mirrored-localhost-session-portability.md
+ M docs/research/20260424-windows-client-onboarding-simplification.md
+ M docs/research/20260426-citation-probe-v1.md
+ M docs/research/20260426-ctx-research-critical-evaluation.md
+ M docs/research/20260426-ctx-retrieval-benchmark-synthesis.md
+ M docs/research/20260426-g1-hybrid-rrf-dense-retrieval.md
+ M docs/research/20260426-g2-code-gap-and-false-positive-analysis.md
+ M docs/research/20260426-g2-code-staleness-auto-fix.md
+ M docs/research/20260426-g2-docs-eval-corpus-drift-fix.md
+ M docs/research/20260426-g2-docs-goldset-eval.md
+ M docs/research/20260426-g2-docs-hybrid-dense-retrieval.md
+ M docs/research/20260426-g2-docs-korean-crosslingual-fix.md
+ M docs/research/20260426-mab-competency-sota-methodology.md
+ M docs/research/20260426-mab-longmemeval-validity-for-ctx.md
+ M docs/research/20260426-retrieval-node-relevance-verification.md
+ M docs/research/20260427-ctx-data-asset-status-v035.md
+ M docs/research/20260427-ctx-flywheel-data-coverage.md
+ M docs/research/20260427-ctx-plugin-distribution-research.md
+ M docs/research/20260427-ctx-telemetry-implementation.md
+ M docs/research/20260427-ctx-user-data-flywheel-strategy.md
+ M docs/research/20260427-dashboard-semantic-appeal-spec.md
+ M docs/research/20260427-dashboard-semantic-closeness-cm-fix.md
+ M docs/research/20260427-dashboard-ui-multilens-eval.md
+ M docs/research/20260427-pre-format-backup-inventory.md
+ M docs/research/MCP_AUTOMATION_RESEARCH.md
+ M docs/research/QUICK_REFERENCE.md
+ M docs/research/README.md
+ M docs/research/generate_ctx_bm25_report.py
+ M docs/research/generate_ctx_nemotron_report.py
+ M docs/research/generate_full_report.py
+ M docs/research/generate_soya_validation_report.py
+ M hf_space/README.md
+ M hf_space/app.py
+ M hf_space/requirements.txt
+ M hf_space_dashboard/app.py
+ M hf_space_dashboard/bench_endpoint.py
+ M hf_space_dashboard/puac_endpoint.py
+ M hf_space_dashboard/static/app.js
+ M hf_space_dashboard/static/bench.html
+ M hf_space_dashboard/static/index.html
+ M hf_space_dashboard/static/puac.html
+ M hf_space_dashboard/static/styles.css
+ M hf_space_dashboard/tier3_pairwise.py
+ M plugin/.claude-plugin/plugin.json
+ M requirements.txt
+ M resume-session.sh
+ M run_coir_eval.py
+ M run_experiment.py
+ M run_llm_eval.py
+ M run_llm_eval_openrouter.py
+ M run_llm_eval_opensource.py
+ M run_llm_eval_v2.py
+ M scripts/publish.sh
+ M src/analysis/differentiation.py
+ M src/analysis/error_analysis.py
+ M src/analysis/trigger_accuracy.py
+ M src/cli/telemetry.py
+ M src/data/dataset_generator.py
+ M src/data/real_codebase_loader.py
+ M src/evaluator/benchmark_runner.py
+ M src/evaluator/coir_evaluator.py
+ M src/evaluator/doc_retrieval_eval.py
+ M src/evaluator/downstream_quality.py
+ M src/evaluator/hook_effectiveness_eval.py
+ M src/evaluator/llm_quality.py
+ M src/evaluator/metrics.py
+ M src/evaluator/ranger_comparison.py
+ M src/evaluator/repobench_evaluator.py
+ M src/evaluator/statistical_tests.py
+ M src/hooks/_ctx_telemetry.py
+ M src/hooks/ctx-telemetry
+ M src/hooks/g2-fallback.py
+ M src/hooks/memory-keyword-trigger.py
+ M src/hooks/utility-rate.py
+ M src/retrieval/ablation_variants.py
+ M src/retrieval/adaptive_trigger.py
+ M src/retrieval/bm25_retriever.py
+ M src/retrieval/chroma_retriever.py
+ M src/retrieval/context_selector.py
+ M src/retrieval/dense_retriever.py
+ M src/retrieval/full_context.py
+ M src/retrieval/graph_rag.py
+ M src/retrieval/hybrid_dense_ctx.py
+ M src/retrieval/llamaindex_retriever.py
+ M src/retrieval/ranger_approx.py
+ M src/trigger/trigger_classifier.py
+ M src/visualizer/report.py
+ M tests/benchmark_before_after.py
+ M tests/benchmark_results.json
+ M tests/test_ast_improvements.py
+ M tests/test_trigger_classifier_ko.py
+?? .playwright-mcp/
+?? :1
+?? docs/CTX_v0310_validation_report_KO.docx
+?? docs/decisions/20260506-ctx-monetization-next-items.md
+?? docs/demo-script-v1.0.md
+?? docs/infra/20260429-windows-native-claude-code-setup.md
+?? docs/infra/hook-python-requirements.md
+?? docs/marketing/
+?? docs/media/ctx-dashboard-demo.mp4
+?? docs/media/ctx-demo-v2.mp4
+?? docs/media/ctx-graph-signal.webm
+?? docs/media/edit_decisions.txt
+?? docs/media/mov_final.mp4
+?? docs/media/mov_no_bgm.mp4
+?? docs/media/mov_no_bgm_v2.mp4
+?? docs/media/mov_preview.jpg
+?? docs/media/mov_trimmed.mp4
+?? docs/media/pip_face_cam.mp4
+?? docs/media/preview_0s.jpg
+?? docs/media/preview_120s.jpg
+?? docs/media/preview_180s.jpg
+?? docs/media/preview_300s.jpg
+?? docs/media/preview_30s.jpg
+?? docs/media/preview_60s.jpg
+?? docs/media/transcript_cleaned.txt
+?? docs/research/20260429-ctx-crossplatform-distribution-readiness.md
+?? docs/research/20260502-ctx-plugin-install-validation.md
+?? memory/
+---
+ .claude-plugin/marketplace.json                    |    36 +-
+ .github/workflows/publish.yml                      |    74 +-
+ .gitignore                                         |   106 +-
+ .omc/episodes.jsonl                                |    16 +-
+ .omc/goal-tree.json                                |    22 +-
+ .omc/infinite-state.archive.jsonl                  |     2 +-
+ .omc/infinite-state.json                           |    80 +-
+ .omc/live-state.json                               |   514 +-
+ .omc/session-decisions.md                          |     2 +-
+ .omc/world-model.json                              |   498 +-
+ CONTRIBUTING.md                                    |    72 +-
+ LICENSE                                            |    42 +-
+ benchmarks/eval/aggregated_stat_report.py          |  1508 +-
+ benchmarks/eval/citation_probe.py                  |   508 +-
+ benchmarks/eval/claude_sonnet_ctx_eval.py          |   664 +-
+ benchmarks/eval/coir_repobench_integrated_eval.py  |  1280 +-
+ benchmarks/eval/cross_session_recall.py            |   634 +-
+ benchmarks/eval/decide_bench.py                    |  1276 +-
+ benchmarks/eval/decision_drr.py                    |   414 +-
+ benchmarks/eval/doc_retrieval_eval_v2.py           |  1192 +-
+ benchmarks/eval/downstream_llm_eval.py             |  1018 +-
+ benchmarks/eval/expand_mab_templates.py            |   248 +-
+ benchmarks/eval/g1_changelog_eval.py               |  1618 +-
+ benchmarks/eval/g1_cross_domain_generalization.py  |   914 +-
+ benchmarks/eval/g1_docs_bm25_eval.py               |   762 +-
+ benchmarks/eval/g1_docs_memory_eval.py             |   792 +-
+ benchmarks/eval/g1_fair_eval.py                    |  1000 +-
+ benchmarks/eval/g1_final_eval.py                   |   858 +-
+ benchmarks/eval/g1_financebench_bm25_eval.py       |  1420 +-
+ benchmarks/eval/g1_format_ablation_eval.py         |  1428 +-
+ benchmarks/eval/g1_hybrid_rrf_eval.py              |   712 +-
+ benchmarks/eval/g1_longterm_baseline_eval.py       |   958 +-
+ benchmarks/eval/g1_longterm_eval.py                |  1166 +-
+ benchmarks/eval/g1_longterm_metrics.py             |   764 +-
+ benchmarks/eval/g1_pageindex_eval.py               |  1072 +-
+ benchmarks/eval/g1_regression_ctx_v2.py            |   290 +-
+ benchmarks/eval/g1_spiral_eval.py                  |   736 +-
+ benchmarks/eval/g1_temporal_retention_eval.py      |  1314 +-
+ benchmarks/eval/g2_docs_ab_test.py                 |   806 +-
+ benchmarks/eval/g2_docs_eval.py                    |   480 +-
+ benchmarks/eval/g2_docs_goldset.json               |   306 +-
+ benchmarks/eval/g2_docs_paraphrase_eval.py         |   998 +-
+ benchmarks/eval/g2_goldset.json                    |   330 +-
+ benchmarks/eval/g2_goldset_scorer.py               |   320 +-
+ benchmarks/eval/homograph_audit.py                 |   538 +-
+ benchmarks/eval/hook_comparison_eval.py            |  1044 +-
+ benchmarks/eval/instruction_grounding_eval.py      |   538 +-
+ benchmarks/eval/latency_profiler.py                |   472 +-
+ benchmarks/eval/mab_n50_with_ci.py                 |   152 +-
+ benchmarks/eval/mab_real_eval.py                   |   604 +-
+ benchmarks/eval/mcnemar_bonferroni.py              |   276 +-
+ .../eval/multi_dataset_cross_session_eval.py       |  1332 +-
+ benchmarks/eval/nemotron_ctx_eval.py               |   802 +-
+ benchmarks/eval/nemotron_ctx_eval_v2.py            |   832 +-
+ benchmarks/eval/nemotron_ctx_eval_v3.py            |   760 +-
+ benchmarks/eval/nemotron_ctx_eval_v4.py            |   866 +-
+ benchmarks/eval/project_understanding_g1_eval.py   |  1088 +-
+ benchmarks/eval/puac_eval.py                       |   838 +-
+ benchmarks/eval/real_codebase_downstream_eval.py   |   622 +-
+ benchmarks/eval/recency_rerank.py                  |   226 +-
+ benchmarks/eval/reeval_external.py                 |   426 +-
+ benchmarks/eval/retrieve_claudemem_faithful.py     |   276 +-
+ benchmarks/eval/retrieve_ctx_v2.py                 |   202 +-
+ benchmarks/eval/retrieve_ctx_v3.py                 |   276 +-
+ benchmarks/eval/tier1_longmemeval.py               |   598 +-
+ benchmarks/eval/tier1_memoryagentbench.py          |   588 +-
+ benchmarks/eval/trigger_surfacing_g1_eval.py       |   492 +-
+ benchmarks/eval/unified_g2v4_eval.py               |   676 +-
+ benchmarks/eval/zero_storage_g1_eval.py            |   566 +-
+ benchmarks/results/RESULTS_INDEX.md                |    34 +-
+ benchmarks/results/ablation_results.md             |    98 +-
+ benchmarks/results/aggregated_stat_report.md       |   310 +-
+ benchmarks/results/bench_comparison_summary.txt    |    98 +-
+ benchmarks/results/coir_ctx_vs_bm25.json           |    14 +-
+ benchmarks/results/coir_evaluation.json            |  1920 +-
+ benchmarks/results/coir_evaluation.md              |    96 +-
+ benchmarks/results/coir_format_analysis.md         |   168 +-
+ benchmarks/results/coir_repobench_integrated.md    |    76 +-
+ benchmarks/results/coir_standard_eval.json         |    46 +-
+ benchmarks/results/ctx_vs_bm25_complete.json       |    60 +-
+ benchmarks/results/decision_recall_eval.md         |    60 +-
+ benchmarks/results/differentiation_analysis.md     |   256 +-
+ benchmarks/results/doc_retrieval_eval.md           |   110 +-
+ benchmarks/results/doc_retrieval_eval_v2.md        |   154 +-
+ benchmarks/results/drb_questions.json              |   240 +-
+ benchmarks/results/drb_results.json                |    52 +-
+ benchmarks/results/error_analysis.md               |   740 +-
+ benchmarks/results/external_codebase_eval.md       |   200 +-
+ benchmarks/results/final_bench_summary.txt         |   102 +-
+ benchmarks/results/final_report.md                 |   276 +-
+ benchmarks/results/final_report_v10.md             |   444 +-
+ benchmarks/results/final_report_v2.md              |   396 +-
+ benchmarks/results/final_report_v3.md              |   442 +-
+ benchmarks/results/final_report_v4.md              |   290 +-
+ benchmarks/results/final_report_v5.md              |   456 +-
+ benchmarks/results/final_report_v6.md              |   366 +-
+ benchmarks/results/final_report_v7.md              |   286 +-
+ benchmarks/results/final_report_v8.md              |   530 +-
+ benchmarks/results/final_report_v9.md              |   474 +-
+ benchmarks/results/g1_gitlog_hook_test.json        |    70 +-
+ benchmarks/results/g1_hybrid_rrf_eval.md           |  3066 +--
+ .../results/g1_iter4_synonym_temporal_results.json |    58 +-
+ benchmarks/results/g1_longterm_eval_report.md      |   188 +-
+ benchmarks/results/g1_openset_qa_pairs.json        |   324 +-
+ benchmarks/results/g1_openset_report.md            |    66 +-
+ benchmarks/results/g1_openset_results.json         |  1294 +-
+ benchmarks/results/g2_prefetch_benchmark.json      |   296 +-
+ benchmarks/results/g2_prefetch_results.json        |   482 +-
+ .../results/g2v4_minimax_20260329_115254.json      |   152 +-
+ benchmarks/results/g2v4_nemotron_20260329.json     |    76 +-
+ benchmarks/results/g2v4_unified_comparison.json    |    80 +-
+ benchmarks/results/hook_effectiveness_eval.md      |   230 +-
+ benchmarks/results/hybrid_evaluation.md            |   170 +-
+ benchmarks/results/llm_quality_openrouter.md       |   158 +-
+ benchmarks/results/llm_quality_opensource.md       |   198 +-
+ benchmarks/results/llm_quality_report.md           |   106 +-
+ benchmarks/results/llm_quality_report_v2.md        |   198 +-
+ benchmarks/results/mcp_code_search_headtohead.md   |   114 +-
+ .../results/multi_dataset_cross_session_eval.md    |   366 +-
+ benchmarks/results/ndcg_tes_correlation.json       |   382 +-
+ .../results/project_understanding_g1_results.json  |   486 +-
+ benchmarks/results/ranger_comparison.md            |   130 +-
+ benchmarks/results/reeval_external_iter11.json     |  3778 ++--
+ benchmarks/results/repobench_eval.md               |   170 +-
+ .../results/report_ablation_real_AgentNode.txt     |   106 +-
+ .../results/report_ablation_real_GraphPrompt.txt   |   106 +-
+ .../results/report_ablation_real_OneViral.txt      |   106 +-
+ benchmarks/results/report_ablation_small.txt       |   106 +-
+ benchmarks/results/report_medium.txt               |    98 +-
+ benchmarks/results/report_real_AgentNode.txt       |   100 +-
+ benchmarks/results/report_real_GraphPrompt.txt     |   100 +-
+ benchmarks/results/report_real_OneViral.txt        |   100 +-
+ benchmarks/results/report_real_eval_fastapi.txt    |   112 +-
+ benchmarks/results/report_real_eval_flask.txt      |   122 +-
+ benchmarks/results/report_real_eval_requests.txt   |   112 +-
+ benchmarks/results/report_real_fastapi.txt         |   112 +-
+ benchmarks/results/report_real_flask.txt           |   112 +-
+ benchmarks/results/report_real_requests.txt        |   112 +-
+ benchmarks/results/report_small.txt                |    98 +-
+ benchmarks/results/sonnet_ctx_g1g2_results.json    |    66 +-
+ benchmarks/results/trigger_accuracy.md             |    84 +-
+ .../results/trigger_surfacing_g1_results.json      |  1196 +-
+ benchmarks/results/trigger_token_analysis.md       |   136 +-
+ benchmarks/results/zero_storage_g1_results.json    | 20874 +++++++++----------
+ commit_tree.txt                                    |    24 +-
+ compute_ndcg_correlation.py                        |   406 +-
+ docs/ARCHITECTURE.md                               |   266 +-
+ docs/CTX_SPEC_v1.0.md                              |   898 +-
+ docs/DOC_INDEX.md                                  |   369 +-
+ docs/SOYA_DEPLOYMENT_GUIDE.md                      |   520 +-
+ docs/benchmark/g1-longterm-eval-design.md          |  1022 +-
+ docs/benchmark/g1_g2_publication_framework.md      |   270 +-
+ docs/claude_code_integration.md                    |   274 +-
+ .../20260326-concept-extraction-sema-conc.md       |    74 +-
+ docs/decisions/20260326-import-bfs-over-ast.md     |    56 +-
+ docs/decisions/20260326-non-symbols-frozenset.md   |    74 +-
+ .../20260326-path-derived-module-to-file.md        |    68 +-
+ .../20260326-unified-doc-code-indexing.md          |    94 +-
+ .../infra/20260423-client-onboarding-north-star.md |   354 +-
+ .../20260423-wsl2-remote-tailscale-tunneling.md    |   878 +-
+ docs/paper/CTX_paper.tex                           |   908 +-
+ docs/paper/CTX_paper_draft.md                      |  1086 +-
+ docs/paper/README.md                               |    16 +-
+ docs/paper/paper2_ctx_vs_claudemem_draft.md        |  1004 +-
+ docs/paper/references.bib                          |   166 +-
+ docs/paper_draft_outline.md                        |   378 +-
+ .../20260324-ctx-methodology-critique-top-tier.md  |    80 +-
+ docs/research/20260324-ctx-paper-worthiness.md     |    48 +-
+ .../research/20260325-ctx-paper-tier-evaluation.md |   138 +-
+ .../20260325-long-session-context-management.md    |   234 +-
+ docs/research/20260326-ctx-achievement-review.md   |   198 +-
+ .../20260326-ctx-benchmark-validation-roadmap.md   |   180 +-
+ .../research/20260326-ctx-final-sota-comparison.md |   324 +-
+ .../20260326-ctx-methodology-comparison.md         |   414 +-
+ docs/research/20260326-ctx-results-review.md       |   158 +-
+ docs/research/20260326-ctx-sota-final-v2.md        |   394 +-
+ docs/research/20260326-ctx-vs-claudecode-tools.md  |   234 +-
+ .../20260326-ctx-vs-industry-comparison.md         |   192 +-
+ docs/research/20260326-ctx-vs-sota-comparison.md   |   144 +-
+ docs/research/20260327-ctx-downstream-eval.md      |   274 +-
+ docs/research/20260327-ctx-nemotron-comparison.md  |   682 +-
+ .../20260327-ctx-nemotron-g1g2-comparison.md       |   472 +-
+ .../20260327-ctx-paper-numbers-critique.md         |    64 +-
+ .../20260327-ctx-real-project-self-eval.md         |   318 +-
+ ...20260328-adaptive-trigger-generalization-fix.md |   190 +-
+ .../20260328-ctx-downstream-eval-complete.md       |   268 +-
+ .../20260328-ctx-downstream-eval-nemotron-final.md |   356 +-
+ .../20260328-ctx-downstream-minimax-eval.md        |   218 +-
+ .../20260328-ctx-downstream-nemotron-eval-v2.md    |   238 +-
+ .../20260328-ctx-downstream-nemotron-eval.md       |   272 +-
+ .../research/20260328-ctx-real-codebase-g2-eval.md |   202 +-
+ .../20260328-trigger-classifier-semantic-fix.md    |   138 +-
+ .../20260329-ctx-corrected-results-summary.md      |   228 +-
+ .../20260329-ctx-hook-improvement-report.md        |   312 +-
+ docs/research/20260329-ctx-paper-gap-analysis.md   |   348 +-
+ .../20260330-ctx-academic-critique-web-grounded.md |   324 +-
+ ...60402-g2-evaluation-methods-research-summary.md |   616 +-
+ .../20260402-g2-evaluation-methods-research.md     |   754 +-
+ .../20260402-omc-live-infinite-progress-report.md  |   382 +-
+ ...2-project-understanding-evaluation-framework.md |  1224 +-
+ docs/research/20260407-g1-final-eval-benchmark.md  |   404 +-
+ docs/research/20260407-g1-spiral-eval-results.md   |   354 +-
+ docs/research/20260407-g1-temporal-eval-results.md |   234 +-
+ .../20260407-g1-temporal-evaluation-framework.md   |   182 +-
+ .../20260407-g1g2-established-benchmarks.md        |   144 +-
+ .../20260407-global-claude-md-critical-review.md   |   180 +-
+ .../20260407-hook-vs-claudemd-redundancy.md        |   124 +-
+ .../20260408-g1-format-ablation-results.md         |   328 +-
+ .../20260408-g1-longterm-eval-initial-results.md   |   482 +-
+ ...0408-g1-longterm-memory-evaluation-framework.md |   732 +-
+ .../20260408-g1-temporal-retention-eval.md         |   366 +-
+ .../20260408-original-intent-gap-analysis.md       |   336 +-
+ ...20260409-bm25-memory-generalization-research.md |   488 +-
+ .../20260409-g1-fulleval-sota-comparison.md        |   598 +-
+ .../20260409-g1g2-critique-and-verification.md     |   470 +-
+ docs/research/20260410-claude-vault-research.md    |   170 +-
+ docs/research/20260410-g1-fair-eval-bm25-bias.md   |   280 +-
+ .../20260410-session-6c4f589e-chat-memory.md       |  4196 ++--
+ ...0260410-vault-vector-migration-and-benchmark.md |   322 +-
+ .../20260411-auto-index-necessity-analysis.md      |    88 +-
+ .../20260411-chat-memory-threshold-principled.md   |   414 +-
+ .../20260411-g1-g2-architecture-improvements.md    |   644 +-
+ .../20260411-g1-generalization-validation.md       |   396 +-
+ ...11-hook-comparison-auto-index-vs-chat-memory.md |   334 +-
+ .../20260411-hook-memory-ceiling-experiment.md     |   362 +-
+ .../20260412-semantic-gap-keyword-vs-contextual.md |   226 +-
+ .../20260417-ctx-semantic-search-upgrade-sota.md   |   408 +-
+ .../20260419-ctx-report-visibility-research.md     |   262 +-
+ .../20260421-ctx-distribution-research-replay.md   |   636 +-
+ .../20260421-ctx-monetization-session-summary.md   |   906 +-
+ ...vs-claudemem-evaluation-rubric-v2-paper-tier.md |   656 +-
+ ...0424-claude-client-bootstrap-session-summary.md |   380 +-
+ ...20260424-common-port-fanout-tailscale-vs-ssh.md |   188 +-
+ .../20260424-mab-recency-tokenization-gap.md       |   178 +-
+ .../20260424-memory-experiential-eval-protocol.md  |   666 +-
+ ...0260424-memory-retrieval-benchmark-landscape.md |   848 +-
+ ...60424-mirrored-localhost-session-portability.md |   132 +-
+ ...424-windows-client-onboarding-simplification.md |   120 +-
+ docs/research/20260426-citation-probe-v1.md        |   262 +-
+ .../20260426-ctx-research-critical-evaluation.md   |   314 +-
+ .../20260426-ctx-retrieval-benchmark-synthesis.md  |   264 +-
+ .../20260426-g1-hybrid-rrf-dense-retrieval.md      |   188 +-
+ ...0426-g2-code-gap-and-false-positive-analysis.md |   322 +-
+ .../20260426-g2-code-staleness-auto-fix.md         |   268 +-
+ .../20260426-g2-docs-eval-corpus-drift-fix.md      |   244 +-
+ docs/research/20260426-g2-docs-goldset-eval.md     |   254 +-
+ .../20260426-g2-docs-hybrid-dense-retrieval.md     |   200 +-
+ .../20260426-g2-docs-korean-crosslingual-fix.md    |   250 +-
+ .../20260426-mab-competency-sota-methodology.md    |   206 +-
+ .../20260426-mab-longmemeval-validity-for-ctx.md   |   156 +-
+ ...260426-retrieval-node-relevance-verification.md |   192 +-
+ .../20260427-ctx-data-asset-status-v035.md         |   536 +-
+ .../20260427-ctx-flywheel-data-coverage.md         |   350 +-
+ .../20260427-ctx-plugin-distribution-research.md   |   240 +-
+ .../20260427-ctx-telemetry-implementation.md       |   302 +-
+ .../20260427-ctx-user-data-flywheel-strategy.md    |   418 +-
+ .../20260427-dashboard-semantic-appeal-spec.md     |   392 +-
+ ...20260427-dashboard-semantic-closeness-cm-fix.md |   300 +-
+ .../20260427-dashboard-ui-multilens-eval.md        |   502 +-
+ .../20260427-pre-format-backup-inventory.md        |   172 +-
+ docs/research/MCP_AUTOMATION_RESEARCH.md           |   572 +-
+ docs/research/QUICK_REFERENCE.md                   |   424 +-
+ docs/research/README.md                            |    50 +-
+ docs/research/generate_ctx_bm25_report.py          |   640 +-
+ docs/research/generate_ctx_nemotron_report.py      |  1118 +-
+ docs/research/generate_full_report.py              |   816 +-
+ docs/research/generate_soya_validation_report.py   |   914 +-
+ hf_space/README.md                                 |    19 +-
+ hf_space/app.py                                    |  1420 +-
+ hf_space/requirements.txt                          |     4 -
+ hf_space_dashboard/app.py                          |   226 +-
+ hf_space_dashboard/bench_endpoint.py               |   314 +-
+ hf_space_dashboard/puac_endpoint.py                |   256 +-
+ hf_space_dashboard/static/app.js                   |  3922 ++--
+ hf_space_dashboard/static/bench.html               |   422 +-
+ hf_space_dashboard/static/index.html               |   336 +-
+ hf_space_dashboard/static/puac.html                |   388 +-
+ hf_space_dashboard/static/styles.css               |  1340 +-
+ hf_space_dashboard/tier3_pairwise.py               |   532 +-
+ plugin/.claude-plugin/plugin.json                  |    44 +-
+ requirements.txt                                   |     8 +-
+ resume-session.sh                                  |    10 +-
+ run_coir_eval.py                                   |   130 +-
+ run_experiment.py                                  |   372 +-
+ run_llm_eval.py                                    |   716 +-
+ run_llm_eval_openrouter.py                         |   996 +-
+ run_llm_eval_opensource.py                         |  1352 +-
+ run_llm_eval_v2.py                                 |  1052 +-
+ scripts/publish.sh                                 |    42 +-
+ src/analysis/differentiation.py                    |   780 +-
+ src/analysis/error_analysis.py                     |   662 +-
+ src/analysis/trigger_accuracy.py                   |   816 +-
+ src/cli/telemetry.py                               |  1948 +-
+ src/data/dataset_generator.py                      |   886 +-
+ src/data/real_codebase_loader.py                   |   780 +-
+ src/evaluator/benchmark_runner.py                  |  1062 +-
+ src/evaluator/coir_evaluator.py                    |  1322 +-
+ src/evaluator/doc_retrieval_eval.py                |   414 +-
+ src/evaluator/downstream_quality.py                |   370 +-
+ src/evaluator/hook_effectiveness_eval.py           |   850 +-
+ src/evaluator/llm_quality.py                       |   792 +-
+ src/evaluator/metrics.py                           |   336 +-
+ src/evaluator/ranger_comparison.py                 |  1020 +-
+ src/evaluator/repobench_evaluator.py               |  2138 +-
+ src/evaluator/statistical_tests.py                 |   370 +-
+ src/hooks/_ctx_telemetry.py                        |   420 +-
+ src/hooks/ctx-telemetry                            |   278 +-
+ src/hooks/g2-fallback.py                           |   316 +-
+ src/hooks/memory-keyword-trigger.py                |   228 +-
+ src/hooks/utility-rate.py                          |  1636 +-
+ src/retrieval/ablation_variants.py                 |   494 +-
+ src/retrieval/adaptive_trigger.py                  |  2126 +-
+ src/retrieval/bm25_retriever.py                    |   178 +-
+ src/retrieval/chroma_retriever.py                  |   278 +-
+ src/retrieval/context_selector.py                  |   316 +-
+ src/retrieval/dense_retriever.py                   |   200 +-
+ src/retrieval/full_context.py                      |   134 +-
+ src/retrieval/graph_rag.py                         |   652 +-
+ src/retrieval/hybrid_dense_ctx.py                  |   580 +-
+ src/retrieval/llamaindex_retriever.py              |   338 +-
+ src/retrieval/ranger_approx.py                     |   748 +-
+ src/trigger/trigger_classifier.py                  |   614 +-
+ src/visualizer/report.py                           |   448 +-
+ tests/benchmark_before_after.py                    |   668 +-
+ tests/benchmark_results.json                       |   260 +-
+ tests/test_ast_improvements.py                     |   354 +-
+ tests/test_trigger_classifier_ko.py                |   418 +-
+ 327 files changed, 89114 insertions(+), 89670 deletions(-)

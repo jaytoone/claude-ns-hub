@@ -1,0 +1,3938 @@
+CMD: ssh -p 30001 root@cl1.gpuhub.nhncloud.com "nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader; echo '---'; hostname; uptime" 2>/dev/null || echo "SSH_FAILED"
+---
+CMD: cat > /home/jayone/Project/FromScratch/.omc/infinite-state.json << 'EOF'
+{
+  "status": "IN_PROGRESS",
+  "session_id": "inf-20260412-aether166b-v28-b200",
+  "current_iteration": 1,
+  "root_goal": "B200×16 IB 멀티노드에서 AETHER-166B v28 학습 시작 — hostname 확인, hostfile 완성, passwordless SSH, dryrun PASS, v28 학습 실제 시작",
+  "original_goal": "B200×16 IB 멀티노드에서 AETHER-166B v28 학습 시작까지 전 과정 자율 진행",
+  "evolution_co
+---
+CMD: cp /mnt/c/Users/Jayone/Downloads/aether-b200-v28-1_key ~/.ssh/aether-b200-v28-1_key
+chmod 600 ~/.ssh/aether-b200-v28-1_key
+# node1 hostname 확인
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 -p 42501 gmail_be2j@59.150.32.1 "hostname && ip addr show | grep 'inet ' | grep -v '127.0.0.1'"
+---
+CMD: # node1에서 /etc/hosts 확인 — node2 IP 알 수 있는지
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  "cat /etc/hosts | grep -v '^#' | grep -v '^$'; echo '---'; cat /etc/hostname"
+---
+CMD: cat > /home/jayone/Project/FromScratch/hostfile_b200.txt << 'EOF'
+# B200×16 IB Multinode Hostfile for DeepSpeed
+# Node 1: aether-b200-v28-1 (10.34.4.33, c13f-h03-3-gpu126)
+# Node 2: aether-b200-v28-2 (10.34.4.34, c13f-h03-4-gpu127)
+aether-b200-v28-1 slots=8
+aether-b200-v28-2 slots=8
+EOF
+echo "hostfile 완성"
+
+# node1에서 SSH keygen + node2에 공개키 등록 (node2 키 없이 node1→node2 passwordless 설정)
+# 방법: node1에서 
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  "ls ~/.ssh/ 2>/dev/null && echo HOME=\$HOME && whoami"
+---
+CMD: # node1 공개키 가져오기
+NODE1_PUBKEY=$(ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 "cat ~/.ssh/id_rsa.pub")
+echo "Node1 pubkey: $NODE1_PUBKEY"
+
+# node2에 node1 공개키 등록 — node1을 통해 진행 (내부 네트워크로 직접 접근)
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 << 'REMOTE'
+# node2로 SSH (내부 IP 직접 사용)
+NODE2_IP="10.34.4.34"
+
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  "ls -la ~/.ssh/ && file ~/.ssh/id_rsa"
+---
+CMD: # id_rsa.pub 없음 → private key에서 public key 추출 후 node2에 등록
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  "ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub && cat ~/.ssh/id_rsa.pub"
+---
+CMD: # node1에서 node2로 공개키 추가 + 검증
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  'ssh -o StrictHostKeyChecking=no 10.34.4.34 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && echo ADDED_OK && hostname"' \
+  < <(ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 "cat ~
+---
+CMD: # node1→node2 검증 + node2 pubkey 가져와서 node1에 등록 (양방향)
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 << 'REMOTE'
+set -e
+echo "=== node1→node2 SSH test ==="
+ssh -o StrictHostKeyChecking=no 10.34.4.34 "echo OK_NODE2 && hostname"
+
+echo "=== node2 SSH key gen ==="
+ssh -o StrictHostKeyChecking=no 10.34.4.34 "
+  if [ ! -f ~/.ssh/id_rsa ]; then
+    ssh-keyg
+---
+CMD: # node2 pubkey 생성 및 가져오기
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  'ssh -o StrictHostKeyChecking=no 10.34.4.34 "if [ ! -f ~/.ssh/id_rsa.pub ]; then ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub; fi && cat ~/.ssh/id_rsa.pub"'
+---
+CMD: # 두 노드 공개키가 동일 → node1 authorized_keys에 이미 등록됨
+# node2→node1 방향 검증
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  'ssh -o StrictHostKeyChecking=no 10.34.4.34 "ssh -o StrictHostKeyChecking=no 10.34.4.33 \"echo BIDIRECTIONAL_OK && hostname\""'
+---
+CMD: # NIPA 서버의 기존 train_mohawk_zero3.py 확인 + 주요 설정 라인 확인
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  'ls /home/work/vidraft/aether-v3/ 2>/dev/null | head -20 && echo "---" && head -120 /home/work/vidraft/aether-v3/train_mohawk_zero3.py 2>/dev/null | grep -E "(NCCL|SEQ|MAX_SEQ|LR|LEARN|BATCH|WARM|TOTAL_STEP|os\.environ|CUMEM|NVLS|P2P)"'
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  'ls /home/work/ 2>/dev/null; ls /NHNHOME/WORKSPACE/ 2>/dev/null; ls ~ 2>/dev/null | head -10'
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  'ls /NHNHOME/WORKSPACE/0426030024_A/ 2>/dev/null | head -20; df -h /NHNHOME/WORKSPACE/0426030024_A/ 2>/dev/null'
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -p 42501 gmail_be2j@59.150.32.1 \
+  'ls /NHNHOME/WORKSPACE/0426030024_A/
+   echo "=== GPU check ==="
+   nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null | head -3
+   echo "=== Python/torch ==="
+   python3 -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.device_count())" 2>/dev/
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "pip show deepspeed 2>/dev/null; echo EXIT:$?" 2>&1 | tail -20
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "pip show deepspeed 2>&1; python3 -c 'import deepspeed; print(deepspeed.__version__)' 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "curl -s --connect-timeout 5 http://proxy2.nipa2025.ktcloud.com:10280/health 2>&1; echo EXIT:$?" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "curl -sv --connect-timeout 10 http://proxy2.nipa2025.ktcloud.com:10280/health 2>&1 | head -30" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "pip install deepspeed --quiet 2>&1 | tail -5; echo EXIT:$?" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "pip install deepspeed --break-system-packages 2>&1 | tail -10; echo EXIT:$?" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "python3 -c 'import deepspeed; print(\"DS:\", deepspeed.__version__)' 2>&1; echo EXIT:$?" 2>&1
+---
+CMD: # Install DeepSpeed on node2 via node1
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ssh aether-b200-v28-2 'pip install deepspeed --break-system-packages 2>&1 | tail -5; python3 -c \"import deepspeed; print(deepspeed.__version__)\"'" 2>&1
+---
+CMD: # Create workspace directory structure on B200 Lustre
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && ls /NHNHOME/WORKSPACE/0426030024_A/" 2>&1
+---
+CMD: # Transfer dryrun script and hostfile to B200 Lustre workspace
+scp -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/test_zero3_dryrun.py \
+  /home/jayone/Project/FromScratch/hostfile_b200.txt \
+  /home/jayone/Project/FromScratch/launch_v28_b200.sh \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>&1 && echo "TRANSFER OK"
+---
+CMD: scp -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/train_mohawk_zero3.py \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>&1 && echo "TRANSFER OK"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && ls" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "which deepspeed 2>/dev/null || python3 -m deepspeed --version 2>&1 | head -3; echo '---'; ~/.local/bin/deepspeed --version 2>&1 | head -3" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "export PATH=\$PATH:~/.local/bin && cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && \
+   export NCCL_CUMEM_ENABLE=1 NCCL_NVLS_ENABLE=0 NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=0 \
+          NCCL_SOCKET_IFNAME=eth0 NCCL_DEBUG=WARN \
+          PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+          PYTHONUNBUFFERED=1 && \
+   nohu
+---
+CMD: sleep 20 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "tail -40 /tmp/dryrun_v28.log 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "apt-get install -y pdsh 2>&1 | tail -3; which pdsh 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "sudo apt-get install -y pdsh 2>&1 | tail -5; which pdsh" 2>&1
+---
+CMD: # Try --launcher ssh instead of pdsh
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "export PATH=\$PATH:~/.local/bin && cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && \
+   export NCCL_CUMEM_ENABLE=1 NCCL_NVLS_ENABLE=0 NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=0 \
+          NCCL_SOCKET_IFNAME=eth0 NCCL_DEBUG=WARN \
+          PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True PYTHON
+---
+CMD: sleep 30 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "tail -50 /tmp/dryrun_v28b.log 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "~/.local/bin/deepspeed --help 2>&1 | grep -A5 launcher; echo '---'; which mpirun 2>&1; which openmpirun 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "which mpirun 2>&1; which ompirun 2>&1; ls /usr/bin/mpi* 2>&1; ls /usr/lib/openmpi* 2>&1 | head -5" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "find /usr -name 'mpirun' 2>/dev/null; find /usr -name 'pdsh' 2>/dev/null; find / -name 'pdsh' 2>/dev/null -maxdepth 8 2>/dev/null | head -5" 2>&1
+---
+CMD: # Run single-node dryrun first on node1 (8 GPUs) to verify B200 + NCCL_CUMEM_ENABLE=1
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "export PATH=\$PATH:~/.local/bin && cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && \
+   export NCCL_CUMEM_ENABLE=1 NCCL_NVLS_ENABLE=0 NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=0 \
+          PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True PYTHONUNB
+---
+CMD: sleep 45 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "tail -60 /tmp/dryrun_singlenode.log 2>&1" 2>&1
+---
+CMD: # Install transformers on node1 and node2 in parallel
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "pip install transformers --break-system-packages -q 2>&1 | tail -3 && echo NODE1_OK &
+   ssh aether-b200-v28-2 'pip install transformers --break-system-packages -q 2>&1 | tail -3 && echo NODE2_OK' &
+   wait" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "export PATH=\$PATH:~/.local/bin && cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && \
+   export NCCL_CUMEM_ENABLE=1 NCCL_NVLS_ENABLE=0 NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=0 \
+          PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True PYTHONUNBUFFERED=1 && \
+   nohup ~/.local/bin/deepspeed --num_gpus 8 test_zero3_dryrun.py > /tm
+---
+CMD: sleep 60 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "tail -40 /tmp/dryrun2.log 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "apt-cache show pdsh 2>/dev/null | grep Version; dpkg -l pdsh 2>/dev/null; ls /usr/sbin/pdsh 2>/dev/null" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "which torchrun 2>&1; python3 -m torch.distributed.run --version 2>&1 | head -2" 2>&1
+---
+CMD: scp -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/launch_v28_torchrun.sh \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>&1 && echo "TRANSFER OK"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && \
+   chmod +x launch_v28_torchrun.sh && \
+   nohup bash launch_v28_torchrun.sh dryrun > /tmp/v28_multinode_dryrun.log 2>&1 &
+   echo LAUNCHED:PID=\$!" 2>&1
+---
+CMD: sleep 60 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "tail -60 /tmp/v28_multinode_dryrun.log 2>&1 && echo '---NODE2---' && \
+   ssh aether-b200-v28-2 'tail -30 /tmp/v28_node2_dryrun.log 2>/dev/null || echo NO_NODE2_LOG'" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "head -30 /tmp/v28_multinode_dryrun.log 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ip addr show | grep -E '^[0-9]+:|inet ' | head -20" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ls /sys/class/infiniband/ 2>&1; ibstat 2>&1 | grep -E 'CA|Port|State' | head -20" 2>&1
+---
+CMD: scp -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/launch_v28_torchrun.sh \
+  /home/jayone/Project/FromScratch/launch_v28_b200.sh \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>&1 && \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "chmod +x /NHNHOME/WORKSPACE/0426030024_A/aether-v3/*.sh && \
+   cd /NHNHOME/WORKSPACE/
+---
+CMD: sleep 75 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "tail -60 /tmp/v28_dryrun3.log 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "head -40 /tmp/v28_dryrun3.log 2>&1" 2>&1
+---
+CMD: scp -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/test_zero3_dryrun.py \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>&1 && \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && \
+   nohup bash launch_v28_torchrun.sh dryrun > /tmp/v28_dryrun4.log 2>&1 &
+   echo LAUNCHED:PID
+---
+CMD: sleep 75 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "cat /tmp/v28_dryrun4.log 2>&1" 2>&1
+---
+CMD: # Check if B200 can reach NIPA SSH port (for rsync)
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "curl -sv --connect-timeout 10 tcp://proxy2.nipa2025.ktcloud.com:22 2>&1 | head -5; echo EXIT:$?; \
+   nc -zv -w5 proxy2.nipa2025.ktcloud.com 22 2>&1 | head -3" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "python3 -c \"import socket; s=socket.create_connection(('proxy2.nipa2025.ktcloud.com', 22), timeout=10); print('REACH_OK'); s.close()\" 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ssh aether-b200-v28-2 'tail -20 /tmp/v28_node2_dryrun.log 2>&1'" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ssh aether-b200-v28-2 'grep -E \"PASS|FAIL|CHECK|world_size\" /tmp/v28_node2_dryrun.log 2>&1 | head -10'" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ssh aether-b200-v28-2 'cat /tmp/v28_node2_dryrun.log 2>&1 | tail -5'" 2>&1
+---
+CMD: # Start SSH reverse tunnel: B200:8010 → WSL2 → NIPA:10280 (teacher vLLM)
+# Run in background
+nohup ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  -o ServerAliveInterval=60 -o ServerAliveCountMax=10 \
+  -o ExitOnForwardFailure=yes \
+  -R 8010:proxy2.nipa2025.ktcloud.com:10280 \
+  -N gmail_be2j@59.150.32.1 \
+  > /tmp/ssh_tunnel_b200_teacher.log 2>&1 &
+TUNNEL_PID=$!
+echo "TUNNEL_PID=$TUNNEL_PID"
+sl
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "curl -s --connect-timeout 5 http://localhost:8010/v1/models 2>&1 | head -5" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "curl -s --connect-timeout 5 http://localhost:8010/ 2>&1 | head -5" 2>&1
+---
+CMD: git commit -m "$(cat <<'EOF'
+live-inf iter 5/∞: success | B200×16 dryrun PASS — v28 런처 완성
+
+- B200×16 IB ZeRO-3 dryrun ALL CHECKS PASSED (world_size=16, NCCL_CUMEM_ENABLE=1)
+- NCCL_SOCKET_IFNAME=bond0 (B200에 eth0 없음, bond0=10.34.4.33)
+- 런처: torchrun (pdsh 미설치 → launch_v28_torchrun.sh, SSH node2 호출)
+- train_mohawk_zero3.py v28 변경: LR=3e-4, seq=4096, warmup=500, 16GPU, NCCL env
+- TEACHER_API_URL: SSH
+---
+CMD: ssh nipa "python3 -c \"import socket; s=socket.create_connection(('59.150.32.1', 42501), timeout=8); print('B200_REACH_OK'); s.close()\" 2>&1" 2>&1 | grep -v "bind\|forwarding\|known hosts\|listen"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "echo B200_OK && ls /NHNHOME/WORKSPACE/0426030024_A/" 2>&1 | head -20
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ && ls /NHNHOME/WORKSPACE/0426030024_A/" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ && echo '---' && ls /NHNHOME/WORKSPACE/0426030024_A/" 2>&1
+---
+CMD: # Transfer modified train scripts directly from WSL2 to B200
+scp -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/train_mohawk_zero3.py \
+  /home/jayone/Project/FromScratch/launch_v28_torchrun.sh \
+  /home/jayone/Project/FromScratch/test_zero3_dryrun.py \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>&1 | tail -5
+---
+CMD: # Transfer NIPA model code (config.py, model.py, oheng_moe.py, etc.) to B200 via WSL2 relay
+ssh nipa "tar -cf - \
+  /home/work/vidraft/aether-v3/config.py \
+  /home/work/vidraft/aether-v3/model.py \
+  /home/work/vidraft/aether-v3/oheng_moe.py \
+  /home/work/vidraft/aether-v3/layers.py \
+  /home/work/vidraft/aether-v3/cab.py \
+  /home/work/vidraft/aether-v3/weight_map.py \
+  /home/work/vidraft/aeth
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/" 2>&1
+---
+CMD: # Fix: strip-components=4 (strips home/work/vidraft/aether-v3/)
+ssh nipa "tar -cf - \
+  /home/work/vidraft/aether-v3/config.py \
+  /home/work/vidraft/aether-v3/model.py \
+  /home/work/vidraft/aether-v3/oheng_moe.py \
+  /home/work/vidraft/aether-v3/layers.py \
+  /home/work/vidraft/aether-v3/cab.py \
+  /home/work/vidraft/aether-v3/weight_map.py \
+  /home/work/vidraft/aether-v3/gpu_utils.py \
+  /home
+---
+CMD: # Teacher logits cache (30GB) — background
+nohup bash -c '
+ssh nipa "tar -cf - /home/work/vidraft/aether-net-397b/teacher_logits/ 2>/dev/null" 2>/dev/null | \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ && \
+   tar -xf - --strip-components=4 -C /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ 2>&1" 2>&1
+' > /tmp
+---
+CMD: # Tokenizer (small, config files only — exclude safetensors/bin weights)
+ssh nipa "tar -cf - --exclude='*.safetensors' --exclude='*.bin' /home/work/vidraft/models/qwen3.5-397b/ 2>/dev/null" 2>/dev/null | \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ && \
+   tar -xvf - --strip-components=4 -C /NHNHOME/WORKSPA
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ | grep -v '.cache\|.gitattributes\|README\|LICENSE'" 2>&1
+---
+CMD: # Transfer just the essential tokenizer files
+ssh nipa "tar -cf - \
+  /home/work/vidraft/models/qwen3.5-397b/tokenizer.json \
+  /home/work/vidraft/models/qwen3.5-397b/tokenizer_config.json \
+  /home/work/vidraft/models/qwen3.5-397b/vocab.json \
+  2>/dev/null" 2>/dev/null | \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "tar -xvf - --strip-components=4 -C /NHNHOME/WORKSPA
+---
+CMD: # Check if checkpoint already exists on B200
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ 2>/dev/null || echo NOT_FOUND" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: # Start 621GB checkpoint transfer in background (long-running)
+nohup bash -c '
+ssh nipa "tar -cf - /home/work/vidraft/aether-166b-calibrated-v11/ 2>/dev/null" 2>/dev/null | \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ && \
+   tar -xf - --strip-components=4 -C /NHNHOME/WORKSPACE/0426030024_A/ 2>&1"
+ec
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ && echo '---tokenizer---' && \
+   ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ | grep -v '.cache\|.git'" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: # Transfer logits with clean SSH (no config file port forwarding overhead)
+nohup bash -c '
+ssh -F /dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_container -p 10581 \
+  work@proxy3.nipa2025.ktcloud.com \
+  "tar -cf - /home/work/vidraft/aether-net-397b/teacher_logits/ 2>/dev/null" | \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_
+---
+CMD: # Start checkpoint transfer with clean SSH
+nohup bash -c '
+ssh -F /dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_container -p 10581 \
+  work@proxy3.nipa2025.ktcloud.com \
+  "tar -cf - /home/work/vidraft/aether-166b-calibrated-v11/ 2>/dev/null" | \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ && \
+ 
+---
+CMD: # Wait a moment and check if logits transfer is progressing
+sleep 15 && cat /tmp/transfer_logits2.log 2>&1 && echo "---" && \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ 2>/dev/null | wc -l && \
+   du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ 2>/dev/null" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: cat /tmp/transfer_logits2.log 2>&1 | tail -5 && echo "---" && \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/ 2>/dev/null || echo NO_CACHE" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: # Transfer shard by shard (more reliable for large files)
+# First create the destination directory
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+
+# Transfer input_ids.pt first (small: 156MB)
+ssh -F /dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/input_ids.pt" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: # Write batch sftp download + scp upload script
+cat > /tmp/transfer_logits_batch.sh << 'EOF'
+#!/bin/bash
+set -e
+NIPA_HOST="proxy3.nipa2025.ktcloud.com"
+NIPA_PORT="10581"
+NIPA_KEY="$HOME/.ssh/id_container"
+NIPA_USER="work"
+NIPA_SRC="/home/work/vidraft/aether-net-397b/teacher_logits"
+
+B200_HOST="59.150.32.1"
+B200_PORT="42501"
+B200_KEY="$HOME/.ssh/aether-b200-v28-1_key"
+B200_USER="gmail_be2j"
+B200_DS
+---
+CMD: # Create B200 destination dir
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+
+# Start logits transfer in background
+nohup bash /tmp/transfer_logits_batch.sh > /tmp/transfer_logits3.log 2>&1 &
+echo "Logits batch transfer PID: $!"
+---
+CMD: kill 5923 2>/dev/null; echo "Killed old transfer"
+
+# Simpler script with hardcoded file list
+cat > /tmp/transfer_logits_v2.sh << 'SCRIPT'
+#!/bin/bash
+NIPA="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $HOME/.ssh/id_container -P 10581"
+B200="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $HOME/.ssh/aether-b200-v28-1_key -P 42501"
+NIPA_BASE="work@proxy3.nipa2025.ktc
+---
+CMD: # Upload to B200 (replacing old train_mohawk_zero3.py)
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/train_mohawk_v28.py \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py 2>&1 | head -3
+echo "Uploaded v28 script"
+
+# Also update the launch script to use --v28_
+---
+CMD: # Start 311GB checkpoint download from NIPA via sftp (background, ~3h)
+nohup bash -c '
+echo "[$(date)] Starting model.safetensors sftp download from NIPA (311GB)..."
+sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/id_container -P 10581 \
+  work@proxy3.nipa2025.ktcloud.com:/home/work/vidraft/aether-166b-calibrated-v11/model.safetensors \
+  /tmp/ckpt_model.safetensors
+
+---
+CMD: # Also transfer config.json and README.md from checkpoint dir
+ssh -F /dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_container -p 10581 \
+  work@proxy3.nipa2025.ktcloud.com \
+  "cat /home/work/vidraft/aether-166b-calibrated-v11/config.json" 2>&1 | \
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ && \
+
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "python3 -c 'import deepspeed, transformers, safetensors, datasets; print(\"ALL_OK\")' 2>&1" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: # Also check node2
+ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ssh 10.34.4.34 'python3 -c \"import deepspeed, transformers, safetensors, datasets; print(ALL_OK)\" 2>&1'" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "ssh 10.34.4.34 \"python3 -c 'import deepspeed, transformers, safetensors, datasets; print(\\\"ALL_OK\\\")' 2>&1\"" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "echo '=== aether-v3/ ===' && ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ && \
+   echo '=== models/qwen3.5-397b/ ===' && ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ | grep -v '.cache\|.git' && \
+   echo '=== teacher_logits/ ===' && ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/ 2>/dev/null | w
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: # Upload final v28 script to B200
+scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -P 42501 \
+  /home/jayone/Project/FromScratch/train_mohawk_v28.py \
+  gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py 2>&1 | head -2
+echo "v28 script uploaded"
+
+# Check logits progress
+cat /tmp/logits_v2.log 2>&1 | tail -4
+---
+CMD: cat > /tmp/autolaunch_v28.sh << 'SCRIPT'
+#!/bin/bash
+# Auto-launch v28 training once checkpoint is ready on B200
+CKPT="/NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors"
+LOGITS_DIR="/NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits"
+WORKDIR="/NHNHOME/WORKSPACE/0426030024_A/aether-v3"
+LOG="/tmp/v28_train_node1.log"
+
+echo "[autolaunch] Waiting for checkpoint a
+---
+CMD: sleep 5 && ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  "cat /tmp/autolaunch.log" 2>&1 | grep -v "^Warning\|^bind\|^channel\|^Could"
+---
+CMD: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_*.pt 2>/dev/null | wc -l && \
+   ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ 2>/dev/null && \
+   cat /tmp/autolaunch.log 2>/dev/null | tail -5' 2>/dev/null
+---
+CMD: ps aux | grep sftp | grep -v grep
+stat -c%s /tmp/ckpt_model.safetensors 2>/dev/null
+# Check if scp upload is progressing by comparing B200 file size
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev/null || echo 0' 
+---
+CMD: # Delete the partial local file and partial B200 file
+rm -f /tmp/ckpt_model.safetensors
+echo "Local partial deleted"
+
+# Delete partial file on B200
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'rm -f /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors && echo "B200 partial delete
+---
+CMD: # Use rsync with --partial for resumable NIPA→WSL2 download
+# rsync supports partial file resume; if it fails midway we can restart and it continues
+nohup bash -c '
+echo "[$(date)] Starting rsync download from NIPA (333GB, resumable)..."
+rsync -avz --partial --progress \
+  -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_container -p 10581" \
+  work@proxy3.nipa2025.
+---
+CMD: # Strategy: split 333GB file into 5GB chunks on NIPA, sftp each chunk, reassemble locally, then scp to B200
+# First check NIPA /tmp space
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/id_container -p 10581 \
+  work@proxy3.nipa2025.ktcloud.com \
+  'df -h /tmp && df -h /home/work/vidraft/ && echo "---" && ls /tmp/ckpt_chunks/ 2>/dev/null || echo "no chunks dir"' 2>/de
+---
+CMD: # Use curl with sftp + resume (-C -) in a retry loop
+nohup bash -c '
+while true; do
+  LOCAL_SIZE=$(stat -c%s /tmp/ckpt_model.safetensors 2>/dev/null || echo 0)
+  REMOTE_SIZE=333164799844
+  echo "[$(date)] Resume attempt — local: ${LOCAL_SIZE}B / ${REMOTE_SIZE}B ($(( LOCAL_SIZE * 100 / REMOTE_SIZE ))%)"
+  
+  curl -C - \
+    -o /tmp/ckpt_model.safetensors \
+    --key ~/.ssh/id_container \
+    --inse
+---
+CMD: # Check logits transfer progress
+ps aux | grep transfer_logits | grep -v grep | awk '{print $1, $2}'
+ls /tmp/logits_stage_* 2>/dev/null
+
+# Check B200 logits count
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_*.pt 2>/dev/null 
+---
+CMD: # Write the chunk transfer script - runs on WSL2
+# Downloads each chunk as it appears, uploads to B200, deletes local
+cat > /tmp/transfer_chunks.sh << 'SCRIPT'
+#!/bin/bash
+set -e
+
+NIPA="work@proxy3.nipa2025.ktcloud.com"
+NIPA_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_container -P 10581"
+B200="gmail_be2j@59.150.32.1"
+B200_OPTS="-o StrictHostKeyChecking=no -o User
+---
+CMD: # Create B200 chunks dir and start transfer in background
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks && echo "dir created"' 2>/dev/null
+
+nohup bash /tmp/transfer_chunks.sh > /tmp/chunks_transfer.log 2>&1 &
+echo "Chunk transfer 
+---
+CMD: # Debug: check what B200_OPTS/NIPA_OPTS resolved to and test manually
+# The issue might be the B200 mkdir command in script is hanging
+# Try killing and restarting with explicit debug
+kill 23863 2>/dev/null
+sleep 2
+
+# Test NIPA SSH connection
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/id_container -P 10581 \
+  work@proxy3.nipa2025.ktcloud.com \
+  'ls /tmp/ckpt_sp
+---
+CMD: cat > /tmp/transfer_chunks.sh << 'SCRIPT'
+#!/bin/bash
+
+NIPA="work@proxy3.nipa2025.ktcloud.com"
+NIPA_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_container -p 10581"
+NIPA_SFTP="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_container -P 10581"
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/nul
+---
+CMD: # Check logits transfer and B200 status
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'echo "Logits: $(ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_*.pt 2>/dev/null | wc -l)/20" && cat /tmp/autolaunch.log | tail -3' 2>/dev/null
+---
+CMD: tail -6 /tmp/chunks_transfer.log && echo "---" && \
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'echo "Logits: $(ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_*.pt 2>/dev/null | wc -l)/20" && cat /tmp/autolaunch.log | tail -3' 2>/dev/null
+---
+CMD: grep -o 'aes[^ ]*' /proc/cpuinfo | head -5 || echo "no aes"
+# Check upload speed while chunk_aa is uploading to B200
+sleep 5 && ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/chunk_aa 2>/dev/null || echo 0' 2>/dev/null
+---
+CMD: tail -6 /tmp/chunks_transfer.log && echo "---" && \
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'echo "Logits: $(ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_*.pt 2>/dev/null | wc -l)/20" && ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/nu
+---
+CMD: # Check how many transfer processes running (duplicate issue)
+ps aux | grep -E "transfer_chunks|sftp.*nipa|scp.*aether-b200" | grep -v grep | awk '{print $2, $11}'
+
+# Check what chunks exist on NIPA and B200
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/id_container -p 10581 \
+  work@proxy3.nipa2025.ktcloud.com \
+  'ls /tmp/ckpt_split/ 2>/dev/null' 2>/dev/null &
+ssh
+---
+CMD: # NIPA split complete (39 chunks ready)! Check B200 in detail
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/null && echo "---" && ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ 2>/dev/null' 2>/dev/null
+
+#
+---
+CMD: # Kill all transfer processes
+kill 29799 13006 2>/dev/null
+ps aux | grep -E "transfer_chunks|sftp.*nipa|scp.*aether-b200|23863" | grep -v grep | awk '{print $2}' | xargs kill 2>/dev/null
+sleep 2
+
+# Cleanup local staging files
+rm -f /tmp/ckpt_chunk_transfer /tmp/ckpt_chunk_W*
+echo "All killed, writing parallel script..."
+
+# Write 3-worker parallel transfer script
+cat > /tmp/transfer_parallel.sh << 
+---
+CMD: kill 18607 2>/dev/null; rm -f /tmp/ckpt_chunk_test /tmp/ckpt_chunk_W*
+
+cat > /tmp/transfer_parallel.sh << 'SCRIPT'
+#!/bin/bash
+# 3-parallel worker checkpoint transfer
+# NIPA ciphers: chacha20-poly1305,aes128-ctr,aes256-ctr (no cbc)
+# Tuning: -B 262000 -R 32 (Azure recommended for high-latency)
+
+NIPA="work@proxy3.nipa2025.ktcloud.com"
+NIPA_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev
+---
+CMD: # W2 downloaded only 343MB of chunk_an (truncated again). Need retry loop with size check.
+kill 21096 2>/dev/null
+ps aux | grep "transfer_parallel\|sftp.*nipa\|scp.*aether" | grep -v grep | awk '{print $2}' | xargs kill 2>/dev/null
+rm -f /tmp/ckpt_chunk_W*
+
+# Check B200 - what's there and needs to be fixed
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v2
+---
+CMD: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  'ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/null && stat -c "%n %s" /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/* 2>/dev/null' 2>/dev/null
+---
+CMD: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/' 2>/dev/null; echo "exit:$?"
+---
+CMD: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'find /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ -type f 2>/dev/null | head -10 && echo "---" && cat /tmp/autolaunch.log | tail -3' 2>/dev/null
+---
+CMD: # Clean up B200 corrupt model.safetensors and recreate chunks dir
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 \
+  gmail_be2j@59.150.32.1 \
+  'rm -f /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors && mkdir -p /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks && echo "cleaned"' 2>/dev/null
+
+
+---
+CMD: # Now write the robust parallel script with retry-until-complete logic
+cat > /tmp/transfer_parallel.sh << 'SCRIPT'
+#!/bin/bash
+# Robust 3-parallel chunk transfer with retry-until-complete
+NIPA="work@proxy3.nipa2025.ktcloud.com"
+NIPA_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_container -p 10581"
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -
+---
+CMD: sleep 60 && \
+  echo "=W1=" && tail -4 /tmp/parallel_transfer.log.w1 2>/dev/null | grep "10:2[7-9]\|10:3" && \
+  echo "=W2=" && tail -4 /tmp/parallel_transfer.log.w2 2>/dev/null | grep "10:2[7-9]\|10:3" && \
+  echo "=W3=" && tail -4 /tmp/parallel_transfer.log.w3 2>/dev/null | grep "10:2[7-9]\|10:3" && \
+  echo "=Files=" && ls -la /tmp/ckpt_chunk_W* 2>/dev/null | awk '{print $5, $9}' && \
+  echo "=
+---
+CMD: tail -8 /tmp/parallel_transfer.log.w1 2>/dev/null && echo "---B200---" && \
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 \
+  'ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/null' 2>/dev/null
+---
+CMD: ssh -i ~/.ssh/id_container -p 42501 gmail_be2j@59.150.32.1 "stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/chunk_aa 2>/dev/null || echo 'MISSING'; stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/chunk_an 2>/dev/null || echo 'MISSING'" 2>/dev/null &
+ssh -i ~/.ssh/id_container -p 10581 work@proxy3.nipa2025.ktcloud.com "stat -c%s /home/work/vid
+---
+CMD: ssh -i ~/.ssh/id_container -p 42501 gmail_be2j@59.150.32.1 "ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/null | head -20" 2>&1 | head -30
+---
+CMD: ls -la ~/.ssh/ | grep -i b200; cat /tmp/transfer_parallel.sh | grep -E "B200|SSH|SCP" | head -20
+---
+CMD: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/null | head -20; echo '---'; du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/null" 2>&1
+---
+CMD: sleep 1200; echo "[$(date)] --- STATUS CHECK ---"; ls -la /tmp/ckpt_chunk_W* 2>/dev/null; echo ""; echo "=== W1 ==="; tail -8 /tmp/parallel_transfer.log.w1; echo "=== W2 ==="; tail -5 /tmp/parallel_transfer.log.w2; echo "=== W3 ==="; tail -5 /tmp/parallel_transfer.log.w3; echo "=== B200 chunks ==="; ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 
+---
+CMD: tail -3 /tmp/parallel_transfer.log.w1; echo "---"; tail -3 /tmp/parallel_transfer.log.w2; echo "---"; tail -3 /tmp/parallel_transfer.log.w3; echo "---B200---"; ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ | wc -l; du -sh /NHNHOME/WORKSPACE/042603
+---
+CMD: ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+ps aux | grep autolaunch | grep -v grep || echo 'NO_AUTOLAUNCH';
+echo '---chunks---';
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ | wc -l;
+du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/
+" 2>/dev/null
+---
+CMD: tail -3 /tmp/parallel_transfer.log.w1; echo "---"; tail -3 /tmp/parallel_transfer.log.w2; echo "---"; tail -3 /tmp/parallel_transfer.log.w3; echo "---B200---"; ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ | wc -l; du -sh /NHNHOME/WORKSPACE/042603
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== B200 chunks count ==='
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/chunks/ 2>/dev/null | wc -l
+echo '=== Autolaunch PID 18466 alive? ==='
+ps aux | grep autolaunch | grep -v grep
+echo '=== Autolaunch log tail 
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== 디스크 여유 ==='
+df -h /NHNHOME 2>/dev/null || df -h /
+echo ''
+echo '=== HuggingFace 설치 여부 ==='
+python3 -c 'import huggingface_hub; print(\"HF hub:\", huggingface_hub.__version__)' 2>/dev/null || echo 'huggingface_hub 없음'
+echo ''
+e
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== aether-net-397b 내용 ==='
+ls -lh /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ 2>/dev/null | head -20
+echo ''
+echo '=== aether-net-397b 총 크기 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ 2>/dev/null
+echo ''
+ech
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== models/qwen3.5-397b 크기 및 내용 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/
+ls -lh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ | head -20
+echo ''
+echo '=== config.json 확인 (397B 맞는지) ==='
+python3 -c \"
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== HF 다운로드 속도 테스트 (Qwen vocab.json ~6MB) ==='
+time curl -sL -o /tmp/test_dl.bin 'https://huggingface.co/Qwen/Qwen3-0.6B/resolve/main/vocab.json' 2>&1
+stat -c%s /tmp/test_dl.bin 2>/dev/null
+rm -f /tmp/test_dl.bin
+echo ''
+echo '===
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# Run speed test in background and get result
+ssh $B200_SSH $B200 "
+START=\$(date +%s%N)
+curl -sL -o /tmp/test_dl.bin 'https://huggingface.co/Qwen/Qwen3-0.6B/resolve/main/model.safetensors' --max-time 30 2>/dev/null
+END=\$(date +%s%N)
+SIZE=\$(stat -c%s /tmp
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== B200 System RAM ==='
+free -h | head -2
+echo ''
+echo '=== GPU 메모리 (transplant device=cpu라도 확인) ==='
+nvidia-smi --query-gpu=name,memory.total,memory.free --format=csv,noheader 2>/dev/null | head -4
+echo ''
+echo '=== Python trans
+---
+CMD: NIPA="work@proxy3.nipa2025.ktcloud.com"
+NIPA_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_container -p 10581"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# Step 2: NIPA에서 transplant.py 가져와서 B200으로 전송
+echo "=== transplant.py: NIPA → WSL2 ==="
+sftp -o StrictHostKeyCheck
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# Step 3 & 4: B200에서 HF 다운로드 + transplant 실행 (nohup background)
+ssh $B200_SSH $B200 "
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+
+echo '=== transplant.py 파일 확인 ==='
+ls -lh transplant.py
+
+echo ''
+echo '=== 기존 chunks 디렉토리 정리 (이제 필요없음) ==='
+rm -rf /NHNHOME/W
+---
+CMD: sleep 5
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== Pipeline 프로세스 살아있나? ==='
+ps aux | grep -E '49367|huggingface-cli|transplant' | grep -v grep | head -5
+
+echo ''
+echo '=== transplant.py 복사 확인 ==='
+ls -lh /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/nu
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# 먼저 B200에서 경로와 python 환경 확인
+ssh $B200_SSH $B200 "
+echo '=== Python 경로 ==='
+which python3
+python3 --version
+
+echo ''
+echo '=== HF CLI 위치 ==='
+python3 -c 'import subprocess, sys; result = subprocess.run([sys.executable, \"-m\", \"huggingface_hub._cli.cli\", 
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# transplant.py 직접 전송 (cat 방식으로 확실하게)
+echo "=== transplant.py 전송 (cat pipe 방식) ==="
+cat /tmp/transplant.py | ssh $B200_SSH $B200 \
+  "cat > /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py && echo 'written $(wc -c < /NHNHOME/WORKSPACE/0426030024_A/ae
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# 먼저 B200 디렉토리 구조 재확인
+ssh $B200_SSH $B200 "
+ls -la /NHNHOME/WORKSPACE/0426030024_A/ | head -10
+echo ''
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ | head -10
+echo ''
+# 테스트 파일 쓰기
+echo 'test' > /NHNHOME/WORKSPACE/0426030024_A/aether-v3/test.txt && cat /NHNH
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# transplant.py 전송
+ssh $B200_SSH $B200 "cat > /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py" \
+  < /tmp/transplant.py 2>/dev/null
+
+# 확인
+ssh $B200_SSH $B200 "wc -c /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py" 2>/dev/null
+---
+CMD: B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+
+# HF 다운로드 + transplant 파이프라인 실행
+ssh $B200_SSH $B200 "
+nohup bash -c '
+set -e
+LOG=/tmp/transplant_run.log
+WORK=/NHNHOME/WORKSPACE/0426030024_A
+
+echo \"[$(date)] === Pipeline START ===\" >> \$LOG
+
+echo \"[$(date)] Step 1: HF download Qwen3.5-397B-A17B\" >> \$
+---
+CMD: sleep 8
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== PID 49803 alive? ==='
+ps aux | grep 49803 | grep -v grep
+
+echo ''
+echo '=== transplant_run.log ==='
+tail -20 /tmp/transplant_run.log 2>/dev/null
+
+echo ''
+echo '=== transplant_main.log ==='
+tail -10 /tmp/transplant_main
+---
+CMD: sleep 30
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== 다운로드 진행 상황 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ 2>/dev/null
+echo ''
+ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/*.safetensors 2>/dev/null | wc -l
+echo 'safetensors files download
+---
+CMD: sleep 60
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== 다운로드 진행 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ 2>/dev/null
+ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/*.safetensors 2>/dev/null | wc -l
+echo 'safetensors files done'
+echo ''
+echo 
+---
+CMD: sleep 120
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] 다운로드 상태 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ 2>/dev/null
+ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/*.safetensors 2>/dev/null | wc -l
+echo 'safetensors file
+---
+CMD: sleep 90
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] 상태 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ 2>/dev/null
+
+echo ''
+echo '=== 로그 마지막 10줄 ==='
+tail -10 /tmp/transplant_run.log 2>/dev/null
+
+echo ''
+echo '=== 프로세스 상태 ==='
+ps au
+---
+CMD: sleep 180
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] 상태 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ 2>/dev/null
+ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/*.safetensors 2>/dev/null | wc -l
+echo 'safetensors done'
+
+ec
+---
+CMD: sleep 150
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] 상태 ==='
+du -sh /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/ 2>/dev/null
+ls /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/*.safetensors 2>/dev/null | wc -l
+echo 'safetensors done'
+
+ec
+---
+CMD: sleep 30
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] transplant 상태 ==='
+ps aux | grep 51143 | grep -v grep | awk '{print \"CPU:\", \$3\"%  MEM:\", \$4\"%\"}' || echo 'transplant process ended'
+
+echo ''
+echo '=== 최신 로그 ==='
+tail -8 /tmp/transplant_run
+---
+CMD: sleep 120
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] 완료 확인 ==='
+
+echo '=== transplant 프로세스 ==='
+ps aux | grep 51143 | grep -v grep | awk '{print \"CPU:\", \$3\"%  MEM:\", \$4\"%\"}' || echo 'PROCESS ENDED'
+
+echo ''
+echo '=== 최신 로그 마지막 15줄 ==='
+tail 
+---
+CMD: sleep 180
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] ==='
+
+echo '=== 프로세스 ==='
+ps aux | grep 51143 | grep -v grep | awk '{print \"CPU:\", \$3\"%  MEM:\", \$4\"%\"}' || echo 'PROCESS ENDED'
+
+echo ''
+echo '=== 로그 마지막 10줄 ==='
+tail -10 /tmp/transplant_
+---
+CMD: sleep 90
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] ==='
+
+echo '=== model.safetensors 크기 ==='
+stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev/null
+du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calib
+---
+CMD: sleep 30
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] Training log: /tmp/v28_train_node1.log ==='
+cat /tmp/v28_train_node1.log 2>/dev/null | head -60
+
+echo ''
+echo '=== 학습 프로세스 확인 ==='
+ps aux | grep -E '52197|deepspeed|torchrun|train_mohawk' | grep -v
+---
+CMD: sleep 60
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] transplant 완료 확인 ==='
+
+echo '=== 프로세스 ==='
+ps aux | grep 51143 | grep -v grep | awk '{print \"CPU:\", \$3\"%  MEM:\", \$4\"%\"}' || echo 'TRANSPLANT DONE'
+
+echo ''
+echo '=== 파일 크기 ==='
+stat -c%s /N
+---
+CMD: sleep 240
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200="gmail_be2j@59.150.32.1"
+ssh $B200_SSH $B200 "
+echo '=== [$(date +%H:%M:%S)] ==='
+
+echo '=== 프로세스 종료 여부 ==='
+ps aux | grep 51143 | grep -v grep | awk '{print \"CPU:\", \$3\"%\"}' || echo 'TRANSPLANT PROCESS EXITED'
+
+echo ''
+echo '=== 파일 최종 크기 ==='
+stat -c%s /NHNHOME/WORKSP
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+ssh $B200_SSH $B200 "
+echo '=== transplant processes ==='
+ps aux | grep transplant | grep -v grep
+
+echo '=== autolaunch processes ==='
+ps aux | grep autolaunch | grep -v grep
+
+echo '=== v28 training ==='
+ps aux | grep train_mohawk | grep -v grep
+
+echo '=== 
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+ssh $B200_SSH $B200 "
+grep -n 'shard.by.layer\|shard_by_layer\|load_donor_sharded' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/null | head -20
+echo '---'
+grep -n 'add_argument' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/de
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+ssh $B200_SSH $B200 "
+ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-v3/gpu_utils.py 2>/dev/null && echo EXISTS || echo MISSING
+grep -n 'def load_donor_sharded' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/gpu_utils.py 2>/dev/null
+echo '---'
+ls /NHNHOME/WORKSPA
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+# Fix autolaunch threshold: 300GB → 620GB (actual final file is ~621GB)
+ssh $B200_SSH $B200 "
+sed -i 's/300000000000/620000000000/g' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/autolaunch_v28.sh
+grep 'CKPT_SIZE.*gt' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/a
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+# Launch transplant v2 (--shard-by-layer) and restart autolaunch
+ssh $B200_SSH $B200 "
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+
+# Kill any lingering training crash processes
+pkill -f 'train_mohawk' 2>/dev/null; sleep 1
+
+# Remove bad checkpoint to avoid
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+ssh -v $B200_SSH $B200 "echo alive" 2>&1 | tail -5
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+ssh $B200_SSH $B200 "ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+# Step 1: remove bad checkpoint
+ssh $B200_SSH $B200 "rm -f /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors && echo REMOVED" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+# Step 2: launch transplant v2
+ssh $B200_SSH $B200 "cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && nohup python3 transplant.py --donor-path /NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b --output-path /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibr
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+sleep 5
+ssh $B200_SSH $B200 "
+ps -p 54744 -o pid,stat,cmd 2>/dev/null || echo 'PID not found'
+echo '--- transplant_v2.log ---'
+cat /tmp/transplant_v2.log 2>/dev/null | head -40
+" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+ssh $B200_SSH $B200 "
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+nohup bash autolaunch_v28.sh > /tmp/autolaunch_v28.log 2>&1 &
+echo AUTOLAUNCH_PID=\$!
+" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+# Check progress: transplant tail + autolaunch status
+sleep 10
+ssh $B200_SSH $B200 "
+echo '=== transplant progress ==='
+tail -5 /tmp/transplant_v2.log
+
+echo '=== autolaunch status ==='
+tail -3 /tmp/autolaunch_v28.log
+" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "tail -3 /tmp/transplant_v2.log" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+echo '=== transplant tail ==='
+tail -15 /tmp/transplant_v2.log
+echo '=== checkpoint size ==='
+stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev/null || echo 0
+echo '=== transplant process ==='
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+ps aux | grep python3 | grep -v grep
+echo '---'
+ls -la /proc/54744/exe 2>/dev/null || echo 'PID 54744 gone'
+ps aux | grep 54 | grep -v grep | head -5
+" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+for i in 1 2 3; do
+  sleep 30
+  ssh $B200_SSH $B200 "
+  OPS=\$(grep -o '\[[0-9]*/38763\]' /tmp/transplant_v2.log 2>/dev/null | tail -1)
+  CKPT=\$(stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev/null || echo 0)
+ 
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# Check if process is alive and what file it has open
+ls -la /proc/54745/fd 2>/dev/null | grep safetensors | tail -5
+echo '---'
+cat /proc/54745/status 2>/dev/null | grep -E 'State|VmRSS|VmSize'
+echo '---'
+# last few lines of log to see 
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+echo '=== full transplant log (last 40 lines) ==='
+wc -l /tmp/transplant_v2.log
+tail -40 /tmp/transplant_v2.log
+
+echo '=== OOM check ==='
+dmesg 2>/dev/null | grep -i 'oom\|killed\|out of memory' | tail -5
+
+echo '=== free memory ==='
+fre
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# Any safetensors being written?
+ls -lah /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ 2>/dev/null
+echo '---'
+# dmesg for segfault/signal
+dmesg 2>/dev/null | grep -iE 'segfault|python|54745|killed|signal' | tail -10
+echo '
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# cgroup memory limit?
+cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || \
+cat /sys/fs/cgroup/\$(cat /proc/self/cgroup | grep memory | cut -d: -f3)/memory.limit_in_bytes 2>/dev/null || \
+echo 'no cgroup limit found'
+
+# tmux
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# How many ops are COPY vs others? Check around op 21200
+grep -n 'def execute\|for.*op\|ops\[.*\]\|COPY\|ATTN_ADAPT\|HEAD_TRUNCATE\|expert_expand\|router' \
+  /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/null | head -3
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# Is python3 still running?
+ps aux | grep -E 'python3|transplant' | grep -v grep
+echo '---'
+# Is the output file being written (check inode activity)?
+ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/
+echo '---'
+# Any p
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# Kill any stray sessions first
+tmux kill-session -t transplant 2>/dev/null
+
+# Launch in tmux with unbuffered output
+tmux new-session -d -s transplant -x 220 -y 50
+tmux send-keys -t transplant \
+  'cd /NHNHOME/WORKSPACE/0426030024_A/aet
+---
+CMD: sleep 30
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "tail -20 /tmp/transplant_v3.log" 2>/dev/null
+---
+CMD: sleep 60
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+tail -10 /tmp/transplant_v3.log
+echo '---'
+ps aux | grep -E 'python3.*transplant|transplant.*python' | grep -v grep | awk '{print \"PID=\"\$2,\"CPU=\"\$3,\"MEM=\"\$4,\"VSZ_GB=\"\$5/1024/1024}'
+" 2>/dev/null
+---
+CMD: sleep 60
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+tail -8 /tmp/transplant_v3.log
+echo '---'
+ps -p 57555 -o pid,stat,%cpu,%mem,vsz,rss 2>/dev/null
+free -g | head -2
+" 2>/dev/null
+---
+CMD: sleep 120
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+tail -10 /tmp/transplant_v3.log
+echo '---'
+ps -p 57555 -o pid,stat,%cpu,%mem,rss 2>/dev/null || echo 'PROCESS GONE'
+free -g | grep Mem
+" 2>/dev/null
+---
+CMD: sleep 180
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+LAST=\$(tail -3 /tmp/transplant_v3.log)
+PROC=\$(ps -p 57555 -o pid,stat,%cpu,%mem,rss 2>/dev/null)
+FREE=\$(free -g | grep Mem)
+CKPT=\$(stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/d
+---
+CMD: sleep 300
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+echo \$(date +%H:%M:%S)
+tail -5 /tmp/transplant_v3.log
+ps -p 57555 -o pid,stat,%cpu,%mem,rss 2>/dev/null || echo DEAD
+free -g | grep Mem
+stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>
+---
+CMD: sleep 300
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+echo \$(date +%H:%M:%S)
+LOG_LINES=\$(wc -l < /tmp/transplant_v3.log)
+LAST_LINE=\$(tail -1 /tmp/transplant_v3.log)
+PROC=\$(ps -p 57555 -o pid,stat,%cpu,%mem,rss --no-headers 2>/dev/null || echo DEAD)
+FREE=\$(free -g | awk '/Mem
+---
+CMD: sleep 60
+B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+echo \$(date +%H:%M:%S)
+CKPT=\$(stat -c%s /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev/null || echo 0)
+LAST=\$(tail -3 /tmp/transplant_v3.log)
+PROC=\$(ps -p 57555 -o pid,stat,%cpu,rss --no
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# What keys does load_donor_sharded actually produce after unpacking?
+# Check index.json to see the actual fused key names
+python3 -c \"
+import json
+with open('/NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/model.safetensors.index.
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+import json
+with open('/NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/model.safetensors.index.json') as f:
+    idx = json.load(f)
+keys = list(idx['weight_map'].keys())
+expert_keys = [k for k in keys if 'experts' in k a
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "sed -n '167,230p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/gpu_utils.py" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "sed -n '230,310p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/gpu_utils.py" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+grep -n 'needed_keys\|donor_key\|TEACHER_PREFIX\|expert.*key\|key.*expert' \
+  /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/null | head -30
+echo '---'
+grep -n 'needed_keys\|donor_key' \
+  /NHNHOME/WORKSPACE/0426030024_
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "sed -n '410,425p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+grep -n 'TEACHER_PREFIX\|expert\|gate_proj\|gate_up\|source_name' \
+  /NHNHOME/WORKSPACE/0426030024_A/aether-v3/weight_map.py 2>/dev/null | head -30
+" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+import json, re, sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+
+# Load weight map
+with open('/NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/model.safetensors.index.json') as f:
+    idx = json.load
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "sed -n '254,325p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+import sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+from model import AetherNetModel, AetherNetConfig
+cfg = AetherNetConfig()
+m = AetherNetModel(cfg)
+# Check what expert param names look like
+params =
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+import sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+from model import AetherNetModel, AetherNetConfig
+cfg = AetherNetConfig()
+m = AetherNetModel(cfg)
+params = dict(m.named_parameters())
+moe_params = [
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "
+# Kill the current bad transplant (saving useless file)
+tmux send-keys -t transplant C-c 2>/dev/null
+sleep 2
+pkill -f 'transplant.py' 2>/dev/null
+sleep 1
+# Check it's dead
+ps aux | grep -E 'transplant|python3.*transplant' | grep -v grep
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+# Try separate commands
+ssh $B200_SSH $B200 "pkill -9 -f 'transplant.py' 2>/dev/null; echo done" 2>/dev/null
+sleep 2
+ssh $B200_SSH $B200 "grep -n 'LAYER_MAP\|layer_map\|ti =\|teacher_i\|TEACHER_LAYERS\|zip.*layer' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/we
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "sed -n '52,100p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/weight_map.py" 2>/dev/null
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+from safetensors import safe_open
+import json
+
+# Get the shard containing layers.0.mlp.experts.gate_up_proj
+with open('/NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/model.safetensors.index.json') as f:
+    idx = json.
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+# Check attention key names and shared expert key names in teacher
+ssh $B200_SSH $B200 "python3 -c \"
+import json
+with open('/NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/model.safetensors.index.json') as f:
+    wm = json.load(f)['weight_map']
+attn = [
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+import json
+with open('/NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/model.safetensors.index.json') as f:
+    wm = json.load(f)['weight_map']
+layer0 = sorted(k for k in wm if k.startswith('model.language_model.layers.
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+import json
+with open('/NHNHOME/WORKSPACE/0426030024_A/models/qwen3.5-397b/model.safetensors.index.json') as f:
+    wm = json.load(f)['weight_map']
+layer3 = sorted(k for k in wm if k.startswith('model.language_model.layers.
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "python3 -c \"
+import sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+from model import AetherNetModel, AetherNetConfig
+from weight_map import compute_layer_mapping
+cfg = AetherNetConfig()
+m = AetherNetModel(cfg)
+param
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+B200_SCP="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -P 42501"
+
+# Upload transplant_v4.py
+cat /tmp/transplant_v4.py | ssh $B200_SSH $B200 "cat > /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant_v4.py"
+echo
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+
+# Kill any remnant from v3, then launch v4 in tmux
+ssh $B200_SSH $B200 "
+pkill -9 -f 'transplant' 2>/dev/null; sleep 1
+rm -f /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors
+tmux kill-session -t transplant 2>/dev/null
+tmux new-se
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "pkill -9 -f transplant 2>/dev/null; echo ok" 2>/dev/null
+sleep 2
+ssh $B200_SSH $B200 "rm -f /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors && echo removed" 2>/dev/null
+sleep 1
+ssh $B200_SSH $B200 "tmux kill-
+---
+CMD: B200="gmail_be2j@59.150.32.1"
+B200_SSH="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/aether-b200-v28-1_key -p 42501"
+ssh $B200_SSH $B200 "tmux send-keys -t transplant 'cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && python3 -u transplant_v4.py 2>&1 | tee /tmp/transplant_v4.log; echo EXIT=\$? >> /tmp/transplant_v4.log' Enter && sleep 5 && tail -8 /tmp/transplant_v4.log" 2>/
+---
+CMD: cat ~/.ssh/config | grep -A5 "59.150.32.1\|B200\|b200\|gmail_be2j" 2>/dev/null | head -30
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "tail -50 /tmp/transplant_v4.log" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  # Check if transplant_v4 process is alive
+  pid=\$(pgrep -f transplant_v4 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    echo \"STATUS: running\"
+    # Memory usage
+    cat /proc/\$pid/status 2>/dev/null | grep -E 'VmRSS|VmPeak'
+    # Last few lines of log
+    echo '--- LAST 5 LOG LINES ---'
+    t
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  # Full log to see if anything new after 'Unpacking...'
+  wc -l /tmp/transplant_v4.log 2>/dev/null
+  echo '--- FULL LOG ---'
+  cat /tmp/transplant_v4.log 2>/dev/null
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  # Wait 90 seconds then check status
+  sleep 90
+  pid=\$(pgrep -f transplant_v4 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    echo 'STATUS: running'
+    cat /proc/\$pid/status 2>/dev/null | grep -E 'VmRSS|VmPeak'
+  else
+    echo 'STATUS: FINISHED or CRASHED'
+  fi
+  echo '--- LAST 10 LOG LINES ---'
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 120
+  pid=\$(pgrep -f transplant_v4 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    echo 'STATUS: running'
+    cat /proc/\$pid/status 2>/dev/null | grep -E 'VmRSS'
+  else
+    echo 'STATUS: FINISHED or CRASHED'
+  fi
+  echo '--- LAST 5 LOG LINES ---'
+  tail -5 /tmp/transplant_v4.log 2>/dev/null
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 300
+  pid=\$(pgrep -f transplant_v4 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    echo 'STATUS: running'
+    cat /proc/\$pid/status 2>/dev/null | grep -E 'VmRSS'
+  else
+    echo 'STATUS: FINISHED or CRASHED'
+  fi
+  echo '--- LAST 8 LOG LINES ---'
+  tail -8 /tmp/transplant_v4.log 2>/dev/null
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 480
+  pid=\$(pgrep -f transplant_v4 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    echo 'STATUS: running'
+    cat /proc/\$pid/status 2>/dev/null | grep -E 'VmRSS'
+  else
+    echo 'STATUS: FINISHED or CRASHED'
+  fi
+  echo '--- LAST 10 LOG LINES ---'
+  tail -10 /tmp/transplant_v4.log 2>/dev/nu
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- LAST 20 LOG LINES ---'
+  tail -20 /tmp/transplant_v4.log 2>/dev/null
+  echo ''
+  echo '--- CHECKPOINT ---'
+  ls -lh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ 2>/dev/null
+  echo ''
+  echo '--- AUTOLAUNCH STATUS ---'
+  ps aux | grep autolaunch | grep -v grep | head -3
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 120
+  echo '--- TRANSPLANT PID ---'
+  pgrep -f transplant_v4 2>/dev/null | head -3 || echo 'DONE'
+  echo ''
+  echo '--- LAST 5 LOG LINES ---'
+  tail -5 /tmp/transplant_v4.log 2>/dev/null
+  echo ''
+  echo '--- CHECKPOINT SIZE ---'
+  du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- FULL CHECKPOINT DIR ---'
+  ls -lh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ 2>/dev/null
+  echo ''
+  echo '--- TRANSPLANT LOG ---'
+  cat /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/transplant_log.json 2>/dev/null
+  echo ''
+  echo '--- V28 TRAINING LOG ---'
+  cat /tmp/v28_train_node1.lo
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- SERVER TIME ---'
+  date
+  echo ''
+  echo '--- SEARCH FOR RECENT SAFETENSORS (last 2h) ---'
+  find /NHNHOME/WORKSPACE/0426030024_A/ -name '*.safetensors' -newer /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/config.json -ls 2>/dev/null | head -10
+  echo ''
+  echo '--- CHECK IF SHARDED OUTPUT EXISTS ---'
+  
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- TRANSPLANT.PY SAVE FUNCTION ---'
+  grep -n 'shard_by_layer\|shard-by-layer\|save\|output_path\|Saving' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/null | head -40
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- TRANSPLANT.PY LINES 405-480 ---'
+  sed -n '405,480p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/null
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- TRANSPLANT.PY MAIN + EXCEPTION HANDLING ---'
+  sed -n '480,530p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/null
+  echo ''
+  echo '--- CHECK EXECUTOR.EXECUTE RETURN TYPE ---'
+  grep -n 'def execute\|return model\|return None\|stats\[' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py | head 
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- TRANSPLANT.PY EXECUTE LINES 254-330 ---'
+  sed -n '254,330p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant.py 2>/dev/null
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- DMESG OOM CHECK ---'
+  dmesg 2>/dev/null | grep -i 'oom\|killed\|transplant' | tail -20
+  echo ''
+  echo '--- TMUX SESSION LIST ---'
+  tmux ls 2>/dev/null || echo 'no tmux'
+  echo ''
+  echo '--- CAPTURE TMUX TRANSPLANT SESSION ---'
+  tmux capture-pane -t transplant -p 2>/dev/null | tail -30 || echo 'transplant sessio
+---
+CMD: scp -P 42501 -i ~/.ssh/aether-b200-v28-1_key /tmp/transplant_v5.py gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/transplant_v5.py 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  # Kill old transplant session and start v5
+  tmux kill-session -t transplant 2>/dev/null || true
+  # Clear old bad checkpoint partial state if any
+  rm -f /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev/null || true
+  # Check psutil available
+  python3 -c 'import psutil; print(\"psutil ok\")
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  tmux new-session -d -s transplant5 2>/dev/null || tmux kill-session -t transplant5 2>/dev/null; tmux new-session -d -s transplant5
+  tmux send-keys -t transplant5 'cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && python3 -u transplant_v5.py 2>&1 | tee /tmp/transplant_v5.log; echo \"EXIT=\$?\"' Enter
+  sleep 5
+  echo '--- INITIA
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 300
+  pid=\$(pgrep -f transplant_v5 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    cat /proc/\$pid/status 2>/dev/null | grep 'VmRSS'
+  fi
+  echo '--- LAST 5 LOG ---'
+  tail -5 /tmp/transplant_v5.log 2>/dev/null
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- AUTOLAUNCH PROCESSES ---'
+  ps aux | grep -E 'autolaunch|v28' | grep -v grep
+  echo ''
+  echo '--- V28 AUTOLAUNCH SCRIPT CONTENT ---'
+  cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/autolaunch_v28.sh 2>/dev/null | head -40
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 600
+  pid=\$(pgrep -f transplant_v5 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    cat /proc/\$pid/status 2>/dev/null | grep 'VmRSS'
+    echo 'STATUS: running'
+  else
+    echo 'STATUS: finished'
+  fi
+  echo '--- LAST 8 LOG ---'
+  tail -8 /tmp/transplant_v5.log 2>/dev/null
+  echo '--- CKPT --
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 300
+  pid=\$(pgrep -f transplant_v5 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    cat /proc/\$pid/status 2>/dev/null | grep 'VmRSS'
+    echo 'STATUS: running'
+  else
+    echo 'STATUS: finished/crashed'
+  fi
+  echo '--- LAST 12 LOG ---'
+  tail -12 /tmp/transplant_v5.log 2>/dev/null
+  echo '-
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 120
+  pid=\$(pgrep -f transplant_v5 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    echo 'STATUS: running (still saving)'
+    cat /proc/\$pid/status 2>/dev/null | grep 'VmRSS'
+  else
+    echo 'STATUS: done'
+  fi
+  echo '--- LAST 15 LOG ---'
+  tail -15 /tmp/transplant_v5.log 2>/dev/null
+  echo
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 180
+  pid=\$(pgrep -f transplant_v5 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then
+    echo 'STILL SAVING...'
+  else
+    echo 'PROCESS DONE'
+  fi
+  echo '--- LAST 10 LOG ---'
+  tail -10 /tmp/transplant_v5.log 2>/dev/null
+  echo ''
+  echo '--- CKPT SIZE ---'
+  du -sh /NHNHOME/WORKSPACE/0426030024
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 180
+  pid=\$(pgrep -f transplant_v5 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then echo 'STILL SAVING'; else echo 'DONE'; fi
+  echo '--- LAST 10 LOG ---'
+  tail -10 /tmp/transplant_v5.log 2>/dev/null
+  echo ''
+  echo '--- CKPT SIZE ---'
+  du -sh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibr
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 120
+  pid=\$(pgrep -f transplant_v5 2>/dev/null | head -1)
+  echo \"PID: \$pid\"
+  if [ -n \"\$pid\" ]; then echo 'STILL SAVING'; else echo 'DONE'; fi
+  echo '--- LAST 10 LOG ---'
+  tail -10 /tmp/transplant_v5.log 2>/dev/null
+  echo ''
+  echo '--- CKPT ---'
+  ls -lh /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- TRANSPLANT LOG V5 ---'
+  cat /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/transplant_log.json
+  echo ''
+  echo '--- LAUNCH SCRIPT ---'
+  cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh 2>/dev/null | head -30 || echo 'not found'
+  echo ''
+  echo '--- LOGITS CHECK ---'
+  ls /NHNHOME/W
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  # Launch v28 training
+  cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+  LOG='/tmp/v28_train_node1.log'
+  # Back up old log
+  mv \$LOG \${LOG}.failed_prev 2>/dev/null || true
+  # Launch
+  nohup bash launch_v28_torchrun.sh train > \$LOG 2>&1 &
+  echo \"Training launched! PID: \$!\"
+  echo \"Log: \$LOG\"
+  # Wait 20 seconds and ch
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 60
+  echo '--- TRAINING LOG ---'
+  cat /tmp/v28_train_node1.log 2>/dev/null
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 120
+  echo '--- TRAINING LOG TAIL ---'
+  tail -30 /tmp/v28_train_node1.log 2>/dev/null
+  echo ''
+  echo '--- TRAINING PID CHECK ---'
+  pgrep -f train_mohawk_zero3 2>/dev/null | head -5 || echo 'not running'
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 300
+  echo '--- TRAINING LOG TAIL ---'
+  tail -30 /tmp/v28_train_node1.log 2>/dev/null
+  echo ''
+  echo '--- PID CHECK ---'
+  pgrep -f train_mohawk_zero3 2>/dev/null | head -5 || echo 'not running'
+  echo ''
+  echo '--- GPU USAGE ---'
+  nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,no
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "cat /tmp/v28_train_node1.log 2>/dev/null" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- LOGIT SHARD FILES ---'
+  ls -lh /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_*.pt 2>/dev/null | head -25
+  echo ''
+  echo '--- FIRST SHARD CHECK ---'
+  python3 -c \"
+import torch
+try:
+    d = torch.load('/NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_0.pt', 
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- TEST LOADING SHARD 0000 ---'
+  python3 -c \"
+import torch
+try:
+    d = torch.load('/NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_0000.pt', map_location='cpu', weights_only=False)
+    print('OK:', type(d))
+    if hasattr(d, 'shape'): print('shape:', d.shape)
+    elif isinstance(d, dict): 
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  python3 -c \"
+import torch
+from pathlib import Path
+import sys
+
+logits_dir = '/NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/'
+shards = sorted(Path(logits_dir).glob('logits_shard_*.pt'))
+print(f'Found {len(shards)} shards')
+bad = []
+for f in shards:
+    size_mb = f.stat().st_size / 1e6
+    try:
+        d = torc
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 'python3 /NHNHOME/WORKSPACE/0426030024_A/aether-v3/check_shards.py 2>&1' 2>&1 || ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+cat > /tmp/check_shards.py << 'PYEOF'
+import torch
+from pathlib import Path
+logits_dir = '/NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/'
+shards = sorted(Path(logit
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- GENERATE TEACHER LOGITS SCRIPT ---'
+  ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/generate_teacher_logits.py 2>/dev/null && head -60 /NHNHOME/WORKSPACE/0426030024_A/aether-v3/generate_teacher_logits.py || echo 'not found in aether-v3'
+  echo ''
+  ls /NHNHOME/WORKSPACE/0426030024_A/*.py 2>/dev/null | head -10
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- ALL PY FILES IN WORKSPACE ---'
+  find /NHNHOME/WORKSPACE/0426030024_A/ -maxdepth 2 -name '*.py' 2>/dev/null | grep -v __pycache__ | head -20
+  echo ''
+  echo '--- CHECK NIPA FOR GENERATE SCRIPT ---'
+  ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>/dev/null | head -30
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "sed -n '380,450p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py 2>/dev/null" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+python3 -c \"
+import torch
+d = torch.load('/NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_0001.pt', map_location='cpu', weights_only=False)
+print('keys:', list(d.keys()))
+print('start_idx:', d['start_idx'])
+print('count:', d['count'])
+print('top_k_values shape:', d['top_k_values'].shape, 'dtype:', d[
+---
+CMD: scp -P 42501 -i ~/.ssh/aether-b200-v28-1_key /tmp/regen_logit_shards.py gmail_be2j@59.150.32.1:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/regen_logit_shards.py 2>&1 && echo "SCP OK"
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  tmux new-session -d -s regen_logits 2>/dev/null || tmux kill-session -t regen_logits; tmux new-session -d -s regen_logits
+  tmux send-keys -t regen_logits 'cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && python3 -u regen_logit_shards.py 2>&1 | tee /tmp/regen_logits.log; echo EXIT=\$?' Enter
+  sleep 15
+  echo '--- INITIAL LOG -
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- PYTHON ENVS ---'
+  which python3 && python3 --version
+  echo ''
+  echo '--- ACCELERATE CHECK ---'
+  python3 -c 'import accelerate; print(accelerate.__version__)' 2>/dev/null || echo 'not found'
+  echo ''
+  echo '--- SYSTEM PIP ---'
+  pip3 install accelerate -q 2>&1 | tail -3
+  echo '--- CHECK AFTER INSTALL ---'
+  pyt
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  pip3 install accelerate --break-system-packages -q 2>&1 | tail -3
+  python3 -c 'import accelerate; print(\"accelerate:\", accelerate.__version__)' 2>/dev/null || echo 'failed'
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  echo '--- REGEN LOG ---'
+  tail -10 /tmp/regen_logits.log 2>/dev/null
+  echo ''
+  echo '--- PID ---'
+  pgrep -f regen_logit_shards 2>/dev/null || echo 'not running'
+  echo ''
+  echo '--- GPU USAGE ---'
+  nvidia-smi --query-gpu=index,memory.used,memory.total --format=csv,noheader 2>/dev/null | head -8
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  ps aux | grep 71632 | grep -v grep
+  echo ''
+  echo '--- FULL LOG TAIL ---'
+  tail -20 /tmp/regen_logits.log 2>/dev/null
+  # Kill stale session and restart cleanly
+  tmux kill-session -t regen_logits 2>/dev/null || true
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  # Fix script: dtype= instead of torch_dtype=
+  sed -i 's/torch_dtype=torch.bfloat16/dtype=torch.bfloat16/g' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/regen_logit_shards.py
+  # Test accelerate is importable first
+  python3 -c 'import accelerate; print(\"accelerate\", accelerate.__version__); import transformers; print(\"transfo
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  tmux new-session -d -s regen_logits
+  tmux send-keys -t regen_logits 'cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3 && python3 -u regen_logit_shards.py 2>&1 | tee /tmp/regen_logits.log; echo EXIT=\$?' Enter
+  sleep 20
+  echo '--- LOG ---'
+  tail -15 /tmp/regen_logits.log 2>/dev/null
+  echo ''
+  echo '--- GPU ---'
+  nvidia-smi -
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 120
+  echo '--- LOG TAIL ---'
+  tail -8 /tmp/regen_logits.log 2>/dev/null
+  echo ''
+  echo '--- GPU ---'
+  nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -8
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 180
+  echo '--- LOG TAIL ---'
+  tail -5 /tmp/regen_logits.log 2>/dev/null
+  echo ''
+  echo '--- GPU ---'
+  nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -8
+  echo ''
+  pgrep -f regen_logit_shards && echo 'RUNNING' || echo 'DONE/CRASHED'
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key gmail_be2j@59.150.32.1 "
+  sleep 120
+  echo '--- LOG TAIL ---'
+  tail -8 /tmp/regen_logits.log 2>/dev/null
+  echo ''
+  echo '--- GPU ---'
+  nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -8
+  echo ''
+  pgrep -f regen_logit_shards && echo 'RUNNING' || echo 'DONE/CRASHED'
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no root@59.150.32.1 "tmux capture-pane -t regen_logits -p -S -50" 2>&1
+---
+CMD: ssh -i ~/.ssh/id_container -p 10581 -o StrictHostKeyChecking=no work@proxy3.nipa2025.ktcloud.com "tmux ls 2>/dev/null; echo '---'; ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/*.log 2>/dev/null | head -5; ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/regen* 2>/dev/null" 2>&1
+---
+CMD: ls -la ~/.ssh/aether-b200-v28-1_key && chmod 600 ~/.ssh/aether-b200-v28-1_key && ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 root@59.150.32.1 "echo ok; hostname; id" 2>&1
+---
+CMD: ssh -i ~/.ssh/id_container -p 10581 -o StrictHostKeyChecking=no work@proxy3.nipa2025.ktcloud.com "cat /home/jayone/Project/b200_host.txt 2>/dev/null; ls /home/jayone/Project/ 2>/dev/null | head -10" 2>&1
+---
+CMD: cat ~/.ssh/aether-b200-v28-1_key | head -3
+# Check if it's a private key or something else
+file ~/.ssh/aether-b200-v28-1_key
+---
+CMD: # Check if there's a .pub for this key, or generate one
+ssh-keygen -y -f ~/.ssh/aether-b200-v28-1_key 2>/dev/null
+---
+CMD: # Try different users on B200
+for user in root work jayone ubuntu admin; do
+  result=$(ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=8 -o BatchMode=yes ${user}@59.150.32.1 "echo ${user}:OK" 2>&1)
+  echo "${user}: ${result}"
+done
+---
+CMD: ssh -i ~/.ssh/id_container -p 10581 -o StrictHostKeyChecking=no work@proxy3.nipa2025.ktcloud.com "
+ssh -p 2200 -o StrictHostKeyChecking=no main1 'ps aux | grep -E \"regen|python|train\" | grep -v grep | head -10; nvidia-smi --query-gpu=memory.used,memory.total,name --format=csv,noheader; df -h /NHNHOME 2>/dev/null || df -h /home 2>/dev/null | tail -1'
+" 2>&1
+---
+CMD: ssh -i ~/.ssh/id_container -p 10581 -o StrictHostKeyChecking=no work@proxy3.nipa2025.ktcloud.com "
+ssh -p 2200 -o StrictHostKeyChecking=no main1 '
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>/dev/null | head -5
+echo \"---regen---\"
+ls /NHNHOME/WORKSPACE/0426030024_A/logit_cache/ 2>/dev/null | grep shard | wc -l
+ls -la /NHNHOME/WORKSPACE/0426030024_A/logit_cache/logits_shard_00{02,03,08,16}.pt 
+---
+CMD: ssh -i ~/.ssh/id_container -p 10581 -o StrictHostKeyChecking=no work@proxy3.nipa2025.ktcloud.com "
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>/dev/null | head -10
+echo '---logit cache---'
+ls /NHNHOME/WORKSPACE/0426030024_A/logit_cache/ 2>/dev/null | grep shard | wc -l
+ls -lh /NHNHOME/WORKSPACE/0426030024_A/logit_cache/logits_shard_00{02,03,08,16}.pt 2>/dev/null
+echo '---calibrated model---'
+l
+---
+CMD: ssh -i ~/.ssh/id_container -p 10581 -o StrictHostKeyChecking=no work@proxy3.nipa2025.ktcloud.com "
+hostname; whoami; pwd; df -h | grep -v tmpfs | head -8
+echo '---NHNHOME---'
+ls /NHNHOME/ 2>&1
+echo '---home---'
+ls ~ | head -10
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "hostname; id; tmux ls 2>/dev/null" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "tmux capture-pane -t regen_logits -p -S -80" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "tail -20 /tmp/regen_logits.log" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 420  # ~7 min for shard_0008 remainder + shard_0016 start
+tail -30 /tmp/regen_logits.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 250
+tail -15 /tmp/regen_logits.log
+echo '---shard sizes---'
+ls -lh /NHNHOME/WORKSPACE/0426030024_A/logit_cache/logits_shard_00{02,03,08,16}.pt 2>/dev/null
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+ls -lh /NHNHOME/WORKSPACE/0426030024_A/logit_cache/logits_shard_00{02,03,08,16}.pt 2>/dev/null
+echo '---verify---'
+python3 -c \"
+import torch
+for f in ['logits_shard_0002.pt','logits_shard_0003.pt','logits_shard_0008.pt','logits_shard_0016.pt']:
+    d = torch.load(f'/NHNHOME/WORKSPACE/0426030024_A/log
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+ls /NHNHOME/WORKSPACE/0426030024_A/ 2>/dev/null
+echo '---script dir---'
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/regen_logit_shards.py 2>/dev/null
+echo '---logit path in script---'
+grep -i 'logit_cache\|OUTPUT\|shard' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/regen_logit_shards.py 2>/dev/null | he
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+grep 'LOGITS_DIR\|INPUT\|MODEL' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/regen_logit_shards.py | head -10
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ 2>/dev/null
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+ls -lh /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/logits_shard_00{02,03,08,16}.pt 2>/dev/null
+echo '---verify---'
+python3 -c \"
+import torch
+base = '/NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits'
+for f in ['logits_shard_0002.pt','logits_shard_0003.pt','logits_shard
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh 2>/dev/null
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/model.safetensors 2>/dev/null && echo 'checkpoint OK'
+# Check if training is already running
+ps aux | grep -E 'torchrun|train_mohawk|deepspeed' | grep -v grep |
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+nohup bash launch_v28_torchrun.sh train > /tmp/v28_node1_train.log 2>&1 &
+echo TRAIN_PID=$!
+sleep 5
+tail -10 /tmp/v28_node1_train.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 60
+tail -40 /tmp/v28_node1_train.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 90
+tail -50 /tmp/v28_node1_train.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+wc -l /tmp/v28_node1_train.log
+ls -la /tmp/v28_node1_train.log
+# Check if training processes are running
+ps aux | grep -E 'torchrun|train_mohawk' | grep -v grep | wc -l
+# GPU usage
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 120
+tail -60 /tmp/v28_node1_train.log
+echo '---GPU---'
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Check node2 log
+ssh aether-b200-v28-2 'tail -20 /tmp/v28_node2_train.log 2>/dev/null || echo no_log'
+echo '---node2 GPU---'
+ssh aether-b200-v28-2 'nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader 2>/dev/null'
+echo '---node1 processes---'
+ps aux | grep -E 'torchrun|pytho
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 180
+echo '===log==='
+tail -80 /tmp/v28_node1_train.log
+echo '===size==='
+wc -c /tmp/v28_node1_train.log
+echo '===gpu==='
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 120
+tail -40 /tmp/v28_node1_train.log
+echo '---gpu---'
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 60
+tail -30 /tmp/v28_node1_train.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+wc -c /tmp/v28_node1_train.log
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+ps aux | grep 'train_mohawk' | grep -v grep | awk '{print \$1,\$8,\$9,\$11}' | head -3
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 120
+wc -c /tmp/v28_node1_train.log
+tail -40 /tmp/v28_node1_train.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Check all recent log files
+ls -lt /tmp/*.log 2>/dev/null | head -10
+echo '---processes still running?---'
+ps aux | grep 'train_mohawk' | grep -v grep | wc -l
+echo '---node1 train log alt---'
+cat /tmp/v28_node1_train.log 2>/dev/null | tail -5
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+echo '---strace on rank0 worker---'
+# Find rank 0 process and check what it's doing
+PID=\$(ps aux | grep 'train_mohawk' | grep -v grep | head -1 | awk '{print \$2}')
+echo \"PID: \$PID\"
+ls -la /proc/\$PID/fd 2>/dev/null | g
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 300
+echo 'log size:'
+wc -c /tmp/v28_node1_train.log
+tail -20 /tmp/v28_node1_train.log
+echo '---gpu---'
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+echo '---procs---'
+ps aux | grep 'train_mohawk' | grep -v grep | wc -l
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Check for output via process stdout pipe
+PID_TORCHRUN=\$(ps aux | grep 'torchrun' | grep -v grep | awk '{print \$2}' | head -1)
+echo \"torchrun PID: \$PID_TORCHRUN\"
+# Check process FDs for pipe connections
+ls -la /proc/\$PID_TORCHRUN/fd 2>/dev/null | head -10
+
+# Check if tee is running
+ps aux | gre
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+grep -n 'LOG_INTERVAL\|print.*step\|print.*kld\|print.*loss\|log.*step' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py 2>/dev/null | head -20
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Check how much data tee has received via pipe
+TEE_PID=75696
+cat /proc/\$TEE_PID/status 2>/dev/null | grep -E 'State|VmRSS'
+
+# Check if torchrun worker has any output pending
+WORKER_PID=75776
+ls -la /proc/\$WORKER_PID/fd 2>/dev/null | head -10
+
+# Also check node2 log - maybe it has step output
+ssh ae
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+ssh aether-b200-v28-2 'cat /tmp/v28_node2_train.log' 2>/dev/null | grep -A5 -B2 'Error\|error\|OOM\|killed\|exit\|traceback\|RuntimeError\|CUDA\|NCCL' | head -60
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Kill all training processes on node1
+pkill -f 'train_mohawk_zero3.py' 2>/dev/null
+pkill -f 'torchrun' 2>/dev/null
+sleep 3
+ps aux | grep 'train_mohawk\|torchrun' | grep -v grep | wc -l
+# Kill on node2 too
+ssh aether-b200-v28-2 'pkill -f train_mohawk_zero3 2>/dev/null; pkill -f torchrun 2>/dev/null; s
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+pkill -u gmail_be2j -f 'train_mohawk_zero3' 2>/dev/null || true
+pkill -u gmail_be2j -f 'torchrun' 2>/dev/null || true
+sleep 5
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "pkill -f 'train_mohawk' 2>/dev/null; echo killed" 2>&1
+sleep 8
+ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "nvidia-smi --query-gpu=index,memory.used --format=csv,noheader; ps aux | grep train | grep -v grep | wc -l" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+grep -n 'gradient_checkpoint\|use_reentrant\|BATCH_SIZE\|MAX_SEQ\|GRAD_ACCUM\|attn\|attention\|flash\|scaled_dot' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -30
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+grep -n 'gradient_checkpoint\|checkpoint\|flash\|sdp\|memory_efficient' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -15
+echo '---attention in model---'
+grep -n 'scaled_dot_product\|flash\|attn_output\|matmul.*q.*k\|softmax' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/model.py 
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+grep -n 'scaled_dot_product\|flash\|matmul\|softmax\|attn_mask\|causal' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/*.py 2>/dev/null | grep -i 'attn\|attention' | head -20
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sed -n '85,115p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+echo '---'
+sed -n '330,360p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Find all attention blocks with naive attn pattern
+grep -n 'torch.matmul(q, k' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+echo '---total attention blocks---'
+grep -c 'torch.matmul(q, k' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sed -n '390,435p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sed -n '95,115p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+echo '==='
+sed -n '338,358p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+cp /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py.bak
+python3 << 'PYEOF'
+path = '/NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py'
+with open(path) as f:
+    src = f.read()
+
+# Fix 1: SelfAttention naive -> SDPA (causal)
+old1 = '''        # Sca
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sed -n '396,432p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+python3 << 'PYEOF'
+path = '/NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py'
+with open(path) as f:
+    src = f.read()
+
+# Fix 3a: CrossAttention cross path
+old3a = '''            attn_cross = torch.matmul(q, k_cross.transpose(-2, -1)) / math.sqrt(self.head_dim)
+            attn_cross = F.softmax(att
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Quick sanity check - can the model file be imported?
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+python3 -c 'import layers; print(\"layers.py import OK\")' 2>&1
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+nohup bash launch_v28_torchrun.sh train > /tmp/v28_node1_train2.log 2>&1 &
+echo TRAIN_PID=\$!
+sleep 5
+tail -5 /tmp/v28_node1_train2.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 600
+tail -40 /tmp/v28_node1_train2.log
+echo '---gpu---'
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+# Check DS config for gradient checkpointing
+grep -n 'gradient_checkpoint\|activation_checkpoint\|cpu_offload\|offload_param\|stage3' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -20
+echo '---DS config block---'
+sed -n '110,145p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/trai
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sed -n '145,175p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+python3 << 'PYEOF'
+path = '/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py'
+with open(path) as f:
+    src = f.read()
+
+# Fix batch & grad_accum for v28 mode (BATCH_SIZE_PER_GPU=4, GRAD_ACCUM=8 → 1, 32)
+old_v28 = '''    BATCH_SIZE_PER_GPU = 4
+    MAX_SEQ_LEN        = 2048
+    GRAD_ACCUM 
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+python3 << 'PYEOF'
+path = '/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py'
+with open(path) as f:
+    src = f.read()
+
+# Fix 1: batch
+old_v28 = '''    BATCH_SIZE_PER_GPU = 4
+    MAX_SEQ_LEN        = 2048
+    GRAD_ACCUM         = 8        # eff_batch = 4×16×8 = 512'''
+new_v28 = '''    BA
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+pkill -f 'train_mohawk' 2>/dev/null; sleep 3
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -2
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+nohup bash launch_v28_torchrun.sh train > /tmp/v28_train3.log 2>&1 &
+echo PID=\$!
+sleep 8
+tail -8 /tmp/v28_train3.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "pkill -f 'train_mohawk' 2>/dev/null; echo done" 2>&1
+sleep 5
+ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -2
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+nohup bash launch_v28_torc
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sleep 900
+echo '=== log ==='
+tail -50 /tmp/v28_train3.log
+echo '=== gpu ==='
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+free -h
+echo '---'
+grep -E 'MemTotal|MemFree|MemAvailable' /proc/meminfo
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+grep -E 'Error|OOM|memory|CUDA|Kill|kill|Traceback|RuntimeError' /tmp/v28_train3.log | head -30
+echo '---full log head---'
+head -60 /tmp/v28_train3.log
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+grep -n 'teacher\|top_k\|cuda\|device\|map_location\|cached_logits' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | grep -i 'load\|cuda\|device\|move\|to(' | head -20
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+sed -n '385,430p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+" 2>&1
+---
+CMD: ssh -p 42501 -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no gmail_be2j@59.150.32.1 "
+python3 << 'PYEOF'
+path = '/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py'
+with open(path) as f:
+    src = f.read()
+
+# Remove offload_param: cpu
+old_offload = '''        \"offload_param\": {
+            \"device\": \"cpu\",
+            \"pin_memory\": True,
+        },
+        \"overla
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== v27 train script check ==='
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk*.py 2>/dev/null
+echo '=== NIPA v27 launch config check ==='
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch*.sh 2>/dev/null
+echo '=== Current train_mohawk_zero3.py key params ==='
+grep -n 'BATCH_SIZE\|GRAD_ACCUM\|CUMEM\|offload\|s
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== train script lines 1-50 (docstring + CUMEM context) ==='
+head -55 /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+echo '=== launch_v28_b200.sh ==='
+cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_b200.sh 2>/dev/null || echo 'NOT FOUND'
+echo '=== any v27 logs on NIPA? ==='
+ls /NHNHOME/WORKSPACE/
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== NCCL docs on CUMEM_ENABLE ==='
+python3 -c \"
+import subprocess, sys
+# Check NCCL env vars documentation
+result = subprocess.run(['python3', '-c', 'import torch; print(torch.__version__); print(torch.version.cuda)'], capture_output=True, text=True)
+print(result.stdout)
+\"
+echo '=== Check NCCL buffer env vars ==='
+env | 
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== Previous training logs showing CUMEM=0 hang evidence ==='
+ls /tmp/v28_*.log 2>/dev/null
+echo '---'
+# Check latest training logs for NCCL hang evidence
+for f in /tmp/v28_node1_train.log /tmp/v28_train*.log; do
+  if [ -f \"\$f\" ]; then
+    echo \"=== \$f (tail 30) ===\"
+    tail -30 \"\$f\"
+  fi
+done
+echo '=== check if 
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+# Check the multinode dryrun log for CUMEM=0 vs 1 results
+echo '=== multinode dryrun log (key sections) ==='
+grep -E 'CUMEM|HANG|hang|timeout|barrier|rendezvous|NCCL|error|Error|OOM|passed|PASSED|failed|FAILED' /tmp/v28_multinode_dryrun.log 2>/dev/null | tail -40 || echo 'NOT FOUND or empty'
+echo '=== node1 dryrun (single-node C
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== node1_train2.log (OOM detail) ==='
+grep -E 'OOM|OutOfMemory|alloc|178|CUMEM|error|Error|NCCL' /tmp/v28_node1_train2.log 2>/dev/null | tail -30
+echo '---'
+echo '=== Full multinode dryrun log head ==='
+head -60 /tmp/v28_multinode_dryrun.log 2>/dev/null
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== test_zero3_dryrun.py NCCL settings ==='
+head -50 /NHNHOME/WORKSPACE/0426030024_A/aether-v3/test_zero3_dryrun.py | grep -A3 'NCCL\|socket\|bond0'
+echo '---'
+echo '=== Memory breakdown with CUMEM=1: check via nvidia-smi after fresh launch ==='
+echo '=== Current GPU memory state ==='
+nvidia-smi --query-gpu=index,memory.us
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "head -15 /NHNHOME/WORKSPACE/0426030024_A/aether-v3/test_zero3_dryrun.py"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "grep -n 'os.environ\|NCCL\|import os\|import sys' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/test_zero3_dryrun.py | head -20"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "sed -n '28,35p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/test_zero3_dryrun.py"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+# Add NCCL bond0 settings right after the imports in test_zero3_dryrun.py
+# Also set CUMEM=0 for multinode test
+sed -n '28,36p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/test_zero3_dryrun.py
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+# Patch: add NCCL settings after 'import deepspeed' line
+SCRIPT='/NHNHOME/WORKSPACE/0426030024_A/aether-v3/test_zero3_dryrun.py'
+cp \"\$SCRIPT\" \"\${SCRIPT}.bak\"
+python3 - <<'PYEOF'
+import re
+
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/test_zero3_dryrun.py', 'r') as f:
+    content = f.read()
+
+nccl_block = '''
+# ── NC
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+SCRIPT='/NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh'
+cp \"\$SCRIPT\" \"\${SCRIPT}.bak\"
+
+# Change CUMEM from 1 to 0 in both places
+sed -i 's/export NCCL_CUMEM_ENABLE=1/export NCCL_CUMEM_ENABLE=0/g' \"\$SCRIPT\"
+sed -i 's/NCCL_CUMEM_ENABLE=1 /NCCL_CUMEM_ENABLE=0 /g' \"\$SCRIPT\"
+
+# Verify
+grep 'CUMEM' \"\$SCR
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== Launching multinode dryrun with CUMEM=0 ==='
+export NCCL_CUMEM_ENABLE=0
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+nohup bash launch_v28_torchrun.sh dryrun > /tmp/v28_multinode_dryrun2.log 2>&1 &
+echo \"PID: \$!\"
+echo 'Waiting 30s for NCCL init...'
+sleep 30
+echo '=== Log so far ==='
+cat /tmp/v28_multinode_dryrun2.lo
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== Launching v28 multinode training with CUMEM=0 ==='
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3
+nohup bash launch_v28_torchrun.sh train > /tmp/v28_train5.log 2>&1 &
+TRAIN_PID=\$!
+echo \"Training PID: \$TRAIN_PID\"
+echo 'Waiting 60s for NCCL init + first forward pass...'
+sleep 60
+echo '=== Training log (first 80 lines) 
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== Training progress (60s later) ==='
+tail -40 /tmp/v28_train5.log
+echo '=== GPU memory usage ==='
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo 'Waiting 120s for weight scatter + training init...'
+sleep 120
+echo '=== Training log tail ==='
+tail -50 /tmp/v28_train5.log
+echo '=== GPU memory ==='
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+sleep 180
+echo '=== Training log tail ==='
+tail -30 /tmp/v28_train5.log
+echo '=== GPU memory ==='
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo '=== Process alive check ==='
+ps aux | grep 'train_mohawk' | grep -v grep | head -3
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+sleep 300
+echo '=== Training log ==='
+tail -40 /tmp/v28_train5.log
+echo '=== GPU memory node1 ==='
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+echo '=== Process state ==='
+ps aux | grep 'train_mohawk' | grep -v grep | awk '{print \$1,\$2,\$3,\$4,\$11}' | head -3
+echo '=== node2 log tail ==='
+ssh aether-b200-v2
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+tail -30 /tmp/v28_train5.log
+echo '---GPU---'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+echo '---PROC---'
+ps aux | grep '[t]rain_mohawk' | awk '{print \$2,\$3,\$4,\$11}'
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== Full train5 log around the error ==='
+grep -n 'Error\|error\|Traceback\|rank5\|rank:5\|OOM\|CUDA\|memory\|scatter\|Loading\|Student' /tmp/v28_train5.log | tail -40
+echo '=== Full log lines 30-100 ==='
+sed -n '30,120p' /tmp/v28_train5.log
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+grep -n 'zero_optimization\|prefetch_bucket\|persistence_threshold\|offload_optimizer\|offload_param\|gather_16bit\|stage3' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -20
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "sed -n '145,165p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+python3 - <<'PYEOF'
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py', 'r') as f:
+    content = f.read()
+
+old = '''        \"stage3_prefetch_bucket_size\": 5e8,
+        \"stage3_param_persistence_threshold\": 1e6,
+        \"stage3_gather_16bit_weights_on_model_save\": True,'''
+
+new = '''        # Limit 
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+echo '=== Relaunching training (attempt 6) ==='
+nohup bash /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh train > /tmp/v28_train6.log 2>&1 &
+echo \"PID: \$!\"
+sleep 90
+echo '=== Log progress ==='
+tail -40 /tmp/v28_train6.log
+echo '=== GPU memory ==='
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheade
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+sleep 120
+tail -50 /tmp/v28_train6.log
+echo '---'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+# Check process state and what it's actually doing
+ps aux | grep '[t]rain_mohawk' | awk '{print \$2,\$3,\$4,\$8,\$11}'
+echo '---'
+# Check if it's doing IB transfer
+cat /proc/\$(pgrep -f 'train_mohawk' | head -1)/status 2>/dev/null | grep -E 'VmRSS|VmPeak|State'
+echo '---'
+# Check network IO (is IB active?)
+cat /proc/net/dev | gr
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "sed -n '640,700p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+sleep 240
+tail -50 /tmp/v28_train6.log
+echo '---GPU---'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+sleep 60
+tail -30 /tmp/v28_train6.log
+echo '---GPU---'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+sleep 30
+tail -20 /tmp/v28_train6.log
+echo '---'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+echo '---'
+ps aux | grep '[t]rain_mohawk' | awk '{print \$2,\$3,\$11}' | head -5
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+# Wait for step output
+for i in 1 2 3 4 5; do
+  sleep 60
+  LAST=\$(tail -5 /tmp/v28_train6.log)
+  echo \"[t+\${i}min] \$LAST\"
+  if echo \"\$LAST\" | grep -q 'step\\|Step\\|KLD\\|loss\\|FAILED\\|Error\\|OOM'; then
+    echo 'GOT SIGNAL'
+    break
+  fi
+done
+echo '=== Final log tail ==='
+tail -30 /tmp/v28_train6.log
+nvidia-smi --qu
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader
+echo '---'
+# Check if process is doing I/O or compute
+cat /proc/\$(pgrep -f 'train_mohawk' | grep -v '88711\|88713' | head -1)/status 2>/dev/null | grep -E 'State|VmRSS|voluntary_ctxt'
+echo '---'
+# Strace top process briefly
+timeout 3 strace -p \$(pgr
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+# Kill current slow run
+kill \$(pgrep -f 'train_mohawk') 2>/dev/null && echo 'killed' || echo 'nothing to kill'
+sleep 3
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -2
+"
+---
+CMD: ssh -o ConnectTimeout=10 -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+pkill -f train_mohawk 2>/dev/null; sleep 5; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -2
+"
+---
+CMD: ssh -o ConnectTimeout=15 -o ServerAliveInterval=5 -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "echo alive" 2>&1
+---
+CMD: ssh -o ConnectTimeout=15 -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "pkill -9 -f train_mohawk 2>/dev/null; echo done" 2>&1
+---
+CMD: ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+pids=\$(pgrep -f train_mohawk)
+echo \"PIDs: \$pids\"
+kill -9 \$pids 2>/dev/null
+echo 'sent kill'
+" 2>&1 &
+sleep 15
+echo 'background kill sent'
+---
+CMD: sleep 10
+ssh -o ConnectTimeout=20 -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -3" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+python3 - <<'PYEOF'
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py', 'r') as f:
+    content = f.read()
+
+old = '''        # Limit simultaneous all-gather to prevent accumulation during forward.
+        # AETHER chunked MoE (25L x 64chunks) needs strict ZeRO-3 release control.
+        \"stage3_prefetch_
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+nohup bash /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh train > /tmp/v28_train7.log 2>&1 &
+echo \"PID: \$!\"
+sleep 90
+tail -20 /tmp/v28_train7.log
+echo '---GPU---'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -p 42501 gmail_be2j@59.150.32.1 "
+sleep 360
+tail -30 /tmp/v28_train7.log
+echo '---GPU---'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+"
+---
+CMD: ssh 0426030024_A "tail -50 /tmp/v28_train7.log 2>/dev/null; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used,memory.total --format=csv,noheader 2>/dev/null | head -8"
+---
+CMD: cat ~/.ssh/config | grep -A3 "0426030024" | head -20
+---
+CMD: cat ~/.ssh/aether-b200-v28-1_key 2>/dev/null | head -5; ls -la ~/.ssh/aether-b200-v28-1_key
+---
+CMD: cat /home/jayone/Project/FromScratch/.omc/world-model.json | python3 -c "
+import json,sys
+d = json.load(sys.stdin)
+# Find B200 SSH connection info
+for fact in d.get('known_facts', []):
+    if 'B200' in fact and ('ssh' in fact.lower() or 'port' in fact.lower() or '42501' in fact):
+        print(fact[:200])
+        print('---')
+" 2>/dev/null
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 work@proxy3.nipa2025.ktcloud.com -p 42501 "tail -50 /tmp/v28_train7.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader" 2>&1 | head -80
+---
+CMD: # Try NIPA proxy first then hop to B200
+ssh -i ~/.ssh/id_container -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p 10581 work@proxy3.nipa2025.ktcloud.com "hostname; ls /NHNHOME/WORKSPACE/ 2>/dev/null | head -5" 2>&1
+---
+CMD: ssh -i ~/.ssh/id_container -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p 10581 work@proxy3.nipa2025.ktcloud.com "
+# Check if B200 training log exists on NIPA side
+ls /tmp/v28_train*.log 2>/dev/null
+# Check any running training PIDs
+ps aux | grep -E 'train_mohawk|torchrun|deepspeed' | grep -v grep | head -5
+# Check if there's a node connection
+cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/lau
+---
+CMD: ssh -i ~/.ssh/id_container -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p 10581 work@proxy3.nipa2025.ktcloud.com "ls /NHNHOME/WORKSPACE/ 2>/dev/null; who am i; hostname" 2>&1
+---
+CMD: ssh -i ~/.ssh/id_container -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p 10581 work@proxy3.nipa2025.ktcloud.com 2>&1 <<'EOF'
+hostname
+ls /NHNHOME/
+EOF
+---
+CMD: # Check the B200 key file for connection hints, and try connecting to B200
+ssh-keygen -l -f ~/.ssh/aether-b200-v28-1_key 2>&1
+# Also look for any B200 connection script
+find /home/jayone/Project/FromScratch -name "*.sh" -newer /home/jayone/Project/FromScratch/.git/index 2>/dev/null | head -10
+ls /home/jayone/Project/FromScratch/*.sh 2>/dev/null | head -10
+---
+CMD: cat /home/jayone/Project/FromScratch/launch_v28_b200.sh | grep -E 'HOST|IP|PORT|ssh|node[12]|10\.' | head -20
+---
+CMD: # Try various B200 connection methods
+# The key comment says root@c13f-h03-3-gpu126 and world model says B200:42501
+for port in 42501 10580 10582 10583; do
+    result=$(ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=5 -p $port work@proxy3.nipa2025.ktcloud.com "echo OK:$port" 2>&1)
+    echo "Port $port: $result"
+done
+---
+CMD: # Try with the container key on port 10582/10583 (B200 is likely a different port)
+ssh -i ~/.ssh/id_container -o StrictHostKeyChecking=no -o ConnectTimeout=10 -p 10582 work@proxy3.nipa2025.ktcloud.com "hostname; tail -20 /tmp/v28_train7.log 2>/dev/null; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -4" 2>&1
+---
+CMD: # Try B200 via NIPA hop (ProxyJump)
+ssh -i ~/.ssh/id_container -o StrictHostKeyChecking=no -J work@proxy3.nipa2025.ktcloud.com:10581 work@10.34.4.33 "hostname; tail -30 /tmp/v28_train7.log 2>/dev/null; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -8" 2>&1 | head -50
+---
+CMD: # B200 접속 시도: aether-b200-v28-1_key 사용, NIPA proxy 경유
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no \
+    -o ProxyCommand="ssh -i ~/.ssh/id_container -W %h:%p -p 10581 work@proxy3.nipa2025.ktcloud.com" \
+    work@10.34.4.33 "hostname; tail -30 /tmp/v28_train7.log 2>/dev/null; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -8" 2
+---
+CMD: # NIPA proxy 경유 NIPA 서버에 접속, 거기서 B200으로 hop
+ssh -i ~/.ssh/id_container -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p 10581 work@proxy3.nipa2025.ktcloud.com \
+    "ssh -i /home/work/.ssh/id_rsa -o StrictHostKeyChecking=no work@10.34.4.33 'hostname; tail -30 /tmp/v28_train7.log 2>/dev/null; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -8'" 2>&1 | head -50
+---
+CMD: # Check the git commit about B200 dryrun for connection details
+git -C /home/jayone/Project/FromScratch show 592d8c0 --stat 2>/dev/null | head -10
+# Look for any B200 SSH connection script or port notes in recent history
+git -C /home/jayone/Project/FromScratch log --all --oneline --follow -- "*.sh" 2>/dev/null | head -5
+---
+CMD: # Check B200 SSH setup - look for hostnames in all known places
+cat /home/jayone/Project/FromScratch/launch_v28_torchrun.sh | grep -E 'NODE[12]|SSH|USER|root|work|10\.' | head -20
+---
+CMD: # Check if there are notes about B200 portal connection
+git -C /home/jayone/Project/FromScratch show 592d8c0 -- "*.md" "*.sh" "*.json" 2>/dev/null | grep -E 'proxy|port|ssh|10\.|HOST|B200' | head -20
+---
+CMD: # Found it! B200 is at 59.150.32.1:42501, user gmail_be2j
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "hostname; tail -50 /tmp/v28_train7.log 2>/dev/null || echo 'log not found'; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader 2>/dev/null | head -8" 2>&1 | head -70
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "tail -80 /tmp/v28_train7.log 2>/dev/null" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ps aux | grep -E 'train_mohawk|torchrun' | grep -v grep; echo '---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -8" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -5 /tmp/v28_train7.log; echo '---node2---'; tail -5 /tmp/v28_node2_train.log 2>/dev/null || echo 'no node2 log'" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; ps aux | grep -E 'train_mohawk' | grep -v grep | awk '{print \$1, \$2, \$3, \$11}' | head -2; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -8; wc -l /tmp/v28_train7.log" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-v28/ 2>/dev/null | head -5 || echo 'output dir empty/missing'; grep -a 'step\|Step\|loss\|Loss\|KLD\|kld\|ERROR\|error\|OOM\|killed' /tmp/v28_train7.log 2>/dev/null | tail -5" 2>&1
+---
+CMD: sleep 300 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -10 /tmp/v28_train7.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -8; ps aux | grep train_mohawk | grep -v grep | wc -l" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -n 'freeze\|expert\|moe\|requires_grad' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -30" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "sed -n '660,695p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "python3 -c \"
+import torch, sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+from configuration_aether_micro import AetherMicroConfig
+from modeling_aether_micro import AetherMicroForCausalLM
+cfg = AetherMicroConfig.from_pretrained('/NHNHOME/WORKSPACE/
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/*.py | head -10; ls /NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/ | head -5" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "python3 -c \"
+import torch, sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+from model import AetherModel
+from config import AetherConfig
+import json
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/config.json') as f:
+    cfg_di
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "python3 -c \"
+import sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+from model import AetherNetModel, AetherNetConfig
+import json
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-166b-calibrated-v11/config.json') as f:
+    cfg_dict = json.load(f)
+c
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "head -50 /NHNHOME/WORKSPACE/0426030024_A/aether-v3/model.py" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -n 'chunks\|experts\|gate\|up_proj\|down_proj\|ExpertChunk' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py | head -30" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -n 'chunks\|self\.chunks\|ExpertChunk\|nn\.ModuleList' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py | head -20" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -n 'shared_expert\|shared\|num_experts\|ExpertFFN\|self\.' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py | grep -v '^\s*#' | head -30" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -n 'class OhengMoE\|self\.' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py | grep 'self\.' | grep -v 'def \|#' | head -30" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "sed -n '235,275p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; wc -l /tmp/v28_train7.log; tail -5 /tmp/v28_train7.log; echo '---'; ps aux | grep train_mohawk | grep -v grep | head -2 | awk '{print \$1,\$2,\$3,\$4}'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -4" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "sed -n '668,685p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py" 2>&1
+---
+CMD: # Check what dataset paths are available on B200
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ls /NHNHOME/WORKSPACE/0426030024_A/datasets/ 2>/dev/null | head -10; ls /NHNHOME/WORKSPACE/0426030024_A/teacher_logits/ 2>/dev/null | head -5; ls /NHNHOME/WORKSPACE/0426030024_A/ 2>/dev/null | head -20" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/ 2>/dev/null | head -10; ls /NHNHOME/WORKSPACE/0426030024_A/models/ 2>/dev/null | head -10; grep -n 'TEACHER_LOGITS_DIR\|CACHED_LOGITS\|logits' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -10"
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/ 2>/dev/null | head -10; ls -la /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/*.pt 2>/dev/null | head -5" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/ | grep -c logits_shard; ls /NHNHOME/WORKSPACE/0426030024_A/aether-net-397b/teacher_logits/ | grep logits_shard | sort | tail -5" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=15 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -n 'SlimPajama\|random data\|dataset\|Dataset\|input_ids\|CACHED' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -30" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; ps aux | grep train_mohawk | grep -v grep | awk '{sum += \$3} END {print \"Total CPU%:\", sum}'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | awk -F', ' '{sum += \$2} END {print \"Total GPU mem MiB:\", sum}'; tail -3 /tmp/v28_train7.log" 2>&1
+---
+CMD: # Check node2 status
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 'hostname; ps aux | grep train_mohawk | grep -v grep | wc -l; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -4; tail -5 /tmp/v28_node2_train.log 2>/dev/null || echo no-node2-log' 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 'cat /tmp/v28_node2_train.log 2>/dev/null | tail -80' 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 'wc -l /tmp/v28_node2_train.log; head -100 /tmp/v28_node2_train.log' 2>&1" 2>&1 | head -80
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 'sed -n \"100,200p\" /tmp/v28_node2_train.log' 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "pkill -f train_mohawk_zero3; sleep 2; ps aux | grep train_mohawk | grep -v grep | wc -l; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -4" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "pkill -f train_mohawk_zero3 2>/dev/null; echo 'kill sent'; sleep 3; ps aux | grep train_mohawk | grep -v grep | wc -l; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -4" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
+    -p 42501 gmail_be2j@59.150.32.1 2>&1 << 'ENDSSH'
+pkill -f train_mohawk_zero3 2>/dev/null || true
+echo "kill done"
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 "sleep 3 && ps aux | grep train_mohawk | grep -v grep | wc -l && nvidia-smi --query-gpu=index,memory.used --format=csv,noheader" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "sed -n '673,678p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "sed -i 's/if \".moe.experts.\" in name or \".moe.shared_expert.\" in name:/if \".moe.chunks.\" in name or \".moe.shared_expert.\" in name:/' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py && grep -n 'moe.chunks\|moe.experts' /NHNHOME/WORKSPACE/042603002
+---
+CMD: # Also apply the same fix on node2
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 \"sed -i 's/if \\\\\".moe.experts.\\\\\" in name or \\\\\".moe.shared_expert.\\\\\" in name:/if \\\\\".moe.chunks.\\\\\" in name or \\\\\".moe.shared_expert.\\\\\" in name:/' /NHNHOME/WORKSPACE/0426030024_A/aether
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "sed -n '395,440p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -n 'BATCH_SIZE\|GRAD_ACCUM\|MAX_STEPS\|v28_mode\|max_live_param\|reduce_bucket\|stage3_prefetch' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -20" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "sed -n '153,170p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Replace the max_live_parameters comment block and value  
+python3 -c "
+content = open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py').read()
+
+old = '''        # ZeRO-3 all-gather memory control for AETHER chunked MoE (25L x 64chunks).
+        #
+---
+CMD: # Apply same ZeRO-3 config fix on node2
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 \"python3 -c \\\"
+content = open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py').read()
+old = '\\\"stage3_max_live_parameters\\\": 7e9,         # max 7B params live (~13 GB fp16, 1 MoE laye
+---
+CMD: # Check what node2 already has (it was already patched in the previous step since files are shared)
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 \"grep -n 'max_live_param' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py\" 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "echo '=== Freeze fix ===' && grep -n 'moe.chunks\|moe.experts' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | grep 'requires_grad\|in name'; echo '=== max_live ===' && grep -n 'max_live_param' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zer
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "nohup bash /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh train > /tmp/v28_train8.log 2>&1 & echo PID=$!" 2>&1
+---
+CMD: sleep 5 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ps aux | grep launch_v28 | grep -v grep; ps aux | grep train_mohawk | grep -v grep | wc -l; tail -5 /tmp/v28_train8.log 2>/dev/null || echo 'log not started'" 2>&1
+---
+CMD: sleep 600 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -30 /tmp/v28_train8.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader; ps aux | grep train_mohawk | grep -v grep | wc -l" 2>&1
+---
+CMD: sleep 120 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -20 /tmp/v28_train8.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -8" 2>&1
+---
+CMD: sleep 180 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -25 /tmp/v28_train8.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -8" 2>&1
+---
+CMD: sleep 300 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -30 /tmp/v28_train8.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -a 'rank6\|rank.6\|OOM\|OutOfMemory\|Error\|error\|Traceback\|frozen\|Expert params\|Trainable' /tmp/v28_train8.log | tail -30" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "grep -a 'Expert params\|Trainable\|Optimizer param\|frozen' /tmp/v28_train8.log | head -20" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+python3 -c "
+content = open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py').read()
+old = '\"stage3_max_live_parameters\": 1e12,        # no limit — baseline is only ~25 GB with freeze fix'
+new = '\"stage3_max_live_parameters\": 25e9,        # 25B
+---
+CMD: # Apply same fix on node2 (shared filesystem - likely already updated)
+ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 \"grep -n 'max_live_param' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py\" 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "nohup bash /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh train > /tmp/v28_train9.log 2>&1 & echo 'Train 9 launched'; sleep 3; ps aux | grep launch_v28 | grep -v grep" 2>&1
+---
+CMD: sleep 120 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -15 /tmp/v28_train9.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader; ps aux | grep train_mohawk | grep -v grep | wc -l" 2>&1
+---
+CMD: sleep 480 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; tail -20 /tmp/v28_train9.log; echo '---GPU---'; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader; ps aux | grep train_mohawk | grep -v grep | wc -l" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; wc -l /tmp/v28_train9.log; grep -a 'OOM\|OutOfMemory\|Error\|Traceback\|step.*=\|Step.*loss\|KLD\|kld\|expert.*frozen\|Trainable' /tmp/v28_train9.log | tail -5; ps aux | grep train_mohawk | grep -v grep | wc -l" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "date; ps aux | grep train_mohawk | grep -v grep | wc -l; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader; grep -a 'OOM\|OutOfMemory\|Traceback\|exitcode' /tmp/v28_train9.log | tail -3" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 'ps aux | grep train_mohawk | grep -v grep | wc -l; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -4; tail -5 /tmp/v28_node2_train.log 2>/dev/null | grep -E \"frozen|OOM|Error|Step|step|loss|kld\"' 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 'grep -a \"OOM\|OutOfMemory\|SIGTERM\|exitcode\" /tmp/v28_node2_train.log | tail -10' 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 \
+    "ssh aether-b200-v28-2 'grep -a \"rank.\\+OutOfMemory\\|OutOfMemory\\|rank\" /tmp/v28_node2_train.log | grep -v SIGTERM | tail -20' 2>&1" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 \
+    -p 42501 gmail_be2j@59.150.32.1 "pkill -f train_mohawk_zero3 2>/dev/null; sleep 2; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader | head -4" 2>&1
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+pkill -9 -f train_mohawk_zero3 2>/dev/null
+pkill -9 -f deepspeed 2>/dev/null
+sleep 2
+echo "kill_done"
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader 2>/dev/null | head -8
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '150,175p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Show lines around deepspeed.initialize() to find where to add memory printout
+grep -n "deepspeed.initialize\|ds_engine\|local_rank\|torch.cuda.memory" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -30
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '755,785p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+
+# Fix 1: contiguous_gradients False
+sed -i 's/"contiguous_gradients": True/"contiguous_gradients": False/' train_mohawk_zero3.py
+
+# Fix 2: max_live_parameters 7e9 (was 25e9)
+sed -i 's/"stage3_max_live_parameters": 25e9/"stag
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+
+# Fix 3: Add memory summary after "DeepSpeed ZeRO-3 initialized." print
+# Use Python to insert lines after line 768
+python3 << 'PYEOF'
+with open('train_mohawk_zero3.py', 'r') as f:
+    lines = f.readlines()
+
+insert_after = N
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Sync the modified train script to node2
+scp -o StrictHostKeyChecking=no /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py \
+    aether-b200-v28-2:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py 2>&1
+echo "scp_exit=$?"
+
+# Also kill any stuc
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Verify node2 has the updated file
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "grep -n 'contiguous_gradients\|stage3_max_live_parameters\|memory_summary\|MEM rank' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -10"
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Check node2 GPU state
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader | head -8"
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+nohup bash launch_v28_torchrun.sh > /tmp/v28_train10.log 2>&1 &
+echo "Train10 PID=$!"
+ENDSSH
+---
+CMD: sleep 45 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 40 lines of train10 log ==="
+tail -40 /tmp/v28_train10.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 120 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 60 lines ==="
+tail -60 /tmp/v28_train10.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 180 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 60 lines ==="
+tail -60 /tmp/v28_train10.log 2>/dev/null
+echo "=== Node2 log ==="
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "tail -20 /tmp/v28_node2_train.log 2>/dev/null" 2>/dev/null
+echo "=== GPU memory node1 ==="
+nvidia-smi --query-g
+---
+CMD: sleep 60 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 50 lines ==="
+tail -50 /tmp/v28_train10.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 90 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 30 lines ==="
+tail -30 /tmp/v28_train10.log 2>/dev/null
+echo "=== process check ==="
+pgrep -a -f train_mohawk_zero3 | head -5
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 300 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 40 lines ==="
+tail -40 /tmp/v28_train10.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== process alive? ==="
+pgrep -c -f train_mohawk_zero3 && echo "YES" || echo "DE
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '775,850p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Show what's between memory printout and "Starting training"
+grep -n "barrier\|os.makedirs\|dataloader\|dataset\|Starting training\|MEM rank" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -40
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+pkill -9 -f train_mohawk_zero3 2>/dev/null
+sleep 2
+
+# Fix the deadlock: replace the per-rank loop (which requires barrier) with simple rank-0-only print
+python3 << 'PYEOF'
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py', 'r') as f:
+    content
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Sync fix to node2 and verify
+scp -o StrictHostKeyChecking=no /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py \
+    aether-b200-v28-2:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+
+# Verify
+grep -n "MEM rank\|barrier" /NHNHOME/WORKSPACE
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+nohup bash launch_v28_torchrun.sh > /tmp/v28_train11.log 2>&1 &
+echo "Train11 PID=$!"
+ENDSSH
+---
+CMD: sleep 300 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 50 lines ==="
+tail -50 /tmp/v28_train11.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== Process alive? ==="
+pgrep -c -f train_mohawk_zero3 && echo "YES" || echo "DE
+---
+CMD: sleep 300 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 40 lines ==="
+tail -40 /tmp/v28_train11.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 120 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 30 lines ==="
+tail -30 /tmp/v28_train11.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== Process alive ==="
+pgrep -c -f train_mohawk_zero3 && echo "YES" || echo "DEA
+---
+CMD: sleep 300 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 20 lines ==="
+tail -20 /tmp/v28_train11.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== GPU utilization ==="
+nvidia-smi --query-gpu=index,utilization.gpu,memory.use
+---
+CMD: sleep 180 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== GPU mem + util ==="
+nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.free --format=csv,noheader
+echo "=== New log? ==="
+tail -5 /tmp/v28_train11.log 2>/dev/null | grep -E "step|Step|KLD|loss|ERROR|OOM|Error" || echo "(no new step out
+---
+CMD: sleep 600 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== GPU mem + util ==="
+nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.free --format=csv,noheader
+echo "=== New log? ==="
+tail -10 /tmp/v28_train11.log 2>/dev/null
+echo "=== Process alive ==="
+pgrep -c -f train_mohawk_zero3 && echo "YE
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Node2 GPU util ==="
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.free --format=csv,noheader" 2>/dev/null
+echo "=== Node2 process alive ==="
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Get node2 crash reason
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "tail -60 /tmp/v28_node2_train.log 2>/dev/null"
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Get more context - search for OOM or Error before the failure
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "grep -n 'OOM\|Error\|CUDA\|RuntimeError\|memory\|GPU' /tmp/v28_node2_train.log 2>/dev/null | tail -30"
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+pkill -9 -f train_mohawk_zero3 2>/dev/null
+sleep 2
+echo "=== Node1 CPU RAM ==="
+free -h
+echo "=== Node2 CPU RAM ==="
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "free -h" 2>/dev/null
+echo "=== GPUs clear? ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,n
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "gradient_checkpointing\|GradientCheckpoint\|checkpoint" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py 2>/dev/null | head -10
+grep -n "gradient_checkpointing\|GradientCheckpoint" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Check what model class is used (OhengForCausalLM etc)
+grep -n "class Oheng\|gradient_checkpointing\|config.use_cache" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py 2>/dev/null | head -20
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '140,175p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+python3 << 'PYEOF'
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py', 'r') as f:
+    content = f.read()
+
+old = '''        # offload_param: B200 180GB/GPU × 16 GPUs. Model shard = 332GB/16 = ~21GB/GPU.
+        # B200 has enough VRAM; keep params 
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Sync to node2
+scp -o StrictHostKeyChecking=no /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py \
+    aether-b200-v28-2:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+echo "scp=$?"
+
+# Verify node2
+ssh -o StrictHostKeyChecking=no aether-b2
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+nohup bash launch_v28_torchrun.sh > /tmp/v28_train12.log 2>&1 &
+echo "Train12 PID=$!"
+ENDSSH
+---
+CMD: sleep 300 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 40 lines ==="
+tail -40 /tmp/v28_train12.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== Processes ==="
+pgrep -c -f train_mohawk_zero3 && echo "YES" || echo "DEAD"
+E
+---
+CMD: sleep 420 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 40 lines ==="
+tail -40 /tmp/v28_train12.log 2>/dev/null
+echo "=== Node2 last lines ==="
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "tail -10 /tmp/v28_node2_train.log 2>/dev/null" 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "OOM\|Error\|CUDA\|RuntimeError\|memory\|rank 3\|local_rank: 3\|SIGKILL\|Killed" \
+    /tmp/v28_train12.log 2>/dev/null | grep -v "lr_schedules\|LR" | tail -30
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Check if expandable_segments is in the launch script
+grep "PYTORCH_CUDA\|expandable" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/launch_v28_torchrun.sh
+
+echo "=== OhengMoE forward - check for large allocations ==="
+# Look at forward pass in oheng_moe.py for large tensors
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Read the OhengMoE forward method in full
+sed -n '279,330p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Find the top-level model class and attention implementation
+grep -n "class Oheng\|SelfAttention\|MHA\|num_heads\|head_dim\|vocab_size\|hidden_size" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py | head -30
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Find attention module - probably in a separate file
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/*.py | head -20
+grep -rn "class.*Attention\|class.*Model\|class.*Layer\|num_heads" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ 2>/dev/null | grep -v ".pyc" | head -20
+
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Check layers.py for attention details  
+grep -n "class.*Attention\|class.*Layer\|num_heads\|head_dim\|state.*head_dim" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py | head -30
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Get the actual model config values
+python3 -c "
+import sys
+sys.path.insert(0, '/NHNHOME/WORKSPACE/0426030024_A/aether-v3')
+from config import AetherConfig
+c = AetherConfig()
+print('hidden_size:', c.hidden_size)
+print('num_layers:', c.num_hidden_layers)
+print('num_heads
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/config.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "class\|def forward\|element_states\|hidden_states\|logits\|all_hidden\|student_capture" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/model.py | head -40
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "student_capture\|register_hook\|hook\|hidden_capture\|all_hidden" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -20
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '520,560p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '160,230p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '245,320p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/layers.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "MEM rank\|Starting training\|DeepSpeed ZeRO\|alloc=\|Scatter\|initialized\|Expert params\|state dict" \
+    /tmp/v28_train12.log 2>/dev/null | head -20
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "MAX_SEQ_LEN\|seq_len\|BATCH_SIZE\|GRAD_ACCUM" \
+    /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -20
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '825,875p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+python3 << 'PYEOF'
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py', 'r') as f:
+    content = f.read()
+
+# Fix 1: Change MAX_SEQ_LEN to 256 (v28 mode only, line 85)
+old1 = '    MAX_SEQ_LEN        = 2048\n    GRAD_ACCUM         = 32       # eff_b
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Verify and sync to node2
+grep -n "MAX_SEQ_LEN\|sl = student" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -5
+scp -o StrictHostKeyChecking=no /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py \
+    aether-b200-v28-2:/NHNHOME/WORKS
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+nohup bash launch_v28_torchrun.sh > /tmp/v28_train13.log 2>&1 &
+echo "Train13 PID=$!"
+ENDSSH
+---
+CMD: sleep 600 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Last 40 lines ==="
+tail -40 /tmp/v28_train13.log 2>/dev/null
+echo "=== GPU memory ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== Node2 status ==="
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "nvidia-
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+pkill -9 -f train_mohawk_zero3 2>/dev/null
+sleep 2
+echo "=== Node2 error ==="
+ssh -o StrictHostKeyChecking=no aether-b200-v28-2 "grep -n 'OOM\|CUDA out\|Error\|rank.*exitcode.*1' /tmp/v28_node2_train.log 2>/dev/null | tail -10"
+echo "=== Node1 error ==="
+grep -n "OOM\|CU
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+python3 << 'PYEOF'
+with open('/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py', 'r') as f:
+    content = f.read()
+
+# Fix 1: GRAD_ACCUM from 32 to 1 (v28 mode)
+old = '    GRAD_ACCUM         = 32       # eff_batch = 1×16×32 = 512'
+new = '    GRAD_ACCUM     
+---
+CMD: ssh -o StrictHostKeyChecking=no node1.b200 "cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/ && nohup bash launch_v28_torchrun.sh > /tmp/v28_train14.log 2>&1 & echo PID=$!"
+---
+CMD: cat ~/.ssh/config | grep -A3 -i "b200\|nhn\|node1\|node2" | head -40
+---
+CMD: ls -la ~/.ssh/ | grep b200; cat ~/.ssh/aether-b200-v28-1_key 2>/dev/null | head -3
+---
+CMD: grep -A10 "b200\|B200\|0426030024" ~/.ssh/config 2>/dev/null; echo "---"; env | grep -i "b200\|nhn\|0426"
+---
+CMD: grep -i "ssh.*0426\|proxy.*0426\|HostName.*0426\|10\.\|b200" /home/jayone/.claude/projects/-home-jayone-Project-FromScratch/694b077d-c078-4029-b529-3f0b3f851e12.jsonl 2>/dev/null | grep -i "ssh\|host\|proxy\|connect" | tail -20
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+# Verify current settings before launch
+echo "=== DS_CONFIG max_live_parameters ==="
+grep "max_live_parameters\|contiguous_grad\|offload_param" train_mohawk_zero3.py | head -10
+echo "=== Hyperparams ==="
+grep "BATCH_SIZE\|MAX
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+pkill -f "train_mohawk_zero3\|torchrun" 2>/dev/null; sleep 2
+nohup bash launch_v28_torchrun.sh > /tmp/v28_train14.log 2>&1 &
+echo "PID=$!"
+ENDSSH
+---
+CMD: sleep 20 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log (last 40) ===" && tail -40 /tmp/v28_train14.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 60 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log (last 50) ===" && tail -50 /tmp/v28_train14.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 90 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log (last 60) ===" && tail -60 /tmp/v28_train14.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== Process alive? ==="
+ps aux | grep "train_mohawk\|torchrun" | grep -v grep | head -5
+ENDSS
+---
+CMD: sleep 120 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log (last 60) ===" && tail -60 /tmp/v28_train14.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used,memory.free --format=csv,noheader
+echo "=== Node2 log (last 10) ==="
+ssh aether-b200-v28-2 "tail -10 /tmp/v28_node2_train.log 2>/dev
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+ps aux | grep "train_mohawk\|torchrun" | grep -v grep | awk '{print $1,$2,$3,$4,$11}' | head -5
+echo "---CPU mem---"
+free -h
+ENDSSH
+---
+CMD: sleep 180 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log tail ===" && tail -30 /tmp/v28_train14.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+echo "=== Procs ==="
+ps aux | grep "train_mohawk" | grep -v grep | awk '{print $2,$3,$4}' | head -5
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Full log around error ===" 
+grep -n "Error\|error\|OOM\|CUDA\|killed\|Traceback\|RuntimeError\|MemoryError\|SIGKILL\|rank 3\|local_rank.*3" /tmp/v28_train14.log | tail -30
+echo "=== Log lines 50 before crash ==="
+grep -n "" /tmp/v28_train14.log | tail -80 | hea
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Rank3 traceback ===" 
+sed -n '79,176p' /tmp/v28_train14.log
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Check if no_grad patch is applied to ExpertChunk.forward
+grep -n "no_grad\|ExpertChunk\|chunks.*forward\|monkey" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -20
+echo "---"
+# Also check oheng_moe.py: does MoE return delta or replace hidden_sta
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Find ExpertChunk class definition
+grep -n "class ExpertChunk\|class.*Chunk" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/oheng_moe.py
+# Find where model is built in train script
+grep -n "ExpertChunk\|from oheng_moe\|import.*moe\|deepspeed.initialize" /NHNHOME/WORKSPACE/04
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Show lines around deepspeed.initialize() to find where to insert the patch
+sed -n '750,775p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Show 5 lines before deepspeed.initialize to get exact context for sed
+grep -n "We wrap student_model with DeepSpeed" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+
+# Insert no_grad monkey-patch for ExpertChunk.forward before deepspeed.initialize
+# The patch goes between line 757 and 758
+python3 - << 'PYEOF'
+with open('train_mohawk_zero3.py', 'r') as f:
+    lines = f.readlines()
+
+# Find
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Verify the patch looks correct
+sed -n '755,785p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+
+# Restore max_live_parameters to a reasonable value - with no_grad fix,
+# params are released after each chunk so 1e9 (1B) is safe
+sed -i 's/"stage3_max_live_parameters": 5e7,  # 50M = one expert chunk.*/"stage3_max_live_par
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+pkill -f "train_mohawk_zero3\|torchrun" 2>/dev/null; sleep 2
+nohup bash launch_v28_torchrun.sh > /tmp/v28_train15.log 2>&1 &
+echo "Train15 PID=$!"
+ENDSSH
+---
+CMD: sleep 360 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log (last 60) ===" && tail -60 /tmp/v28_train15.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 120 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log tail ===" && tail -40 /tmp/v28_train15.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log tail ===" && tail -40 /tmp/v28_train15.log
+echo "=== GPU mem ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 60 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 'tail -15 /tmp/v28_train15.log'
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 'tail -20 /tmp/v28_train15.log'
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Check if training is progressing beyond step 1
+grep "step " /tmp/v28_train15.log | tail -10
+echo "--- last line ---"
+tail -1 /tmp/v28_train15.log
+echo "--- GPU ---"
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+nvidia-smi --query-gpu=index,utilization.gpu,memory.used --format=csv,noheader
+echo "--- process check ---"
+ps aux | grep train_mohawk | grep -v grep | awk '{print $2,$3,$11}' | head -3
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "print.*step\|log_interval\|% 10\|% 100\|step.*loss" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -15
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "step\b.*stage\|f\".*step\|print.*step\b" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -15
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '960,985p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+grep -n "LOG_INTERVAL" /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | head -5
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+
+python3 - << 'PYEOF'
+with open('train_mohawk_zero3.py', 'r') as f:
+    content = f.read()
+
+# 1. Restore seq_len 2048
+content = content.replace(
+    'MAX_SEQ_LEN        = 256    # reduced from 2048 for B200 memory fit',
+    '
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+scp train_mohawk_zero3.py aether-b200-v28-2:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+echo "scp exit=$?"
+pkill -f "train_mohawk_zero3\|torchrun" 2>/dev/null; sleep 2
+nohup bash launch_v28_torchrun.sh > /
+---
+CMD: sleep 420 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log ===" && tail -30 /tmp/v28_train16.log
+echo "=== GPU ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 420 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log ===" && tail -40 /tmp/v28_train16.log
+echo "=== GPU ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Processes ==="
+ps aux | grep "train_mohawk\|torchrun" | grep -v grep | awk '{print $2,$3,$4,$11}' | head -10
+echo "=== Log size ==="
+wc -l /tmp/v28_train16.log
+echo "=== Full log ==="
+cat /tmp/v28_train16.log
+echo "=== Node2 log ==="
+ssh aether-b200-v28-2 "tail
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Kill all python training processes on both nodes
+pkill -9 -f "train_mohawk_zero3" 2>/dev/null
+pkill -9 -f "torchrun" 2>/dev/null
+ssh aether-b200-v28-2 "pkill -9 -f 'train_mohawk_zero3'; pkill -9 -f torchrun" 2>/dev/null
+sleep 3
+echo "=== Remaining procs ==="
+ps aux | g
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+pkill -9 -f "train_mohawk_zero3" 2>/dev/null
+pkill -9 -f "torchrun" 2>/dev/null
+sleep 3
+ps aux | grep "train_mohawk\|torchrun" | grep -v grep | head -5
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+ssh aether-b200-v28-2 "pkill -9 -f 'train_mohawk_zero3'; pkill -9 -f torchrun; nvidia-smi --query-gpu=index,memory.used --format=csv,noheader"
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42601 gmail_be2j@59.150.32.1 << 'ENDSSH'
+pkill -9 -f "train_mohawk_zero3"; pkill -9 -f torchrun
+sleep 2
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+ssh aether-b200-v28-2 << 'NODE2'
+pkill -9 -f "train_mohawk_zero3" 2>/dev/null
+pkill -9 -f torchrun 2>/dev/null
+sleep 2
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+NODE2
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+nohup bash launch_v28_torchrun.sh > /tmp/v28_train16.log 2>&1 &
+echo "Train16 PID=$!"
+ENDSSH
+---
+CMD: sleep 480 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+echo "=== Log ===" && tail -35 /tmp/v28_train16.log
+echo "=== GPU ==="
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: sleep 120 && ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+tail -10 /tmp/v28_train16.log
+echo "---"
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+sed -n '80,170p' /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+# Also check the v3 guide distill.py for reference params
+cat /NHNHOME/WORKSPACE/0426030024_A/aether-v3/distill.py 2>/dev/null | head -100 || \
+ls /NHNHOME/WORKSPACE/0426030024_A/aether-v3/*.py | head -20
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+tail -15 /tmp/v28_train16.log
+echo "---"
+nvidia-smi --query-gpu=index,memory.used --format=csv,noheader
+ENDSSH
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+
+python3 - << 'PYEOF'
+with open('train_mohawk_zero3.py', 'r') as f:
+    content = f.read()
+
+# 1. GRAD_ACCUM 1 → 8
+content = content.replace(
+    'GRAD_ACCUM         = 1        # reduced from 32 for memory diagnosis',
+    'GRA
+---
+CMD: ssh -i ~/.ssh/aether-b200-v28-1_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p 42501 gmail_be2j@59.150.32.1 << 'ENDSSH'
+cd /NHNHOME/WORKSPACE/0426030024_A/aether-v3/
+scp train_mohawk_zero3.py aether-b200-v28-2:/NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py && echo "scp OK"
+pkill -9 -f "train_mohawk_zero3" 2>/dev/null; pkill -9 -f torchrun 2>/dev/null
+sleep 2
+nohup bash la
+---
+CMD: ssh aether-b200-v28-1 "head -80 /NHNHOME/WORKSPACE/0426030024_A/aether-v3/train_mohawk_zero3.py | grep -n 'TOTAL_STEPS\|BATCH_SIZE\|SAVE_INTERVAL\|GRAD_ACCUM\|WARMUP\|LEARNING_RATE\|MAX_SEQ'"
+---
+CMD: ssh aether-b200-v28-1 "pgrep -af 'train_mohawk_zero3' | head -20"
+---
+CMD: cat ~/.ssh/config | grep -A5 -i "b200\|aether\|nhn\|v28" 2>/dev/null || echo "no match"
+---
+CMD: ssh nipa "cat ~/.ssh/config 2>/dev/null | grep -A5 -i 'b200\|v28\|aether'" 2>&1 | head -50
+---
+CMD: ssh -o LocalForward=none nipa "cat ~/.ssh/config 2>/dev/null | grep -A5 -i 'b200\|v28\|aether\|nhn'" 2>&1 | head -50
+---
+CMD: ssh -F /dev/null -o "IdentityFile=~/.ssh/id_container" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -p 10581 work@proxy3.nipa2025.ktcloud.com "cat ~/.ssh/config 2>/dev/null; echo '---'; cat ~/.ssh/known_hosts 2>/dev/null | grep -i 'b200\|nhn\|192\.' | head -10" 2>&1 | head -60
+---
+CMD: ssh -F /dev/null -o "IdentityFile=~/.ssh/id_container" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -p 10581 work@proxy3.nipa2025.ktcloud.com "hostname; ls /NHNHOME/WORKSPACE/ 2>/dev/null; env | grep -i 'host\|node\|nhn' | head -10; cat /etc/hosts | grep -v '^#\|^127\|^::' | head -20" 2>&1
+---
+CMD: ssh -F /dev/null -o "IdentityFile=~/.ssh/id_container" -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -p 10581 work@proxy3.nipa2025.ktcloud.com "nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null | head -5; ls /NHNHOME/WORKSPACE/0426030024_A/ 2>/dev/null || echo 'NHNHOME not found'" 2>&1
+---
+CMD: grep -n "ssh\|HostName\|Host \|User\|IdentityFile\|Port\|nhn\|b200\|v28" /home/jayone/Project/FromScratch/launch_v28_b200.sh | head -30
+---
+CMD: ls -la ~/.ssh/aether-b200-v28-1_key && file ~/.ssh/aether-b200-v28-1_key
+---
+CMD: cat ~/.ssh/known_hosts.old 2>/dev/null | head -5; grep -r "nhn\|ktcloud\|b200\|10581\|10282\|10283\|10284" ~/.ssh/ 2>/dev/null | head -10
+---
+CMD: python3 -c "
+import json
+with open('/home/jayone/.claude/projects/-home-jayone-Project-FromScratch/694b077d-c078-4029-b529-3f0b3f851e12.jsonl') as f:
+    lines = f.readlines()
+print(f'Total entries: {len(lines)}')
+# Look for SSH connection commands in recent entries
+for line in lines[-200:]:
+    try:
+        entry = json.loads(line)
+        if entry.get('type') == 'tool_use' and entry.get('name') 
+---
+CMD: python3 -c "
+import json
+with open('/home/jayone/.claude/projects/-home-jayone-Project-FromScratch/694b077d-c078-4029-b529-3f0b3f851e12.jsonl') as f:
+    lines = f.readlines()
+# Look for SSH commands with aether-b200 or train-related commands
+for line in lines:
+    try:
+        entry = json.loads(line)
+        if entry.get('type') == 'tool_use' and entry.get('name') == 'Bash':
+            cmd = en
+---
+CMD: python3 -c "
+import json
+with open('/home/jayone/.claude/projects/-home-jayone-Project-FromScratch/694b077d-c078-4029-b529-3f0b3f851e12.jsonl') as f:
+    lines = f.readlines()
+# Look at recent tool calls
+count = 0
+for line in reversed(lines[-500:]):
+    try:
+        entry = json.loads(line)
+        if entry.get('type') == 'tool_use' and entry.get('name') == 'Bash':
+            cmd = entry.get('inp
+---
+CMD: python3 << 'EOF'
+import json
+
+path = '/home/jayone/.claude/projects/-home-jayone-Project-FromScratch/694b077d-c078-4029-b529-3f0b3f851e12.jsonl'
+with open(path) as f:
+    lines = f.readlines()
+
+# Find any tool calls with ssh commands
+for line in lines:
+    try:
+        d = json.loads(line)
+        if d.get('type') == 'tool_use' and d.get('name') == 'Bash':
+            cmd = d.get('input', {}).get(
+---
+CMD: python3 << 'EOF'
+import json, re
+
+path = '/home/jayone/.claude/projects/-home-jayone-Project-FromScratch/694b077d-c078-4029-b529-3f0b3f851e12.jsonl'
+with open(path) as f:
+    lines = f.readlines()
+
+# Find tool use calls in assistant messages  
+for line in lines:
+    try:
+        d = json.loads(line)
+        if d.get('type') != 'assistant':
+            continue
+        msg = d.get('message', {})
+  
+---

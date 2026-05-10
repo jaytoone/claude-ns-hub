@@ -51,12 +51,38 @@ def get_project_id(cwd: str) -> str | None:
     return None
 
 
+def _ensure_watcher():
+    """Start milestone-watcher.py daemon if not already running."""
+    pid_file = Path("/tmp/hub-milestone-watcher.pid")
+    watcher = Path.home() / ".claude/hub/milestone-watcher.py"
+    if not watcher.exists():
+        return
+    # Check if existing process is alive
+    if pid_file.exists():
+        try:
+            pid = int(pid_file.read_text().strip())
+            os.kill(pid, 0)  # signal 0 = check existence
+            return  # already running
+        except (OSError, ValueError):
+            pid_file.unlink(missing_ok=True)
+    # Start daemon
+    import subprocess
+    subprocess.Popen(
+        [sys.executable, str(watcher)],
+        stdout=open("/tmp/hub-watcher.log", "a"),
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+
+
 def main():
     try:
         raw = sys.stdin.read()
         data = json.loads(raw) if raw.strip() else {}
     except Exception:
         data = {}
+
+    _ensure_watcher()
 
     cwd = data.get("cwd", os.getcwd())
     proj_id = get_project_id(cwd)

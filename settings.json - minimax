@@ -1,0 +1,320 @@
+{
+  "env": {
+    "PATH": "/home/jayone/google-cloud-sdk/bin:/home/jayone/.local/bin:/home/jayone/bin:/home/jayone/.nvm/versions/node/v22.19.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "BASH_DEFAULT_TIMEOUT_MS": "600000",
+    "BASH_MAX_TIMEOUT_MS": "1800000",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "20000",
+    "ANTHROPIC_BASE_URL": "https://api.minimax.io/anthropic",
+    "ANTHROPIC_AUTH_TOKEN": "sk-cp-81GKPOkbaQLxHxOZjlhwuxhd_93B9OjTtqpPUlKJwMuCx6nqR0I6MUZoN29GypJ1yUh8v3rgVSj7e-fQ0LMAdS6aHg3wJSeSnXYWCYedxrsfytm5E0vvogY",
+    "DISABLE_COST_WARNINGS": "1",
+    "ANTHROPIC_MODEL": "MiniMax-M2.5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "MiniMax-M2.5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "MiniMax-M2.7",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "MiniMax-M2.5",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(bun *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(.venv/bin/python *)",
+      "Bash(.venv/bin/pip *)",
+      "Bash(pip *)",
+      "Bash(pip3 *)",
+      "Bash(torchrun *)",
+      "Bash(pytest *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(sort *)",
+      "Bash(tee *)",
+      "Bash(xargs *)",
+      "Bash(wc *)",
+      "Bash(du *)",
+      "Bash(tree *)",
+      "Bash(mkdir *)",
+      "Bash(rm *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(chmod *)",
+      "Bash(ln *)",
+      "Bash(date *)",
+      "Bash(which *)",
+      "Bash(env *)",
+      "Bash(test *)",
+      "Bash(curl *)",
+      "Bash(sleep *)",
+      "Bash(pkill *)",
+      "Bash(kill *)",
+      "Bash(lsof *)",
+      "Bash(tmux *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(rsync *)",
+      "Bash(nohup *)",
+      "Bash(source *)",
+      "Bash(exit *)",
+      "Bash(xxd *)",
+      "Bash(openssl *)",
+      "Bash(jq *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(ffmpeg *)",
+      "Bash(ffprobe *)",
+      "Bash(yt-dlp *)",
+      "Bash(railway *)",
+      "Bash(supabase *)",
+      "Bash(psql *)",
+      "Bash(PGPASSWORD=*)",
+      "Bash(YOUTUBE_API_KEY=*)",
+      "Bash(GEMINI_API_KEY=*)",
+      "Bash(PORT=*)",
+      "Bash(NODE_ENV=*)",
+      "Bash(CUDA_VISIBLE_DEVICES=*)",
+      "Bash(claude *)",
+      "WebFetch",
+      "WebSearch",
+      "mcp__repomix__*",
+      "mcp__playwright-session-*__*",
+      "mcp__claude-flow__*",
+      "Skill(commit)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~/Project/*)",
+      "Bash(rm -rf ~/Documents/*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard HEAD~*)",
+      "Bash(sudo *)",
+      "Bash(format *)",
+      "Bash(DROP TABLE *)",
+      "Bash(TRUNCATE TABLE *)"
+    ],
+    "ask": [],
+    "defaultMode": "default"
+  },
+  "model": "sonnet[1m]",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "claude-flow hooks session-start 2>/dev/null; echo '[claude-flow] Session initialized'"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/memory-session-start.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/pre-compact-save.js"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/stream_router.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/graphprompt-augment.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/graphprompt-instruct.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/ctx_loader.py"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/task_complete.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/subagent_tracker.py",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CLAUDE_HOOK_EVENT=SubagentStop python3 $HOME/.claude/hooks/subagent_tracker.py",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "claude-flow hooks session-end --save-state true --export-metrics true 2>/dev/null; echo '[claude-flow] Session saved'"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/session-end-hint.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/memory-session-end.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/windows-notify.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/stop-playwright-detect.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/windows-stop.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/post-write-doc-index.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/ctx_session_tracker.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/grep_fallback_router.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Grep|Glob|Read|Search",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Reminder: prefer codebase-memory-mcp search_graph/trace_call_path/get_code_snippet over Grep/Glob/Read/Search for code discovery. Use get_code_snippet(qualified_name) instead of Read to view a function. Fall back only if MCP returns insufficient results.' >&2"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "autoUpdatesChannel": "stable",
+  "minimumVersion": "2.1.50",
+  "skipDangerousModePermissionPrompt": true,
+  "mcpServers": {
+    "stitch": {
+      "command": "npx",
+      "args": [
+        "@_davideast/stitch-mcp",
+        "proxy"
+      ]
+    },
+    "graphprompt": {
+      "command": "python3",
+      "args": [
+        "/home/jayone/Project/GraphPrompt/graphprompt-mcp/server.py"
+      ]
+    },
+    "graphagent": {
+      "command": "python3",
+      "args": [
+        "/home/jayone/Project/GraphAgent/mcp_server.py"
+      ]
+    }
+  }
+}

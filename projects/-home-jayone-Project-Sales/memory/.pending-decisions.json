@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-04-26T15:45:22.400270+00:00",
+  "cwd": "/home/jayone/Project/Sales",
+  "turn_count": 551,
+  "decisions": [
+    {
+      "text": "Done",
+      "context": "Done. Full scripts now in speaker notes (only you see, prospect sees clean slides). **Deck structure:** | Slide | Visible to prospect | Speaker notes ",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Done",
+      "context": "**Done. Summary:** **Task 1:** 분석 과정 panel removed from both Chat and Arena. - `conceptual/chat/page.tsx` — collapsible block + expand div gone - `con",
+      "tag": "impl_complete"
+    }
+  ]
+}

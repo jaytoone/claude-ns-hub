@@ -34,6 +34,13 @@ SCOPE = os.environ.get("CHAT_MEMORY_SCOPE", "project")
 # e.g. "/home/jayone/Project/Moat" or "/home/jayone/Project/Sales:/home/jayone/Project/Moat"
 EXTRA_PROJECTS_RAW = os.environ.get("CHAT_MEMORY_EXTRA_PROJECTS", "")
 
+# CHAT_MEMORY_EXCLUDED_PROJECTS: projects excluded from vault read AND write (sensitive repos)
+# These projects will not inject past memory AND will not be indexed into vault.
+_EXCLUDED_RAW = os.environ.get("CHAT_MEMORY_EXCLUDED_PROJECTS", "")
+EXCLUDED_PROJECTS: set[str] = set()
+if _EXCLUDED_RAW:
+    EXCLUDED_PROJECTS.update(p.strip() for p in _EXCLUDED_RAW.split(":") if p.strip())
+
 STOPWORDS = {
     # English
     "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
@@ -378,10 +385,16 @@ def main():
     except Exception:
         pass
 
+    # Exclusion check: skip vault read/write for sensitive projects
+    cwd = data.get("cwd", "")
+    if cwd:
+        current_project = cwd_to_project(cwd)
+        if current_project in EXCLUDED_PROJECTS:
+            sys.exit(0)  # silently skip — no memory injection, no indexing
+
     # Per-project filtering: cwd → project column key
     project_filters: list[str] | None = None
     if SCOPE == "project":
-        cwd = data.get("cwd", "")
         if cwd:
             main_project = cwd_to_project(cwd)
             extras = [cwd_to_project(p.strip()) for p in EXTRA_PROJECTS_RAW.split(":") if p.strip()]
@@ -454,6 +467,36 @@ def main():
 
     if not snippets:
         sys.exit(0)
+
+    # Write CM injection items for utility-rate.py retrieval_event measurement
+    try:
+        import time as _time_cm
+        _STOP_WORDS = frozenset([
+            "that", "this", "with", "from", "have", "been", "were", "they",
+            "their", "what", "when", "will", "more", "into", "then", "than",
+            "some", "also", "about", "which", "there", "other",
+        ])
+
+        def _cm_tokens(text: str, n: int = 4) -> list:
+            words = [w.strip(".,()[]{}:;!?\"'").lower() for w in text.split()]
+            return [w for w in words if len(w) >= 5 and w not in _STOP_WORDS][:n]
+
+        cm_items = [
+            {"block": "chat_memory", "tokens": _cm_tokens(s), "subject": s[:80]}
+            for s in snippets if s
+        ]
+        if cm_items:
+            cm_injection = {
+                "ts": _time_cm.time(),
+                "items": cm_items,
+                "retrieval_method": search_mode.upper(),
+            }
+            from pathlib import Path as _Path
+            (_Path.home() / ".claude" / "last-cm-injection.json").write_text(
+                json.dumps(cm_injection)
+            )
+    except Exception:
+        pass
 
     first_snippet = snippets[0][:60].replace("\n", " ").strip()
     rest_count = len(snippets) - 1

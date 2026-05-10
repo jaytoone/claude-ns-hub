@@ -1,0 +1,647 @@
+WARNING: Docker is not running
+Deploying Function: cardtoon-generate
+Uploading asset (cardtoon-generate): supabase/functions/cardtoon-generate/index.ts
+Uploading asset (cardtoon-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-generate): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-generate): supabase/functions/_shared/errorReporter.ts
+Uploading asset (cardtoon-generate): supabase/functions/_shared/refundService.ts
+Deploying Function: lipsync-merger
+Uploading asset (lipsync-merger): supabase/functions/lipsync-merger/index.ts
+Uploading asset (lipsync-merger): supabase/functions/_shared/errorHandler.ts
+Uploading asset (lipsync-merger): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (lipsync-merger): supabase/functions/_shared/cors.ts
+Uploading asset (lipsync-merger): supabase/functions/_shared/errorReporter.ts
+Deploying Function: soma-stream
+Uploading asset (soma-stream): supabase/functions/soma-stream/index.ts
+Uploading asset (soma-stream): supabase/functions/_shared/errorHandler.ts
+Uploading asset (soma-stream): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (soma-stream): supabase/functions/_shared/cors.ts
+Uploading asset (soma-stream): supabase/functions/_shared/errorReporter.ts
+Deploying Function: videoedit-generate
+Uploading asset (videoedit-generate): supabase/functions/videoedit-generate/index.ts
+Uploading asset (videoedit-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (videoedit-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (videoedit-generate): supabase/functions/_shared/cors.ts
+Uploading asset (videoedit-generate): supabase/functions/_shared/errorReporter.ts
+Uploading asset (videoedit-generate): supabase/functions/_shared/refundService.ts
+Uploading asset (videoedit-generate): supabase/functions/_shared/uploadToStorage.ts
+Deploying Function: cardnews-generate
+Uploading asset (cardnews-generate): supabase/functions/cardnews-generate/index.ts
+Uploading asset (cardnews-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardnews-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardnews-generate): supabase/functions/_shared/cors.ts
+Uploading asset (cardnews-generate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: create-text-image
+Uploading asset (create-text-image): supabase/functions/create-text-image/deno.json
+Uploading asset (create-text-image): supabase/functions/create-text-image/index.ts
+Uploading asset (create-text-image): supabase/functions/_shared/errorHandler.ts
+Uploading asset (create-text-image): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (create-text-image): supabase/functions/_shared/cors.ts
+Uploading asset (create-text-image): supabase/functions/_shared/errorReporter.ts
+Deploying Function: diagram-render
+Uploading asset (diagram-render): supabase/functions/diagram-render/index.ts
+Uploading asset (diagram-render): supabase/functions/_shared/errorHandler.ts
+Uploading asset (diagram-render): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (diagram-render): supabase/functions/_shared/cors.ts
+Uploading asset (diagram-render): supabase/functions/_shared/errorReporter.ts
+Deploying Function: festa-score-cron
+Uploading asset (festa-score-cron): supabase/functions/festa-score-cron/index.ts
+Uploading asset (festa-score-cron): supabase/functions/_shared/errorHandler.ts
+Uploading asset (festa-score-cron): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (festa-score-cron): supabase/functions/_shared/cors.ts
+Uploading asset (festa-score-cron): supabase/functions/_shared/errorReporter.ts
+Deploying Function: storyboard-status
+Uploading asset (storyboard-status): supabase/functions/storyboard-status/index.ts
+Uploading asset (storyboard-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (storyboard-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (storyboard-status): supabase/functions/_shared/cors.ts
+Uploading asset (storyboard-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: storyboard-submit
+Uploading asset (storyboard-submit): supabase/functions/storyboard-submit/index.ts
+Uploading asset (storyboard-submit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (storyboard-submit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (storyboard-submit): supabase/functions/_shared/cors.ts
+Uploading asset (storyboard-submit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: storyboard-upload
+Uploading asset (storyboard-upload): supabase/functions/storyboard-upload/index.ts
+Uploading asset (storyboard-upload): supabase/functions/_shared/errorHandler.ts
+Uploading asset (storyboard-upload): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (storyboard-upload): supabase/functions/_shared/cors.ts
+Uploading asset (storyboard-upload): supabase/functions/_shared/errorReporter.ts
+Deploying Function: test-error-reporting
+Uploading asset (test-error-reporting): supabase/functions/test-error-reporting/index.ts
+Uploading asset (test-error-reporting): supabase/functions/_shared/errorHandler.ts
+Uploading asset (test-error-reporting): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (test-error-reporting): supabase/functions/_shared/cors.ts
+Uploading asset (test-error-reporting): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-preprocess
+Uploading asset (audio-preprocess): supabase/functions/audio-preprocess/index.ts
+Uploading asset (audio-preprocess): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-preprocess): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-preprocess): supabase/functions/_shared/cors.ts
+Uploading asset (audio-preprocess): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-voice-clone
+Uploading asset (audio-voice-clone): supabase/functions/audio-voice-clone/index.ts
+Uploading asset (audio-voice-clone): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-voice-clone): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-voice-clone): supabase/functions/_shared/cors.ts
+Uploading asset (audio-voice-clone): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-voice-clone-only
+Uploading asset (audio-voice-clone-only): supabase/functions/audio-voice-clone-only/index.ts
+Uploading asset (audio-voice-clone-only): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-voice-clone-only): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-voice-clone-only): supabase/functions/_shared/cors.ts
+Uploading asset (audio-voice-clone-only): supabase/functions/_shared/errorReporter.ts
+Deploying Function: directors-generate
+Uploading asset (directors-generate): supabase/functions/directors-generate/index.ts
+Uploading asset (directors-generate): supabase/functions/_shared/errorReporter.ts
+Uploading asset (directors-generate): supabase/functions/_shared/cors.ts
+Uploading asset (directors-generate): supabase/functions/_shared/apiErrorHandler.ts
+Deploying Function: directors-merge
+Uploading asset (directors-merge): supabase/functions/directors-merge/index.ts
+Uploading asset (directors-merge): supabase/functions/_shared/errorHandler.ts
+Uploading asset (directors-merge): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (directors-merge): supabase/functions/_shared/cors.ts
+Uploading asset (directors-merge): supabase/functions/_shared/errorReporter.ts
+Deploying Function: directors-tts-translate
+Uploading asset (directors-tts-translate): supabase/functions/directors-tts-translate/index.ts
+Uploading asset (directors-tts-translate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (directors-tts-translate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (directors-tts-translate): supabase/functions/_shared/cors.ts
+Uploading asset (directors-tts-translate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-cardtoon-image
+Uploading asset (generate-cardtoon-image): supabase/functions/generate-cardtoon-image/index.ts
+Uploading asset (generate-cardtoon-image): supabase/functions/_shared/errorHandler.ts
+Uploading asset (generate-cardtoon-image): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (generate-cardtoon-image): supabase/functions/_shared/cors.ts
+Uploading asset (generate-cardtoon-image): supabase/functions/_shared/errorReporter.ts
+Deploying Function: get-user
+Uploading asset (get-user): supabase/functions/get-user/deno.json
+Uploading asset (get-user): supabase/functions/get-user/index.ts
+Uploading asset (get-user): supabase/functions/_shared/errorHandler.ts
+Uploading asset (get-user): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (get-user): supabase/functions/_shared/cors.ts
+Uploading asset (get-user): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-tts
+Uploading asset (audio-tts): supabase/functions/audio-tts/index.ts
+Uploading asset (audio-tts): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-tts): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-tts): supabase/functions/_shared/cors.ts
+Uploading asset (audio-tts): supabase/functions/_shared/errorReporter.ts
+Uploading asset (audio-tts): supabase/functions/_shared/festaUtils.ts
+Deploying Function: cardnews-status
+Uploading asset (cardnews-status): supabase/functions/cardnews-status/index.ts
+Uploading asset (cardnews-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardnews-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardnews-status): supabase/functions/_shared/cors.ts
+Uploading asset (cardnews-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: directors-heygen
+Uploading asset (directors-heygen): supabase/functions/directors-heygen/index.ts
+Uploading asset (directors-heygen): supabase/functions/_shared/errorReporter.ts
+Uploading asset (directors-heygen): supabase/functions/_shared/cors.ts
+Deploying Function: lipsync-worker
+Uploading asset (lipsync-worker): supabase/functions/lipsync-worker/index.ts
+Uploading asset (lipsync-worker): supabase/functions/_shared/errorReporter.ts
+Uploading asset (lipsync-worker): supabase/functions/_shared/errorHandler.ts
+Uploading asset (lipsync-worker): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (lipsync-worker): supabase/functions/_shared/cors.ts
+Uploading asset (lipsync-worker): supabase/functions/_shared/refundService.ts
+Uploading asset (lipsync-worker): supabase/functions/_shared/festaUtils.ts
+Deploying Function: storyboard-complete
+Uploading asset (storyboard-complete): supabase/functions/storyboard-complete/index.ts
+Uploading asset (storyboard-complete): supabase/functions/_shared/cors.ts
+Uploading asset (storyboard-complete): supabase/functions/_shared/errorHandler.ts
+Uploading asset (storyboard-complete): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (storyboard-complete): supabase/functions/_shared/errorReporter.ts
+Deploying Function: storyboard-regenerate
+Uploading asset (storyboard-regenerate): supabase/functions/storyboard-regenerate/index.ts
+Uploading asset (storyboard-regenerate): supabase/functions/_shared/cors.ts
+Uploading asset (storyboard-regenerate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (storyboard-regenerate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (storyboard-regenerate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: upload-to-replicate
+Uploading asset (upload-to-replicate): supabase/functions/upload-to-replicate/index.ts
+Uploading asset (upload-to-replicate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (upload-to-replicate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (upload-to-replicate): supabase/functions/_shared/cors.ts
+Uploading asset (upload-to-replicate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardtoon-video-submit
+Uploading asset (cardtoon-video-submit): supabase/functions/cardtoon-video-submit/index.ts
+Uploading asset (cardtoon-video-submit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-video-submit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-video-submit): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-video-submit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: charge-credits
+Uploading asset (charge-credits): supabase/functions/charge-credits/index.ts
+Uploading asset (charge-credits): supabase/functions/_shared/authHelper.ts
+Uploading asset (charge-credits): supabase/functions/_shared/errorHandler.ts
+Uploading asset (charge-credits): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (charge-credits): supabase/functions/_shared/cors.ts
+Uploading asset (charge-credits): supabase/functions/_shared/errorReporter.ts
+Deploying Function: directors-status
+Uploading asset (directors-status): supabase/functions/directors-status/index.ts
+Uploading asset (directors-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (directors-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (directors-status): supabase/functions/_shared/cors.ts
+Uploading asset (directors-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: festa-finalize
+Uploading asset (festa-finalize): supabase/functions/festa-finalize/index.ts
+Uploading asset (festa-finalize): supabase/functions/_shared/errorHandler.ts
+Uploading asset (festa-finalize): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (festa-finalize): supabase/functions/_shared/cors.ts
+Uploading asset (festa-finalize): supabase/functions/_shared/errorReporter.ts
+Deploying Function: videoedit-check-results
+Uploading asset (videoedit-check-results): supabase/functions/videoedit-check-results/index.ts
+Uploading asset (videoedit-check-results): supabase/functions/_shared/errorHandler.ts
+Uploading asset (videoedit-check-results): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (videoedit-check-results): supabase/functions/_shared/cors.ts
+Uploading asset (videoedit-check-results): supabase/functions/_shared/errorReporter.ts
+Uploading asset (videoedit-check-results): supabase/functions/_shared/uploadToStorage.ts
+Deploying Function: batch-image-status
+Uploading asset (batch-image-status): supabase/functions/batch-image-status/index.ts
+Uploading asset (batch-image-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (batch-image-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (batch-image-status): supabase/functions/_shared/cors.ts
+Uploading asset (batch-image-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-video-fal
+Uploading asset (generate-video-fal): supabase/functions/generate-video-fal/index.ts
+Uploading asset (generate-video-fal): supabase/functions/_shared/errorReporter.ts
+Uploading asset (generate-video-fal): supabase/functions/_shared/cors.ts
+Uploading asset (generate-video-fal): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (generate-video-fal): supabase/functions/_shared/moderateContent.ts
+Uploading asset (generate-video-fal): supabase/functions/_shared/alertAdmin.ts
+Uploading asset (generate-video-fal): supabase/functions/_shared/koreanBlocklist.ts
+Deploying Function: shortform-analyze-insert-images
+Uploading asset (shortform-analyze-insert-images): supabase/functions/shortform-analyze-insert-images/index.ts
+Uploading asset (shortform-analyze-insert-images): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-analyze-insert-images): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-analyze-insert-images): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-analyze-insert-images): supabase/functions/_shared/errorReporter.ts
+Deploying Function: upload-to-supabase
+Uploading asset (upload-to-supabase): supabase/functions/upload-to-supabase/index.ts
+Uploading asset (upload-to-supabase): supabase/functions/_shared/errorHandler.ts
+Uploading asset (upload-to-supabase): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (upload-to-supabase): supabase/functions/_shared/cors.ts
+Uploading asset (upload-to-supabase): supabase/functions/_shared/errorReporter.ts
+Deploying Function: video-fal-status
+Uploading asset (video-fal-status): supabase/functions/video-fal-status/index.ts
+Uploading asset (video-fal-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (video-fal-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (video-fal-status): supabase/functions/_shared/cors.ts
+Uploading asset (video-fal-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardnews-regenerate-card
+Uploading asset (cardnews-regenerate-card): supabase/functions/cardnews-regenerate-card/index.ts
+Uploading asset (cardnews-regenerate-card): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardnews-regenerate-card): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardnews-regenerate-card): supabase/functions/_shared/cors.ts
+Uploading asset (cardnews-regenerate-card): supabase/functions/_shared/errorReporter.ts
+Deploying Function: get-history-summary
+Uploading asset (get-history-summary): supabase/functions/get-history-summary/index.ts
+Uploading asset (get-history-summary): supabase/functions/_shared/errorHandler.ts
+Uploading asset (get-history-summary): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (get-history-summary): supabase/functions/_shared/cors.ts
+Uploading asset (get-history-summary): supabase/functions/_shared/errorReporter.ts
+Deploying Function: replicate-webhook
+Uploading asset (replicate-webhook): supabase/functions/replicate-webhook/index.ts
+Uploading asset (replicate-webhook): supabase/functions/_shared/errorHandler.ts
+Uploading asset (replicate-webhook): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (replicate-webhook): supabase/functions/_shared/cors.ts
+Uploading asset (replicate-webhook): supabase/functions/_shared/errorReporter.ts
+Deploying Function: simplevideo-translate
+Uploading asset (simplevideo-translate): supabase/functions/simplevideo-translate/index.ts
+Uploading asset (simplevideo-translate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (simplevideo-translate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (simplevideo-translate): supabase/functions/_shared/cors.ts
+Uploading asset (simplevideo-translate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-music-generate
+Uploading asset (audio-music-generate): supabase/functions/audio-music-generate/index.ts
+Uploading asset (audio-music-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-music-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-music-generate): supabase/functions/_shared/cors.ts
+Uploading asset (audio-music-generate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: consume-credit
+Uploading asset (consume-credit): supabase/functions/consume-credit/index.ts
+Uploading asset (consume-credit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (consume-credit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (consume-credit): supabase/functions/_shared/cors.ts
+Uploading asset (consume-credit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: grant-admin
+Uploading asset (grant-admin): supabase/functions/grant-admin/index.ts
+Uploading asset (grant-admin): supabase/functions/_shared/errorHandler.ts
+Uploading asset (grant-admin): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (grant-admin): supabase/functions/_shared/cors.ts
+Uploading asset (grant-admin): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shortform-video-submit
+Uploading asset (shortform-video-submit): supabase/functions/shortform-video-submit/index.ts
+Uploading asset (shortform-video-submit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-video-submit): supabase/functions/_shared/refundService.ts
+Uploading asset (shortform-video-submit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-video-submit): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-video-submit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: video-longform
+Uploading asset (video-longform): supabase/functions/video-longform/index.ts
+Uploading asset (video-longform): supabase/functions/_shared/errorReporter.ts
+Uploading asset (video-longform): supabase/functions/_shared/errorHandler.ts
+Uploading asset (video-longform): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (video-longform): supabase/functions/_shared/cors.ts
+Uploading asset (video-longform): supabase/functions/_shared/refundService.ts
+Deploying Function: video-render-final
+Uploading asset (video-render-final): supabase/functions/video-render-final/index.ts
+Uploading asset (video-render-final): supabase/functions/_shared/errorHandler.ts
+Uploading asset (video-render-final): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (video-render-final): supabase/functions/_shared/cors.ts
+Uploading asset (video-render-final): supabase/functions/_shared/errorReporter.ts
+Deploying Function: admin-hide-content
+Uploading asset (admin-hide-content): supabase/functions/admin-hide-content/index.ts
+Uploading asset (admin-hide-content): supabase/functions/_shared/errorHandler.ts
+Uploading asset (admin-hide-content): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (admin-hide-content): supabase/functions/_shared/cors.ts
+Uploading asset (admin-hide-content): supabase/functions/_shared/errorReporter.ts
+Deploying Function: admin-reset-user
+Uploading asset (admin-reset-user): supabase/functions/admin-reset-user/index.ts
+Uploading asset (admin-reset-user): supabase/functions/_shared/errorHandler.ts
+Uploading asset (admin-reset-user): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (admin-reset-user): supabase/functions/_shared/cors.ts
+Uploading asset (admin-reset-user): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardnews-submit
+Uploading asset (cardnews-submit): supabase/functions/cardnews-submit/index.ts
+Uploading asset (cardnews-submit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardnews-submit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardnews-submit): supabase/functions/_shared/cors.ts
+Uploading asset (cardnews-submit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardtoon-complete
+Uploading asset (cardtoon-complete): supabase/functions/cardtoon-complete/index.ts
+Uploading asset (cardtoon-complete): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-complete): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-complete): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-complete): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-cardtoon-story
+Uploading asset (generate-cardtoon-story): supabase/functions/generate-cardtoon-story/index.ts
+Uploading asset (generate-cardtoon-story): supabase/functions/_shared/errorHandler.ts
+Uploading asset (generate-cardtoon-story): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (generate-cardtoon-story): supabase/functions/_shared/cors.ts
+Uploading asset (generate-cardtoon-story): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-video
+Uploading asset (generate-video): supabase/functions/generate-video/deno.json
+Uploading asset (generate-video): supabase/functions/generate-video/index.ts
+Uploading asset (generate-video): supabase/functions/_shared/errorReporter.ts
+Uploading asset (generate-video): supabase/functions/_shared/cors.ts
+Uploading asset (generate-video): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (generate-video): supabase/functions/_shared/moderateContent.ts
+Uploading asset (generate-video): supabase/functions/_shared/alertAdmin.ts
+Uploading asset (generate-video): supabase/functions/_shared/koreanBlocklist.ts
+Deploying Function: scenario-submit
+Uploading asset (scenario-submit): supabase/functions/scenario-submit/index.ts
+Uploading asset (scenario-submit): supabase/functions/_shared/refundService.ts
+Uploading asset (scenario-submit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (scenario-submit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (scenario-submit): supabase/functions/_shared/cors.ts
+Uploading asset (scenario-submit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shortform-image-generate
+Uploading asset (shortform-image-generate): supabase/functions/shortform-image-generate/index.ts
+Uploading asset (shortform-image-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-image-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-image-generate): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-image-generate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-seedream
+Uploading asset (generate-seedream): supabase/functions/generate-seedream/deno.json
+Uploading asset (generate-seedream): supabase/functions/generate-seedream/index.ts
+Uploading asset (generate-seedream): supabase/functions/_shared/errorReporter.ts
+Uploading asset (generate-seedream): supabase/functions/_shared/alertAdmin.ts
+Uploading asset (generate-seedream): supabase/functions/_shared/cors.ts
+Uploading asset (generate-seedream): supabase/functions/_shared/moderateContent.ts
+Uploading asset (generate-seedream): supabase/functions/_shared/koreanBlocklist.ts
+Deploying Function: increment-free-usage
+Uploading asset (increment-free-usage): supabase/functions/increment-free-usage/index.ts
+Uploading asset (increment-free-usage): supabase/functions/_shared/errorHandler.ts
+Uploading asset (increment-free-usage): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (increment-free-usage): supabase/functions/_shared/cors.ts
+Uploading asset (increment-free-usage): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shortform-merge-videos
+Uploading asset (shortform-merge-videos): supabase/functions/shortform-merge-videos/index.ts
+Uploading asset (shortform-merge-videos): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-merge-videos): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-merge-videos): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-merge-videos): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shortform-story-generate
+Uploading asset (shortform-story-generate): supabase/functions/shortform-story-generate/deno.json
+Uploading asset (shortform-story-generate): supabase/functions/shortform-story-generate/index.ts
+Uploading asset (shortform-story-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-story-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-story-generate): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-story-generate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shortform-video-generate
+Uploading asset (shortform-video-generate): supabase/functions/shortform-video-generate/index.ts
+Uploading asset (shortform-video-generate): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-video-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-video-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-video-generate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shorttoon-generate-scene
+Uploading asset (shorttoon-generate-scene): supabase/functions/shorttoon-generate-scene/index.ts
+Uploading asset (shorttoon-generate-scene): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shorttoon-generate-scene): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shorttoon-generate-scene): supabase/functions/_shared/cors.ts
+Uploading asset (shorttoon-generate-scene): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shorttoon-soma
+Uploading asset (shorttoon-soma): supabase/functions/shorttoon-soma/index.ts
+Uploading asset (shorttoon-soma): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shorttoon-soma): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shorttoon-soma): supabase/functions/_shared/cors.ts
+Uploading asset (shorttoon-soma): supabase/functions/_shared/errorReporter.ts
+Deploying Function: video-status-poll
+Uploading asset (video-status-poll): supabase/functions/video-status-poll/deno.json
+Uploading asset (video-status-poll): supabase/functions/video-status-poll/index.ts
+Uploading asset (video-status-poll): supabase/functions/_shared/errorHandler.ts
+Uploading asset (video-status-poll): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (video-status-poll): supabase/functions/_shared/cors.ts
+Uploading asset (video-status-poll): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-music-status
+Uploading asset (audio-music-status): supabase/functions/audio-music-status/index.ts
+Uploading asset (audio-music-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-music-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-music-status): supabase/functions/_shared/cors.ts
+Uploading asset (audio-music-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-music-submit
+Uploading asset (audio-music-submit): supabase/functions/audio-music-submit/index.ts
+Uploading asset (audio-music-submit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-music-submit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-music-submit): supabase/functions/_shared/cors.ts
+Uploading asset (audio-music-submit): supabase/functions/_shared/errorReporter.ts
+Uploading asset (audio-music-submit): supabase/functions/_shared/refundService.ts
+Deploying Function: cardtoon-video-merge
+Uploading asset (cardtoon-video-merge): supabase/functions/cardtoon-video-merge/index.ts
+Uploading asset (cardtoon-video-merge): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-video-merge): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-video-merge): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-video-merge): supabase/functions/_shared/errorReporter.ts
+Deploying Function: longform-webhook
+Uploading asset (longform-webhook): supabase/functions/longform-webhook/index.ts
+Uploading asset (longform-webhook): supabase/functions/_shared/errorHandler.ts
+Uploading asset (longform-webhook): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (longform-webhook): supabase/functions/_shared/cors.ts
+Uploading asset (longform-webhook): supabase/functions/_shared/errorReporter.ts
+Deploying Function: scenario-status
+Uploading asset (scenario-status): supabase/functions/scenario-status/index.ts
+Uploading asset (scenario-status): supabase/functions/_shared/cors.ts
+Uploading asset (scenario-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (scenario-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (scenario-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shortform-video-status
+Uploading asset (shortform-video-status): supabase/functions/shortform-video-status/index.ts
+Uploading asset (shortform-video-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-video-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-video-status): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-video-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: simplevideo-generate
+Uploading asset (simplevideo-generate): supabase/functions/simplevideo-generate/index.ts
+Uploading asset (simplevideo-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (simplevideo-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (simplevideo-generate): supabase/functions/_shared/cors.ts
+Uploading asset (simplevideo-generate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: video-webhook
+Uploading asset (video-webhook): supabase/functions/video-webhook/index.ts
+Uploading asset (video-webhook): supabase/functions/_shared/pushNotification.ts
+Uploading asset (video-webhook): supabase/functions/_shared/errorHandler.ts
+Uploading asset (video-webhook): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (video-webhook): supabase/functions/_shared/cors.ts
+Uploading asset (video-webhook): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardtoon-submit
+Uploading asset (cardtoon-submit): supabase/functions/cardtoon-submit/index.ts
+Uploading asset (cardtoon-submit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-submit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-submit): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-submit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: diagram-generate
+Uploading asset (diagram-generate): supabase/functions/diagram-generate/index.ts
+Uploading asset (diagram-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (diagram-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (diagram-generate): supabase/functions/_shared/cors.ts
+Uploading asset (diagram-generate): supabase/functions/_shared/errorReporter.ts
+Uploading asset (diagram-generate): supabase/functions/_shared/refundService.ts
+Uploading asset (diagram-generate): supabase/functions/diagram-generate/types.ts
+Uploading asset (diagram-generate): supabase/functions/diagram-generate/storage.ts
+Uploading asset (diagram-generate): supabase/functions/diagram-generate/renderer.ts
+Uploading asset (diagram-generate): supabase/functions/diagram-generate/mermaid.ts
+Uploading asset (diagram-generate): supabase/functions/diagram-generate/llm.ts
+Deploying Function: frame-extractor
+Uploading asset (frame-extractor): supabase/functions/frame-extractor/index.ts
+Uploading asset (frame-extractor): supabase/functions/_shared/errorHandler.ts
+Uploading asset (frame-extractor): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (frame-extractor): supabase/functions/_shared/cors.ts
+Uploading asset (frame-extractor): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-nano-banana-pro
+Uploading asset (generate-nano-banana-pro): supabase/functions/generate-nano-banana-pro/index.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/cors.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/errorHandler.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/errorReporter.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/alertAdmin.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/festaUtils.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/moderateContent.ts
+Uploading asset (generate-nano-banana-pro): supabase/functions/_shared/koreanBlocklist.ts
+Deploying Function: shortform-analyze-video
+Uploading asset (shortform-analyze-video): supabase/functions/shortform-analyze-video/index.ts
+Uploading asset (shortform-analyze-video): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-analyze-video): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-analyze-video): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-analyze-video): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shorttoon-check-status
+Uploading asset (shorttoon-check-status): supabase/functions/shorttoon-check-status/index.ts
+Uploading asset (shorttoon-check-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shorttoon-check-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shorttoon-check-status): supabase/functions/_shared/cors.ts
+Uploading asset (shorttoon-check-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: update-history-summary
+Uploading asset (update-history-summary): supabase/functions/update-history-summary/index.ts
+Uploading asset (update-history-summary): supabase/functions/_shared/errorHandler.ts
+Uploading asset (update-history-summary): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (update-history-summary): supabase/functions/_shared/cors.ts
+Uploading asset (update-history-summary): supabase/functions/_shared/errorReporter.ts
+Deploying Function: video-lipsync
+Uploading asset (video-lipsync): supabase/functions/video-lipsync/index.ts
+Uploading asset (video-lipsync): supabase/functions/_shared/errorHandler.ts
+Uploading asset (video-lipsync): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (video-lipsync): supabase/functions/_shared/cors.ts
+Uploading asset (video-lipsync): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardtoon-video-clip
+Uploading asset (cardtoon-video-clip): supabase/functions/cardtoon-video-clip/index.ts
+Uploading asset (cardtoon-video-clip): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-video-clip): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-video-clip): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-video-clip): supabase/functions/_shared/errorReporter.ts
+Deploying Function: nano-banana-status
+Uploading asset (nano-banana-status): supabase/functions/nano-banana-status/index.ts
+Uploading asset (nano-banana-status): supabase/functions/_shared/cors.ts
+Uploading asset (nano-banana-status): supabase/functions/_shared/festaUtils.ts
+Uploading asset (nano-banana-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (nano-banana-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (nano-banana-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: refund-credit
+Uploading asset (refund-credit): supabase/functions/refund-credit/index.ts
+Uploading asset (refund-credit): supabase/functions/_shared/refundService.ts
+Uploading asset (refund-credit): supabase/functions/_shared/errorHandler.ts
+Uploading asset (refund-credit): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (refund-credit): supabase/functions/_shared/cors.ts
+Uploading asset (refund-credit): supabase/functions/_shared/errorReporter.ts
+Deploying Function: save-images
+Uploading asset (save-images): supabase/functions/save-images/index.ts
+Uploading asset (save-images): supabase/functions/_shared/errorHandler.ts
+Uploading asset (save-images): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (save-images): supabase/functions/_shared/cors.ts
+Uploading asset (save-images): supabase/functions/_shared/errorReporter.ts
+Deploying Function: shortform-analyze-url
+Uploading asset (shortform-analyze-url): supabase/functions/shortform-analyze-url/index.ts
+Uploading asset (shortform-analyze-url): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-analyze-url): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-analyze-url): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-analyze-url): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-chunker
+Uploading asset (audio-chunker): supabase/functions/audio-chunker/index.ts
+Uploading asset (audio-chunker): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-chunker): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-chunker): supabase/functions/_shared/cors.ts
+Uploading asset (audio-chunker): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardtoon-status
+Uploading asset (cardtoon-status): supabase/functions/cardtoon-status/index.ts
+Uploading asset (cardtoon-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-status): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardtoon-video-status
+Uploading asset (cardtoon-video-status): supabase/functions/cardtoon-video-status/index.ts
+Uploading asset (cardtoon-video-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardtoon-video-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardtoon-video-status): supabase/functions/_shared/cors.ts
+Uploading asset (cardtoon-video-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: convert-to-webp
+Uploading asset (convert-to-webp): supabase/functions/convert-to-webp/index.ts
+Uploading asset (convert-to-webp): supabase/functions/_shared/errorHandler.ts
+Uploading asset (convert-to-webp): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (convert-to-webp): supabase/functions/_shared/cors.ts
+Uploading asset (convert-to-webp): supabase/functions/_shared/errorReporter.ts
+Deploying Function: directors-soma
+Uploading asset (directors-soma): supabase/functions/directors-soma/index.ts
+Uploading asset (directors-soma): supabase/functions/_shared/errorHandler.ts
+Uploading asset (directors-soma): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (directors-soma): supabase/functions/_shared/cors.ts
+Uploading asset (directors-soma): supabase/functions/_shared/errorReporter.ts
+Deploying Function: festa-engagement-reward
+Uploading asset (festa-engagement-reward): supabase/functions/festa-engagement-reward/index.ts
+Uploading asset (festa-engagement-reward): supabase/functions/_shared/errorHandler.ts
+Uploading asset (festa-engagement-reward): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (festa-engagement-reward): supabase/functions/_shared/cors.ts
+Uploading asset (festa-engagement-reward): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-thumbnail
+Uploading asset (generate-thumbnail): supabase/functions/generate-thumbnail/index.ts
+Uploading asset (generate-thumbnail): supabase/functions/_shared/errorReporter.ts
+Uploading asset (generate-thumbnail): supabase/functions/_shared/cors.ts
+Deploying Function: poll-replicate-prediction
+Uploading asset (poll-replicate-prediction): supabase/functions/poll-replicate-prediction/deno.json
+Uploading asset (poll-replicate-prediction): supabase/functions/poll-replicate-prediction/index.ts
+Uploading asset (poll-replicate-prediction): supabase/functions/_shared/errorHandler.ts
+Uploading asset (poll-replicate-prediction): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (poll-replicate-prediction): supabase/functions/_shared/cors.ts
+Uploading asset (poll-replicate-prediction): supabase/functions/_shared/errorReporter.ts
+Deploying Function: audio-lyrics-generate
+Uploading asset (audio-lyrics-generate): supabase/functions/audio-lyrics-generate/index.ts
+Uploading asset (audio-lyrics-generate): supabase/functions/_shared/errorHandler.ts
+Uploading asset (audio-lyrics-generate): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (audio-lyrics-generate): supabase/functions/_shared/cors.ts
+Uploading asset (audio-lyrics-generate): supabase/functions/_shared/errorReporter.ts
+Deploying Function: cardnews-complete
+Uploading asset (cardnews-complete): supabase/functions/cardnews-complete/index.ts
+Uploading asset (cardnews-complete): supabase/functions/_shared/errorHandler.ts
+Uploading asset (cardnews-complete): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (cardnews-complete): supabase/functions/_shared/cors.ts
+Uploading asset (cardnews-complete): supabase/functions/_shared/errorReporter.ts
+Deploying Function: festa-score-calculator
+Uploading asset (festa-score-calculator): supabase/functions/festa-score-calculator/index.ts
+Uploading asset (festa-score-calculator): supabase/functions/_shared/errorHandler.ts
+Uploading asset (festa-score-calculator): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (festa-score-calculator): supabase/functions/_shared/cors.ts
+Uploading asset (festa-score-calculator): supabase/functions/_shared/errorReporter.ts
+Deploying Function: generate-nano-banana
+Uploading asset (generate-nano-banana): supabase/functions/generate-nano-banana/deno.json
+Uploading asset (generate-nano-banana): supabase/functions/generate-nano-banana/index.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/errorHandler.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/cors.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/errorReporter.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/alertAdmin.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/festaUtils.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/moderateContent.ts
+Uploading asset (generate-nano-banana): supabase/functions/_shared/koreanBlocklist.ts
+Deploying Function: generate-video-multi
+Uploading asset (generate-video-multi): supabase/functions/generate-video-multi/index.ts
+Uploading asset (generate-video-multi): supabase/functions/_shared/errorReporter.ts
+Uploading asset (generate-video-multi): supabase/functions/_shared/cors.ts
+Uploading asset (generate-video-multi): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (generate-video-multi): supabase/functions/_shared/moderateContent.ts
+Uploading asset (generate-video-multi): supabase/functions/_shared/alertAdmin.ts
+Uploading asset (generate-video-multi): supabase/functions/_shared/koreanBlocklist.ts
+Deploying Function: push-send
+Uploading asset (push-send): supabase/functions/push-send/index.ts
+Deploying Function: shortform-analyze-reference
+Uploading asset (shortform-analyze-reference): supabase/functions/shortform-analyze-reference/index.ts
+Uploading asset (shortform-analyze-reference): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (shortform-analyze-reference): supabase/functions/_shared/errorHandler.ts
+Uploading asset (shortform-analyze-reference): supabase/functions/_shared/cors.ts
+Uploading asset (shortform-analyze-reference): supabase/functions/_shared/errorReporter.ts
+Deploying Function: simplevideo-status
+Uploading asset (simplevideo-status): supabase/functions/simplevideo-status/index.ts
+Uploading asset (simplevideo-status): supabase/functions/_shared/errorHandler.ts
+Uploading asset (simplevideo-status): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (simplevideo-status): supabase/functions/_shared/cors.ts
+Uploading asset (simplevideo-status): supabase/functions/_shared/errorReporter.ts
+Deploying Function: apply-watermark
+Uploading asset (apply-watermark): supabase/functions/apply-watermark/deno.json
+Uploading asset (apply-watermark): supabase/functions/apply-watermark/index.ts
+Uploading asset (apply-watermark): supabase/functions/_shared/errorHandler.ts
+Uploading asset (apply-watermark): supabase/functions/_shared/apiErrorHandler.ts
+Uploading asset (apply-watermark): supabase/functions/_shared/cors.ts
+Uploading asset (apply-watermark): supabase/functions/_shared/errorReporter.ts
+Deployed Functions on project rteypbamkblsxhgbqwbf: admin-hide-content, admin-reset-user, apply-watermark, audio-chunker, audio-lyrics-generate, audio-music-generate, audio-music-status, audio-music-submit, audio-preprocess, audio-tts, audio-voice-clone, audio-voice-clone-only, batch-image-status, cardnews-complete, cardnews-generate, cardnews-regenerate-card, cardnews-status, cardnews-submit, cardtoon-complete, cardtoon-generate, cardtoon-status, cardtoon-submit, cardtoon-video-clip, cardtoon-video-merge, cardtoon-video-status, cardtoon-video-submit, charge-credits, consume-credit, convert-to-webp, create-text-image, diagram-generate, diagram-render, directors-generate, directors-heygen, directors-merge, directors-soma, directors-status, directors-tts-translate, festa-engagement-reward, festa-finalize, festa-score-calculator, festa-score-cron, frame-extractor, generate-cardtoon-image, generate-cardtoon-story, generate-nano-banana, generate-nano-banana-pro, generate-seedream, generate-thumbnail, generate-video, generate-video-fal, generate-video-multi, get-history-summary, get-user, grant-admin, increment-free-usage, lipsync-merger, lipsync-worker, longform-webhook, nano-banana-status, poll-replicate-prediction, push-send, refund-credit, replicate-webhook, save-images, scenario-status, scenario-submit, shortform-analyze-insert-images, shortform-analyze-reference, shortform-analyze-url, shortform-analyze-video, shortform-image-generate, shortform-merge-videos, shortform-story-generate, shortform-video-generate, shortform-video-status, shortform-video-submit, shorttoon-check-status, shorttoon-generate-scene, shorttoon-soma, simplevideo-generate, simplevideo-status, simplevideo-translate, soma-stream, storyboard-complete, storyboard-regenerate, storyboard-status, storyboard-submit, storyboard-upload, test-error-reporting, update-history-summary, upload-to-replicate, upload-to-supabase, video-fal-status, video-lipsync, video-longform, video-render-final, video-status-poll, video-webhook, videoedit-check-results, videoedit-generate, shortform-story-generate, video-status-poll, video-webhook, replicate-webhook
+You can inspect your deployment in the Dashboard: https://supabase.com/dashboard/project/rteypbamkblsxhgbqwbf/functions
+A new version of Supabase CLI is available: v2.84.2 (currently installed v2.72.7)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

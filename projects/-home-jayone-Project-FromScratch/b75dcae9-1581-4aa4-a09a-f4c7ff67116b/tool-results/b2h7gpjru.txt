@@ -1,0 +1,834 @@
+=====================================
+AETHER-1T Launch (B200-only)
+  nodes: 1 × 8 GPU
+  master: 127.0.0.1:29500
+  phase: 2 | output: /NHNHOME/WORKSPACE/aether_1t/checkpoints/mid_fixed
+  seed:  /NHNHOME/WORKSPACE/0426030024_A/kimi_seed.safetensors
+  kd:    weight=-1 dir=none
+=====================================
+W0416 19:10:18.795000 731362 torch/distributed/run.py:852] 
+W0416 19:10:18.795000 731362 torch/distributed/run.py:852] *****************************************
+W0416 19:10:18.795000 731362 torch/distributed/run.py:852] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0416 19:10:18.795000 731362 torch/distributed/run.py:852] *****************************************
+[W416 19:10:32.086704504 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:32.381107752 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+NCCL version 2.27.5+cuda12.9
+[W416 19:10:32.524793839 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:32.587769180 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:33.133852551 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:33.144830280 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:33.146394883 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:33.290857247 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+2026-04-16 19:10:35,399 INFO: [MID] 20L×320E arch validation: 45B total, 8B active, 8-GPU safe
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank1]:     train(args)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank1]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank1]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank1]:     engine = DeepSpeedEngine(args=args,
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank1]:     self._configure_optimizer(optimizer, model_parameters)
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank1]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank1]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank1]:     optimizer = CPUAdam(model_parameters,
+[rank1]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank1]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank1]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank1]:     return self.jit_load(verbose)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank1]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank1]:                                         ^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank1]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank1]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank1]:     assert_no_cuda_mismatch(self.name)
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank1]:     raise CUDAMismatchException(
+[rank1]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank2]:     train(args)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank2]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank2]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank2]:     engine = DeepSpeedEngine(args=args,
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank2]:     self._configure_optimizer(optimizer, model_parameters)
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank2]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank2]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank2]:     optimizer = CPUAdam(model_parameters,
+[rank2]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank2]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank2]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank2]:     return self.jit_load(verbose)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank2]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank2]:                                         ^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank2]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank2]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank2]:     assert_no_cuda_mismatch(self.name)
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank2]:     raise CUDAMismatchException(
+[rank2]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank6]:     train(args)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank6]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank6]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank6]:     engine = DeepSpeedEngine(args=args,
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank6]:     self._configure_optimizer(optimizer, model_parameters)
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank6]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank6]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank6]:     optimizer = CPUAdam(model_parameters,
+[rank6]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank6]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank6]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank6]:     return self.jit_load(verbose)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank6]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank6]:                                         ^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank6]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank6]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank6]:     assert_no_cuda_mismatch(self.name)
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank6]:     raise CUDAMismatchException(
+[rank6]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank5]:     train(args)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank5]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank5]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank5]:     engine = DeepSpeedEngine(args=args,
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank5]:     self._configure_optimizer(optimizer, model_parameters)
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank5]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank5]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank5]:     optimizer = CPUAdam(model_parameters,
+[rank5]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank5]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank5]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank5]:     return self.jit_load(verbose)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank5]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank5]:                                         ^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank5]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank5]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank5]:     assert_no_cuda_mismatch(self.name)
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank5]:     raise CUDAMismatchException(
+[rank5]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank3]:     train(args)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank3]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank3]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank3]:     engine = DeepSpeedEngine(args=args,
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank3]:     self._configure_optimizer(optimizer, model_parameters)
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank3]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank3]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank3]:     optimizer = CPUAdam(model_parameters,
+[rank3]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank3]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank3]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank3]:     return self.jit_load(verbose)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank3]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank3]:                                         ^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank3]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank3]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank3]:     assert_no_cuda_mismatch(self.name)
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank3]:     raise CUDAMismatchException(
+[rank3]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x74eb0978d8a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank7]:     train(args)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank7]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank7]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank7]:     engine = DeepSpeedEngine(args=args,
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank7]:     self._configure_optimizer(optimizer, model_parameters)
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank7]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank7]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank7]:     optimizer = CPUAdam(model_parameters,
+[rank7]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank7]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank7]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank7]:     return self.jit_load(verbose)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank7]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank7]:                                         ^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank7]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank7]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank7]:     assert_no_cuda_mismatch(self.name)
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank7]:     raise CUDAMismatchException(
+[rank7]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank4]:     train(args)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank4]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank4]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank4]:     engine = DeepSpeedEngine(args=args,
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank4]:     self._configure_optimizer(optimizer, model_parameters)
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank4]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank4]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank4]:     optimizer = CPUAdam(model_parameters,
+[rank4]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank4]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank4]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank4]:     return self.jit_load(verbose)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank4]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank4]:                                         ^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank4]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank4]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank4]:     assert_no_cuda_mismatch(self.name)
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank4]:     raise CUDAMismatchException(
+[rank4]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank0]:     train(args)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank0]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank0]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank0]:     engine = DeepSpeedEngine(args=args,
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank0]:     self._configure_optimizer(optimizer, model_parameters)
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank0]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank0]:     optimizer = CPUAdam(model_parameters,
+[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank0]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank0]:     return self.jit_load(verbose)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank0]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank0]:                                         ^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank0]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank0]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank0]:     assert_no_cuda_mismatch(self.name)
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank0]:     raise CUDAMismatchException(
+[rank0]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x759fdb7958a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x72c5c53918a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x7e8eb83918a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x703c949918a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x7b9cc5a858a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x70c45a2858a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x70ad0ce958a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+[rank0]:[W416 19:10:43.288643443 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0416 19:10:44.735000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 731451 closing signal SIGTERM
+W0416 19:10:44.736000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 731453 closing signal SIGTERM
+W0416 19:10:44.736000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 731454 closing signal SIGTERM
+W0416 19:10:44.737000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 731455 closing signal SIGTERM
+W0416 19:10:44.737000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 731456 closing signal SIGTERM
+W0416 19:10:44.738000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 731457 closing signal SIGTERM
+W0416 19:10:44.738000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 731458 closing signal SIGTERM
+E0416 19:10:45.766000 731362 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 1 (pid: 731452) of binary: /usr/bin/python
+[W416 19:10:53.303148048 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+NCCL version 2.27.5+cuda12.9
+[W416 19:10:53.450760239 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:54.953614382 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:54.987402733 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:54.063474752 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:54.074113225 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:54.080952473 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:10:54.205618299 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+2026-04-16 19:10:56,321 INFO: [MID] 20L×320E arch validation: 45B total, 8B active, 8-GPU safe
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank2]:     train(args)
+[rank2]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank2]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank2]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank2]:     engine = DeepSpeedEngine(args=args,
+[rank2]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank2]:     self._configure_optimizer(optimizer, model_parameters)
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank2]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank2]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank2]:     optimizer = CPUAdam(model_parameters,
+[rank2]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank2]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank2]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank2]:     return self.jit_load(verbose)
+[rank2]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank2]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank2]:                                         ^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank2]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank2]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank2]:     assert_no_cuda_mismatch(self.name)
+[rank2]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank2]:     raise CUDAMismatchException(
+[rank2]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank3]:     train(args)
+[rank3]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank3]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank3]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank3]:     engine = DeepSpeedEngine(args=args,
+[rank3]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank3]:     self._configure_optimizer(optimizer, model_parameters)
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank3]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank3]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank3]:     optimizer = CPUAdam(model_parameters,
+[rank3]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank3]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank3]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank3]:     return self.jit_load(verbose)
+[rank3]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank3]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank3]:                                         ^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank3]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank3]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank3]:     assert_no_cuda_mismatch(self.name)
+[rank3]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank3]:     raise CUDAMismatchException(
+[rank3]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank7]: Traceback (most recent call last):
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank7]:     train(args)
+[rank7]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank7]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank7]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank7]:     engine = DeepSpeedEngine(args=args,
+[rank7]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank7]:     self._configure_optimizer(optimizer, model_parameters)
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank7]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank7]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank7]:     optimizer = CPUAdam(model_parameters,
+[rank7]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank7]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank7]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank7]:     return self.jit_load(verbose)
+[rank7]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank7]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank7]:                                         ^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank7]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank7]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank7]:     assert_no_cuda_mismatch(self.name)
+[rank7]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank7]:     raise CUDAMismatchException(
+[rank7]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank5]: Traceback (most recent call last):
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank5]:     train(args)
+[rank5]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank5]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank5]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank5]:     engine = DeepSpeedEngine(args=args,
+[rank5]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank5]:     self._configure_optimizer(optimizer, model_parameters)
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank5]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank5]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank5]:     optimizer = CPUAdam(model_parameters,
+[rank5]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank5]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank5]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank5]:     return self.jit_load(verbose)
+[rank5]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank5]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank5]:                                         ^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank5]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank5]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank5]:     assert_no_cuda_mismatch(self.name)
+[rank5]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank5]:     raise CUDAMismatchException(
+[rank5]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank6]: Traceback (most recent call last):
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank6]:     train(args)
+[rank6]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank6]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank6]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank6]:     engine = DeepSpeedEngine(args=args,
+[rank6]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank6]:     self._configure_optimizer(optimizer, model_parameters)
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank6]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank6]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank6]:     optimizer = CPUAdam(model_parameters,
+[rank6]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank6]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank6]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank6]:     return self.jit_load(verbose)
+[rank6]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank6]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank6]:                                         ^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank6]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank6]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank6]:     assert_no_cuda_mismatch(self.name)
+[rank6]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank6]:     raise CUDAMismatchException(
+[rank6]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x7d8e57c918a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank0]:     train(args)
+[rank0]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank0]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank0]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank0]:     engine = DeepSpeedEngine(args=args,
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank0]:     self._configure_optimizer(optimizer, model_parameters)
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank0]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank0]:     optimizer = CPUAdam(model_parameters,
+[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank0]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank0]:     return self.jit_load(verbose)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank0]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank0]:                                         ^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank0]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank0]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank0]:     assert_no_cuda_mismatch(self.name)
+[rank0]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank0]:     raise CUDAMismatchException(
+[rank0]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank4]: Traceback (most recent call last):
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank4]:     train(args)
+[rank4]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank4]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank4]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank4]:     engine = DeepSpeedEngine(args=args,
+[rank4]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank4]:     self._configure_optimizer(optimizer, model_parameters)
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank4]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank4]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank4]:     optimizer = CPUAdam(model_parameters,
+[rank4]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank4]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank4]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank4]:     return self.jit_load(verbose)
+[rank4]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank4]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank4]:                                         ^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank4]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank4]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank4]:     assert_no_cuda_mismatch(self.name)
+[rank4]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank4]:     raise CUDAMismatchException(
+[rank4]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+[rank1]:     train(args)
+[rank1]:   File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 378, in train
+[rank1]:     engine, optimizer, _, scheduler = deepspeed.initialize(
+[rank1]:                                       ^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/__init__.py", line 214, in initialize
+[rank1]:     engine = DeepSpeedEngine(args=args,
+[rank1]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 364, in __init__
+[rank1]:     self._configure_optimizer(optimizer, model_parameters)
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1559, in _configure_optimizer
+[rank1]:     basic_optimizer = self._configure_basic_optimizer(model_parameters)
+[rank1]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/runtime/engine.py", line 1635, in _configure_basic_optimizer
+[rank1]:     optimizer = CPUAdam(model_parameters,
+[rank1]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 94, in __init__
+[rank1]:     self.ds_opt_adam = CPUAdamBuilder().load()
+[rank1]:                        ^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 542, in load
+[rank1]:     return self.jit_load(verbose)
+[rank1]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 575, in jit_load
+[rank1]:     cxx_args = self.strip_empty_entries(self.cxx_args())
+[rank1]:                                         ^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 858, in cxx_args
+[rank1]:     CUDA_ENABLE = self.get_cuda_compile_flag()
+[rank1]:                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 430, in get_cuda_compile_flag
+[rank1]:     assert_no_cuda_mismatch(self.name)
+[rank1]:   File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/op_builder/builder.py", line 109, in assert_no_cuda_mismatch
+[rank1]:     raise CUDAMismatchException(
+[rank1]: deepspeed.ops.op_builder.builder.CUDAMismatchException: >- DeepSpeed Op Builder: Installed CUDA version 13.1 does not match the version torch was compiled with 12.8, unable to compile cuda/cpp extensions without a matching cuda version.
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x7c95e48858a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x74a4734858a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x7279894958a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x7dc25b4958a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x70de655958a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x7a5cc12858a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+Exception ignored in: <function DeepSpeedCPUAdam.__del__ at 0x74386fa858a0>
+Traceback (most recent call last):
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/ops/adam/cpu_adam.py", line 102, in __del__
+    self.ds_opt_adam.destroy_adam(self.opt_id)
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'DeepSpeedCPUAdam' object has no attribute 'ds_opt_adam'
+[rank0]:[W416 19:11:04.867021242 ProcessGroupNCCL.cpp:1553] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W0416 19:11:05.585000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 732288 closing signal SIGTERM
+W0416 19:11:05.586000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 732289 closing signal SIGTERM
+W0416 19:11:05.586000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 732290 closing signal SIGTERM
+W0416 19:11:05.587000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 732292 closing signal SIGTERM
+W0416 19:11:05.587000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 732293 closing signal SIGTERM
+W0416 19:11:05.588000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 732294 closing signal SIGTERM
+W0416 19:11:05.588000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 732295 closing signal SIGTERM
+E0416 19:11:06.753000 731362 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 3 (pid: 732291) of binary: /usr/bin/python
+[W416 19:11:14.057520688 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:11:14.665582374 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:11:14.665840930 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:11:14.668578682 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:11:15.992402338 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+NCCL version 2.27.5+cuda12.9
+[W416 19:11:15.016025431 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:11:15.040773342 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+[W416 19:11:15.047204953 Utils.hpp:137] Warning: Environment variable NCCL_ASYNC_ERROR_HANDLING is deprecated; use TORCH_NCCL_ASYNC_ERROR_HANDLING instead (function operator())
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+823, 0
+---
+9
+
+[2026-04-16 19:12:14] DCTN-0413110535-1:733154:733437 [4] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:12:15] DCTN-0413110535-1:733155:733466 [5] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:12:15] DCTN-0413110535-1:733152:733465 [2] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+
+[2026-04-16 19:12:15] DCTN-0413110535-1:733157:733467 [7] misc/socket.cc:578 NCCL WARN socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+Traceback (most recent call last):
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 546, in <module>
+    train(args)
+  File "/home/gmail_gini/sft_workspace/aether_1t/train.py", line 264, in train
+    deepspeed.init_distributed()
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/comm.py", line 854, in init_distributed
+    cdb = TorchBackend(dist_backend, timeout, init_method, rank, world_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 120, in __init__
+    self.init_process_group(backend, timeout, init_method, rank, world_size)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/deepspeed/comm/torch.py", line 160, in init_process_group
+    torch.distributed.init_process_group(backend, **kwargs)
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 83, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/c10d_logger.py", line 97, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 1813, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gmail_gini/.local/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py", line 2202, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:93, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketPollConnect: connect to 10.50.6.73<45007> returned Connection refused, exceeded error retry count after 35 attempts
+W0416 19:12:15.401000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 733150 closing signal SIGTERM
+W0416 19:12:15.402000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 733151 closing signal SIGTERM
+W0416 19:12:15.402000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 733152 closing signal SIGTERM
+W0416 19:12:15.403000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 733153 closing signal SIGTERM
+W0416 19:12:15.403000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 733155 closing signal SIGTERM
+W0416 19:12:15.404000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 733156 closing signal SIGTERM
+W0416 19:12:15.404000 731362 torch/distributed/elastic/multiprocessing/api.py:1010] Sending process 733157 closing signal SIGTERM
+E0416 19:12:16.145000 731362 torch/distributed/elastic/multiprocessing/api.py:984] failed (exitcode: 1) local_rank: 4 (pid: 733154) of binary: /usr/bin/python
+aether_1t/launch_b200.sh: line 96: 731362 Killed                  torchrun --nproc_per_node="$NPROC_PER_NODE" --nnodes="$NNODES" --node_rank="$NODE_RANK" --master_addr="$MASTER_ADDR" --master_port="$MASTER_PORT" --max_restarts=3 aether_1t/train.py --data_path "$DATA_PATH" --output_dir "$OUTPUT_DIR" --phase "$PHASE" --micro_batch_size "$MICRO_BATCH" --log_interval "$LOG_INTERVAL" --save_interval "$SAVE_INTERVAL" ${MODEL_PATH:+--model_path "$MODEL_PATH"} ${SEED_WEIGHTS:+--seed_weights "$SEED_WEIGHTS"} ${LOGIT_DIR:+--logit_dir "$LOGIT_DIR"} --kd_weight "$KD_WEIGHT" --mid --deepspeed aether_1t/configs/ds_zero3_b200.json

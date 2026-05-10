@@ -4,46 +4,127 @@ connections: []
 current: '1256'
 deadline: '2026-09-30'
 id: CTX
-layer: 1
+layer: 2
 links: ''
 log:
 - date: '2026-05-06'
-  text: 'step_seed_vault() cold-start fix shipped (3964d39) — git history pre-loads vault.db on install, G1 recall fires session 1'
+  text: step_seed_vault() cold-start fix shipped (3964d39) — git history pre-loads
+    vault.db on install, G1 recall fires session 1
 - date: '2026-05-06'
-  text: '--reseed flag + sharing trigger built (ff34059) — first G1 recall prompts team install; PyPI baseline: 39/day 633/wk'
+  text: '--reseed flag + sharing trigger built (ff34059) — first G1 recall prompts
+    team install; PyPI baseline: 39/day 633/wk'
 - date: '2026-05-07'
-  text: 'Hub Market tab = CTX channel manager live — GitHub ★4, HN 4pts, GeekNews 4comments, PyPI 696/wk (+10%); driller corpus created (7 entity corpora now)'
+  text: Hub Market tab = CTX channel manager live — GitHub ★4, HN 4pts, GeekNews 4comments,
+    PyPI 696/wk (+10%); driller corpus created (7 entity corpora now)
 - date: '2026-05-08'
-  text: 'a0027a1 feat: ship CTX dashboard in pip wheel + ctx-dashboard CLI; channel reactions + PyPI scrape fixed in market-signals.py'
+  text: 'a0027a1 feat: ship CTX dashboard in pip wheel + ctx-dashboard CLI; channel
+    reactions + PyPI scrape fixed in market-signals.py'
+- date: '2026-05-09'
+  text: '7171ae3 feat: add all channel reactions to market-signals + fix PyPI + GeekNews
+    scrape; d8fd10e Add GitHub Actions workflow to publish to PyPI (+1 more)'
+- date: '2026-05-09'
+  text: '368f742 feat: activate Stage 2 telemetry pipeline + north-star milestones;
+    7171ae3 feat: add all channel reactions to market-signals + fix PyPI + GeekNews
+    scrape (+1 more)'
+- date: '2026-05-09'
+  text: '17eda6e feat: M2 — opt-in prompt at install + secure Turso token (env var
+    override); 368f742 feat: activate Stage 2 telemetry pipeline + north-star milestones
+    (+1 more)'
+- date: '2026-05-09'
+  text: '97385f8 chore: save live-state + goal-tree for north-star run (iter 2/5 in
+    progress); 17eda6e feat: M2 — opt-in prompt at install + secure Turso token (env
+    var override) (+1 more)'
+- date: '2026-05-09'
+  text: '11527b9 chore: live iter 2 — M1+M2+M5-GN done, north-star updated; aa3db68
+    fix: add missing `import os` to telemetry.py + batch Turso inserts (+1 more)'
+- date: '2026-05-09'
+  text: 'b900b35 feat: set NS2 — first external user data in Turso (0 → 1 distinct_external_users);
+    11527b9 chore: live iter 2 — M1+M2+M5-GN done, north-star updated (+1 more)'
+- date: '2026-05-09'
+  text: 'b267eab feat: ctx-telemetry send — one-step consent + upload; b900b35 feat:
+    set NS2 — first external user data in Turso (0 → 1 distinct_external_users) (+1
+    more)'
+- date: '2026-05-09'
+  text: '71ae2ef feat: auto-upload session stats on session end (opt-out model); b267eab
+    feat: ctx-telemetry send — one-step consent + upload (+1 more)'
+- date: '2026-05-09'
+  text: 'efa88be feat: schema v1.7 — project_type_id + ctx_version + utility_by_qtype;
+    71ae2ef feat: auto-upload session stats on session end (opt-out model) (+1 more)'
+- date: '2026-05-09'
+  text: '32c4d5c live-inf iter 1/∞: success | goal_v0: NS2 status check + north-star
+    updated + GN v0.3.19 comment; efa88be feat: schema v1.7 — project_type_id + ctx_version
+    + utility_by_qtype (+1 more)'
+- date: '2026-05-10'
+  text: '32c4d5c live-inf iter 1/∞: success | goal_v0: NS2 status check + north-star
+    updated + GN v0.3.19 comment; efa88be feat: schema v1.7 — project_type_id + ctx_version
+    + utility_by_qtype (+1 more)'
+- date: '2026-05-10'
+  text: 'b19c250 feat: /api/stats endpoint + weekly PyPI trend snapshot (1,854 total,
+    912 last 7d); 32c4d5c live-inf iter 1/∞: success | goal_v0: NS2 status check +
+    north-star updated + GN v0.3.19 comment (+1 more)'
+- date: '2026-05-10'
+  text: '7f9d5a9 fix: deterministic sort tiebreaks + build_docs_bm25 dedup (hang-in
+    PR #4 + #5); b19c250 feat: /api/stats endpoint + weekly PyPI trend snapshot (1,854
+    total, 912 last 7d) (+1 more)'
 metric: PyPI downloads/week
 milestones:
 - done: true
-  text: 'Cold-start fix: vault seed on install (3964d39) — G1 recall fires session 1'
+  text: 'Cold-start fix: vault seed on install (3964d39) — G1 recall fires session
+    1'
 - done: true
   text: 'Sharing trigger: .omc/ctx-g1-first-fire.flag fires team install prompt (ff34059)'
 - done: true
-  text: 'Channel manager live in hub — GitHub/HN/GeekNews/Dev.to/PyPI tracked (9cd2371)'
+  text: Channel manager live in hub — GitHub/HN/GeekNews/Dev.to/PyPI tracked (9cd2371)
 - done: true
-  text: 'ctx-dashboard CLI shipped in pip wheel (a0027a1)'
-- done: false
-  text: 'Cloud vault infra decision (Supabase vs Railway) — unblocks Pro paywall'
+  text: ctx-dashboard CLI shipped in pip wheel (a0027a1)
+- done: true
+  status: done
+  text: Cloud vault infra decision (Supabase vs Railway) — unblocks Pro paywall
 - done: false
   text: 'Pro paywall: team shared vault gate + $15-20/mo pricing'
 - done: false
-  text: 'Publish to Claude Code plugin marketplace'
+  text: Publish to Claude Code plugin marketplace
 - done: false
-  text: 'Reach 50 active installs (beyond downloads)'
+  text: Reach 50 active installs (beyond downloads)
 - done: false
-  text: 'Sustain 3 consecutive weeks of +10% WoW PyPI growth'
+  text: Sustain 3 consecutive weeks of +10% WoW PyPI growth
+- claude_ack: null
+  done: false
+  id: M10
+  layer: 0
+  parent_id: null
+  status: pending
+  text: there are no code files showing on the ctx dasboard proof apne.
+- claude_ack: 2026-05-10T17:41
+  done: true
+  done_at: 2026-05-10T17:41
+  id: M11
+  layer: 0
+  parent_id: null
+  status: done
+  text: Add Naver email channel to hub manager — check reactions/issues via IMAP
+  user_added_at: 2026-05-10T12:26
+- claude_ack: 2026-05-10T18:17
+  done: false
+  id: M12
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-10T18:17
+  status: pending_confirmation
+  text: 'Respond to d9ng GitHub replies on PRs #4/#5 + production hardening thread'
+  user_added_at: 2026-05-10T18:10
 name: CTX
-note: 'Claude Code memory + context retrieval plugin. PyPI 696/wk (+10% WoW), HN 4pts, GitHub 4 stars. Next gate: cloud infra decision → Pro paywall.'
-position_x: 1
+note: 'Claude Code memory + context retrieval plugin. PyPI 696/wk (+10% WoW), HN 4pts,
+  GitHub 4 stars. Next gate: cloud infra decision → Pro paywall.'
+parent: MOAT
+position_x: 3
 status: on-track
 target: '1000'
 unit: downloads/wk
 x: -585
 y: 0
 ---
+
 
 # CTX — North Star
 

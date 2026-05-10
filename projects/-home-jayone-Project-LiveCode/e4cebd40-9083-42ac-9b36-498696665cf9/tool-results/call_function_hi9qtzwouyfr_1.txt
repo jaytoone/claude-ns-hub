@@ -1,0 +1,490 @@
+/home/jayone/.claude/skills/omc-live/SKILL.md:163:     ## omc-live: Human Input Required
+/home/jayone/.claude/transcripts/ses_3d2bdbefeffeRk50X4qmYK64m7.jsonl:491:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_315ea6d7bffesiHP8z2IrFn1YR.jsonl:234:[Omitted long matching line]
+/home/jayone/.claude/claude-mem/plugin/scripts/worker-service.cjs:878:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_3d2080b5effelQXbd70wiyRtnJ.jsonl:323:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_3cd043d39ffeqHciMOpw9Rh5ze.jsonl:335:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_3cd043d39ffeqHciMOpw9Rh5ze.jsonl:530:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Ontolo/89654e8e-cd02-43e1-a240-1ce085ca5798/subagents/agent-ad56667.jsonl:40:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Ontolo/89654e8e-cd02-43e1-a240-1ce085ca5798/subagents/agent-ad56667.jsonl:46:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Ontolo/89654e8e-cd02-43e1-a240-1ce085ca5798/subagents/agent-a90fcd2.jsonl:33:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-HugwartsBanana/52d570d5-6f74-4153-afe3-ff8a886710d8/subagents/agent-a1fbbd6.jsonl:58:[Omitted long matching line]
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/pip/_vendor/urllib3/contrib/securetransport.py:319:# We need to keep these two objects references alive: if they get GC'd while
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/pip/_vendor/urllib3/util/request.py:31:    :param keep_alive:
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/pip/_vendor/urllib3/util/request.py:75:    if keep_alive:
+/home/jayone/.claude/transcripts/ses_3c5925656ffeiMbkuC3xaHMGlA.jsonl:51:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_3c5925656ffeiMbkuC3xaHMGlA.jsonl:52:[Omitted long matching line]
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/rich/live.py:25:    def __init__(self, live: "Live", refresh_per_second: float) -> None:
+/home/jayone/.claude/transcripts/ses_3161f923dffe95M7YpXuZhOrFi.jsonl:39:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_3161f923dffe95M7YpXuZhOrFi.jsonl:45:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_3161f923dffe95M7YpXuZhOrFi.jsonl:53:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_3161f923dffe95M7YpXuZhOrFi.jsonl:61:[Omitted long matching line]
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/rich/spinner.py:130:    with Live(all_spinners, refresh_per_second=20) as live:
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/rich/console.py:828:    def set_live(self, live: "Live") -> bool:
+/home/jayone/.claude/transcripts/ses_3c31fe723ffegKLFRAnKZE2Ic1.jsonl:976:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:371:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:377:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:395:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:508:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:535:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:541:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:581:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:643:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:677:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:739:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:746:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:752:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:758:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:765:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:781:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9.jsonl:840:[Omitted long matching line]
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/pip/_vendor/rich/spinner.py:135:    ) as live:
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py:752:        self._live: Optional["Live"] = None
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/pip/_vendor/rich/console.py:824:    def set_live(self, live: "Live") -> None:
+/home/jayone/.claude/tools-venv/lib/python3.12/site-packages/pip/_vendor/rich/live.py:19:    def __init__(self, live: "Live", refresh_per_second: float) -> None:
+/home/jayone/.claude/transcripts/ses_310dc4e2dffeu3n2pY9RfT317T.jsonl:58:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Funnel/dbb69460-74ba-4ffa-881d-c6f7a6e77c1e/subagents/agent-acompact-e55be8e2612ae76f.jsonl:2:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:360:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:364:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:366:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:376:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:380:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:384:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:401:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:403:[Omitted long matching line]
+/home/jayone/.claude/transcripts/ses_318e05d85ffenEwHy9ViH3Oz2m.jsonl:405:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9/subagents/agent-acompact-5380d715cb8209a1.jsonl:343:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AutoCode/e4cebd40-9083-42ac-9b36-498696665cf9/subagents/agent-acompact-5380d715cb8209a1.jsonl:344:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-ASI/a85b697e-4bbc-4722-8358-5dc34b37c0b3.jsonl:3561:[Omitted long matching line]
+/home/jayone/.claude/file-history/47f9fbe8-b105-4621-b374-e556cdd42b36/54c03d7bc2285ec3@v3:1584:        keepalive: true,
+/home/jayone/.claude/file-history/bdfbfd9f-2b6a-457d-8aa6-a440f790a55d/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/bdfbfd9f-2b6a-457d-8aa6-a440f790a55d/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-HugwartsBanana/06fc3b18-47ec-4638-a376-0a4295175242.jsonl:617:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-shortd-next/4d7feb84-89eb-40dc-a4d3-b11e8c0cdb18/subagents/agent-aprompt_suggestion-bac265.jsonl:1:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/f2336018-4440-47ce-a6df-b2d004d75518.jsonl:9900:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970/subagents/agent-acompact-7828e213c4daf2c6.jsonl:66:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970/subagents/agent-a27346b94a982949a.jsonl:60:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970/subagents/agent-a78b1274fc8e6a64e.jsonl:8:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970/subagents/agent-ab521b3b6443a9ff8.jsonl:1:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970/subagents/agent-ab521b3b6443a9ff8.jsonl:14:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970/subagents/agent-ab521b3b6443a9ff8.jsonl:52:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/76e7c04a-a698-45ef-ad04-7a17dbe4a317.jsonl:1192:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/76e7c04a-a698-45ef-ad04-7a17dbe4a317.jsonl:1335:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/ebd9e9e7-c61e-4bb8-acab-ad87490708a4/subagents/agent-a20b47f.jsonl:85:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/ebd9e9e7-c61e-4bb8-acab-ad87490708a4/subagents/agent-a20b47f.jsonl:86:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/ebd9e9e7-c61e-4bb8-acab-ad87490708a4/subagents/agent-a20b47f.jsonl:87:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/ebd9e9e7-c61e-4bb8-acab-ad87490708a4/tool-results/toolu_019rd1UYnV9v6ZdGN6H1ULBn.txt:1:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/ebd9e9e7-c61e-4bb8-acab-ad87490708a4/tool-results/toolu_019rd1UYnV9v6ZdGN6H1ULBn.txt:2:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/ebd9e9e7-c61e-4bb8-acab-ad87490708a4/tool-results/toolu_019rd1UYnV9v6ZdGN6H1ULBn.txt:3:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/ebd9e9e7-c61e-4bb8-acab-ad87490708a4/tool-results/toolu_019rd1UYnV9v6ZdGN6H1ULBn.txt:4:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-shortd-next/4d7feb84-89eb-40dc-a4d3-b11e8c0cdb18/tool-results/toolu_019WvxPoFVK1oRmbtjQpQDe9.txt:23:< Keep-Alive: timeout=5
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25/subagents/agent-acompact-3805cdb9509dc410.jsonl:17:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25/subagents/agent-acompact-3805cdb9509dc410.jsonl:19:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25/subagents/agent-acompact-3805cdb9509dc410.jsonl:193:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25/subagents/agent-acompact-3805cdb9509dc410.jsonl:289:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FromScratch/bb1f1a47-00d1-4172-b1aa-61575c18a808/tool-results/b01615d.txt:10:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25.jsonl:3771:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25.jsonl:3773:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25.jsonl:4097:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-CTX/3dfa7c94-4436-47cd-a033-bb164615fb25.jsonl:4282:[Omitted long matching line]
+/home/jayone/.claude/file-history/d699fee3-124d-4ed5-9dd1-e37a20d0d1a5/54c03d7bc2285ec3@v11:1310:        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:19:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:26:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:31:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:36:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:41:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:46:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:51:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:55:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:60:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:65:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:70:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:98:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:115:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:124:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:136:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:141:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:325:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:330:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:335:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:344:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:356:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:563:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69.jsonl:1311:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4.jsonl:45:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4.jsonl:50:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4.jsonl:73:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4.jsonl:78:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4.jsonl:83:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4.jsonl:242:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4.jsonl:285:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/f2336018-4440-47ce-a6df-b2d004d75518/subagents/agent-af23e1e4e25fa8154.jsonl:95:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:244:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:252:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:257:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:408:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:413:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:418:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:427:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:432:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:440:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:445:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:450:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:455:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:460:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:466:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:475:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:494:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:508:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:514:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-VIDraft-PopTV/20fe2f61-6778-440c-9701-8f5201acf90a.jsonl:520:[Omitted long matching line]
+/home/jayone/.claude/file-history/c8c947cc-7646-4cdc-96ff-69b209ec8edb/8137f6949ff92945@v3:20:  { id: 1, tag: 'HOME', label: '홈 피드', live: true },
+/home/jayone/.claude/file-history/c8c947cc-7646-4cdc-96ff-69b209ec8edb/8137f6949ff92945@v3:21:  { id: 2, tag: 'IMG', label: '이미지 스튜디오', live: false },
+/home/jayone/.claude/file-history/c8c947cc-7646-4cdc-96ff-69b209ec8edb/8137f6949ff92945@v3:22:  { id: 3, tag: 'VID', label: '비디오 생성', live: true },
+/home/jayone/.claude/file-history/c8c947cc-7646-4cdc-96ff-69b209ec8edb/8137f6949ff92945@v3:23:  { id: 4, tag: 'SHORT', label: '숏폼', live: false },
+/home/jayone/.claude/file-history/c8c947cc-7646-4cdc-96ff-69b209ec8edb/8137f6949ff92945@v3:24:  { id: 5, tag: 'AI', label: 'AI 바로가기', live: true },
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/7607273a-7365-4c9a-8f79-05d3e27e8f8a.jsonl:4253:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/7607273a-7365-4c9a-8f79-05d3e27e8f8a.jsonl:4941:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/7607273a-7365-4c9a-8f79-05d3e27e8f8a.jsonl: WARNING: stopped searching binary file after match (found "\0" byte around offset 28758277)
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/c2667f6c-7a33-4480-91e2-7dc16d76227c.jsonl:65:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:25:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:244:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:262:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:445:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:446:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:447:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:448:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:449:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:450:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:451:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:452:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:453:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:454:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:455:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:456:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:457:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:458:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:459:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:460:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:461:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:462:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:463:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:464:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:465:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:466:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:467:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:468:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:469:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:470:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:471:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:472:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:473:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:474:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:475:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:476:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:477:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:478:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:479:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:480:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:481:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:482:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:483:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:484:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:485:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:486:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:487:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:1124:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:1185:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:1211:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:1217:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:1444:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:1450:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:3800:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/36a04880-adab-4e46-8bef-39558b870970.jsonl:4016:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:225:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:228:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:232:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:237:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:240:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:245:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:250:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-FRWP/67a58d09-5aeb-4e6b-acf6-5f598b8da19f.jsonl:1828:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f.jsonl:1923:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f.jsonl:2090:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f.jsonl:2266:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f.jsonl:2272:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f.jsonl:2532:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f.jsonl:2538:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f.jsonl:2781:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AgentNode/8711d8c3-2bd4-40c3-b873-89a4cee64bb9.jsonl:880:[Omitted long matching line]
+/home/jayone/.claude/file-history/b7923bec-6657-44f0-bad1-701b392d471f/54c03d7bc2285ec3@v9:1228:        keepalive: true,
+/home/jayone/.claude/file-history/b7923bec-6657-44f0-bad1-701b392d471f/54c03d7bc2285ec3@v8:1224:        keepalive: true,
+/home/jayone/.claude/file-history/87bec5b5-4668-43fe-ac7c-ed264d5fef4e/54c03d7bc2285ec3@v3:1584:        keepalive: true,
+/home/jayone/.claude/file-history/72601e8f-29ba-4fd9-924c-3e3a2edc20e0/f93be12542d74fe2@v3:140:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/72601e8f-29ba-4fd9-924c-3e3a2edc20e0/f93be12542d74fe2@v4:153:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/b7923bec-6657-44f0-bad1-701b392d471f/54c03d7bc2285ec3@v7:1206:        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5e6f39fc-e32f-4021-9989-faf208f1f532.jsonl:575:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-a62a2e20b8d631549.jsonl:30:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Broadcaster/ce98eda3-3806-4850-ae98-39f1f07c429b/subagents/agent-acompact-a77b41e89e70ad51.jsonl:129:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Broadcaster/ce98eda3-3806-4850-ae98-39f1f07c429b/subagents/agent-acompact-a77b41e89e70ad51.jsonl:241:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Broadcaster/ce98eda3-3806-4850-ae98-39f1f07c429b/subagents/agent-acompact-a77b41e89e70ad51.jsonl:387:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-97831869758c448b.jsonl:129:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-ad700707f06e5ac58.jsonl:31:[Omitted long matching line]
+/home/jayone/.claude/file-history/e0e3045f-47e6-45bc-a311-3324c063e857/54c03d7bc2285ec3@v3:1406:        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-Broadcaster/ce98eda3-3806-4850-ae98-39f1f07c429b.jsonl:161:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Broadcaster/ce98eda3-3806-4850-ae98-39f1f07c429b.jsonl:324:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Broadcaster/ce98eda3-3806-4850-ae98-39f1f07c429b.jsonl:503:[Omitted long matching line]
+/home/jayone/.claude/file-history/e0e3045f-47e6-45bc-a311-3324c063e857/54c03d7bc2285ec3@v4:1392:        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-OneViral/5836a1bd-b507-4775-8f8f-bcb3a07b42d0/subagents/agent-acompact-89024f.jsonl:3:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-AgentNode/a85b697e-4bbc-4722-8358-5dc34b37c0b3.jsonl:3561:[Omitted long matching line]
+/home/jayone/.claude/file-history/e4cebd40-9083-42ac-9b36-498696665cf9/f93be12542d74fe2@v3:140:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/e4cebd40-9083-42ac-9b36-498696665cf9/f93be12542d74fe2@v4:153:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/e4cebd40-9083-42ac-9b36-498696665cf9/f93be12542d74fe2@v6:163:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/e4cebd40-9083-42ac-9b36-498696665cf9/f93be12542d74fe2@v5:156:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/0c038313-70ed-4ac1-b582-752d7579a686/19936a2fd86249b6@v2:178:    if args.live:
+/home/jayone/.claude/file-history/0c038313-70ed-4ac1-b582-752d7579a686/19936a2fd86249b6@v2:224:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-OneViral/5836a1bd-b507-4775-8f8f-bcb3a07b42d0/subagents/agent-acompact-9b7f86.jsonl:3:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-MarketGap/b6aa4b60-cc56-41e8-87a8-4bd3c0876b52.jsonl:406:[Omitted long matching line]
+/home/jayone/.claude/file-history/67a58d09-5aeb-4e6b-acf6-5f598b8da19f/19936a2fd86249b6@v2:178:    if args.live:
+/home/jayone/.claude/file-history/67a58d09-5aeb-4e6b-acf6-5f598b8da19f/19936a2fd86249b6@v2:224:    if args.shadow or args.live:
+/home/jayone/.claude/file-history/58d1987e-ea69-4c37-ba46-21a363484eab/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/58d1987e-ea69-4c37-ba46-21a363484eab/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-8f3c61d06d8ba404.jsonl:45:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-8f3c61d06d8ba404.jsonl:141:[Omitted long matching line]
+/home/jayone/.claude/file-history/c6338da4-f3b5-46c8-8d6d-3002df1da786/8137f6949ff92945@v3:20:  { id: 1, tag: 'HOME', label: '홈 피드', live: true },
+/home/jayone/.claude/file-history/c6338da4-f3b5-46c8-8d6d-3002df1da786/8137f6949ff92945@v3:21:  { id: 2, tag: 'IMG', label: '이미지 스튜디오', live: false },
+/home/jayone/.claude/file-history/c6338da4-f3b5-46c8-8d6d-3002df1da786/8137f6949ff92945@v3:22:  { id: 3, tag: 'VID', label: '비디오 생성', live: true },
+/home/jayone/.claude/file-history/c6338da4-f3b5-46c8-8d6d-3002df1da786/8137f6949ff92945@v3:23:  { id: 4, tag: 'SHORT', label: '숏폼', live: false },
+/home/jayone/.claude/file-history/c6338da4-f3b5-46c8-8d6d-3002df1da786/8137f6949ff92945@v3:24:  { id: 5, tag: 'AI', label: 'AI 바로가기', live: true },
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-d667fc8314151017.jsonl:107:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-ae43072022a0c6d1e.jsonl:34:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-ae43072022a0c6d1e.jsonl:277:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-db30682d1e4c2a39.jsonl:18:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-a42f29095605b6af6.jsonl:29:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-d9e7853c081dc133.jsonl:10:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-d9e7853c081dc133.jsonl:12:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-accb093c01deb65ea.jsonl:30:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-a53c31d274be89733.jsonl:54:[Omitted long matching line]
+/home/jayone/.claude/file-history/1c0fed89-5fd6-4370-a2c0-aa02974d9722/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/1c0fed89-5fd6-4370-a2c0-aa02974d9722/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775/subagents/agent-acompact-8a73a508de4f34e2.jsonl:431:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775/subagents/agent-acompact-8a73a508de4f34e2.jsonl:432:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775/subagents/agent-acompact-8a73a508de4f34e2.jsonl:461:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775/subagents/agent-acompact-8a73a508de4f34e2.jsonl:483:[Omitted long matching line]
+/home/jayone/.claude/file-history/36a04880-adab-4e46-8bef-39558b870970/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/36a04880-adab-4e46-8bef-39558b870970/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775/subagents/agent-af07b9652bda40e09.jsonl:1:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775/subagents/agent-af07b9652bda40e09.jsonl:57:[Omitted long matching line]
+/home/jayone/.claude/file-history/36a04880-adab-4e46-8bef-39558b870970/19936a2fd86249b6@v2:343:    if args.live:
+/home/jayone/.claude/file-history/36a04880-adab-4e46-8bef-39558b870970/19936a2fd86249b6@v2:389:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-eb436fb6b463a707.jsonl:72:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-acompact-eb436fb6b463a707.jsonl:78:[Omitted long matching line]
+/home/jayone/.claude/file-history/36a04880-adab-4e46-8bef-39558b870970/19936a2fd86249b6@v1:286:    if args.live:
+/home/jayone/.claude/file-history/36a04880-adab-4e46-8bef-39558b870970/19936a2fd86249b6@v1:332:    if args.shadow or args.live:
+/home/jayone/.claude/file-history/8f0741a8-0d19-4989-bda2-3c49576b0665/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/8f0741a8-0d19-4989-bda2-3c49576b0665/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/file-history/87c9fffa-2de6-4cf9-8ced-5e8ee0767324/f93be12542d74fe2@v3:140:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/87c9fffa-2de6-4cf9-8ced-5e8ee0767324/f93be12542d74fe2@v4:153:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/87c9fffa-2de6-4cf9-8ced-5e8ee0767324/f93be12542d74fe2@v5:156:     ## omc-live: Human Input Required
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/98e2ea7c-e0d5-434d-93c5-5f46a78c66ce.jsonl:1715:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/98e2ea7c-e0d5-434d-93c5-5f46a78c66ce.jsonl:1721:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/98e2ea7c-e0d5-434d-93c5-5f46a78c66ce.jsonl:1730:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775.jsonl:575:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775.jsonl:576:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775.jsonl:605:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-Secure/2574326a-ae23-4b68-aa5c-1fd17cbe6775.jsonl:627:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/subagents/agent-a77608b3bc98cecb7.jsonl:46:[Omitted long matching line]
+/home/jayone/.claude/file-history/43a1ca67-44c9-4fec-ad4d-be0237382c8e/54c03d7bc2285ec3@v3:1584:        keepalive: true,
+/home/jayone/.claude/file-history/32140be3-f684-42fd-8805-06d7e2b1dbef/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/32140be3-f684-42fd-8805-06d7e2b1dbef/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea/tool-results/b1mhv98gq.txt:3:[Omitted long matching line]
+/home/jayone/.claude/file-history/d5274ea3-1d50-4b83-9cf0-5f56b6f13fcd/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/d5274ea3-1d50-4b83-9cf0-5f56b6f13fcd/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/file-history/60e44f41-4f6e-4f3d-a1c1-5e7c43fbca13/54c03d7bc2285ec3@v3:1406:        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/02a7e2fb-d2c0-46b9-b6cb-b0fadc3ad1fc/subagents/agent-accaada.jsonl:44:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/02a7e2fb-d2c0-46b9-b6cb-b0fadc3ad1fc/subagents/agent-a332844.jsonl:23:[Omitted long matching line]
+/home/jayone/.claude/file-history/612eadb5-2715-408c-bc5c-ac5aa10b418b/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/612eadb5-2715-408c-bc5c-ac5aa10b418b/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4/subagents/agent-a6a92afe68eb3c8b6.jsonl:21:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/e9304ebc-7355-4ab2-958a-9a4567c8f0b4/subagents/agent-ad1b34e9fe0836bbf.jsonl:41:[Omitted long matching line]
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v6:1245:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v5:1220:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v3:1406:        keepalive: true,
+/home/jayone/.claude/file-history/f55e0b98-82ea-4307-97e6-c79dab8d1fee/54c03d7bc2285ec3@v2:1817:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v9:1245:        keepalive: true,
+/home/jayone/.claude/file-history/f55e0b98-82ea-4307-97e6-c79dab8d1fee/54c03d7bc2285ec3@v1:1817:        keepalive: true,
+/home/jayone/.claude/file-history/799ffbbb-1c72-40c3-93f6-d077e2f3342a/54c03d7bc2285ec3@v2:1331:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v1:1335:        keepalive: true,
+/home/jayone/.claude/file-history/799ffbbb-1c72-40c3-93f6-d077e2f3342a/54c03d7bc2285ec3@v1:1280:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v4:1392:        keepalive: true,
+/home/jayone/.claude/file-history/6f37a26b-004d-4a09-ae22-bc9e7ba09429/19936a2fd86249b6@v2:178:    if args.live:
+/home/jayone/.claude/file-history/6f37a26b-004d-4a09-ae22-bc9e7ba09429/19936a2fd86249b6@v2:224:    if args.shadow or args.live:
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v7:1245:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v8:1245:        keepalive: true,
+/home/jayone/.claude/file-history/f8118d32-b4f1-4459-a14f-afe781dd79c0/54c03d7bc2285ec3@v2:1419:        keepalive: true,
+/home/jayone/.claude/file-history/f8118d32-b4f1-4459-a14f-afe781dd79c0/54c03d7bc2285ec3@v1:1310:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v10:1310:        keepalive: true,
+/home/jayone/.claude/file-history/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62/54c03d7bc2285ec3@v2:1355:        keepalive: true,
+/home/jayone/.claude/file-history/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62/54c03d7bc2285ec3@v1:1371:        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:42:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:92:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:97:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:102:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:107:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:112:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:117:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:121:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:126:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:736:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:765:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:970:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62.jsonl:1021:[Omitted long matching line]
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v3:20:  { id: 1, tag: 'HOME', label: '홈 피드', live: true },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v3:21:  { id: 2, tag: 'IMG', label: '이미지 스튜디오', live: false },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v3:22:  { id: 3, tag: 'VID', label: '비디오 생성', live: true },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v3:23:  { id: 4, tag: 'SHORT', label: '숏폼', live: false },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v3:24:  { id: 5, tag: 'AI', label: 'AI 바로가기', live: true },
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v11:1310:        keepalive: true,
+/home/jayone/.claude/file-history/451fd646-d8b2-48f3-89a4-69f1c4d6b234/54c03d7bc2285ec3@v6:1833:        keepalive: true,
+/home/jayone/.claude/file-history/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/54c03d7bc2285ec3@v2:1342:        keepalive: true,
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v2:20:  { id: 1, tag: 'HOME', label: '홈 피드', live: true },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v2:21:  { id: 2, tag: 'IMG', label: '이미지 스튜디오', live: false },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v2:22:  { id: 3, tag: 'VID', label: '비디오 생성', live: true },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v2:23:  { id: 4, tag: 'SHORT', label: '숏폼', live: false },
+/home/jayone/.claude/file-history/20fe2f61-6778-440c-9701-8f5201acf90a/8137f6949ff92945@v2:24:  { id: 5, tag: 'AI', label: 'AI 바로가기', live: true },
+/home/jayone/.claude/file-history/6b11cd8e-7986-4526-b2cf-be92379250a3/f93be12542d74fe2@v3:140:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/6b11cd8e-7986-4526-b2cf-be92379250a3/f93be12542d74fe2@v4:153:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/6b11cd8e-7986-4526-b2cf-be92379250a3/f93be12542d74fe2@v6:163:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/6b11cd8e-7986-4526-b2cf-be92379250a3/f93be12542d74fe2@v5:156:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/abcf7ecd-7f96-4eff-a75d-17b65930046f/f93be12542d74fe2@v3:140:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/abcf7ecd-7f96-4eff-a75d-17b65930046f/f93be12542d74fe2@v4:153:     ## omc-live: Human Input Required
+/home/jayone/.claude/file-history/40b4e710-40b0-47e3-b332-aaadabf3e066/54c03d7bc2285ec3@v3:1406:        keepalive: true,
+/home/jayone/.claude/file-history/40b4e710-40b0-47e3-b332-aaadabf3e066/54c03d7bc2285ec3@v4:1392:        keepalive: true,
+/home/jayone/.claude/file-history/eec15a9b-7acf-4e74-9ca1-03672fdbd16e/54c03d7bc2285ec3@v3:1584:        keepalive: true,
+/home/jayone/.claude/file-history/e9304ebc-7355-4ab2-958a-9a4567c8f0b4/54c03d7bc2285ec3@v2:1335:        keepalive: true,
+/home/jayone/.claude/file-history/e9304ebc-7355-4ab2-958a-9a4567c8f0b4/54c03d7bc2285ec3@v1:1331:        keepalive: true,
+/home/jayone/.claude/file-history/eec15a9b-7acf-4e74-9ca1-03672fdbd16e/54c03d7bc2285ec3@v2:1562:        keepalive: true,
+/home/jayone/.claude/file-history/82a9169e-bfb3-49d5-999f-820830ae38ea/54c03d7bc2285ec3@v6:1833:        keepalive: true,
+/home/jayone/.claude/file-history/82a9169e-bfb3-49d5-999f-820830ae38ea/54c03d7bc2285ec3@v5:1851:        keepalive: true,
+/home/jayone/.claude/file-history/eec15a9b-7acf-4e74-9ca1-03672fdbd16e/54c03d7bc2285ec3@v1:1419:        keepalive: true,
+/home/jayone/.claude/file-history/82a9169e-bfb3-49d5-999f-820830ae38ea/54c03d7bc2285ec3@v3:1842:        keepalive: true,
+/home/jayone/.claude/file-history/82a9169e-bfb3-49d5-999f-820830ae38ea/54c03d7bc2285ec3@v4:1889:        keepalive: true,
+/home/jayone/.claude/file-history/82a9169e-bfb3-49d5-999f-820830ae38ea/54c03d7bc2285ec3@v1:1817:        keepalive: true,
+/home/jayone/.claude/file-history/82a9169e-bfb3-49d5-999f-820830ae38ea/54c03d7bc2285ec3@v2:1817:        keepalive: true,
+/home/jayone/.claude/file-history/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69/54c03d7bc2285ec3@v5:1280:        keepalive: true,
+/home/jayone/.claude/file-history/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69/54c03d7bc2285ec3@v3:1321:        keepalive: true,
+/home/jayone/.claude/file-history/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69/54c03d7bc2285ec3@v4:1280:        keepalive: true,
+/home/jayone/.claude/file-history/6c76d9cd-39f6-4261-8799-c7463b5b83ad/54c03d7bc2285ec3@v4:1280:        keepalive: true,
+/home/jayone/.claude/file-history/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69/54c03d7bc2285ec3@v1:1355:        keepalive: true,
+/home/jayone/.claude/file-history/1750cfda-c0d9-4fa4-a793-82dfa7eb9a69/54c03d7bc2285ec3@v2:1358:        keepalive: true,
+/home/jayone/.claude/file-history/9cd7513b-98cf-4b7a-83dc-493a1a1bf7dc/19936a2fd86249b6@v3:347:    if args.live:
+/home/jayone/.claude/file-history/9cd7513b-98cf-4b7a-83dc-493a1a1bf7dc/19936a2fd86249b6@v3:393:    if args.shadow or args.live:
+/home/jayone/.claude/file-history/fbd5f849-d980-4dd1-853b-5188c4971cef/54c03d7bc2285ec3@v3:1584:        keepalive: true,
+/home/jayone/.claude/file-history/eaa190ef-4237-48af-84b1-f485c3f96055/54c03d7bc2285ec3@v9:1245:        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/eec15a9b-7acf-4e74-9ca1-03672fdbd16e.jsonl:57:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/eec15a9b-7acf-4e74-9ca1-03672fdbd16e.jsonl:161:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/eec15a9b-7acf-4e74-9ca1-03672fdbd16e.jsonl:172:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/eec15a9b-7acf-4e74-9ca1-03672fdbd16e.jsonl:186:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/eec15a9b-7acf-4e74-9ca1-03672fdbd16e.jsonl:1030:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/be881c72-28bb-4eb3-b7fa-d4644c496759/subagents/agent-ad02bd4107f3275cc.jsonl:43:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/be881c72-28bb-4eb3-b7fa-d4644c496759/subagents/agent-ab03ed690b66d7c29.jsonl:27:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/subagents/agent-aebd86b9ca5a681bd.jsonl:22:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/be881c72-28bb-4eb3-b7fa-d4644c496759/tool-results/call_c5a86641f5a4402aa7efede1.txt:1310:  1310→        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/b7923bec-6657-44f0-bad1-701b392d471f/subagents/agent-a48e71ffd9afb524f.jsonl:247:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5e6f39fc-e32f-4021-9989-faf208f1f532/subagents/agent-a32e99ffb68de0580.jsonl:47:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/be881c72-28bb-4eb3-b7fa-d4644c496759/tool-results/b020fd8.txt:43:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/7336c7cf-4dfb-4452-897a-f6e8788b7a62.jsonl:3562:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/7336c7cf-4dfb-4452-897a-f6e8788b7a62.jsonl:3959:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/c54af5ff-013a-49f5-a26d-7b99fcbd3f4b.jsonl:1776:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/c54af5ff-013a-49f5-a26d-7b99fcbd3f4b.jsonl:2014:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/c54af5ff-013a-49f5-a26d-7b99fcbd3f4b.jsonl:3272:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/c54af5ff-013a-49f5-a26d-7b99fcbd3f4b.jsonl:7158:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/fa16304e-641a-479a-b2ef-60e805f8bb52/tool-results/call_function_nw7r0zak48bj_1.txt:1310:  1310→        keepalive: true,
+/home/jayone/.claude/projects/-home-jayone-Project-NodeClaw/709ac27a-2511-49ec-8ab1-f363ad972399/subagents/agent-acompact-81659c4d16bc17c5.jsonl:87:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:85:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:92:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:97:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:101:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:110:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:119:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:128:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:139:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/f8118d32-b4f1-4459-a14f-afe781dd79c0.jsonl:147:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/be881c72-28bb-4eb3-b7fa-d4644c496759.jsonl:288:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/subagents/agent-acffb7742940cf90b.jsonl:18:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/subagents/agent-acffb7742940cf90b.jsonl:21:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b/subagents/agent-a90f49303f5d8ab94.jsonl:20:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-NodeClaw/709ac27a-2511-49ec-8ab1-f363ad972399.jsonl:1127:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/799ffbbb-1c72-40c3-93f6-d077e2f3342a.jsonl:22:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/799ffbbb-1c72-40c3-93f6-d077e2f3342a.jsonl:30:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/799ffbbb-1c72-40c3-93f6-d077e2f3342a.jsonl:35:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/7607273a-7365-4c9a-8f79-05d3e27e8f8a/tool-results/b91ebb1.txt:2:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62/subagents/agent-ae2e491d0a2bbb9d6.jsonl:33:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62/subagents/agent-ae2e491d0a2bbb9d6.jsonl:37:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/7607273a-7365-4c9a-8f79-05d3e27e8f8a/tool-results/bbecb3e.txt:15:< Keep-Alive: timeout=5
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62/subagents/agent-a9bd98bed472932b9.jsonl:34:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/5c0f4586-ee02-4ffe-b3dc-fc531bb23a62/subagents/agent-ad801b05695dbe517.jsonl:26:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:31:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:43:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:48:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:52:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:57:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:62:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:67:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:72:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:77:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:85:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:94:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:101:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:109:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:120:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:129:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:137:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:148:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:153:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:326:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:342:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:382:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:387:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:392:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:397:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:402:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:494:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:498:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:1572:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:1632:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:1773:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:2200:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:2202:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:2262:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:2275:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:2366:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:2417:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:2807:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:4189:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7273:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7277:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7282:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7287:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7292:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7297:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7506:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7510:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/4b92ae6a-fe0f-429c-be25-8e8da5b7847b.jsonl:7514:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:3817:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:6314:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:6361:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:10395:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:23040:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:23818:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:24563:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:24660:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:25199:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:25423:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:25828:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:25833:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:25986:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:26460:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:26663:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:26669:[Omitted long matching line]
+/home/jayone/.claude/projects/-home-jayone-Project-PaintPoint/82a9169e-bfb3-49d5-999f-820830ae38ea.jsonl:31741:[Omitted long matching line]

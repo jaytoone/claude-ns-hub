@@ -4,13 +4,14 @@ connections:
 - Clone
 current: —
 deadline: ''
-layer: 1
+layer: 0
 log: []
 metric: —
 milestones: []
 name: FreeOS
 note: VERTICAL FreeOS project
-position_x: 1
+parent: null
+position_x: 2
 status: paused
 target: —
 unit: ''

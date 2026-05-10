@@ -55,15 +55,15 @@ if [ -n "${CLAUDE_REMOTE_NOTIFY_URL:-}" ]; then
                  -H "X-Notify-Token: ${_notify_token}" \
                  --data "$payload" >/dev/null 2>&1 || true
         done
-        # Bark (iPhone)
-        _bark_key=$(cat "$HOME/.claude/.bark-key" 2>/dev/null || echo "")
-        if [ -n "$_bark_key" ]; then
+        # Bark (iPhone + iPad)
+        while IFS= read -r _bark_key; do
+            [ -z "$_bark_key" ] && continue
             bark_payload=$(jq -cn --arg k "$_bark_key" --arg t "$dir_name" --arg b "$last_activity  $current_time" \
                 '{device_key:$k,title:$t,body:$b,sound:"default"}')
             curl -sf -m 8 -X POST "https://api.day.app/push" \
                 -H 'Content-Type: application/json' \
                 --data "$bark_payload" >/dev/null 2>&1 || true
-        fi
+        done < "$HOME/.claude/.bark-keys"
     ) </dev/null &
     disown 2>/dev/null || true
 fi

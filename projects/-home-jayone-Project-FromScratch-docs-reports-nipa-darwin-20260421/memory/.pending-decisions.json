@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-04-22T01:50:59.614955+00:00",
+  "cwd": "/home/jayone/Project/FromScratch/docs/reports/nipa-darwin-20260421",
+  "turn_count": 502,
+  "decisions": [
+    {
+      "text": "completed",
+      "context": "itten: **Final deliverables (completed)**: - `docs/research/20260422-darwin-v4-vs-v7-matched-scale.md` — full report - DOC_INDEX.md updated - NIPA sta",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "DONE",
+      "context": "**English benchmark DONE!** Darwin-27B_EN results ready. Korean at 53% (~90 min remaining). Pulling English for matched-scale comparison.",
+      "tag": "impl_complete"
+    }
+  ]
+}

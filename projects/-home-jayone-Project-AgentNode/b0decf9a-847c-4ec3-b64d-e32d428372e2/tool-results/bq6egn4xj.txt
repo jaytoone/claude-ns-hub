@@ -1,0 +1,790 @@
+ D .claude/hooks/windows-notify.sh
+ D .claude/hooks/windows-stop.sh
+ M .claude/paper/current_paper.md
+ M .gitignore
+ D AETHER_MICRO_NO_SYNC_FINAL_REPORT.md
+ D ARCHITECTURE-REDESIGN-SUMMARY.md
+ D COMPLEX_VS_SIMPLE_COMPARISON.md
+ D EXPERIMENT_FILES_GUIDE.md
+ D EXPERIMENT_FINAL_SUMMARY.md
+ D EXPERIMENT_REPORT.md
+ D EXPERIMENT_STATUS.md
+ D FEEDBACK_EXPERIMENT_SUMMARY.md
+ D GITHUB-FAME-STRATEGY.md
+ D GLM47-API-Complete-Guide.md
+ D GLM47-API-Usage-Guide.md
+ D GLM47-Quick-Reference.md
+ D GLM47-SSH-Tunnel-Guide.md
+ D HIVE_MIND_PARALLEL_TEST_RESULT.md
+ D NIPA-GLM-SETUP-COMPLETE.md
+ D NIPA-OPENCODE-CONFIG-ANALYSIS.md
+ D NIPA-PROXY-QUICKSTART.md
+ D NIPA-SETUP-DOCUMENTATION.md
+ D NIPA-TOOL-CALLING-GUIDE.md
+ D OPENCODE-DIAGNOSIS.md
+ D OPENCODE-FINAL-FIX.md
+ D OPENCODE-SETUP.md
+ D OPENCODE-TROUBLESHOOTING.md
+ D PROMOTION-GUIDE.md
+ D QUICKSTART-NIPA.md
+ D SIGNUP-API-SUMMARY.md
+ D START-HERE.md
+ D TDD-Cycle-Template.md
+ D TDD-Integration-Progress.md
+ D TOOL_ACTIVATION_TEST_RESULT.md
+ D claude-flow-config-bug.md
+ D dev-to-article.md
+ D "docs/0.5B \352\262\200\354\246\235 \352\260\234\353\260\234\354\240\204\353\236\265.txt"
+ D "docs/0.5B \352\262\200\354\246\235 \352\260\234\353\260\234\354\240\204\353\236\265.txt:Zone.Identifier"
+ D "docs/0.5B_\353\215\260\354\235\264\355\204\260\354\205\213_\352\265\254\354\204\261_\354\240\204\353\236\265.md"
+ D "docs/0.5B_\353\215\260\354\235\264\355\204\260\354\205\213_\352\265\254\354\204\261_\354\240\204\353\236\265.md:Zone.Identifier"
+ D docs/AB_TEST_SINGLE_VS_MULTI_AGENT.md
+ D docs/AETHER_MICRO_0.5B_ADDITIONAL_DATASETS_RESEARCH.md
+ D docs/AETHER_MICRO_0.5B_DATASET_REBALANCING_PLAN.md
+ D docs/AETHER_MICRO_0.5B_DDP_PERFORMANCE_ANALYSIS.md
+ D docs/AETHER_MICRO_0.5B_FINAL_DATA_SOLUTION.md
+ D docs/AETHER_MICRO_0.5B_FULLSCALE_PRETRAINING_DESIGN.md
+ D docs/AETHER_MICRO_0.5B_META_REVIEW_REPORT.md
+ D docs/AETHER_MICRO_0.5B_META_REVIEW_SUMMARY.md
+ D docs/AETHER_MICRO_0.5B_NOSYNC_DEBUG_REPORT.md
+ D docs/AETHER_MICRO_0.5B_NOSYNC_FIX_GUIDE.md
+ D docs/AETHER_MICRO_0.5B_NOSYNC_FIX_SUMMARY.md
+ D docs/AETHER_MICRO_0.5B_PARALLEL_EXECUTION_SCRIPT.sh
+ D docs/AETHER_MICRO_0.5B_PHASE1-2_EXECUTION_PLAN.md
+ D docs/AETHER_MICRO_0.5B_PRETRAINING_OPTIMIZATION_GUIDE.md
+ D docs/AETHER_MICRO_0.5B_SESSION_HANDOFF.md
+ D docs/AETHER_MICRO_0.5B_TRAINING_PERFORMANCE_ANALYSIS.md
+ D docs/AETHER_MICRO_0.5B_TRAINING_PROGRESS_20260213.md
+ D docs/AETHER_MICRO_0.5B_TRAINING_READINESS_VALIDATION.md
+ D docs/AETHER_MICRO_0.5B_ULTRA_OPTIMIZATION_GUIDE.md
+ D docs/AETHER_MICRO_05B_FULL_TRAINING_20260216.md
+ D docs/AETHER_MICRO_CODE_VERIFICATION_FINAL.md
+ D docs/AETHER_MICRO_COMPLETE_IMPLEMENTATION_GUIDE.md
+ D docs/AETHER_MICRO_DATA_COLLECTION_META_VERIFICATION.md
+ D docs/AETHER_MICRO_DDP_TRAINING_DESIGN.md
+ D docs/AETHER_MICRO_FEATURE_STATUS_AND_DEACTIVATION_ANALYSIS.md
+ D docs/AETHER_MICRO_FULL_TRAINING_OPTIMIZATION_REPORT_20260216.md
+ D docs/AETHER_MICRO_META_VALIDATION_FINAL.md
+ D docs/AETHER_MICRO_META_VERIFICATION_REPORT.md
+ D docs/AETHER_MICRO_MOE_INTEGRATION_GUIDE.md
+ D docs/AETHER_MICRO_REMAINING_TASKS.md
+ D docs/AETHER_MICRO_TRAINING_STATUS_20260214.md
+ D docs/AETHER_MICRO_UNSLOTH_INTEGRATION_FINAL_ANALYSIS.md
+ D docs/AETHER_MICRO_V24_VALIDATION_REPORT.md
+ D docs/AETHER_MICRO_WU_XING_INTEGRATION_VERIFICATION.md
+ D "docs/AETHER_Micro_0.5B_EndToEnd_\352\265\254\355\230\204\352\260\200\354\235\264\353\223\234.md"
+ D "docs/AETHER_Micro_0.5B_EndToEnd_\352\265\254\355\230\204\352\260\200\354\235\264\353\223\234.md:Zone.Identifier"
+ D docs/AGENT_SDK_NIPA_INTEGRATION_GUIDE.md
+ D docs/AGENT_TOPOLOGY_EXPERIMENT_FRAMEWORKS.md
+ D docs/AIHUB_CONVERSION_DIAGNOSIS_20260212.md
+ D docs/AI_AGENT_COLLABORATION_ARCHITECTURE_EXPERIMENT_GUIDE.md
+ D docs/ALL_BLOCKS_IMPLEMENTATION_COMPLETE.md
+ D docs/ARCHITECTURE_DESIGN_PLAN.md
+ D docs/ASI-Architecture-Redesign-v2.0.md
+ D docs/BROWSER_AUTOMATION_COMPREHENSIVE_STRATEGY_2026.md
+ D docs/BROWSER_VALIDATION_ENHANCEMENT_DESIGN.md
+ D docs/CLAUDE_CODE_MANAGED_SETTINGS_MIGRATION_GUIDE.md
+ D docs/CLAUDE_CODE_MEMORY_ENHANCEMENT_GUIDE.md
+ D docs/CLAUDE_CODE_NIPA_CONNECTION_EXPLAINED.md
+ D docs/CLAUDE_FLOW_MCP_TOOLS_REFERENCE.md
+ D docs/CONTEXT_COMPRESSION_RESEARCH_2026.md
+ D docs/CONTEXT_RECOVERY_COMPREHENSIVE_RESEARCH_2026.md
+ D docs/CONTEXT_RECOVERY_SYSTEM_ARCHITECTURE.md
+ D docs/CONTEXT_RESTORATION_SYSTEM_ANALYSIS.md
+ D docs/DECISION-TREE.md
+ D docs/DELIVERABLES-SUMMARY.md
+ D docs/DOCUMENTATION-STRATEGY-DELIVERABLE.md
+ M docs/DOC_INDEX.md
+ D docs/EMAIL-VERIFICATION-API.md
+ D docs/FULL_TRAINING_OPTIMIZATION_ANALYSIS_20260216.md
+ D docs/FULL_TRAINING_RESTART_GUIDE_20260216.md
+ D docs/GIT_SMART_CONFIGURATION_GUIDE.md
+ D docs/GRADIENT_CHECKPOINTING_FIX.md
+ D docs/HF_CONVERSION_ANALYSIS.md
+ D docs/HIVE_MIND_ACTIVATION_GUIDE.md
+ D docs/HIVE_MIND_DIAGNOSIS_REPORT.md
+ D docs/HIVE_MIND_HOOK_DIAGNOSIS.md
+ D docs/HIVE_MIND_INTEGRATION_ANALYSIS.md
+ D docs/HIVE_MIND_PHASE_2.1_RELEASE.md
+ D docs/HIVE_MIND_PROMPT_STRATEGY_ANALYSIS.md
+ D docs/HIVE_MIND_SYSTEM_PROMPT_INJECTION_GUIDE.md
+ D docs/HIVE_MIND_SYSTEM_PROMPT_MODIFICATION_GUIDE.md
+ D docs/HIVE_MIND_USAGE_ANALYSIS.md
+ D docs/HIVE_MIND_WORKER_CLEANUP_SOLUTION.md
+ D docs/HIVE_MIND_WORKFLOW_EXECUTION_FAILURE.md
+ D docs/HOOK_MEMORY_EXPLOSION_ROOT_CAUSE_ANALYSIS.md
+ D docs/HOOK_SYSTEM_COMPARISON_AND_ENHANCEMENT.md
+ D docs/INDEX-MCP-ENFORCEMENT.md
+ D docs/INSTRUCTION_DATASET_VERIFICATION_REPORT.md
+ D docs/LANGGRAPH_MULTI_AGENT_EXPERIMENT_GUIDE.md
+ D "docs/LLM_\355\224\204\353\246\254\355\212\270\353\240\210\354\235\264\353\213\235_\353\215\260\354\235\264\355\204\260\354\205\213_\352\265\254\354\204\261_\353\260\251\353\262\225\353\241\240.md"
+ D "docs/LLM_\355\224\204\353\246\254\355\212\270\353\240\210\354\235\264\353\213\235_\353\215\260\354\235\264\355\204\260\354\205\213_\352\265\254\354\204\261_\353\260\251\353\262\225\353\241\240.md:Zone.Identifier"
+ D docs/LORA_TRAINING_SUCCESS_20260215.md
+ D docs/MAGIC_SQUARE_SCHEDULER_META_VERIFICATION_V2.md
+ D docs/MCP-ENFORCEMENT-README.md
+ D docs/MCP_TOOL_ACTIVATION_OPTIMIZATION_GUIDE.md
+ D docs/META_VALIDATION_PLANNING_ALIGNMENT.md
+ D docs/META_VERIFICATION_TRAINING_ALIGNMENT_20260215.md
+ D docs/MODELING_AETHER_MICRO_DESIGN.md
+ D docs/MODEL_ARCHITECTURE_COMPARISON.md
+ D docs/MODULAR_ARCHITECTURE_DESIGN.md
+ D docs/MODULAR_IMPLEMENTATION_COMPLETE.md
+ D docs/MULTI_AGENT_BENCHMARKING_TOOLS_GUIDE.md
+ D docs/MULTI_FILE_DATASET_IMPLEMENTATION.md
+ D docs/NEXTJS_MIGRATION.md
+ D docs/NIPA-GLM-PROJECT-SETUP.md
+ D docs/NIPA-GLOBAL-SETTING-ANALYSIS.md
+ D docs/NIPA_CLAUDE_CODE_INTEGRATION_ANALYSIS.md
+ D docs/NIPA_DATA_COLLECTION_FINAL_STATUS_20260212.md
+ D docs/NIPA_DATA_COLLECTION_STATUS_20260212.md
+ D docs/NIPA_DATA_COLLECTION_STATUS_UPDATED_20260212.md
+ D docs/NIPA_DATA_META_VERIFICATION_20260212.md
+ D docs/NIPA_DATA_META_VERIFICATION_20260212_FINAL.md
+ D docs/NIPA_DATA_META_VERIFICATION_20260212_V2.md
+ D docs/NIPA_DATA_META_VERIFICATION_20260212_V3_FINAL.md
+ D docs/NIPA_FINAL_DATA_STATUS_20260212.md
+ D docs/NIPA_GLM-4.7_API_SETUP_GUIDE.md
+ D docs/NIPA_Kimi-K2.5_API_SETUP_GUIDE.md
+ D docs/NIPA_MODEL_VERIFICATION_20260214.md
+ D docs/NIPA_SERVER_SETUP_AND_ACCESS.md
+ D docs/NIPA_STREAM_OPTIONS_ANALYSIS.md
+ D docs/OPENCODE-ERROR-DOCUMENTATION.md
+ D docs/PASSWORD-RESET-API.md
+ D docs/PHASE0_ACTUAL_IMPLEMENTATION_META_VERIFICATION.md
+ D docs/PHASE1_V4_EXECUTION_PLAN.md
+ D docs/PHASE_0_ABLATION_IMPLEMENTATION_DESIGN.md
+ D docs/PHASE_0_ABLATION_PLAN.md
+ D docs/PLAYWRIGHT_VALIDATION_ENHANCEMENT_GUIDE.md
+ D docs/POST_COMPACTION_REPETITION_PREVENTION.md
+ D docs/PRETOKENIZATION_SPEED_OPTIMIZATION.md
+ D docs/PROVIDER_AUTO_COMPACT_ANALYSIS.md
+ D docs/REACT_PERFORMANCE.md
+ D docs/RLP_DDP_COMPATIBILITY_ANALYSIS.md
+ D docs/RLP_IMPLEMENTATION_DESIGN.md
+ D docs/ROLE_BASED_MULTIAGENT_BENCHMARK_SUPERIORITY.md
+ D docs/ROLE_BASED_MULTIAGENT_EXPERIMENT_GUIDE.md
+ D docs/SELF_EVALUATION_HEAD_DESIGN.md
+ D docs/SERVER_RECOVERY_PROCEDURE_20260214.md
+ D docs/SMART_DOCUMENT_LOADING_WITH_RAG_MEMORY.md
+ D docs/STOP_HOOK_PLAYWRIGHT_OFF_TARGET_FIX_20260224.md
+ D docs/STREAMING_MODE_EARLY_TERMINATION_ANALYSIS.md
+ D docs/SUMMARY-claude-flow-automation.md
+ D docs/SYSTEM_PROMPT_SCAFFOLDING_EVALUATION_20260223.md
+ D docs/SYSTEM_PROMPT_V8.8_20260224.md
+ D docs/TDD-Expert-Agent-Design.md
+ D docs/TECHNICAL_FEASIBILITY_VERIFICATION_REPORT.md
+ D docs/TIER_1_IMPLEMENTATION_REPORT.md
+ D docs/TIER_1_META_VERIFICATION_REPORT.md
+ D docs/TMUX_DOUBLE_PASTE_ISSUE_SOLUTION.md
+ D docs/TMUX_NEW_WINDOW_LAG_ROOT_CAUSE_20260221.md
+ D docs/TMUX_SESSION_MANAGEMENT_SETUP.md
+ D docs/TOKENIZATION_BOTTLENECK_SOLUTIONS.md
+ D docs/TRAINING_FINAL_STATUS_20260214_0315.md
+ D docs/TRAINING_PROGRESS_20260214_0248.md
+ D docs/TRAINING_RESUME_GUIDE_20260214.md
+ D docs/TRAINING_STATUS_BEFORE_UNSLOTH_20260215.md
+ D docs/TRAINING_STATUS_FINAL_20260214_0800.md
+ D docs/TS_SAFETY.md
+ D docs/UNSLOTH_CONFUSION_CLARIFICATION_20260216.md
+ D docs/UNSLOTH_MOE_RESEARCH_AND_INTEGRATION.md
+ D docs/UNSLOTH_OPTIMIZATION_ANALYSIS_AETHER_MICRO.md
+ D docs/WANDB_401_ERROR_ROOT_CAUSE_ANALYSIS.md
+ D docs/WANDB_ACTIVATION_ISSUE_ANALYSIS_20260216.md
+ D docs/WORKER_CLEANUP_COMPREHENSIVE_STRATEGY.md
+ D docs/WORKER_CLEANUP_DESIGN.md
+ D "docs/aether-proto-agi-\355\224\204\353\241\254\354\212\244\355\201\254\353\236\230\354\271\230 \352\260\234\353\260\234 \354\240\204\353\236\265.md"
+ D "docs/aether-proto-agi-\355\224\204\353\241\254\354\212\244\355\201\254\353\236\230\354\271\230 \352\260\234\353\260\234 \354\240\204\353\236\265.md:Zone.Identifier"
+ M docs/agi-benchmark-problems/ARC_10_PROBLEMS_README.md
+ M docs/agi-benchmark-problems/AUTO_SOLVE_GUIDE.md
+ M docs/agi-benchmark-problems/HOW_TO_SOLVE.md
+ M docs/agi-benchmark-problems/QUICK_START.md
+ M docs/agi-benchmark-problems/QUICK_TEST.md
+ M docs/agi-benchmark-problems/TEST_PROBLEMS_GUIDE.md
+ M docs/agi-benchmark-problems/arc-agi-2-sample/readme.md
+ M docs/agi-benchmark-problems/high-difficulty-problems-summary.md
+ M docs/agi-benchmark-problems/session-results.md
+ D docs/analysis-userpromptsubmit-hook-failure.md
+ M docs/architecture/claude-flow-comprehensive-architecture-2026.md
+ M docs/architecture/implementation-roadmap.md
+ M docs/architecture/quick-reference.md
+ M docs/architecture/v2-implementation-design.md
+ D docs/claude-flow-automation-alternatives.md
+ D docs/claude-flow-automation-implementation-guide.md
+ D docs/claude-flow-documentation-index.md
+ D docs/claude-flow-documentation-strategy.md
+ D docs/claude-flow-enforcement-solutions.md
+ D docs/claude-flow-executive-summary.md
+ D docs/claude-flow-http-bug-issue.md
+ D docs/claude-flow-quick-reference-card.md
+ D docs/claude_code_enhancement_guide.md
+ D docs/current-config-analysis.md
+ D docs/deploy-enhanced-mcp-hooks.ps1
+ D docs/enhanced-dev-process-expert-agents.md
+ D docs/enhanced-system-prompt-v2.md
+ D docs/extreme-300-grade-results.json
+ D docs/extreme-300-grading-summary.md
+ M "docs/from_scratch/aether-proto-agi-\355\224\204\353\241\254\354\212\244\355\201\254\353\236\230\354\271\230 \352\260\234\353\260\234 \354\240\204\353\236\265.md"
+ M "docs/from_scratch/\353\247\210\353\260\251\354\247\204-\354\240\201\354\232\251.md"
+ D docs/global-settings-improvement-plan.md
+ D docs/grading_reaudit_report.md
+ D docs/hook-strategy-comparison.md
+ D docs/hooks-enhancement-plan.md
+ D docs/implementation-guide-mcp-enforcement.md
+ D docs/mcp-enforcement-complete-solution.md
+ D docs/mcp-enforcement-quick-reference.md
+ D docs/meta-cognitive-moe-flow-analysis.md
+ D docs/meta-cognitive-token-time-efficiency-analysis.md
+ D docs/model_architecture_moe_integration.py
+ D docs/multi-expert-panel-low-complexity-analysis.md
+ D docs/my-answers-extreme-300.md
+ D docs/my-benchmark-100-answers.json
+ D docs/new_12_problems_results.md
+ D docs/opencode-mcp-tool-parsing-issues.md
+ D docs/prompt-injection-hook-test-report.md
+ D docs/quick-start-immediate-fix.ps1
+ D docs/quick-start-medium-term.ps1
+ D docs/real-world-qa-automation-framework.md
+ M docs/security/ARCHITECTURE.md
+ M docs/security/INDEX.md
+ M docs/security/PROJECT-SUMMARY.md
+ M docs/security/README.md
+ M docs/security/deployment-guide.md
+ M docs/security/prompt-injection-hook-security-strategy.md
+ D docs/selected_problems_comparison.md
+ D docs/signup-api.md
+ M docs/specs/auto-commit-hook-spec.md
+ M docs/specs/claude-code-monitoring-agent.md
+ M docs/specs/monitoring-agent-interactive-mode-spec.md
+ M docs/specs/monitoring-agent-stdin-fix-spec.md
+ M docs/specs/monitoring-agent-working-dir-spec.md
+ M docs/specs/pde-phase-spec.md
+ D docs/system-prompt-application-status.md
+ D docs/system-prompt-infinite-loop-analysis.md
+ D docs/system-prompt-tdd-integration-patch.md
+ D docs/task-tool-coordination-quick-reference.md
+ D docs/ultimate_test_proofs.md
+ D docs/ultimate_test_results.md
+ D "docs/\353\215\260\354\235\264\355\204\260 \355\225\231\354\212\265 \354\240\204\353\236\265.txt"
+ D "docs/\353\215\260\354\235\264\355\204\260 \355\225\231\354\212\265 \354\240\204\353\236\265.txt:Zone.Identifier"
+ D "docs/\353\215\260\354\235\264\355\204\260\354\205\213_\354\266\224\354\262\234_\354\232\224\354\225\275.md"
+ D "docs/\353\215\260\354\235\264\355\204\260\354\205\213_\354\266\224\354\262\234_\354\232\224\354\225\275.md:Zone.Identifier"
+ D "docs/\353\215\260\354\235\264\355\204\260\354\205\213_\354\266\224\354\262\234_\354\232\224\354\225\275_v2.md"
+ D "docs/\353\215\260\354\235\264\355\204\260\354\205\213_\354\266\224\354\262\234_\354\232\224\354\225\275_v2.md:Zone.Identifier"
+ D "docs/\353\247\210\353\260\251\354\247\204-\354\240\201\354\232\251.md"
+ D "docs/\353\247\210\353\260\251\354\247\204-\354\240\201\354\232\251.md:Zone.Identifier"
+ D "docs/\353\254\270\354\204\234_\353\251\224\355\203\200\354\240\220\352\262\200_\354\240\225\355\231\225\353\217\204_\355\217\211\352\260\200.md"
+ D "docs/\353\254\270\354\204\234_\353\251\224\355\203\200\354\240\220\352\262\200_\354\240\225\355\231\225\353\217\204_\355\217\211\352\260\200.md:Zone.Identifier"
+ D "docs/\354\240\204\353\236\265 \355\217\211\352\260\200 \352\262\260\352\263\274.txt"
+ D "docs/\354\240\204\353\236\265 \355\217\211\352\260\200 \352\262\260\352\263\274.txt:Zone.Identifier"
+ D external-api-guide.md
+ D github-seo-optimization.md
+ D hugwarts-banana-error-reporting-progress.md
+ D improved_experiment_summary_report.md
+ D multi_agent_architecture_experiment_design.md
+ D multi_agent_failure_analysis_report.md
+ D nipa-opencode-sharing-strategy.md
+ M node_modules/.package-lock.json
+ M node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
+ D node_modules/core
+ D opencode-ohmyopencode-guide.md
+ M problem.txt
+ D promotional-content.md
+ D reddit-post.md
+ D rlm-v2-session-context.md
+ D rlm-v2-test-report.md
+ M tools/nipa-token-monitor.js
+ M tsconfig.tsbuildinfo
+ D twitter-thread.md
+ D "\354\265\234\354\242\205\353\263\264\352\263\240\354\204\234_Multi_Agent_\354\204\261\353\212\245\353\271\204\352\265\220.md"
+?? .claude/CLAUDE.md
+?? .claude/skills/playwright-validator.skill.json
+?? .claude/skills/playwright-validator.skill.json.backup
+?? .claudeignore
+?? .omc/
+?? .playwright-mcp/console-2026-03-22T15-04-41-388Z.log
+?? .playwright-mcp/console-2026-03-23T02-43-32-813Z.log
+?? .playwright-mcp/console-2026-03-23T02-44-29-059Z.log
+?? .playwright-mcp/console-2026-03-23T02-45-12-957Z.log
+?? .playwright-mcp/high-complexity-validation-screenshot.png
+?? ab_test/.gitignore
+?? ab_test/README.md
+?? ab_test/analyzer.py
+?? ab_test/causal_micro.py
+?? ab_test/causal_micro_llm_test.py
+?? ab_test/data_collector.py
+?? ab_test/obsidian_mcp_analyzer.py
+?? ab_test/obsidian_mcp_results.json
+?? ab_test/obsidian_mcp_results_v2.json
+?? ab_test/obsidian_mcp_run.py
+?? ab_test/obsidian_mcp_scenarios.py
+?? ab_test/pilot_results.json
+?? ab_test/pilot_test.py
+?? ab_test/requirements.txt
+?? ab_test/results/
+?? ab_test/run_ab_test.py
+?? ab_test/scenarios.py
+?? analyze_results.py
+?? docs/ASI-OPENCODE-AGENT-ORCHESTRATION.md
+?? docs/CLAUDE-CODE-HOOKS-MIGRATION.md
+?? docs/DOC_INDEX.md.bak
+?? docs/agent-system/
+?? docs/agi-benchmark-problems/extreme-300-grade-results.json
+?? docs/agi-benchmark-problems/extreme-300-grading-summary.md
+?? docs/agi-benchmark-problems/grading_reaudit_report.md
+?? docs/agi-benchmark-problems/my-answers-extreme-300.md
+?? docs/agi-benchmark-problems/my-benchmark-100-answers.json
+?? docs/agi-benchmark-problems/new_12_problems_results.md
+?? docs/agi-benchmark-problems/selected_problems_comparison.md
+?? docs/agi-benchmark-problems/ultimate_test_proofs.md
+?? docs/agi-benchmark-problems/ultimate_test_results.md
+?? docs/daily/
+?? docs/data/
+?? docs/decisions/
+?? docs/infrastructure/AGENT_SDK_NIPA_INTEGRATION_GUIDE.md
+?? docs/infrastructure/CLAUDE_FLOW_MCP_FIX_20260317.md
+?? docs/infrastructure/FZF_TMUX_FIRST_LAUNCH_LAG_ANALYSIS.md
+?? docs/infrastructure/GCP_CREDIT_BILLING_MECHANISM.md
+?? docs/infrastructure/GIT_SMART_CONFIGURATION_GUIDE.md
+?? docs/infrastructure/GLM47-API-Complete-Guide.md
+?? docs/infrastructure/GLM47-API-Usage-Guide.md
+?? docs/infrastructure/GLM47-Quick-Reference.md
+?? docs/infrastructure/GLM47-SSH-Tunnel-Guide.md
+?? docs/infrastructure/H200_CODING_LLM_KV_CACHE_REUSE_ANALYSIS_20260224.md
+?? docs/infrastructure/H200_FAST_CODING_LLM_COMPREHENSIVE_RESEARCH_20260224.md
+?? docs/infrastructure/LLAMA_SERVER_PREFILL_OPTIMIZATION_RESEARCH_20260224.md
+?? docs/infrastructure/NIPA-GLM-PROJECT-SETUP.md
+?? docs/infrastructure/NIPA-GLM-SETUP-COMPLETE.md
+?? docs/infrastructure/NIPA-GLOBAL-SETTING-ANALYSIS.md
+?? docs/infrastructure/NIPA-PROXY-QUICKSTART.md
+?? docs/infrastructure/NIPA-SETUP-DOCUMENTATION.md
+?? docs/infrastructure/NIPA-TOOL-CALLING-GUIDE.md
+?? docs/infrastructure/NIPA_CLAUDE_CODE_INTEGRATION_ANALYSIS.md
+?? docs/infrastructure/NIPA_GLM-4.7_API_SETUP_GUIDE.md
+?? docs/infrastructure/NIPA_Kimi-K2.5_API_SETUP_GUIDE.md
+?? docs/infrastructure/NIPA_MODEL_VERIFICATION_20260214.md
+?? docs/infrastructure/NIPA_SERVER_SETUP_AND_ACCESS.md
+?? docs/infrastructure/NIPA_STREAM_OPTIONS_ANALYSIS.md
+?? docs/infrastructure/OPENCODE-ERROR-DOCUMENTATION.md
+?? docs/infrastructure/QUICKSTART-NIPA.md
+?? docs/infrastructure/TMUX_DOUBLE_PASTE_ISSUE_SOLUTION.md
+?? docs/infrastructure/TMUX_LONG_TERM_LAG_ANALYSIS.md
+?? docs/infrastructure/TMUX_NEW_WINDOW_LAG_ROOT_CAUSE_20260221.md
+?? docs/infrastructure/TMUX_SESSION_MANAGEMENT_SETUP.md
+?? docs/infrastructure/VSCODE_TMUX_DRAG_SCROLL_LAG_ROOT_CAUSE_20260225.md
+?? docs/infrastructure/WINDOWS_PERSISTENT_TOAST_NOTIFICATION_20260314.md
+?? docs/infrastructure/WSL2_DISCONNECT_ROOT_CAUSE_20260304.md
+?? docs/infrastructure/external-api-guide.md
+?? "docs/infrastructure/\353\247\210\353\260\251\354\247\204-\354\240\201\354\232\251.md"
+?? docs/misc/
+?? docs/model/
+?? docs/research/
+?? docs/specs/EMAIL-VERIFICATION-API.md
+?? docs/specs/NEXTJS_MIGRATION.md
+?? docs/specs/PASSWORD-RESET-API.md
+?? docs/specs/REACT_PERFORMANCE.md
+?? docs/specs/SIGNUP-API-SUMMARY.md
+?? docs/specs/START-HERE.md
+?? docs/specs/TS_SAFETY.md
+?? docs/specs/signup-api.md
+?? docs/superpowers/
+?? docs/training/
+?? docs/validation/
+?? eval/
+?? experiment_results/
+?? files/
+?? generate_multimodel_viz_data.py
+?? hallumaze_check.png
+?? hallumaze_check2.png
+?? hallumaze_final.html
+?? hallumaze_final_visualization.png
+?? hallumaze_guide.html
+?? hallumaze_multi_model.html
+?? hallumaze_multimodel_data.json
+?? hallumaze_multimodel_race.html
+?? hallumaze_paper_figure.html
+?? hallumaze_paper_figure_v2.html
+?? hallumaze_pkg/
+?? hallumaze_playing.png
+?? hallumaze_race_view.html
+?? hallumaze_race_view_initial.png
+?? hallumaze_race_view_playing.png
+?? hallumaze_race_viewer.html
+?? hallumaze_results_20260322_183554.csv
+?? hallumaze_results_20260322_183554.json
+?? hallumaze_results_20260322_183842.csv
+?? hallumaze_results_20260322_183842.json
+?? hallumaze_results_20260322_191816.csv
+?? hallumaze_results_20260322_191816.json
+?? hallumaze_results_20260322_192924.csv
+?? hallumaze_results_20260322_192924.json
+?? hallumaze_submission.html
+?? hallumaze_visual_fixed.html
+?? hallumaze_visual_fixed_data.json
+?? hallumaze_visual_seed3003_7x7.html
+?? hallumaze_visual_seed3003_7x7_data.json
+?? hallumaze_visual_seed4004_5x5.html
+?? hallumaze_visual_seed4004_5x5_data.json
+?? node_modules/.bin/acorn
+?? node_modules/.bin/agentdb
+?? node_modules/.bin/cdl
+?? node_modules/.bin/cross-env
+?? node_modules/.bin/cross-env-shell
+?? node_modules/.bin/esparse
+?? node_modules/.bin/esvalidate
+?? node_modules/.bin/node-gyp-build
+?? node_modules/.bin/node-gyp-build-optional
+?? node_modules/.bin/node-gyp-build-test
+?? node_modules/.bin/node-which
+?? node_modules/.bin/prebuild-install
+?? node_modules/.bin/proto-loader-gen-types
+?? node_modules/.bin/rc
+?? node_modules/.bin/resolve
+?? node_modules/.bin/ruvector
+?? node_modules/.bin/ruvllm
+?? node_modules/.bin/semver
+?? node_modules/.bin/uuid
+?? node_modules/@asi/core
+?? node_modules/@colors/
+?? node_modules/@epic-web/
+?? node_modules/@grpc/
+?? node_modules/@hono/
+?? node_modules/@huggingface/
+?? node_modules/@inquirer/
+?? node_modules/@js-sdsl/
+?? node_modules/@modelcontextprotocol/
+?? node_modules/@opentelemetry/
+?? node_modules/@phc/
+?? node_modules/@protobufjs/
+?? node_modules/@ruvector/
+?? node_modules/@sindresorhus/
+?? node_modules/@types/accepts/
+?? node_modules/@types/aws-lambda/
+?? node_modules/@types/body-parser/
+?? node_modules/@types/bunyan/
+?? node_modules/@types/connect/
+?? node_modules/@types/content-disposition/
+?? node_modules/@types/cookies/
+?? node_modules/@types/express-serve-static-core/
+?? node_modules/@types/express/
+?? node_modules/@types/http-assert/
+?? node_modules/@types/http-errors/
+?? node_modules/@types/keygrip/
+?? node_modules/@types/koa-compose/
+?? node_modules/@types/koa/
+?? node_modules/@types/koa__router/
+?? node_modules/@types/long/
+?? node_modules/@types/memcached/
+?? node_modules/@types/mysql/
+?? node_modules/@types/pg-pool/
+?? node_modules/@types/pg/
+?? node_modules/@types/qs/
+?? node_modules/@types/range-parser/
+?? node_modules/@types/send/
+?? node_modules/@types/serve-static/
+?? node_modules/@types/shimmer/
+?? node_modules/@types/tedious/
+?? node_modules/@xenova/
+?? node_modules/accepts/
+?? node_modules/acorn-import-attributes/
+?? node_modules/acorn/
+?? node_modules/agent-base/
+?? node_modules/agentdb/
+?? node_modules/ajv-formats/
+?? node_modules/ajv/
+?? node_modules/ansi-escapes/
+?? node_modules/ansi-regex/
+?? node_modules/ansi-styles/
+?? node_modules/ansicolors/
+?? node_modules/argon2/
+?? node_modules/b4a/
+?? node_modules/bare-events/
+?? node_modules/bare-fs/
+?? node_modules/bare-os/
+?? node_modules/bare-path/
+?? node_modules/bare-stream/
+?? node_modules/bare-url/
+?? node_modules/base64-js/
+?? node_modules/bcrypt/
+?? node_modules/better-sqlite3/
+?? node_modules/bignumber.js/
+?? node_modules/bindings/
+?? node_modules/bl/
+?? node_modules/body-parser/
+?? node_modules/buffer-equal-constant-time/
+?? node_modules/buffer/
+?? node_modules/bytes/
+?? node_modules/call-bind-apply-helpers/
+?? node_modules/call-bound/
+?? node_modules/cardinal/
+?? node_modules/chalk/
+?? node_modules/char-regex/
+?? node_modules/chardet/
+?? node_modules/chownr/
+?? node_modules/cjs-module-lexer/
+?? node_modules/cli-cursor/
+?? node_modules/cli-spinners/
+?? node_modules/cli-table3/
+?? node_modules/cli-width/
+?? node_modules/cliui/
+?? node_modules/clone/
+?? node_modules/color-convert/
+?? node_modules/color-name/
+?? node_modules/color-string/
+?? node_modules/color/
+?? node_modules/commander/
+?? node_modules/content-disposition/
+?? node_modules/content-type/
+?? node_modules/cookie-signature/
+?? node_modules/cookie/
+?? node_modules/cors/
+?? node_modules/cross-env/
+?? node_modules/cross-spawn/
+?? node_modules/debug/
+?? node_modules/decompress-response/
+?? node_modules/deep-extend/
+?? node_modules/defaults/
+?? node_modules/depd/
+?? node_modules/detect-libc/
+?? node_modules/dotenv/
+?? node_modules/dunder-proto/
+?? node_modules/eastasianwidth/
+?? node_modules/ecdsa-sig-formatter/
+?? node_modules/ee-first/
+?? node_modules/emoji-regex/
+?? node_modules/emojilib/
+?? node_modules/encodeurl/
+?? node_modules/end-of-stream/
+?? node_modules/es-define-property/
+?? node_modules/es-errors/
+?? node_modules/es-object-atoms/
+?? node_modules/escalade/
+?? node_modules/escape-html/
+?? node_modules/esprima/
+?? node_modules/etag/
+?? node_modules/events-universal/
+?? node_modules/eventsource-parser/
+?? node_modules/eventsource/
+?? node_modules/expand-template/
+?? node_modules/express-rate-limit/
+?? node_modules/express/
+?? node_modules/extend/
+?? node_modules/fast-deep-equal/
+?? node_modules/fast-fifo/
+?? node_modules/fast-uri/
+?? node_modules/file-uri-to-path/
+?? node_modules/finalhandler/
+?? node_modules/flatbuffers/
+?? node_modules/forwarded/
+?? node_modules/fresh/
+?? node_modules/fs-constants/
+?? node_modules/function-bind/
+?? node_modules/gaxios/
+?? node_modules/gcp-metadata/
+?? node_modules/get-caller-file/
+?? node_modules/get-intrinsic/
+?? node_modules/get-proto/
+?? node_modules/github-from-package/
+?? node_modules/google-logging-utils/
+?? node_modules/gopd/
+?? node_modules/guid-typescript/
+?? node_modules/has-flag/
+?? node_modules/has-symbols/
+?? node_modules/hasown/
+?? node_modules/helmet/
+?? node_modules/hono/
+?? node_modules/http-errors/
+?? node_modules/https-proxy-agent/
+?? node_modules/iconv-lite/
+?? node_modules/ieee754/
+?? node_modules/import-in-the-middle/
+?? node_modules/inherits/
+?? node_modules/ini/
+?? node_modules/inquirer/
+?? node_modules/ip-address/
+?? node_modules/ipaddr.js/
+?? node_modules/is-arrayish/
+?? node_modules/is-core-module/
+?? node_modules/is-fullwidth-code-point/
+?? node_modules/is-interactive/
+?? node_modules/is-promise/
+?? node_modules/is-stream/
+?? node_modules/is-unicode-supported/
+?? node_modules/isexe/
+?? node_modules/jose/
+?? node_modules/json-bigint/
+?? node_modules/json-schema-traverse/
+?? node_modules/json-schema-typed/
+?? node_modules/jsonwebtoken/
+?? node_modules/jwa/
+?? node_modules/jws/
+?? node_modules/lodash.camelcase/
+?? node_modules/lodash.includes/
+?? node_modules/lodash.isboolean/
+?? node_modules/lodash.isinteger/
+?? node_modules/lodash.isnumber/
+?? node_modules/lodash.isplainobject/
+?? node_modules/lodash.isstring/
+?? node_modules/lodash.merge/
+?? node_modules/lodash.once/
+?? node_modules/log-symbols/
+?? node_modules/long/
+?? node_modules/marked-terminal/
+?? node_modules/math-intrinsics/
+?? node_modules/media-typer/
+?? node_modules/merge-descriptors/
+?? node_modules/mime-db/
+?? node_modules/mime-types/
+?? node_modules/mimic-fn/
+?? node_modules/mimic-response/
+?? node_modules/minimist/
+?? node_modules/mkdirp-classic/
+?? node_modules/module-details-from-path/
+?? node_modules/ms/
+?? node_modules/mute-stream/
+?? node_modules/napi-build-utils/
+?? node_modules/negotiator/
+?? node_modules/node-abi/
+?? node_modules/node-addon-api/
+?? node_modules/node-emoji/
+?? node_modules/node-fetch/
+?? node_modules/node-gyp-build/
+?? node_modules/object-assign/
+?? node_modules/object-inspect/
+?? node_modules/on-finished/
+?? node_modules/once/
+?? node_modules/onetime/
+?? node_modules/onnx-proto/
+?? node_modules/onnxruntime-common/
+?? node_modules/onnxruntime-node/
+?? node_modules/onnxruntime-web/
+?? node_modules/ora/
+?? node_modules/parseurl/
+?? node_modules/path-key/
+?? node_modules/path-parse/
+?? node_modules/path-to-regexp/
+?? node_modules/pg-int8/
+?? node_modules/pg-protocol/
+?? node_modules/pg-types/
+?? node_modules/pkce-challenge/
+?? node_modules/platform/
+?? node_modules/postgres-array/
+?? node_modules/postgres-bytea/
+?? node_modules/postgres-date/
+?? node_modules/postgres-interval/
+?? node_modules/prebuild-install/
+?? node_modules/protobufjs/
+?? node_modules/proxy-addr/
+?? node_modules/pump/
+?? node_modules/qs/
+?? node_modules/range-parser/
+?? node_modules/raw-body/
+?? node_modules/rc/
+?? node_modules/readable-stream/
+?? node_modules/redeyed/
+?? node_modules/require-directory/
+?? node_modules/require-from-string/
+?? node_modules/require-in-the-middle/
+?? node_modules/resolve/
+?? node_modules/restore-cursor/
+?? node_modules/router/
+?? node_modules/run-async/
+?? node_modules/ruvector-attention-wasm/
+?? node_modules/ruvector-core-linux-x64-gnu/
+?? node_modules/ruvector/
+?? node_modules/rxjs/
+?? node_modules/safe-buffer/
+?? node_modules/safer-buffer/
+?? node_modules/semver/
+?? node_modules/send/
+?? node_modules/serve-static/
+?? node_modules/setprototypeof/
+?? node_modules/sharp/
+?? node_modules/shebang-command/
+?? node_modules/shebang-regex/
+?? node_modules/shimmer/
+?? node_modules/side-channel-list/
+?? node_modules/side-channel-map/
+?? node_modules/side-channel-weakmap/
+?? node_modules/side-channel/
+?? node_modules/signal-exit/
+?? node_modules/simple-concat/
+?? node_modules/simple-get/
+?? node_modules/simple-swizzle/
+?? node_modules/skin-tone/
+?? node_modules/sql.js/
+?? node_modules/statuses/
+?? node_modules/stdin-discarder/
+?? node_modules/streamx/
+?? node_modules/string-width/
+?? node_modules/string_decoder/
+?? node_modules/strip-ansi/
+?? node_modules/strip-json-comments/
+?? node_modules/supports-color/
+?? node_modules/supports-hyperlinks/
+?? node_modules/supports-preserve-symlinks-flag/
+?? node_modules/tar-fs/
+?? node_modules/tar-stream/
+?? node_modules/teex/
+?? node_modules/text-decoder/
+?? node_modules/toidentifier/
+?? node_modules/tr46/
+?? node_modules/tslib/
+?? node_modules/tunnel-agent/
+?? node_modules/type-fest/
+?? node_modules/type-is/
+?? node_modules/unicode-emoji-modifier-base/
+?? node_modules/unpipe/
+?? node_modules/util-deprecate/
+?? node_modules/uuid/
+?? node_modules/vary/
+?? node_modules/wcwidth/
+?? node_modules/webidl-conversions/
+?? node_modules/whatwg-url/
+?? node_modules/which/
+?? node_modules/wrap-ansi/
+?? node_modules/wrappy/
+?? node_modules/xtend/
+?? node_modules/y18n/
+?? node_modules/yargs-parser/
+?? node_modules/yargs/
+?? node_modules/yoctocolors-cjs/
+?? node_modules/zod-to-json-schema/
+?? node_modules/zod/
+?? rebuild_figures.py
+?? run_baselines.py
+?? run_experiment.py
+?? run_hallumaze.py
+?? run_multi_model.py
+?? run_openrouter_experiment.py
+?? scripts/add-wikilinks.py
+?? scripts/agent_nodes.py
+?? scripts/auto_finalize_qwen.py
+?? scripts/build_final_analysis.py
+?? scripts/diverse_synthesis.py
+?? scripts/list_util.py
+?? scripts/mei_sensitivity.py
+?? scripts/numbers_util.py
+?? scripts/pipeline_test_util.py
+?? scripts/profile_phase0_components.py
+?? scripts/reorganize_docs.py
+?? scripts/string_util.py
+?? scripts/test-skill-validation.ts
+?? scripts/test_mcp_tools.py
+?? scripts/verify_mcp_tools_checklist.md
+?? tests/e2e_pipeline_test.py
+?? tests/test_calc_grade.py
+?? tests/test_diverse_synthesis.py
+?? tests/test_list_util.py
+?? tests/test_numbers_util.py
+?? tests/test_pipeline.py
+?? tests/test_pipeline_test_util.py
+?? tests/test_skill_invocation.py
+?? tests/test_skill_pipeline.py
+?? tests/test_string_util.py
+?? tests/test_training_utils.py
+?? tmux-client-16952.log
+?? tmux-client-4831.log
+?? visualize_maze.py
+87f0c03 v2.9.3 20260322 1930     - windows-notify.sh: 팝업 위치 screen/4, celi 세션 인덱스 prefix ([N] 프로젝트명)     - windows-stop.sh: 동일 변경 적용     - WINDOWS_NOTIFY_HOOK_DESIGN.md: v2.9.3 변경사항 문서화 (위치/인덱스 표시)
+8139ea9 v2.9.2 20260321 1910     - windows-notify.sh: 위치 left=screen/3, top=16+OFFSET (좌상단 기준)     - windows-stop.sh: 변경파일목록 메세지 (git status --short basename)     - docs/infrastructure/WINDOWS_NOTIFY_HOOK_DESIGN.md: 시스템 설계 문서화     - docs/DOC_INDEX.md: 신규 문서 인덱스 등록
+4863113 v2.9.2 20260320 1901     - windows-notify.sh: $$ → $BASHPID 버그픽스 (subshell에서 $$ = 부모PID 반환 → dead PID stale 오감지 → 크로스 프로젝트 팝업 겹침 유발)     - stale 슬롯 정리 로직 추가 (dead PID 자동 감지 + rmdir)     - 슬롯 획득 시 PID 파일 생성 (slot_N/pid), OFFSET 92 → 100px 통일

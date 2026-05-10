@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-04-22T13:45:07.166019+00:00",
+  "cwd": "/home/jayone/Project/AgentNode",
+  "turn_count": 99,
+  "decisions": [
+    {
+      "text": "done",
+      "context": "lag being parsed. Restore is done — try `celi` now, it should behave exactly as it did before my edits. For the second part, I'm not sure I understood",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Fixed",
+      "context": "nested-quote preview string. Fixed by refactoring the fzf `--preview` and `--bind reload` to delegate to **hidden subcommands on the script itself** —",
+      "tag": "impl_complete"
+    }
+  ]
+}

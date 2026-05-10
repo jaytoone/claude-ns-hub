@@ -1,0 +1,653 @@
+v1.5.8 20260411 conceptual-chat-groq-unify
+    - feat: chat/route.ts Gemini → Groq gpt-oss-120b 교체 (Arena와 모델 통일)
+      · Chat = Arena의 분리 기능 → 동일 모델 사용 원칙 적용
+      · Gemini SSE 파싱 → Groq OpenAI 호환 스트리밍으로 전환
+      · 멀티턴 messages 배열 Groq format으로 직접 전달
+      · 429 Rate limit 시 llama-3.1-8b-instant fallback 추가
+    - feat: chat SYSTEM_PROMPT에 Mode Gate + Insight Confidence Gate 추가
+      · EXECUTE/EXPLORE 모드 분기 (스킬 스펙 적용)
+      · 0.6 임계값 Confidence Gate (과도한 prophetic claim 필터)
+    - feat: arena CONCEPTUAL_SYSTEM에 Insight Confidence Gate 추가
+    - docs: 스킬 gap 구현 스펙 Groq 기반으로 업데이트
+
+v1.5.7 20260411 arena-cyrillic-lang-guard
+    - fix: Arena SYSTEM_PROMPT 언어 지시 강화 — Cyrillic 혼입(фактор 류) 차단
+      · MANDATORY 수준으로 격상, Cyrillic 알파벳 목록 명시
+      · CONCEPTUAL_SYSTEM + STANDARD_SYSTEM 양쪽 동일 적용
+      · 생성 중 자기교정 트리거 ("STOP and rephrase")
+    - why: gpt-oss-120b English-primary 모델 특성상 한국어 질문에 러시아어 단어 drift 발생
+
+v1.5.6 20260411 conceptual-theme-unify-showcase
+    - fix: /conceptual/s/[shareId] 다크 테마 → warm beige 통일 (client component 전환)
+    - feat: /api/conceptual/share/[id] — 개별 대화 조회 API
+    - feat: Chat 랜딩 소셜 증명 → hardcoded 쇼케이스 (DB 조회 제거)
+      · 경쟁사 추격 / 팀 성과 / 매출·가격 — Conceptual 패러다임 전환 예시
+      · 클릭 시 해당 질문 바로 전송
+
+v1.5.5 20260411 conceptual-landing-social-proof
+    - feat: Chat 빈 화면에 최근 공개 대화 3개 미리보기 (소셜 증명 / 피드 진입점)
+    - why: 빈 피드 → "아직 대화 없음" 대신 타인의 대화를 발견하는 경험으로 전환
+
+v1.5.4 20260411 conceptual-viral-loop-feed-history
+    - feat: 공개 대화 피드 (/conceptual/feed) — warm beige 테마 통일, 타인 대화 발견
+    - feat: Chat 헤더 피드 링크 + 대화 히스토리 카운터 (localStorage 기반, "N개 대화")
+    - feat: Arena 헤더 피드 링크 추가
+    - why: 무상태 → 돌아올 이유 설계 (루프 닫힘 시작점)
+
+v1.5.3 20260411 conceptual-chat-system-prompt-skill-upgrade
+    - feat: Conceptual chat API SYSTEM_PROMPT → /conceptual 스킬 수준으로 전면 업그레이드
+      · 6-paradigm map (Mechanistic/Systems/Humanistic/Critical/Evolutionary/Constructivist) + Blind spot
+      · Adversarial 4Q → 7Q (Premise/Confirmation/Paradigm/Warmth/Moral/Indirectness/Structural)
+      · Concept gap 3분류 (Factual/Conceptual/Meta gap) + meta gap 감지 프로토콜
+      · Epistemic source 3분류 (pratyaksha/anumana/shabda) — meta gap 조기 신호
+      · Epistemic basis 톤 적응 (data-driven/intuition-first/authority-referencing)
+      · Paradigm crossing 후 불확실성 명시 규칙 추가
+      · 한국어/영어 언어 규칙 유지
+
+v1.5.2 20260411 arena-model-gpt-oss-120b
+    - feat: Arena 모델 llama-3.3-70b → openai/gpt-oss-120b
+      · 입력 토큰 4배 저렴 ($0.59 → $0.15/M), 무료 TPD 2배 (100K → 200K)
+      · 응답 품질 검증: 1,726자 완전 응답, 34초 스트리밍 완료
+
+v1.5.1 20260411 conceptual-streaming-fix-arena-thread
+    - fix: Conceptual 채팅 gemini-2.5-flash → gemini-2.0-flash (스트림 중단 버그 해결)
+    - fix: Gemini 스트림 AbortController 25s 타임아웃 + 오류 감지 추가
+    - fix: 스트림 종료 후 TextDecoder flush + 최종 메시지 상태 동기화
+    - feat: Conceptual 채팅 thinking indicator (응답 전 점 3개 바운스 애니메이션)
+    - feat: 스트리밍 커서 — animate-blink (terracotta 색상, 선명하게)
+    - feat: Arena 다음 질문 제출 시 이전 대화 스레드로 보존 (thread 배열)
+      · 이전 질문/양쪽 응답/선택 결과 dimmed 카드로 상단 표시
+    - refactor: tailwind.config.js — blink keyframes 추가
+    - perf: chat API headers — Cache-Control no-cache, X-Accel-Buffering no
+
+v1.5.0 20260410 arena-e2e-verified-header-nav-fix
+    - fix: Arena 좌상단 "Arena" 링크 → /conceptual (자기 참조 → 뒤로가기)
+    - verify: 전체 기능 E2E 검수 18/18 PASS (Playwright)
+      · 제안 질문 클릭 → 로딩 → 스트리밍 → 투표 → 레이블 reveal
+      · "A/B가 도움이 됐다" 투표 버튼 정상
+      · "Conceptual과 계속 대화하기" → /conceptual 컨텍스트 유지
+
+v1.4.9 20260410 arena-max-tokens-8192
+    - feat: max_tokens 4096 → 8192 (llama-3.3-70b-versatile 출력 확장)
+
+v1.4.8 20260410 conceptual-arena-model-prompt-upgrade
+    - feat: 모델 llama-4-scout-17b → llama-3.3-70b-versatile (Groq 무료 70B)
+    - feat: CONCEPTUAL_SYSTEM 전면 재작성 — /conceptual 스킬 핵심 구조 이식
+    - feat: 패러다임 맵 6개 (Mechanistic/Systems/Humanistic/Critical/Evolutionary/Constructivist)
+    - feat: 5단계 내부 처리 프로토콜 (신호감지→패러다임→드래프트→적대적자기검사→출력)
+    - feat: Anti-sycophancy 체크 (framing 수용/nod-along/헷징 감지)
+
+v1.4.7 20260410 arena-ux-ttps-improvements
+    - feat: 후킹 문구 — "같은 질문, 두 AI의 답" → "AI가 다르게 생각할 수 있을까요?"
+    - feat: 방법론 1줄 UI — "동일한 질문 · 시스템 프롬프트 없음 · 무작위 배치"
+    - feat: reveal 후 공유 버튼 — 클립보드 복사 (블라인드 테스트 결과 텍스트)
+    - feat: SUGGESTED 질문 교체 — 고분산 한국 직업 맥락 4개 (경쟁사/팀성과/채용/투자자)
+    - feat: Staged reveal — 투표 클릭 후 700ms 지연 → "확인 중..." → 라벨 공개
+
+v1.4.6 20260410 conceptual-arena-prompt-fix
+    - fix: /api/conceptual/arena Conceptual AI 시스템 프롬프트 — 내부 레이블 사용자 노출 차단
+    - fix: "Draft:", "Internal adversarial check:", "Stage 1/2/3:", "Deliver:" 등 프로세스 레이블 PROHIBITIONS에 명시
+    - fix: 한국어 응답 강제 (NO EXCEPTIONS) — 한국어 질문에 영어 응답 버그 수정
+    - fix: Standard AI 시스템 프롬프트 동일 언어 규칙 적용
+
+v1.4.4 20260410 groq-llama4-scout-streaming
+    - feat: /api/conceptual/arena Groq + Llama 4 Scout (meta-llama/llama-4-scout-17b-16e-instruct)
+    - feat: 양쪽 패널 동시 스트리밍 — Promise.all([pipePanel(a), pipePanel(b)]) 멀티플렉스 SSE
+    - feat: max_tokens 4096, temperature 0.9
+    - feat: arena page.tsx streamDone 상태 — 스트리밍 완료 후에만 투표 버튼 노출
+    - feat: 스트리밍 커서 (pulsing inline cursor) + "답변 작성 중..." 헤더 표시
+    - feat: 첫 청크 도착시 loading → 패널 전환 (체감 속도 개선)
+    - chore: GROQ_API_KEY 환경변수 필요 (wtp-dashboard/.env.local에 추가)
+
+v1.4.3 20260410 arena-beige-theme-cleanup
+    - feat: /conceptual/arena 베이지 테마 전면 적용 (#f8f4ee 크림 배경, 테라코타 액센트)
+    - fix: globals.css html:has(.conceptual-page) zoom:1 — zoom:0.8 흰 배경 누출 수정
+    - fix: layout.tsx conceptual-page 클래스 (conceptual-dark → conceptual-page)
+    - chore: /conceptual/page.tsx 삭제 (채팅 인터페이스 제거)
+    - chore: arena 헤더 "← Conceptual" 링크 제거, Link import 제거
+    - fix: arena 입력 단계 여백 — justify-center 제거, pt-14 상단 고정
+
+v1.4.2 20260410 arena-ui-warm-theme
+    - feat: /conceptual/arena LM Arena 스타일 UI 리디자인 (dark theme + 따뜻한 stone/amber 팔레트)
+    - fix: html:has(.conceptual-dark) { zoom:1; background:#0c0a09 } — zoom:0.8 흰 배경 누출 수정
+    - chore: globals.css conceptual-dark 클래스 기반 html 배경/줌 오버라이드 추가
+    - chore: layout.tsx conceptual-dark 래퍼 클래스 추가
+
+v1.4.1 20260410 postcss-tailwind-fix
+    - fix: @tailwindcss/postcss 설치 — Tailwind v4 utility class CSS 미생성 버그 수정 (dark theme)
+    - feat: wtp-dashboard/playwright.config.ts 추가 (stop-playwright-detect hook 활성화)
+    - chore: stop-playwright-detect.sh 중복 로직 제거 (CURRENT_STAGED, RENAMED_FILES, stderr echo 4줄)
+    - chore: kool playwright 의존성 추가, send-cl-outreach.js 마녀공장 SKIP 처리
+v1.4.0 20260410 1222 conceptual-chat-arena
+    - feat: Conceptual Chat 웹앱 완성 (wtp-dashboard/src/app/conceptual/)
+    - feat: /conceptual/arena — LM Arena 스타일 블라인드 비교 (Standard vs Conceptual)
+    - feat: conceptual_arena_votes 테이블 + 승률 집계 API
+    - fix: dark theme — /conceptual/layout.tsx 추가 (body bg-white 오버라이드)
+    - fix: markdown 렌더링 — **bold**, *italic*, `code` 인라인 파싱
+    - feat: /conceptual/s/[shareId] 공유 페이지 + double-parse JSONB fix
+    - deploy: Vercel production
+
+v1.3.0 20260402 2046 cl-wtp-validation-infra
+    - feat: CL 샘플 리포트 (이니스프리 YouTube 분석, 한국어, 인라인 신청 폼 + wtp_events DB 저장)
+    - feat: Kool 랜딩 Fake Door 모달 (가격별 클릭 트래킹 + 대기자 등록)
+    - feat: CL 콜드이메일 발송 스크립트 (send-cl-outreach.js, 뷰티 9개 브랜드)
+    - feat: wtp_events POST API + CORS (outreach/track-visit route.ts)
+    - feat: CL /pricing Fake Door 페이지 (comment-lens/src/app/pricing/)
+    - docs: LinkedIn DM 템플릿 + VW 인터뷰 가이드 + 카카오 포스팅 v2
+    - chore: find-decision-maker-email.js CL 뷰티 13개 브랜드 추가
+
+v1.2.1 20260401 kool-outreach-iter5-checkpoint
+    - chore: kool 아웃리치 iter5 완료 — 이메일 16건 발송 (CS10 + 마케팅직접6)
+    - feat: send-kool-outreach.js id=11~16 추가 (오늘의집/마이리얼트립/무신사/리디/젝시믹스BrandX/프레시지mkt)
+    - chore: omc-live 5iter 완료, episodes.jsonl 저장, D+3 팔로업 대기
+    - result: 열람 3건 (채널톡/오늘의집/무신사), hard bounce 1건 (젝시믹스BrandX)
+
+v1.2.0 20260330 live-infinite-iter-novelty-escape
+    - security: kool/track-visit + outreach/track-visit 오픈 리다이렉트 취약점 수정
+      — KOOL_LANDING_HOST / CL_LANDING_HOST 도메인 allowlist 검증 추가
+      — 미허용 도메인 redirect 파라미터는 픽셀 응답으로 조용히 무시
+
+v1.1.5 20260330 live-infinite-iter107
+    - chore: comment-lens/ 내부 git repo에 ITER105 수정사항 커밋 — TRACK_BASE 수정 + CLAUDE.md + scripts/
+    - chore: comment-lens/는 독립 git repo임 확인 (embedded repo, submodule 아님)
+
+v1.1.4 20260330 live-infinite-iter106
+    - fix: kool/followup-sequence.js getSentRecords 중복 발송 방지 — notes LIKE '%[FOLLOWUP-D{step}]%' 제외 조건 추가
+    - fix: getSentRecords status에 'opened' 추가 — 이메일 열람했지만 클릭 안 한 대상도 팔로업 수신
+
+v1.1.3 20260330 live-infinite-iter105
+    - fix: comment-lens/page.tsx TRACK_BASE paintpoint.co.kr → wtp-dashboard.vercel.app (CL 방문/WTP 트래킹 잘못된 서버로 전송되던 버그)
+    - docs: comment-lens/CLAUDE.md 환경변수 섹션 추가
+
+v1.1.2 20260330 live-infinite-iter104
+    - fix: kool/track-visit 중복 INSERT 제거 — 이메일 클릭(redirect) 시만 kool_visits 기록 (랜딩 픽셀 이중 계수 방지)
+
+v1.1.1 20260330 live-infinite-iter103
+    - fix: dashboard sendRow res.ok 체크 추가 — 발송 API 실패 시 에러 토스트 (try/finally 패턴 유지)
+
+v1.1.0 20260330 live-infinite-iter102
+    - fix: api/outreach/track-open id > 0 가드 추가 — kool/track-open, outreach/track-visit와 일관성
+
+v1.0.9 20260330 live-infinite-iter101
+    - fix: dashboard sendAllDrafts/sendAllKoolDrafts res.ok 체크 추가 — 발송 API 실패 시 에러 토스트
+
+v1.0.8 20260330 live-infinite-iter100
+    - fix: dashboard triggerFollowup/triggerClFollowup res.ok 체크 추가 — API 실패 시 에러 토스트 표시
+
+v1.0.7 20260330 live-infinite-iter99
+    - fix: dashboard deleteRow DELETE 응답 상태 체크 추가 — 실패 시 에러 토스트 표시 (silent fail 제거)
+
+v1.0.6 20260330 live-infinite-iter98
+    - fix: api/stats/route.ts 인라인 주석 N<30 → 정확한 설명 수정 (코드는 n<20 사용)
+
+v1.0.5 20260330 live-infinite-iter97
+    - docs: comment-lens/CLAUDE.md 스크립트 실행 섹션 추가 + WTP API URL 프로덕션 주소로 업데이트
+
+v1.0.4 20260330 live-infinite-iter96
+    - fix: comment-lens/CLAUDE.md 커밋 경로 수정 (../../ → ../) — comment-lens/ 기준 올바른 상대경로
+
+v1.0.3 20260330 live-infinite-iter95
+    - fix: comment-lens/scripts/update-cl-outreach.js BASE_URL 환경변수화 — ITER91 누락분 반영
+
+v1.0.2 20260330 live-infinite-iter94
+    - chore: world-model.json 업데이트 — iter24 → iter93 최신화, 전체 감사 완료 사실 기록, plateau_count=1 반영
+
+v1.0.1 20260330 live-infinite-iter93
+    - fix: outreach/lead/route.ts OPTIONS handler — new Response → new NextResponse (kool/lead 와 대칭)
+
+v1.0.0 20260330 live-infinite-iter92
+    - docs: kool/CLAUDE.md 전면 업데이트 — 이메일 목록 완성 (확인 필요 제거), nodemailer 의존 수정, v3 5-Layer 구조, 환경변수 표 추가
+    - 스크립트 현황 Brevo SMTP + 로컬 nodemailer로 정정
+
+v0.9.9 20260330 live-infinite-iter91
+    - fix: scripts/update-cl-outreach.js — BASE_URL 하드코딩 제거, NEXT_PUBLIC_BASE_URL 환경변수 지원
+    - 배포 환경에서 NEXT_PUBLIC_BASE_URL=https://... 로 실행 가능
+
+v0.9.8 20260330 live-infinite-iter90
+    - fix: daily-summary — Kool 방문율 이메일 본문에 추가 (koolVisitRate 계산되었으나 미표시)
+    - feat: daily-summary — koolNeedMore [LOW] 액션 추가 (CL과 대칭, 100건 목표 미달 시 알림)
+
+v0.9.7 20260330 live-infinite-iter89
+    - docs: CLAUDE.md — 환경변수 섹션 추가 (wtp-dashboard/.env.local 필수 변수 목록)
+    - DATABASE_URL/GMAIL_USER/GMAIL_APP_PASSWORD/EMAIL_FROM/NEXT_PUBLIC_BASE_URL/KOOL_LANDING_URL/CL_LANDING_URL/CRON_SECRET/DAILY_SUMMARY_EMAIL/OUTREACH_ATTACHMENT_PATH
+
+v0.9.6 20260330 live-infinite-iter88
+    - fix: wtp-dashboard/vercel.json 추가 — rootDirectory=wtp-dashboard 환경에서 cron 미인식 버그
+    - Vercel이 rootDirectory 기준으로 vercel.json을 탐색함 (루트 vercel.json은 무시됨)
+    - 매일 오전 8시 KST daily-summary 크론 정상 등록됨
+
+v0.9.5 20260330 live-infinite-iter87
+    - chore: lib/db.ts — PaintPoint 잔유물 타입 제거 (165줄 dead code)
+    - PainPoint/Stats/VideoInfo/AnalysisMeta/Session/TargetChannel 등 미사용 인터페이스 삭제
+
+v0.9.4 20260330 live-infinite-iter86
+    - feat: KOOL_TEMPLATES에 b2b + app 카테고리 추가 (CL 6종과 대칭)
+    - Kool 신규 draft 폼에서 B2B SaaS/앱 제목 템플릿 선택 가능
+
+v0.9.3 20260330 live-infinite-iter85
+    - fix: dashboard "Replied" 버튼 — bounced(수신거부) 상태에서 숨김 처리
+    - feat: stats API cl.wtp에 samplesNeeded 추가 (cl.visit과 대칭)
+
+v0.9.2 20260330 live-infinite-iter84
+    - fix: funnel/route.ts all 브랜치 Kool statusBreakdown bounced 누락 추가
+    - fix: outreach/track-wtp/route.ts 미사용 getClientIp 함수 제거
+
+v0.9.1 20260330 live-infinite-iter83
+    - feat: kool/send-kool-outreach.js — HTML 이메일 + 트래킹 픽셀 + 클릭 리디렉션 + 수신거부 추가
+    - 스크립트 발송 이메일도 open/visit 이벤트 DB 기록 가능 (db_id 있는 경우)
+    - BASE_URL 환경변수 지원 (NEXT_PUBLIC_BASE_URL), buildHtml() 헬퍼 추가
+
+v0.9.0 20260330 live-infinite-iter82
+    - fix: CL 결정 패널 — Visit CI 중복 span 제거 (ITER78 편집 실수)
+
+v0.8.9 20260330 live-infinite-iter81
+    - fix: 팔로업 윈도우 일치화 — JS inWindow(2.5,4.5)/(6.5,8.5) → (2,4)/(6,8) (SQL minDays/maxDays와 동기)
+    - 적용: dashboard Next Actions + cron/daily-summary
+
+v0.8.8 20260330 live-infinite-iter80
+    - fix: followup SQL 인터벌 버그 — `(N || ' days')::interval` → `N * INTERVAL '1 day'` (integer||text 오류)
+    - 적용: outreach/followup + kool/followup D+3/D+7 윈도우 필터
+
+v0.8.7 20260330 live-infinite-iter79
+    - fix: koolWtp 집계 일관성 — wtp_subscribe !== null → === true (stats API와 통일)
+    - 적용: cron/daily-summary + api/funnel (kool 브랜치 2곳)
+
+v0.8.6 20260330 live-infinite-iter78
+    - fix: CL 결정 패널 — 배지/테두리색 visit.verdict 기준으로 수정 (FAKE_DOOR 주 메트릭 = visit_rate)
+    - feat: CL 결정 패널 — Visit CI + samplesNeeded 표시 추가 (WTP CI와 함께)
+
+v0.8.5 20260330 live-infinite-iter77
+    - feat: CL 퍼널 CI 섹션 — Visit verdict + samplesNeeded 추가 (Kool CI 섹션과 대칭)
+
+v0.8.4 20260330 live-infinite-iter76
+    - fix: kool/track-visit — redirect URL 검증 추가 (http 미포함 시 https:// 보완, CL과 대칭)
+
+v0.8.3 20260330 live-infinite-iter75
+    - fix: kool/track-open — isHumanBrowser() 봇 필터 추가 (GoogleImageProxy/보안게이트웨이 봇 열람 제외)
+
+v0.8.2 20260330 live-infinite-iter74
+    - fix: kool/lead — status 전환 CASE에 'opened' 추가 (열람 후 form 제출 시 replied 미승격 버그)
+
+v0.8.1 20260330 live-infinite-iter73
+    - feat: Kool 퍼널 CI 섹션 — Open verdict + samplesNeeded 표시 추가
+
+v0.8.0 20260330 live-infinite-iter72
+    - feat: stats API — kool.open에 samplesNeeded(Open목표 30%) 추가
+    - feat: Kool 결정 패널 — Open목표/WTP목표 각각 "추가 발송 시 목표 달성 예상" 표시
+
+v0.7.9 20260330 live-infinite-iter71
+    - feat: CL 신규 폼 — brand 입력 시 subject/body_text의 [브랜드명] 자동 치환 (Kool폼과 대칭)
+
+v0.7.8 20260330 live-infinite-iter70
+    - fix: 이메일 미리보기 — draft 상태에서도 클릭 가능 (status !== 'draft' 조건 제거)
+
+v0.7.7 20260330 live-infinite-iter69
+    - feat: Kool 결정 패널 — Open CI95 추가 (Open목표 30% / WTP목표 5% 같이 표시)
+    - fix: Next Actions — Kool 미발송 상세 "Send All Kool Drafts 버튼" 으로 수정
+
+v0.7.6 20260330 live-infinite-iter68
+    - feat: KOOL_TEMPLATES 정의 — 뷰티/피트니스/식품/이커머스 subject 템플릿 4종
+    - feat: Kool 아웃리치 폼에 템플릿 버튼 추가 (CL폼과 대칭)
+    - fix: Kool brand 자동완성 — 템플릿 subject의 [브랜드명] 치환 처리
+
+v0.7.5 20260330 live-infinite-iter67
+    - feat: CL_TEMPLATES에 ecommerce(D2C 이커머스) + app(앱/서비스) 템플릿 추가 — 총 6개 카테고리
+    - feat: 대시보드 템플릿 버튼 레이블 업데이트 (이커머스 / 앱/서비스)
+
+v0.7.4 20260330 live-infinite-iter66
+    - fix: funnel API — Kool statusBreakdown에 'bounced' 추가 (수신 거부 시 대시보드 배지 표시)
+    - feat: daily-summary — Kool 열람/방문 카운트 + Open CI95 + Open verdict 추가 (CL과 대칭)
+
+v0.7.3 20260330 live-infinite-iter65
+    - fix: kool/followup — notes dedup 가드 추가 (이미 팔로업 발송된 건 재발송 방지)
+    - fix: outreach/followup — CL도 동일 notes dedup 가드 추가 (버튼 중복 클릭 방어)
+
+v0.7.2 20260330 live-infinite-iter64
+    - feat: dashboard Kool 퍼널 카드 — 열람(opened) 단계 추가 (발송→열람→방문→WTP 4단계)
+    - feat: dashboard Kool CI95 — Open CI95 + WTP CI95 병렬 표시 (CL과 대칭)
+
+v0.7.1 20260330 live-infinite-iter63
+    - feat: StatsCI.kool — open 필드 추가 (count/rate/ci95/verdict)
+    - feat: Decision Panel — Kool Open Rate 메트릭 추가 (N/Open/Visit/WTP 4칸 표시)
+
+v0.7.0 20260330 live-infinite-iter62
+    - fix: kool/outreach/[id]/preview — 수신 거부 푸터 추가 (실제 이메일과 일치하도록)
+    - feat: /api/stats — Kool open 통계 추가 (열람률 + CI95 + verdict, 목표 30%)
+    - feat: stats API response.kool.open — count/rate/ci95/verdict 구조
+
+v0.6.9 20260330 live-infinite-iter61
+    - feat: /api/kool/track-open/[id] — Kool 열람 추적 픽셀 (sent→opened 승격, visit과 분리)
+    - fix: kool/track-visit — opened 상태도 visited 승격 허용 (opened→visited 진행 가능)
+    - fix: kool/send + kool/followup — 픽셀 URL을 track-visit → track-open으로 교체
+    - fix: kool/followup — 팔로업 대상에 'opened' 상태 포함 (opened but not clicked도 팔로업)
+    - feat: funnel API — Kool opened 카운트 + open_rate 반영 (3개 브랜치 모두)
+    - fix: daily-summary + dashboard Next Actions — Kool D+3/D+7 후보에 'opened' 포함
+
+v0.6.8 20260330 live-infinite-iter60
+    - feat: /api/outreach/[id]/preview — CL 이메일 HTML 온디맨드 렌더링 (draft 포함, Kool과 대칭)
+    - fix: dashboard openPreview — CL을 /api/outreach/[id] 전체 레코드 대신 /preview 엔드포인트로 변경
+    - fix: CL buildHtml CTA 링크 font-weight:600 추가 (Kool과 동일 스타일로 클릭률 개선)
+
+v0.6.7 20260330 live-infinite-iter59
+    - feat: CL followup HTML — 수신 거부 링크 추가 (text + HTML 모두)
+    - feat: Kool followup — text-only → HTML 멀티파트 이메일로 업그레이드 (CTA 버튼 + 픽셀 추적)
+    - feat: Kool followup — 수신 거부 링크 HTML 블록 추가 (buildFollowupEmail 함수로 리팩토링)
+
+v0.6.6 20260330 live-infinite-iter58
+    - feat: /api/outreach/unsubscribe — CL 수신 거부 엔드포인트 (개인정보보호법 준수)
+    - feat: /api/kool/outreach/unsubscribe — Kool 수신 거부 엔드포인트 (CL과 대칭)
+    - feat: CL 발송 이메일 HTML + 텍스트에 수신 거부 링크 추가 (buildHtml unsubscribeUrl param)
+    - feat: Kool send/followup 이메일에 수신 거부 링크 추가 (HTML + 텍스트 모두)
+
+v0.6.5 20260330 live-infinite-iter57
+    - fix: outreach/lead — wtpPriceKrw 미사용 변수 제거, price를 notes에 기록
+    - feat: kool/outreach/[id] PATCH에 subject 업데이트 지원 추가 (CL과 대칭)
+
+v0.6.4 20260330 live-infinite-iter56
+    - fix: daily-summary 이메일 이모지 제거 ([HIGH]/[MID]/[LOW] 텍스트 우선순위로 교체)
+    - feat: daily-summary 이메일에 Wilson CI95 + verdict 추가 (CL visit/wtp, Kool wtp)
+    - fix: [OK] 액션 없음 메시지도 이모지 제거
+
+v0.6.3 20260330 live-infinite-iter55
+    - fix: CL send/followup landing URL에 UTM 파라미터 추가 (utm_content={outreachId})
+    - fix: commentlens.app?utm_content=N → /api/outreach/lead가 outreach_id 올바르게 매칭
+    - fix: CL followup도 utm_campaign=followup_d3/d7 + utm_content 추가
+
+v0.6.2 20260330 live-infinite-iter54
+    - feat: POST /api/outreach/lead — CL 랜딩 페이지 리드 기록 (Kool lead와 대칭)
+    - feat: utm_content → outreach_id 연결, plan/email/name 기록, wtp_choice + status 업데이트
+    - feat: CORS preflight 지원 (commentlens.app 정적 호스팅에서 fetch 가능)
+
+v0.6.1 20260330 live-infinite-iter53
+    - feat: Kool 새 draft 폼 — 중복 이메일 감지 (CL과 동일 패턴)
+    - feat: Kool brand 입력 시 subject 자동 완성 (빈 경우만)
+    - fix: CL DELETE API 드래프트 가드 추가 (draft 상태만 삭제 허용)
+
+v0.6.0 20260330 live-infinite-iter52
+    - feat: Experiment Decision Panel — 대시보드 상단에 Wilson CI 기반 Go/No-Go 의사결정 패널
+    - feat: N/Visit Rate/WTP Rate + CI95 bounds + verdict + samplesNeeded 통합 표시
+    - feat: CL FAKE_DOOR + Kool SMOKE_TEST 개별 실험 카드 (verdict 기반 border 색상)
+
+v0.5.9 20260330 live-infinite-iter51
+    - feat: 대시보드 funnel 카드에 Wilson CI 신뢰구간 표시 (CI95 lo–hi)
+    - feat: WTP/Visit 신뢰구간 기반 verdict badge (GO/LIKELY_GO/WATCH/PIVOT/INSUFFICIENT)
+    - feat: samplesNeeded hint — 목표 전환율 달성 추가 필요 건수 표시
+
+v0.5.8 20260330 live-infinite-iter50
+    - feat: /api/stats — Wilson score 95% CI + Go/No-Go verdict (INSUFFICIENT/WATCH/LIKELY_GO/GO/PIVOT)
+    - feat: CL visit_rate, CL wtp_rate, Kool wtp_rate 통계 신뢰구간 + samplesNeeded 추정
+
+v0.5.7 20260330 live-infinite-iter49
+    - feat: /api/kool/outreach/[id]/preview — 온디맨드 이메일 HTML 렌더링 (저장 없이 미리보기)
+    - feat: dashboard — 브랜드 셀 클릭 → Kool 이메일 미리보기 (CL과 동일 iframe 모달 패턴)
+
+v0.5.6 20260330 live-infinite-iter48
+    - feat: /api/kool/track-visit — ?redirect= 파라미터 지원 (방문 기록 + 랜딩 리다이렉트 동시)
+    - feat: /api/kool/send — CTA 링크 → track-visit?redirect= 경유 (클릭 추적 정확도 향상)
+    - feat: /api/kool/followup — 팔로업 CTA도 동일 추적 링크 패턴 적용
+
+v0.5.5 20260330 live-infinite-iter47
+    - feat: /api/kool/send — HTML 이메일 + 방문 추적 픽셀 추가 (텍스트 전용 → HTML/텍스트 멀티파트)
+    - feat: Kool 이메일 CTA 버튼 HTML 스타일 (amber 컬러, 클릭 추적 UTM)
+    - feat: 방문 시 kool_outreach.status 'visited' 자동 승격 (/api/kool/track-visit 픽셀 연동)
+
+v0.5.4 20260330 live-infinite-iter46
+    - feat: dashboard — WTP 셀 인라인 편집 (CL: wtp_choice 드롭다운, Kool: wtp_subscribe+가격 입력)
+    - feat: /api/outreach/[id] PATCH — wtp_choice 필드 추가
+    - feat: /api/kool/outreach/[id] PATCH — wtp_subscribe + wtp_price_krw 필드 추가
+
+v0.5.3 20260330 live-infinite-iter45
+    - feat: dashboard — Send All Kool Drafts 배치 발송 버튼 (koolBatchSending 진행률 포함)
+    - feat: /api/kool/send — ids[] 배치 발송 지원 (CL /api/outreach/send와 동일 패턴)
+
+v0.5.2 20260330 live-infinite-iter44
+    - feat: /api/kool/send POST — 대시보드에서 Kool draft 직접 발송 (v3 generic template + UTM)
+    - feat: /api/kool/outreach/[id] DELETE — Kool draft 삭제 엔드포인트 추가
+    - feat: dashboard — Kool draft 행 Send/Delete 버튼 활성화 (기존 CL 전용 → 공통)
+    - feat: dashboard — + Kool 추가 인라인 폼 (CL과 동일 패턴)
+    - feat: dashboard — Next Actions Kool 100건 목표 달성 안내 추가
+
+v0.5.1 20260330 live-infinite-iter43
+    - feat: /api/cron/daily-summary GET — Vercel Cron 일일 KPI 요약 이메일 (매일 08:00 KST)
+    - feat: vercel.json — crons 스케줄 등록 (0 23 * * * UTC = 08:00 KST)
+
+v0.5.0 20260330 live-infinite-iter42
+    - fix: dashboard — markReplied/saveNote 에러 핸들링 + 토스트 피드백 추가 (silent fail 제거)
+
+v0.4.9 20260330 live-infinite-iter41
+    - chore: tsconfig.tsbuildinfo git 추적 해제 (.gitignore *.tsbuildinfo 규칙 적용)
+
+v0.4.8 20260330 live-infinite-iter40
+    - feat: dashboard — CL 퍼널 카드 내 WTP 선택 분포 (plan-a/plan-b/not-interested 건수)
+
+v0.4.7 20260330 live-infinite-iter39
+    - feat: dashboard — Notes 셀 인라인 편집 (클릭→입력, Enter 저장, Esc 취소, CL/Kool 공통)
+
+v0.4.6 20260330 live-infinite-iter38
+    - fix: kool/lead — status 승격 'visited'도 포함 (draft|sent → 'visited' 후 폼 제출 시 replied 미승격 버그)
+
+v0.4.5 20260330 live-infinite-iter37
+    - feat: dashboard — Next Actions에 CL D+3/D+7 팔로업 후보 추가 + notes 중복발송 방지
+    - feat: dashboard — Kool 상태 분포 배지 행 추가 (CL과 동일 포맷)
+
+v0.4.4 20260330 live-infinite-iter36
+    - feat: /api/outreach/followup POST (CL D+3/D+7 팔로업 발송 — sent/delivered/opened 대상)
+    - feat: dashboard — CL D+3/D+7 Followup 버튼 (CL 뷰에서 노출, 발송 중 비활성)
+
+v0.4.3 20260330 live-infinite-iter35
+    - feat: dashboard — CL 이메일 템플릿 (뷰티/SaaS/식품/피트니스 카테고리 원클릭 자동완성)
+
+v0.4.2 20260330 live-infinite-iter34
+    - feat: dashboard — Next Actions 패널 (미발송 draft / D+3·D+7 팔로업 / 샘플 부족 우선순위 알림)
+
+v0.4.1 20260330 live-infinite-iter33
+    - feat: dashboard — localStorage 영속성 (selectedService/sortKey/sortAsc 새로고침 후 복원)
+    - fix: sortKey 초기화 typeof 순환참조 → 명시적 타입 유니온 캐스트
+
+v0.4.0 20260330 live-infinite-iter32
+    - feat: /api/kool/followup POST (step=3|7 팔로업 발송, 3초 간격, notes 자동 업데이트)
+    - feat: dashboard — D+3/D+7 Followup 버튼 (Kool 뷰에서 노출, 발송 중 비활성)
+
+v0.3.9 20260330 live-infinite-iter31
+    - feat: dashboard — CSV 내보내기 버튼 (현재 필터/정렬 결과 → YYYY-MM-DD 파일명 다운로드)
+
+v0.3.8 20260330 live-infinite-iter30
+    - feat: dashboard — 상태 드롭다운 필터 (status별 테이블 필터링, 검색과 AND 조합)
+    - fix: dashboard — 서비스 탭 전환 시 previewHtml/statusFilter/search 초기화 (모달 잔존 버그)
+
+v0.3.7 20260330 live-infinite-iter29
+    - feat: dashboard — 테이블 검색 입력창 (브랜드명/이메일 실시간 필터, 결과 N/M건 카운트)
+    - feat: dashboard — search + sort 파이프라인 (filteredRows → sortedRows)
+
+v0.3.6 20260330 live-infinite-iter28
+    - feat: dashboard — New CL Form 중복 이메일 감지 (rows 대조 실시간 경고 + 입력창 amber 하이라이트)
+
+v0.3.5 20260330 live-infinite-iter27
+    - feat: dashboard — 테이블 컬럼 클릭 정렬 (Brand/Status/Sent/D+ — 오름/내림차순 토글, 화살표 표시)
+    - feat: dashboard — sortedRows 계산 (Date.now 기반 D+ 정렬 포함)
+
+v0.3.4 20260330 live-infinite-iter26
+    - fix: dashboard — iframe sandbox="" (allow-same-origin → 완전 격리, 이메일 HTML 보안 강화)
+    - fix: dashboard — preview null body_html silent fail 수정 ('' sentinel → 모달 오픈 + 안내)
+    - feat: dashboard — "D+" 경과일 컬럼 (gray<3 / amber≥3 / red≥7, followup 타이밍 시각화)
+
+v0.3.3 20260330 live-infinite-iter25
+    - feat: dashboard — Experiment Progress 섹션 (CL/Kool 발송 목표 진행률 바 + 전환율 임계값 시각화)
+    - feat: dashboard — 100건 목표 대비 % 바 + 5% 전환율 대비 % 바 (색상: green/amber/gray)
+
+v0.3.2 20260330 live-infinite-iter24
+    - feat: dashboard — 토스트 알림 시스템 (alert() 제거 → 우하단 3.5초 non-blocking 알림)
+    - feat: dashboard — CL draft 행 Delete 버튼 + confirm 다이얼로그
+    - feat: dashboard — 발송 성공/실패/배치 완료 모두 토스트로 피드백
+
+v0.3.1 20260330 live-infinite-iter23
+    - fix: dashboard — isOpened 중복 배지 제거 (status 배지로 통일)
+    - feat: dashboard — 이메일 미리보기 모달 (CL 발송 완료 행 클릭 → body_html iframe)
+    - refactor: dashboard — 행 배경 색상을 status 기반으로 통일 (hasInteracted)
+
+v0.3.0 20260330 live-infinite-iter22
+    - feat: dashboard — "CL 추가" 인라인 폼 (brand/email/subject/body/notes → POST /api/outreach)
+    - feat: dashboard — Draft 생성 후 자동 테이블 갱신
+
+v0.2.9 20260330 live-infinite-iter21
+    - perf: dashboard — Page Visibility API 적용 (탭 숨김 시 30초 polling 일시 중단)
+    - fix: dashboard — 테이블 컨테이너 overflow-x: auto (가로 스크롤 지원)
+
+v0.2.8 20260330 live-infinite-iter20
+    - feat: dashboard — "Send All Drafts" 배치 발송 버튼 (CL draft 전체 순차 발송 + 확인 다이얼로그)
+    - feat: dashboard — 배치 발송 진행률 표시 (발송 중 N/M)
+    - feat: dashboard — API 오류 시 에러 배너 표시 (silent fail 제거)
+
+v0.2.7 20260330 live-infinite-iter19
+    - feat: dashboard — CL draft 행에 "Send" 버튼 추가 (발송 중 비활성 + 완료 시 자동 갱신)
+    - feat: dashboard — sendingIds 상태로 발송 중 UX 표시
+
+v0.2.6 20260330 live-infinite-iter18
+    - feat: /api/kool/outreach/[id] PATCH 엔드포인트 추가 (status/notes 수동 업데이트)
+    - feat: dashboard — "Replied" 버튼 추가 (CL/Kool 행별 답장 마킹, 즉시 반영)
+    - feat: dashboard — Notes 컬럼 추가 (말줄임 + title tooltip으로 오버플로우 방지)
+
+v0.2.5 20260330 live-infinite-iter17
+    - fix: send/route.ts — 재발송 가드 버그 수정 (status==='sent'만 → status!=='draft' 전체 차단)
+    - fix: opened/visited/wtp_responded/replied 상태에서도 force 없이 재발송 불가
+
+v0.2.4 20260330 live-infinite-iter16
+    - perf: send/route.ts — 배치 pre-fetch (N쿼리 → 1쿼리: WHERE id=ANY(int[]))
+    - feat: funnel API — service=cl/kool 브랜치에도 statusBreakdown 추가 (all 브랜치와 일관성)
+
+v0.2.3 20260330 live-infinite-iter15
+    - feat: funnel API — statusBreakdown 필드 추가 (CL 8단계 + Kool 4단계 상태 분포)
+    - feat: dashboard — CL 상태 분포 배지 행 추가 (funnel 아래)
+    - chore: scripts/update-cl-outreach.js git 추적 시작
+
+v0.2.2 20260330 live-infinite-iter14
+    - perf: funnel API 'all' 브랜치 — CL/Kool DB 쿼리 Promise.all 병렬화 (~50% 응답시간 단축)
+
+v0.2.1 20260330 live-infinite-iter13
+    - feat: funnel API — priceStats 집계 (Kool wtp_price_krw avg/min/max/count)
+    - fix: funnel API — Kool SQL에 NULL::text AS wtp_choice 추가 (API shape 정합)
+    - feat: dashboard — Kool 퍼널 아래 WTP 가격 분포 표시 (응답수/평균/최소/최대)
+    - chore: api/live/route.ts 삭제 + CLAUDE.md api/funnel 반영
+
+v0.2.0 20260330 live-infinite-iter12
+    - feat: kool/track-visit — 방문 시 kool_outreach.status 'visited'로 승격 (sent/draft → visited)
+    - feat: kool/followup-sequence.js 생성 — Day+3/+7 미응답자 팔로업 시퀀스
+
+v0.1.9 20260330 live-infinite-iter11
+    - fix: ClOutreach 타입 — delivered 상태 + delivered_at 필드 추가 (DB 스키마 정합)
+    - fix: LiveRow 타입 — 전체 상태 유니온 명시 (이전엔 draft|sent|replied|bounced만)
+    - fix: kool/lead — wtp_price_krw CASE→COALESCE 단순화
+    - fix: kool/lead — status 승격 'sent' 외 'draft'도 포함 (타이밍 이슈 방지)
+
+v0.1.8 20260330 live-infinite-iter10
+    - fix: Kool 이메일 utm_content — 스크립트 ID(0-10) → DB ID(3-12) 정렬 (랜딩 리드 추적 정확도)
+    - feat: send-kool-outreach.js — db_id 필드 추가 (script ID ↔ DB ID 매핑 명시)
+    - feat: send-kool-outreach.js — 발송 후 kool_outreach.status='sent' DB 자동 업데이트 (pg 사용)
+    - fix: kool_outreach DB — 프레시지(ID 8) 이메일 누락 수정 (cs@fresheasy.co.kr)
+    - feat: kool/package.json — pg 의존성 추가
+
+v0.1.7 20260330 live-infinite-iter9
+    - fix: STATUS_COLOR — delivered/opened/visited/wtp_responded 배지 추가 (기존 모두 gray Draft로 표시됨)
+    - feat: CL funnel + live API — wtp_choice 필드 노출 (ID12 plan-b 실제 선택값 표시 가능)
+    - feat: dashboard WTP 컬럼 — CL은 wtp_choice, Kool은 wtp_subscribe 분기 표시
+    - feat: LiveRow 타입 — wtp_choice 필드 추가
+
+v0.1.6 20260330 live-infinite-iter8
+    - fix: track-wtp — delivered/visited 상태에서도 wtp_responded 승격 (0 WTP → 1 실제 데이터)
+    - fix: track-visit — delivered 상태에서도 visited 승격
+    - feat: track-visit — ?redirect= 지원 (이메일 CTA 클릭 추적 + 랜딩 리다이렉트)
+    - feat: CL 이메일 HTML — 방문 추적 CTA 링크 자동 삽입 (미리보기 →)
+    - fix: DB — ID 12 (리쥬라이크) status visited → wtp_responded 수정
+
+v0.1.5 20260330 live-infinite-iter7
+    - fix: CL funnel 'delivered'(봇픽셀) vs '열람'(사람) 분리 — 오픈율 정확도 수정 (20→5)
+    - feat: /api/funnel + /api/live — delivered/deliver_rate 필드 추가 (5단계 funnel)
+    - feat: dashboard — 배달 단계 추가 (발송→배달→열람→방문→WTP)
+    - fix: FunnelStats 타입 — delivered/deliver_rate optional 필드 추가
+    - fix: kool/node_modules/nodemailer — npm install 완료 (PaintPoint fallback 제거)
+    - chore: DB 스키마 검증 — delivered_at 존재 확인, wtp_price_krw=integer 확인
+
+v0.1.4 20260330 live-infinite
+    - feat: Kool 이메일 v3 — 5-Layer 완성 (EMPATHY + UTM 링크 + CS 전달요청)
+    - feat: /api/kool/lead — 랜딩 CTA 신청 수신 (CORS + outreach notes 연결)
+    - feat: 랜딩 UTM 추적 픽셀 — utm_content→track-visit 자동 연결 (variant-a/b)
+    - fix: CL live API — visited/wtp 4단계 funnel 완성 (기존 2단계 누락)
+    - fix: ClOutreach 타입 — visited_at/wtp_at/wtp_choice 필드 추가
+    - fix: CL baseUrl — paintpoint.co.kr → wtp-dashboard.vercel.app
+    - fix: send-kool-outreach.js --resend 플래그 구현
+    - feat: nodemailer fallback + kool/package.json 로컬 의존성
+    - feat: followup-sequence.js — Day+3/+7 팔로우업 시퀀스
+    - feat: /api/live — SUCCESS_CRITERIA + verdict(Go/No-Go) 응답 포함
+    - feat: .omc/world-model.json — infinite loop 에피스테믹 상태 초기화
+
+v0.1.3 20260329 1230
+    - feat: Vercel 배포 완료 — wtp-dashboard 프로젝트 연결 (rootDirectory API 설정)
+    - fix: vercel.json rootDirectory 제거 (schema 오류 수정)
+    - feat: api/kool/outreach/route.ts 추가 — PaintPoint 누락분 이전
+
+v0.1.2 20260329 1200
+    - feat: 대시보드 타이틀 "Outreach Live" → "WTP Dashboard" 변경
+    - feat: vercel.json 추가 — nextjs 배포 설정
+
+v0.1.1 20260329 1040
+    - chore: CLAUDE.md 추가 — WTP 프로젝트 설정 문서
+
+v0.1.0 20260329 0130
+    - init: WTP Dashboard — CL + Kool 아웃리치 대시보드 (PaintPoint /live 이전)
+    - feat: /dashboard 페이지 — IP 마스킹 제거 (풀 IP 표시)
+    - feat: /api/live, /api/outreach/*, /api/kool/* 이전
+
+v1.5.0 20260410 node-modules-cleanup-favicon
+    - chore: wtp-dashboard/node_modules/.package-lock.json git 추적 제거 (git rm --cached)
+    - feat: wtp-dashboard/src/app/icon.svg 추가 (favicon)
+v1.5.1 20260410 conceptual-viral-community
+    - feat: /api/conceptual/arena/share — battle 저장 + 공개 피드 API (conceptual_arena_sessions 테이블 자동 생성)
+    - feat: /conceptual/arena/s/[shareId] — 공개 battle 결과 URL (질문+답변+승자 표시, "직접 비교해보기" CTA)
+    - feat: /conceptual/page.tsx — Conceptual AI 멀티턴 채팅 페이지 (?q= 파라미터 자동 제출, 공유 저장)
+    - feat: /conceptual/arena — 투표 후 share URL 자동 생성 → "링크 복사" + "Conceptual과 계속 대화하기" 버튼
+    - fix: stop-playwright-detect.sh block_exit() disown 추가 (프로세스 그룹 분리 → windows-stop.sh 알림 보장)
+    - fix: stop-playwright-detect.sh line 211 &; 문법 오류 수정 → &
+
+v1.5.2 20260410 arena-nav-link-stop-notify-fix
+    - feat: Arena 헤더 좌상단 "Arena" → Link 컴포넌트 (클릭시 홈 이동)
+    - fix: stop-playwright-detect.sh 섹션4 (pw_analysis.py 경로) windows-stop.sh 미호출 버그 수정
+      → touch "$BLOCK" 직후 windows-stop.sh 호출 추가 (disown)
+
+v1.5.3 20260410 arena-suggested-prompt-fix
+    - fix: /api/conceptual/arena — Groq 연결을 ReadableStream.start() 안으로 이동
+      HTTP 200 즉시 반환 → 클라이언트 fetch() 즉시 resolve → 예시 프롬프트 "먹통" 해소
+    - fix: Groq 에러 시 { error } SSE 이벤트 전송 + 클라이언트 에러 UI 표시
+    - fix: apiError 상태 시 input 섹션 중복 표시 방지 (!apiError 조건 추가)
+    - fix: stop-playwright-detect.sh windows-stop.sh 분리 → settings.json 독립 Stop hook
+
+v1.5.4 20260410 arena-vs-stats-center
+    - feat: 상단 헤더 배틀 통계 → 중앙 배치 + "vs" 포맷
+      "Conceptual N승 vs N승 Standard · N전" 3-column 레이아웃
+
+v1.5.8 20260410 arena-continue-conversation
+    - feat: 투표 버튼 레이블 "A가 낫다" → "A가 도움이 됐다"
+    - feat: "Conceptual과 계속 대화하기" — Arena 대화 컨텍스트 이어받기
+      sessionStorage('arena_context') → /conceptual 마운트 시 messages 복원
+      질문 + Conceptual AI 답변이 이미 로드된 상태로 대화 시작
+    - fix: stop-playwright-detect.sh 3-A 크로스 세션 검증 — HEAD_HASH 제거
+      커밋마다 HEAD가 바뀌어도 동일 파일셋(DIFF_HASH) 검증 결과 재사용
+
+v1.5.7 20260410 arena-max-tokens-4096-groq413-fix
+    - fix: max_tokens 8192 → 4096 (groq_413 Request Too Large 해소)
+    - fix: pw_analysis.py [API] — generic 안내 → 실제 E2E curl 명령 자동 생성
+      endpoint path / HTTP method / streaming 여부 자동 추출
+      route.ts → /api/path, GET/POST/PUT 감지, SSE streaming curl -N 생성
+
+v1.5.6 20260410 arena-rate-limit-fallback
+    - fix: rate_limit(429) 재시도 활성화 — 기존 즉시 포기 → 2s 대기 후 재시도
+    - feat: 3차 시도시 fallback 모델 llama-3.1-8b-instant (별도 quota pool)
+      primary(70B) → 2s wait → primary(70B) → fallback(8B)
+    - fix: startGroqStream model 파라미터화 (GROQ_PRIMARY/FALLBACK_MODEL 분리)
+
+v1.5.5 20260410 arena-connection-stability
+    - feat: /api/conceptual/arena AbortController 28s 타임아웃 (양쪽 Groq 스트림 공유)
+    - feat: 트랜지언트 에러 자동 재시도 1회 (1.5s 대기, rate_limit/AbortError 제외)
+    - feat: 에러 코드 분류 — rate_limit(429) / timeout(AbortError) / api_error(기타)
+    - fix: 클라이언트 네트워크 에러(!res.ok) → apiError 표시 (기존: 무음 실패)
+    - fix: 스트림 정상 종료 but 데이터 없음 → apiError 표시
+    - feat: 에러 메시지 세분화 — rate_limit/timeout/api_error별 한국어 메시지
