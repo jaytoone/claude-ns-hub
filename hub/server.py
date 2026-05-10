@@ -1275,6 +1275,23 @@ async def run_milestone(proj_id: str, mid: str):
     return JSONResponse({"ok": True, "queued": True, "message": "Injected into Claude session on next prompt"})
 
 
+@app.get("/api/northstar/{proj_id}/tmux-output")
+async def get_tmux_output(proj_id: str, lines: int = 20):
+    """Return latest output from the tmux execute session."""
+    session_name = f"claude-exec-{proj_id}"
+    # Check if session exists
+    check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+    if check.returncode != 0:
+        return JSONResponse({"ok": False, "running": False, "output": ""})
+    # Capture pane output
+    result = subprocess.run(
+        ["tmux", "capture-pane", "-p", "-t", session_name, "-S", f"-{lines}"],
+        capture_output=True, text=True
+    )
+    output = result.stdout.strip()
+    return JSONResponse({"ok": True, "running": True, "session": session_name, "output": output})
+
+
 @app.get("/api/northstar/{proj_id}/task-board")
 async def get_task_board(proj_id: str):
     """Return queued + running + completed tasks for a project (job board view)."""
