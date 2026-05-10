@@ -143,7 +143,7 @@ def _load_projects() -> list:
                             # Already has new schema or partial old schema
                             # Derive status: new schema uses status:, old used done:bool
                             raw_status = m.get("status", "")
-                            if raw_status in ("pending", "queued", "done", "pending_confirmation"):
+                            if raw_status in ("pending", "queued", "done", "pending_confirmation", "needs_clarification"):
                                 status = raw_status
                             elif m.get("done"):
                                 status = "done"
@@ -696,40 +696,30 @@ def _fetch_channel(ch: dict) -> dict:
         else:
             result["error"] = err[:80]
 
-    # Naver mail: check unread count via Naver mail JSON API (session cookie required)
+    # Naver mail: IMAP check (app password required — set NAVER_APP_PW env var)
     if ch["type"] == "naver_mail":
         try:
-            import subprocess as _sp
-            # Use a lightweight python-requests call with session cookies from browser
-            # Naver mail unread count endpoint
-            r2 = _sp.run(
-                ["python3", "-c", """
-import urllib.request, json, http.cookiejar
-# Naver mail folder count API (no auth needed if cookie present — use fallback)
-try:
-    req = urllib.request.Request(
-        'https://mail.naver.com/json/folderList/',
-        headers={'User-Agent': 'Mozilla/5.0', 'Referer': 'https://mail.naver.com/'}
-    )
-    with urllib.request.urlopen(req, timeout=5) as r:
-        d = json.load(r)
-    inbox = next((f for f in d.get('folderList',[]) if f.get('id')=='0'), {})
-    print(json.dumps({'unread': inbox.get('unreadCount', 0), 'total': inbox.get('totalCount', 0)}))
-except Exception as e:
-    print(json.dumps({'error': str(e)[:60]}))
-"""],
-                capture_output=True, text=True, timeout=8
-            )
-            if r2.stdout.strip():
-                d2 = json.loads(r2.stdout.strip())
-                result["unread"] = d2.get("unread", "?")
-                result["total"] = d2.get("total", "?")
-                if "error" in d2:
-                    result["note"] = "cookie auth required — check manually"
-            else:
-                result["note"] = "manual check required"
+            import imaplib, ssl as _ssl, os as _os
+            app_pw = _os.environ.get("NAVER_APP_PW", "7RZ2YNB1XEC8")
+            ctx2 = _ssl.create_default_context()
+            mail = imaplib.IMAP4_SSL("imap.naver.com", 993, ssl_context=ctx2)
+            mail.login("nave94@naver.com", app_pw)
+            mail.select("INBOX")
+            _, unseen = mail.search(None, "UNSEEN")
+            result["unread"] = len(unseen[0].split()) if unseen[0] else 0
+            # Search for CTX-related subjects
+            ctx_subjects = []
+            for keyword in [b"CTX", b"GitHub", b"GeekNews"]:
+                try:
+                    _, ids = mail.search(None, "UNSEEN", f"SUBJECT \"{keyword.decode()}\"".encode())
+                    if ids[0]:
+                        ctx_subjects.append(f"{keyword.decode()}:{len(ids[0].split())}")
+                except Exception:
+                    pass
+            result["ctx_unread"] = " ".join(ctx_subjects) if ctx_subjects else "0"
+            mail.logout()
         except Exception as exc2:
-            result["note"] = "manual check required"
+            result["error"] = str(exc2)[:60]
         return result
 
     # HTML scrape fallback for channels that don't return JSON

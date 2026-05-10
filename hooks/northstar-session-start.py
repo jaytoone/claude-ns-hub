@@ -154,6 +154,19 @@ def main():
             lines.append(f"  → Create cron for {mid}: '{text}'")
         lines.append("  Use CronCreate tool now if these crons don't already exist.")
 
+    # BACKGROUND WATCHER: always create — detects new milestones + answered clarifications mid-session
+    lines.append("")
+    lines.append("BACKGROUND WATCHER (mandatory — create once per session):")
+    lines.append(f"  CronCreate(cron='*/5 * * * *', recurring=True, prompt=")
+    lines.append(f"    'Background check for {proj_id}: GET http://100.119.82.4:9000/api/northstar/{proj_id}/milestones.")
+    lines.append( "     1) NEW milestones: status=pending AND claude_ack=null AND user_added_at set.")
+    lines.append( "        For each: PATCH claude_ack=<now_iso>. If text is clear (>15 chars, not vague) → PATCH status=queued and work on it next turn.")
+    lines.append( "        If vague → PATCH status=needs_clarification + clarification_question=<your question>.")
+    lines.append( "     2) ANSWERED clarifications: status=needs_clarification AND clarification_answer set.")
+    lines.append(f"        For each: PATCH status=pending. Then notify user: \"Clarification received for MX — ready to queue.\"")
+    lines.append( "     If nothing new, do nothing (no output).'")
+    lines.append( "  This watcher replaces the need for a new session to detect hub UI changes.")
+
     msg = "\n".join(lines)
 
     # Output as additionalContext for Claude
