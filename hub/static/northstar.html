@@ -635,10 +635,10 @@ header {
 
 /* Body — 2 columns */
 .dm-body {
-  display: grid; grid-template-columns: 58% 42%; flex: 1; overflow: hidden;
+  display: flex; flex-direction: column; flex: 1; overflow: hidden;
 }
-.dm-left  { overflow-y: auto; padding: 20px 22px; border-right: 1px solid var(--panel-border); -webkit-overflow-scrolling: touch; }
-.dm-right { overflow-y: auto; padding: 20px 20px; background: var(--bg); -webkit-overflow-scrolling: touch; }
+.dm-left  { overflow-y: auto; padding: 20px 22px; flex: 1; -webkit-overflow-scrolling: touch; }
+.dm-right { display: none; }
 
 /* ── Goal hierarchy layers ── */
 .dm-layer {
@@ -821,9 +821,7 @@ header {
 @media (max-width: 640px) {
   .detail-overlay { padding: 0; align-items: flex-end; }
   .detail-modal { max-width: 100%; border-radius: 12px 12px 0 0; max-height: 92vh; }
-  .dm-body { grid-template-columns: 1fr; }
-  .dm-left { border-right: none; border-bottom: 1px solid var(--panel-border); }
-  .dm-right { background: var(--panel); }
+  .dm-left { padding: 16px 16px; }
   .dm-header::before {
     content: ''; display: block; width: 36px; height: 4px; border-radius: 2px;
     background: var(--panel-border); margin: 0 auto 8px; position: absolute;
@@ -3086,6 +3084,9 @@ function renderHierarchy(p) {
         <button class="dm-btn" style="font-size:11px" onclick="addMilestone('${esc(p.id)}', 0, null)">+ milestone</button>
       </div>
     </div>
+
+    <!-- Note (moved from right pane) -->
+    ${p.note ? `<div id="dm-note-inline" style="margin-top:6px;padding:8px 10px;border-radius:5px;background:var(--bg-deep);border:1px solid var(--panel-border);font-size:11px;color:var(--text-dim);line-height:1.6">${esc(p.note)}</div>` : ''}
   `;
 }
 
@@ -3190,23 +3191,18 @@ function renderRight(p, topics, docData) {
   }
 
   // Right panel: note + init if needed
+  // Right pane hidden — init button moved to left panel if needed
   const msCount = (p.milestones||[]).length;
-  document.getElementById('dm-right').innerHTML = `
-    ${p.note ? `<div class="dm-section">
-      <div class="dm-section-label" style="margin-bottom:4px">Note</div>
-      <div class="dm-note">${esc(p.note)}</div>
-    </div>` : ''}
-    ${msCount === 0 ? `<div class="dm-section">
-      <div class="dm-action-row" style="margin-bottom:8px">
-        <button class="dm-btn dm-btn-refresh" onclick="initMilestones('${esc(p.id)}')" title="No milestones — sync from project environment">⊕ Init</button>
-      </div>
-      <div style="padding:8px 10px;border-radius:5px;background:rgba(184,134,11,.08);border:1px solid rgba(184,134,11,.25);font-size:11px;color:var(--text-dim)">
-        No milestones yet. Click <strong>⊕ Init</strong> or add above.
-      </div>
-    </div>` : ''}
-    <div id="dm-align-result"></div>
-    <div id="eval-result"></div>
-  `;
+  if (msCount === 0) {
+    const initArea = document.querySelector('#dm-left .dm-layer:last-of-type');
+    if (initArea) {
+      const initDiv = document.createElement('div');
+      initDiv.style.cssText = 'margin-top:8px';
+      initDiv.innerHTML = `<button class="dm-btn dm-btn-refresh" onclick="initMilestones('${esc(p.id)}')" title="Sync from project">⊕ Init</button>`;
+      initArea.appendChild(initDiv);
+    }
+  }
+  document.getElementById('dm-right').innerHTML = '<div id="dm-align-result"></div><div id="eval-result"></div>';
 }
 
 async function autoRunAlignment(p, topics) {
