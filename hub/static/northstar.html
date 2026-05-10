@@ -149,6 +149,9 @@ header {
   background: var(--bg-deep);
 }
 .ns-node-term:hover { background: var(--accent-soft); color: var(--accent-deep); border-color: var(--accent); }
+.ns-node-menu { font-size: 13px; color: var(--text-dim); cursor: pointer; padding: 0 4px;
+  border-radius: 4px; line-height: 1; transition: background .1s; flex-shrink: 0; }
+.ns-node-menu:hover { background: var(--panel-soft); color: var(--text); }
 .ns-node-top { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
 .ns-node-sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .ns-node-name {
@@ -1640,7 +1643,7 @@ function renderMilestoneCreator(projId, milestones) {
             >${esc(m.text)}${mNewBadge}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
-              ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--accent);opacity:.7;letter-spacing:-.02em" title="Active cron monitor: ${esc(m.cron_job_id)}">⏱${esc(m.cron_job_id.slice(0,6))}</span>` : ''}
+              ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)" title="Active cron monitor: ${esc(m.cron_job_id)}">cron</span>` : ''}
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'◈':'○'}</span>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
             </div>
@@ -1898,6 +1901,8 @@ function nodeCard(p, idx) {
       <span class="ns-node-date">${esc(logDate)}</span>
       <span class="ns-node-term" title="Open Claude session"
         onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_ claude</span>
+      <span class="ns-node-menu" title="More actions"
+        onclick="event.stopPropagation();showNodeCtxMenu('${pid}',event.clientX,event.clientY)">⋮</span>
     </div>
   </div>`;
 }
