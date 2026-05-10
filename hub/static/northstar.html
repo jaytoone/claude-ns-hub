@@ -611,6 +611,7 @@ header {
   border-radius: 10px; width: 100%; max-width: 880px; max-height: 90vh;
   display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 20px 60px rgba(31,28,26,.18);
+  position: relative;
 }
 
 /* Header */
@@ -1037,6 +1038,25 @@ header {
     display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;user-select:none">⤡</div>
 </div>
 
+<!-- Delete confirm dialog (inside hub modal, not browser confirm) -->
+<div id="ns-del-confirm" style="display:none;position:absolute;inset:0;z-index:500;
+  background:rgba(0,0,0,.55);border-radius:12px;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+    padding:20px 24px;max-width:280px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="font-size:13px;color:var(--text);margin-bottom:6px;font-weight:500">Delete stone?</div>
+    <div id="ns-del-label" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);
+      margin-bottom:16px;line-height:1.5;word-break:break-word"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="nsDelCancel()" style="font-size:11px;font-family:var(--mono);
+        padding:5px 14px;border-radius:5px;border:1px solid var(--panel-border);
+        background:none;color:var(--text-dim);cursor:pointer">Cancel</button>
+      <button id="ns-del-ok" style="font-size:11px;font-family:var(--mono);
+        padding:5px 14px;border-radius:5px;border:1px solid var(--red,#c0392b);
+        background:rgba(192,57,43,.12);color:var(--red,#c0392b);cursor:pointer">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- Doc viewer overlay -->
 <div class="doc-overlay" id="doc-overlay">
   <div class="doc-modal">
@@ -1335,58 +1355,77 @@ function renderMultiNS(projId, nsList) {
   const el = document.getElementById('dm-ms-creator');
   if (!el) return;
 
-  const statusColor = s => s === 'behind' ? 'var(--red)' : s === 'exploring' ? 'var(--yellow,#d4a017)' : 'var(--green)';
-  const statusLabel = s => s === 'behind' ? '↓ Behind' : s === 'exploring' ? '◎ Exploring' : '✓ On Track';
+  const sc = s => s === 'behind' ? 'var(--red)' : s === 'exploring' ? 'var(--yellow,#d4a017)' : 'var(--green)';
+  let cur = 0;
+  let touchStartX = 0;
 
-  let html = `<div style="margin-bottom:12px">`;
-
-  nsList.forEach((ns, ni) => {
-    const done  = (ns.milestones || []).filter(m => m.done).length;
-    const total = (ns.milestones || []).length;
+  function show() {
+    const ns = nsList[cur];
+    const done  = (ns.milestones||[]).filter(m => m.done || m.status === 'done').length;
+    const total = (ns.milestones||[]).length;
     const pct   = total ? Math.round(done / total * 100) : 0;
-    const sc    = statusColor(ns.status);
-    const tabId = `ns-tab-${ni}`;
+    const color = sc(ns.status);
 
-    html += `
-    <div style="margin-bottom:16px;padding:12px;border:1px solid var(--panel-border);
-         border-radius:8px;background:var(--bg)">
+    // Pagination dots
+    const dots = nsList.map((_, i) =>
+      `<span onclick="window.__nsGo_${projId.replace(/\W/g,'_')}(${i})"
+        style="display:inline-block;width:${i===cur?'18':'7'}px;height:7px;border-radius:4px;
+        background:${i===cur?'var(--accent)':'var(--panel-border)'};cursor:pointer;
+        transition:all .2s;margin:0 3px"></span>`
+    ).join('');
+
+    const btnBase = 'font-family:var(--mono);font-size:14px;background:none;border:1px solid var(--panel-border);border-radius:5px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);transition:background .1s;';
+
+    // Milestone rows
+    const msHtml = (ns.milestones||[]).map((ms, mi) => {
+      const isDone = ms.done || ms.status === 'done';
+      const dotCol = isDone ? 'var(--green)' : mi === done ? 'var(--accent)' : 'var(--panel-border)';
+      return `<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0">
+        <div style="width:9px;height:9px;border-radius:50%;background:${dotCol};border:1.5px solid ${dotCol};
+          flex-shrink:0;margin-top:3px;transition:all .2s"></div>
+        <span style="font-size:12px;font-family:var(--mono);color:${isDone?'var(--text-dim)':'var(--text-soft)'};
+          ${isDone?'text-decoration:line-through':''};">${esc(ms.text)}</span>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div>
-          <span style="font-family:var(--serif);font-size:13px;color:var(--text);font-weight:500">${esc(ns.name)}</span>
-          <span style="margin-left:8px;font-size:10px;font-family:var(--mono);
-              color:${sc};border:1px solid ${sc};border-radius:3px;padding:1px 6px">${statusLabel(ns.status)}</span>
+        <button style="${btnBase}${cur===0?'opacity:.3;cursor:default':''}"
+          onclick="window.__nsGo_${projId.replace(/\W/g,'_')}(${cur-1})">‹</button>
+        <div style="text-align:center">
+          <div style="font-family:var(--serif);font-size:12px;color:var(--text);font-weight:500;margin-bottom:4px">${esc(ns.name)}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:2px">${dots}</div>
         </div>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">${done}/${total}</span>
+        <button style="${btnBase}${cur===nsList.length-1?'opacity:.3;cursor:default':''}"
+          onclick="window.__nsGo_${projId.replace(/\W/g,'_')}(${cur+1})">›</button>
       </div>
-      <div style="font-size:10px;font-family:var(--mono);color:var(--text-dim);margin-bottom:6px">
-        ${esc(ns.metric || '')} → <span style="color:var(--accent)">${esc(ns.target || '')}</span>
-        ${ns.current ? ` | now: <span style="color:${sc}">${esc(ns.current)}</span>` : ''}
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text-dim);margin-bottom:6px;line-height:1.6">
+        ${esc(ns.metric||'')} → <span style="color:${color}">${esc(ns.target||'')}</span>
+        ${ns.current ? `<br>now: <span style="color:${color}">${esc(ns.current)}</span>` : ''}
       </div>
-      <div style="height:2px;background:var(--panel-border);border-radius:1px;margin-bottom:8px">
-        <div style="width:${pct}%;height:100%;background:${sc};border-radius:1px;transition:width .4s"></div>
+      <div style="height:2px;background:var(--panel-border);border-radius:1px;margin-bottom:10px">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:1px;transition:width .4s"></div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text-dim);margin-bottom:8px">${done}/${total} done</div>
+      <div id="ns-ms-list-${cur}" style="display:flex;flex-direction:column">${msHtml}</div>
     `;
 
-    (ns.milestones || []).forEach((ms, mi) => {
-      const isDone = ms.done;
-      const dotCol = isDone ? 'var(--green)' : mi === done ? 'var(--accent)' : 'var(--panel-border)';
-      html += `
-        <div style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer"
-             onclick="toggleNSMilestone('${esc(projId)}','${esc(ns.id)}','${esc(ms.id||ms.text)}',${!isDone},this)">
-          <div style="width:10px;height:10px;border-radius:50%;background:${dotCol};
-               border:1.5px solid ${dotCol};flex-shrink:0;transition:all .2s"></div>
-          <span style="font-size:12px;font-family:var(--mono);
-               color:${isDone ? 'var(--text-dim)' : 'var(--text-soft)'};
-               ${isDone ? 'text-decoration:line-through' : ''}">${esc(ms.text)}</span>
-        </div>`;
-    });
+    // Touch swipe
+    el.ontouchstart = e => { touchStartX = e.touches[0].clientX; };
+    el.ontouchend   = e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (dx < -50 && cur < nsList.length - 1) window[`__nsGo_${projId.replace(/\W/g,'_')}`](cur + 1);
+      if (dx > 50  && cur > 0)                  window[`__nsGo_${projId.replace(/\W/g,'_')}`](cur - 1);
+    };
+  }
 
-    html += `</div></div>`;
-  });
+  window[`__nsGo_${projId.replace(/\W/g,'_')}`] = idx => {
+    if (idx < 0 || idx >= nsList.length) return;
+    cur = idx;
+    show();
+  };
 
-  html += `</div>`;
-  el.innerHTML = html;
+  show();
 }
 
 async function toggleNSMilestone(projId, nsId, mid, newDone, rowEl) {
@@ -1697,10 +1736,20 @@ async function addMilestone(projId, layer, parentId) {
   }, 100);
 }
 
+function nsDelCancel() {
+  const d = document.getElementById('ns-del-confirm');
+  if (d) d.style.display = 'none';
+}
+
 async function confirmDeleteMs(projId, mid, text) {
   const label = (text || 'this stone').trim().slice(0, 60);
-  if (!confirm(`Delete "${label}"?\n\nThis cannot be undone.`)) return;
-  await deleteMs(projId, mid);
+  const d = document.getElementById('ns-del-confirm');
+  const lbl = document.getElementById('ns-del-label');
+  const ok = document.getElementById('ns-del-ok');
+  if (!d) { if (confirm(`Delete "${label}"?`)) await deleteMs(projId, mid); return; }
+  lbl.textContent = `"${label}"`;
+  d.style.display = 'flex';
+  ok.onclick = async () => { d.style.display = 'none'; await deleteMs(projId, mid); };
 }
 
 async function deleteMs(projId, mid) {
