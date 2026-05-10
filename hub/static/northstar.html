@@ -1018,7 +1018,7 @@ header {
 <!-- Floating draggable terminal — full-screen on mobile, floating on desktop -->
 <div id="ns-terminal-float" style="display:none;position:fixed;
   top:60px;left:50%;transform:translateX(-50%) translateZ(0);
-  z-index:300;width:min(860px,94vw);height:min(520px,65vh);
+  z-index:300;width:min(680px,75vw);height:min(680px,78vh);
   background:#1a1916;border:1px solid #333;border-radius:10px;
   box-shadow:0 12px 40px rgba(0,0,0,.45);flex-direction:column;overflow:hidden;
   will-change:transform;-webkit-overflow-scrolling:touch;resize:both;">
@@ -1640,6 +1640,7 @@ function renderMilestoneCreator(projId, milestones) {
             >${esc(m.text)}${mNewBadge}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
+              ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--accent);opacity:.7;letter-spacing:-.02em" title="Active cron monitor: ${esc(m.cron_job_id)}">⏱${esc(m.cron_job_id.slice(0,6))}</span>` : ''}
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'◈':'○'}</span>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
             </div>
@@ -2595,7 +2596,7 @@ function openTerminal(projId) {
   _termMinimized = false;
   document.getElementById('dm-xterm').style.display = '';
   document.getElementById('ns-term-min-btn').textContent = '—';
-  float.style.height = float.dataset.lastH || '520px';
+  float.style.height = float.dataset.lastH || '680px';
 
   // Init xterm once
   if (!_term) {
@@ -2793,12 +2794,12 @@ function minimizeTerminal() {
   const btn = document.getElementById('ns-term-min-btn');
   _termMinimized = !_termMinimized;
   if (_termMinimized) {
-    float.dataset.lastH = float.style.height || '520px';
+    float.dataset.lastH = float.style.height || '680px';
     float.style.height = '36px';
     xterm.style.display = 'none';
     btn.textContent = '□';
   } else {
-    float.style.height = float.dataset.lastH || '520px';
+    float.style.height = float.dataset.lastH || '680px';
     xterm.style.display = '';
     btn.textContent = '—';
     setTimeout(() => _termFit?.fit(), 80);

@@ -46,16 +46,19 @@ curl -s -X POST http://100.119.82.4:9000/api/northstar/{proj_id}/milestones \
 - Parse the response JSON to get the actual `milestone_id` (e.g. `"M9"`)
 - If API fails (connection refused etc.), skip silently and proceed with the task
 
-### 3. Create CronCreate
+### 3. Create CronCreate + store job ID
 
 After getting the real milestone_id from step 2:
 
 ```
-CronCreate(
+job = CronCreate(
   cron='*/15 * * * *',
-  prompt='Check if milestone {milestone_id} for project {proj_id} is complete. Read ~/.claude/hub/projects/{proj_id}/completion-log.jsonl — if an entry with milestone_id="{milestone_id}" exists, PATCH http://100.119.82.4:9000/api/northstar/{proj_id}/milestones/{milestone_id} with {"status":"pending_confirmation"}, then CronDelete this job. Otherwise do nothing.',
+  prompt='Check if milestone {milestone_id} for project {proj_id} is complete. Read ~/.claude/hub/projects/{proj_id}/completion-log.jsonl — if an entry with milestone_id="{milestone_id}" exists, PATCH http://100.119.82.4:9000/api/northstar/{proj_id}/milestones/{milestone_id} with {"status":"pending_confirmation","cron_job_id":null}, then CronDelete this job. Otherwise do nothing.',
   recurring=True
 )
+# Store cron job ID on the milestone so UI shows the active monitor
+PATCH http://100.119.82.4:9000/api/northstar/{proj_id}/milestones/{milestone_id}
+  body: {"cron_job_id": "{job_id_returned_by_CronCreate}"}
 ```
 
 ### 4. Completion signal

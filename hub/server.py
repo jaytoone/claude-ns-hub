@@ -1154,9 +1154,9 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
     for m in milestones:
         if isinstance(m, dict) and m.get("id") == mid:
             # User-settable fields: text, layer, parent_id, claude_ack, status=queued/pending only
-            for k in ("text", "layer", "parent_id", "claude_ack"):
+            for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id"):
                 if k in data:
-                    m[k] = data[k]
+                    m[k] = data[k] if data[k] else None
             # Status: user can set pending/queued; done is Claude-only (set via done=True or status=done)
             new_status = data.get("status")
             if new_status in ("pending", "queued"):
