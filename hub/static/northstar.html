@@ -1775,6 +1775,20 @@ async function executeProject(projId, btn) {
   if (btn.classList.contains('running')) return;
   btn.classList.add('running');
   const orig = btn.textContent;
+
+  // Step 1: ensure terminal is open
+  const termFloat = document.getElementById('ns-terminal-float');
+  const termIsOpen = termFloat && termFloat.style.display !== 'none';
+  if (!termIsOpen) {
+    btn.textContent = '▶…';
+    // Find the project index and open terminal
+    const idx = projects.findIndex(p => p.id === projId || p.name === projId);
+    if (idx >= 0) {
+      openTerminal(projId);
+      await new Promise(r => setTimeout(r, 4500)); // wait for Claude to init
+    }
+  }
+
   btn.textContent = '⟳';
   try {
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/execute`, {method:'POST'});
@@ -1783,7 +1797,6 @@ async function executeProject(projId, btn) {
       const icon = d.mode === 'init' ? '⊕' : d.mode === 'terminal' ? '▶▶' : '✓';
       btn.textContent = icon;
       btn.title = d.message;
-      // terminal mode: open terminal to see execution
       if (d.mode === 'terminal') {
         btn.style.background = 'var(--accent-soft)';
         btn.style.borderColor = 'var(--accent)';
