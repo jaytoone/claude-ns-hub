@@ -259,7 +259,11 @@ def main():
             ms_data = json.loads(resp.read())
         all_ms = ms_data.get("milestones", [])
         queued_ms = [m for m in all_ms if m.get("status") == "queued" and not m.get("done")]
+        # New unacked: no ack at all
         new_unacked = [m for m in all_ms if m.get("status") == "pending" and not m.get("claude_ack")]
+        # Forgotten pending: acked but never queued/done (slipped through)
+        forgotten = [m for m in all_ms if m.get("status") == "pending" and m.get("claude_ack")
+                     and not m.get("done") and m.get("id") not in {q.get("id") for q in queued_ms}]
 
         parts = []
 
@@ -269,6 +273,13 @@ def main():
             for m in new_unacked[:3]:
                 parts.append(f"  - {m.get('id')}: '{m.get('text','')[:60]}'")
             parts.append("Acknowledge and queue/clarify these now.")
+
+        # Forgotten pending: acked but never moved forward
+        if forgotten and not queued_ms:
+            parts.append(f"[FORGOTTEN PENDING] {len(forgotten)} milestones acknowledged but never queued:")
+            for m in forgotten[:3]:
+                parts.append(f"  - {m.get('id')}: '{m.get('text','')[:60]}'")
+            parts.append("Queue the first one now and start working on it.")
 
         # Next queued: start immediately after current task
         if queued_ms:
