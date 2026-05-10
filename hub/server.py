@@ -1220,7 +1220,7 @@ async def delete_milestone(proj_id: str, mid: str):
 
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/run")
 async def run_milestone(proj_id: str, mid: str):
-    """Dispatch a milestone to the task-worker queue for autonomous processing."""
+    """Queue milestone for injection into the active Claude Code session via UserPromptSubmit hook."""
     md = PROJECTS_DIR / proj_id / "north-star.md"
     if not md.exists():
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
@@ -1229,31 +1229,20 @@ async def run_milestone(proj_id: str, mid: str):
     if not milestone:
         return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
 
-    task_queue = HERE / "task-queue"
-    task_queue.mkdir(parents=True, exist_ok=True)
     from datetime import datetime as _dt_
-    ts = _dt_.now().strftime("%Y%m%d-%H%M%S")
-    task_file = task_queue / f"task-{proj_id}-{mid}-{ts}.md"
     hub_api = f"http://{os.environ.get('HUB_HOST','100.119.82.4')}:9000"
-    lines = [
-        f"# Task: {proj_id} / {mid}",
-        f"",
-        f"Process milestone {mid} in project {proj_id}:",
-        f"  Text: \"{milestone.get('text', '')}\"",
-        f"  Status: {milestone.get('status', 'pending')}",
-        f"",
-        f"Instructions:",
-        f"1. PATCH {hub_api}/api/northstar/{proj_id}/milestones/{mid} with claude_ack=now",
-        f"2. If text is clear and actionable: implement it, PATCH status=pending_confirmation",
-        f"3. If vague or a question: PATCH status=needs_clarification + clarification_question",
-        f"4. Write completion evidence to ~/.claude/hub/projects/{proj_id}/completion-log.jsonl",
-        f"   Format: {{\"session_id\":\"worker\",\"milestone_id\":\"{mid}\",\"evidence\":\"...\",\"timestamp\":\"ISO\"}}",
-        f"",
-        f"Hub API base: {hub_api}",
-        f"Project: {proj_id}",
-    ]
-    task_file.write_text("\n".join(lines))
-    return JSONResponse({"ok": True, "task_file": task_file.name})
+    inbox = Path.home() / ".claude/hub/session-inbox.jsonl"
+    entry = {
+        "ts": _dt_.now().isoformat(timespec="seconds"),
+        "proj_id": proj_id,
+        "mid": mid,
+        "text": milestone.get("text", ""),
+        "status": milestone.get("status", "pending"),
+        "hub_api": hub_api,
+    }
+    with open(inbox, "a") as f:
+        f.write(__import__("json").dumps(entry, ensure_ascii=False) + "\n")
+    return JSONResponse({"ok": True, "queued": True, "message": "Injected into Claude session on next prompt"})
 
 
 @app.post("/api/northstar/create")
