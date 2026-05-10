@@ -1802,6 +1802,7 @@ async function executeProject(projId, btn) {
               }).join('');
             }
           } catch(_) {}
+          loadTaskBoard(projId);  // refresh job board
           if (polls >= 12) { clearInterval(poll); btn.textContent = orig; btn.classList.remove('running'); }
         }, 5000);
       } else {
@@ -3007,6 +3008,7 @@ async function openDetail(idx) {
 
   // Render right column then load milestones
   renderRight(p, ctxData.topics || [], docData);
+  loadTaskBoard(p.id);
 
   // Multi-NS: full left-panel pagination (arc + milestones per NS page)
   const nsResp = await fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]}));
@@ -3090,6 +3092,8 @@ function renderHierarchy(p) {
         <div style="font-size:9px;font-family:var(--mono);color:var(--text-dim);margin-bottom:5px;letter-spacing:.05em">EXECUTION LOG</div>
         <div id="dm-task-results-body" style="font-size:11px;font-family:var(--mono);color:var(--text-soft);line-height:1.5;max-height:120px;overflow-y:auto"></div>
       </div>
+      <!-- Job board: queued/running/done tasks -->
+      <div id="dm-task-board" style="margin-top:8px"></div>
     </div>
 
     <!-- Layer 2: OKRs (collapsed by default — click header to expand) -->
@@ -3206,6 +3210,32 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
   };
 
   showPage();
+}
+
+async function loadTaskBoard(projId) {
+  const board = document.getElementById('dm-task-board');
+  if (!board) return;
+  try {
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/task-board`);
+    const d = await r.json();
+    const jobs = d.jobs || [];
+    if (!jobs.length) { board.innerHTML = ''; return; }
+    const statusIcon = {queued:'○',running:'⟳',done:'✓',failed:'✕',timeout:'⏱'}
+    const statusColor = {queued:'var(--text-dim)',running:'var(--accent)',done:'var(--green)',failed:'var(--red)',timeout:'var(--red)'}
+    board.innerHTML = `
+      <div style="font-size:9px;font-family:var(--mono);color:var(--text-dim);margin-bottom:4px;letter-spacing:.05em;margin-top:8px">
+        JOBS (${jobs.length}) <span style="cursor:pointer;color:var(--accent)" onclick="loadTaskBoard('${esc(projId)}')">↻</span>
+      </div>
+      <div style="font-size:10px;font-family:var(--mono);line-height:1.7">
+        ${jobs.map(j => {
+          const icon = statusIcon[j.status] || '?';
+          const col = statusColor[j.status] || 'var(--text-dim)';
+          const label = j.task_id.replace(`task-${projId}-`,'').slice(0,24);
+          const out = j.output ? `: ${j.output.split('\n')[0].slice(0,50)}` : '';
+          return `<div style="color:${col}">${icon} <span style="color:var(--text-dim)">${esc(label)}</span>${esc(out)}</div>`;
+        }).join('')}
+      </div>`;
+  } catch(_) {}
 }
 
 function renderRight(p, topics, docData) {

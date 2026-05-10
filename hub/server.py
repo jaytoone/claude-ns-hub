@@ -1275,6 +1275,51 @@ async def run_milestone(proj_id: str, mid: str):
     return JSONResponse({"ok": True, "queued": True, "message": "Injected into Claude session on next prompt"})
 
 
+@app.get("/api/northstar/{proj_id}/task-board")
+async def get_task_board(proj_id: str):
+    """Return queued + running + completed tasks for a project (job board view)."""
+    queue_dir = HERE / "task-queue"
+    results_dir = HERE / "task-results"
+    locks_dir = HERE / "task-locks"
+    pattern = f"task-{proj_id}-*"
+
+    jobs = {}
+    # Queued (task file exists, no result, no lock)
+    for f in sorted((queue_dir).glob(pattern) if queue_dir.exists() else []):
+        tid = f.stem
+        result = results_dir / f"{tid}.json"
+        lock = locks_dir / f"{tid}.lock"
+        if not result.exists() and not lock.exists():
+            jobs[tid] = {"status": "queued", "task_id": tid, "output": None}
+
+    # Running (lock exists, no result)
+    for f in sorted((locks_dir).glob(pattern) if locks_dir.exists() else []):
+        tid = f.stem
+        result = results_dir / f"{tid}.json"
+        if not result.exists():
+            jobs[tid] = {"status": "running", "task_id": tid, "output": None}
+
+    # Completed (result exists)
+    if results_dir.exists():
+        for f in sorted(results_dir.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True)[:10]:
+            try:
+                data = __import__("json").loads(f.read_text())
+                tid = f.stem
+                jobs[tid] = {
+                    "status": data.get("status", "done"),
+                    "task_id": tid,
+                    "output": (data.get("output") or "")[:200],
+                    "completed_at": data.get("completed_at", ""),
+                }
+            except Exception:
+                pass
+
+    board = sorted(jobs.values(), key=lambda j: (
+        0 if j["status"] == "running" else 1 if j["status"] == "queued" else 2
+    ))
+    return JSONResponse({"ok": True, "jobs": board})
+
+
 @app.get("/api/northstar/{proj_id}/task-results")
 async def get_task_results(proj_id: str, limit: int = 5):
     """Return recent task execution results for a project."""
