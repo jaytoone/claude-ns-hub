@@ -119,8 +119,8 @@ header {
 .ns-node.drop-after  { border-right: 2px solid var(--accent); }
 /* ── Project node card ── */
 .ns-node {
-  width: 88px; background: var(--panel); border: 1px solid var(--panel-border);
-  border-radius: 8px; padding: 8px 7px; cursor: pointer; user-select: none;
+  width: 154px; background: var(--panel); border: 1px solid var(--panel-border);
+  border-radius: 8px; padding: 8px 10px; cursor: pointer; user-select: none;
   transition: box-shadow .12s, border-color .12s, background .12s; flex-shrink: 0;
   position: relative;
   display: flex; flex-direction: column;
@@ -1950,8 +1950,6 @@ function nodeCard(p, idx) {
       <span class="ns-node-date">${esc(logDate)}</span>
       <span class="ns-node-term" title="Open Claude session"
         onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_ claude</span>
-      <span class="ns-node-exec" title="Execute: init milestones or process queued work"
-        onclick="event.stopPropagation();executeProject('${pid}',this)">▶</span>
       <span class="ns-node-menu" title="More actions"
         onclick="event.stopPropagation();showNodeCtxMenu('${pid}',event.clientX,event.clientY)">⋮</span>
     </div>
@@ -3177,12 +3175,16 @@ function renderRight(p, topics, docData) {
     </div>`
   ).join('') || `<div style="font-size:11px;color:var(--text-dim);font-family:var(--mono)">CTX offline or no activity</div>`;
 
-  // Inject spec doc button into left panel bottom slot
+  // Inject spec doc + execute buttons into left panel slot
   const specSlot = document.getElementById('dm-spec-slot');
   if (specSlot) {
-    specSlot.innerHTML = docData?.ok
+    const specBtn = docData?.ok
       ? `<button class="dm-btn" onclick="openDoc('${esc(p.id)}', '${esc(docData.path)}')">◈ Spec doc</button>`
       : `<button class="dm-btn" style="opacity:.35;pointer-events:none;font-size:10px">no spec</button>`;
+    const execBtn = `<button class="dm-btn" id="dm-exec-btn"
+      style="background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:500"
+      onclick="executeProject('${esc(p.id)}',this)" title="Execute: init milestones or process queued work">▶ Execute</button>`;
+    specSlot.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap">${execBtn}${specBtn}</div>`;
   }
 
   // Right panel: note + init if needed
