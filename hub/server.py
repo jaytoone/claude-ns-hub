@@ -1315,31 +1315,8 @@ async def execute_project(proj_id: str):
         return JSONResponse({"ok": True, "mode": mode, "tasks_created": 1,
                              "message": f"Init task queued for {proj_id}"})
     else:
-        # Check if terminal session is open — prefer terminal injection (full context)
-        term_proc = _sessions.get(proj_id)
-        if term_proc and term_proc.isalive():
-            # TERMINAL MODE: inject execute prompt directly into running Claude session
-            actionable = [m for m in active_ms if m.get("status") in ("queued", "pending", "needs_clarification")][:5]
-            stone_lines = "\n".join(
-                f"  - {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:60]}\""
-                for m in actionable
-            )
-            inject_prompt = (
-                f"[EXECUTE] Analyze and process these {proj_id} milestones:\n"
-                f"{stone_lines}\n"
-                f"For each: ack unreviewed ones, implement clear tasks, ask clarification for vague ones. "
-                f"Hub: {hub_api}"
-            )
-            try:
-                term_proc.write(inject_prompt + "\r")
-                return JSONResponse({
-                    "ok": True, "mode": "terminal",
-                    "message": f"Injected into {proj_id} terminal — {len(actionable)} stones"
-                })
-            except Exception:
-                pass  # fall through to task-worker
-
-        # FALLBACK: create one task file per actionable stone (task-worker handles each)
+        # Always use task-worker: claude --continue --print (reliable, full session context)
+        # PTY injection removed — Claude Code TUI doesn't accept raw \r submissions
         actionable = [m for m in active_ms if m.get("status") in ("queued", "pending", "needs_clarification")][:5]
         tasks_created = 0
         for m in actionable:

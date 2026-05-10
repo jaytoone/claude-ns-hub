@@ -1794,19 +1794,12 @@ async function executeProject(projId, btn) {
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/execute`, {method:'POST'});
     const d = await r.json();
     if (d.ok) {
-      const icon = d.mode === 'init' ? '⊕' : d.mode === 'terminal' ? '▶▶' : '✓';
-      btn.textContent = icon;
+      btn.textContent = d.mode === 'init' ? '⊕' : '✓';
       btn.title = d.message;
-      if (d.mode === 'terminal') {
-        btn.style.background = 'var(--accent-soft)';
-        btn.style.borderColor = 'var(--accent)';
-        btn.style.color = 'var(--accent-deep)';
-      }
       setTimeout(() => {
-        btn.textContent = orig; btn.title = 'Execute: init milestones or process queued work';
-        btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = '';
+        btn.textContent = orig; btn.title = 'Execute: process queued milestones via claude -c -p';
         btn.classList.remove('running');
-      }, 5000);
+      }, 4000);
     } else {
       btn.textContent = d.error?.includes('No active terminal') ? '⚠' : '!';
       btn.title = d.error || 'Error';
