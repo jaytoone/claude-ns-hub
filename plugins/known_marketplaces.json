@@ -5,7 +5,7 @@
       "repo": "anthropics/claude-plugins-official"
     },
     "installLocation": "/home/jayone/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-05-11T13:16:47.974Z"
+    "lastUpdated": "2026-05-11T14:44:12.021Z"
   },
   "thedotmack": {
     "source": {
@@ -13,7 +13,7 @@
       "repo": "thedotmack/claude-mem"
     },
     "installLocation": "/home/jayone/.claude/plugins/marketplaces/thedotmack",
-    "lastUpdated": "2026-05-11T13:11:29.683Z"
+    "lastUpdated": "2026-05-11T14:44:14.433Z"
   },
   "jaytoone": {
     "source": {
@@ -21,6 +21,6 @@
       "repo": "jaytoone/CTX"
     },
     "installLocation": "/home/jayone/.claude/plugins/marketplaces/jaytoone",
-    "lastUpdated": "2026-05-11T13:11:34.614Z"
+    "lastUpdated": "2026-05-11T14:44:19.125Z"
   }
 }
