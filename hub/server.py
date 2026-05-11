@@ -169,6 +169,10 @@ def _load_projects() -> list:
                                 "queued_at": m.get("queued_at") or None,
                                 "done_at":   m.get("done_at") or None,
                                 "pending_confirm_at": m.get("pending_confirm_at") or None,
+                                "clarification_question": m.get("clarification_question") or None,
+                                "clarification_answer": m.get("clarification_answer") or None,
+                                "clarification_answered_at": m.get("clarification_answered_at") or None,
+                                "claude_comment": m.get("claude_comment") or None,
                             }
                             norm_ms.append(entry)
                         elif isinstance(m, str):
@@ -1446,14 +1450,17 @@ async def execute_project(proj_id: str):
             prompt_file.write_text(cron_prompt, encoding="utf-8")
 
             # Kill existing session if any, start fresh
-            # SessionStart hook detects pending-execute-prompt.txt and injects directive automatically
-            # No tmux send-keys needed — hook fires at session start before first user turn
+            # SessionStart hook injects directive via additionalContext from pending-execute-prompt.txt
+            # A minimal trigger ("go") kicks Claude to process the injected context
             subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
             subprocess.Popen([
                 "tmux", "new-session", "-d", "-s", session_name,
                 "-c", proj_dir if Path(proj_dir).exists() else str(Path.home()),
                 "claude", "--dangerously-skip-permissions", "--continue"
             ])
+            import asyncio as _aio
+            await _aio.sleep(4)  # wait for claude + SessionStart hook to complete
+            subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"])
             return JSONResponse({
                 "ok": True, "mode": "tmux",
                 "session": session_name,
