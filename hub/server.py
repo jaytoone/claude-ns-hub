@@ -1289,40 +1289,6 @@ async def delete_milestone(proj_id: str, mid: str):
 
 
 
-@app.post("/api/northstar/{proj_id}/milestones/{mid}/run")
-async def run_milestone(proj_id: str, mid: str):
-    """Queue milestone for injection into the active Claude Code session via UserPromptSubmit hook."""
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
-        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
-    milestone = next((m for m in proj.get("milestones", []) if m.get("id") == mid), None)
-    if not milestone:
-        return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
-
-    from datetime import datetime as _dt_
-    _host = os.environ.get('HUB_HOST', '0.0.0.0')
-    if _host == '0.0.0.0':
-        import re as _re_
-        try:
-            _r = __import__('subprocess').run(['ss','-tlnp'], capture_output=True, text=True, timeout=2)
-            _m = _re_.search(r'(100\.\d+\.\d+\.\d+):9000', _r.stdout)
-            _host = _m.group(1) if _m else '127.0.0.1'
-        except Exception:
-            _host = '127.0.0.1'
-    hub_api = f"http://{_tailscale_interface_ip()}:{PORT}"
-    inbox = Path.home() / ".claude/hub/session-inbox.jsonl"
-    entry = {
-        "ts": _dt_.now().isoformat(timespec="seconds"),
-        "proj_id": proj_id,
-        "mid": mid,
-        "text": milestone.get("text", ""),
-        "status": milestone.get("status", "pending"),
-        "hub_api": hub_api,
-    }
-    with open(inbox, "a") as f:
-        f.write(__import__("json").dumps(entry, ensure_ascii=False) + "\n")
-    return JSONResponse({"ok": True, "queued": True, "message": "Injected into Claude session on next prompt"})
 
 
 @app.get("/api/northstar/{proj_id}/tmux-output")
@@ -1342,6 +1308,44 @@ async def get_tmux_output(proj_id: str, lines: int = 20):
     return JSONResponse({"ok": True, "running": True, "session": session_name, "output": output})
 
 
+
+
+@app.get("/api/northstar/{proj_id}/task-board")
+async def get_task_board(proj_id: str):
+    """Return recent completion-log entries as job board (replaces old task-worker system)."""
+    log_file = PROJECTS_DIR / proj_id / "completion-log.jsonl"
+    jobs = []
+    if log_file.exists():
+        lines = [l.strip() for l in log_file.read_text().splitlines() if l.strip()]
+        for line in reversed(lines[-10:]):  # last 10, newest first
+            try:
+                entry = json.loads(line)
+                mid = entry.get("milestone_id", "?")
+                jobs.append({
+                    "task_id": f"{mid}-{entry.get('timestamp','')[:16]}",
+                    "status": "done",
+                    "output": entry.get("evidence", "")[:120],
+                    "completed_at": entry.get("timestamp", ""),
+                })
+            except Exception:
+                pass
+    # Also show currently queued milestones as "running" if exec session active
+    session_name = f"claude-exec-{proj_id}"
+    check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+    if check.returncode == 0:
+        # Session alive — find queued milestones and show as running
+        md = PROJECTS_DIR / proj_id / "north-star.md"
+        if md.exists():
+            proj = _parse_md_frontmatter(md)
+            for m in (proj.get("milestones") or []):
+                if m.get("status") == "queued":
+                    jobs.insert(0, {
+                        "task_id": f"{m['id']}-running",
+                        "status": "running",
+                        "output": m.get("text", "")[:80],
+                        "completed_at": "",
+                    })
+    return JSONResponse({"ok": True, "jobs": jobs[:10]})
 
 
 @app.post("/api/northstar/{proj_id}/execute")
@@ -1407,6 +1411,7 @@ async def execute_project(proj_id: str):
             return JSONResponse({
                 "ok": True, "mode": "tmux_active",
                 "session": session_name,
+                "tasks_created": len(new_pending),  # shown in EXECUTION LOG
                 "new_injected": len(new_pending),
                 "message": f"Claude is already working on {proj_id} stones (session '{session_name}' active). Check live session for progress.",
             })
