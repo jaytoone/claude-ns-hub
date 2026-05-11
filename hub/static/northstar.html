@@ -1962,6 +1962,13 @@ function nodeCard(p, idx) {
       gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
     }
   }
+  // Clarification badge: show ❓ on card if any milestone needs clarification
+  const clarifyMs = (p.milestones||[]).filter(m => m.status === 'needs_clarification');
+  const clarifyBadge = clarifyMs.length
+    ? `<span style="font-size:9px;color:#7b9fd4;cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid rgba(90,120,200,.3);font-family:var(--mono)"
+        title="${clarifyMs.map(m => m.clarification_question||m.text).join('\\n')}"
+        onclick="event.stopPropagation();openDetail(${idx})">❓${clarifyMs.length}</span>`
+    : '';
   const sKey = _sessionStatus[p.id||p.name];
   const sessPill = buildSessPill(sKey);
   const active = idx === activeIdx ? 'active' : '';
@@ -1983,6 +1990,7 @@ function nodeCard(p, idx) {
     <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
     <div class="ns-node-bottom">
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
+      ${clarifyBadge}
       <span class="ns-node-date">${esc(logDate)}</span>
       <span class="ns-node-term" title="Open Claude session"
         onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_ claude</span>
