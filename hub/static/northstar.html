@@ -1488,8 +1488,10 @@ function renderMilestoneCreator(projId, milestones) {
   let expanded = {};
   try { expanded = JSON.parse(localStorage.getItem(expandKey) || '{}'); } catch(_) {}
 
-  const l0 = milestones.filter(m => (m.layer || 0) === 0).reverse(); // newest first
-  const l1 = milestones.filter(m => (m.layer || 0) === 1);
+  // M32: hide confirmed (done) stones — show only active milestones
+  const l0 = milestones.filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done).reverse();
+  const doneStones = milestones.filter(m => (m.layer || 0) === 0 && ((m.status||'') === 'done' || m.done));
+  const l1 = milestones.filter(m => (m.layer || 0) === 1 && (m.status||'') !== 'done' && !m.done);
   const doneTotal = milestones.filter(m => (m.status||'') === 'done' || m.done).length;
   const queuedTotal = milestones.filter(m => (m.status||'') === 'queued').length;
   const acked = milestones.filter(m => m.claude_ack).length;
@@ -1550,7 +1552,7 @@ function renderMilestoneCreator(projId, milestones) {
     .nt-new-badge { font-size:9px; color:var(--accent); margin-left:3px; cursor:default; }
   </style>
   <div>
-    <button class="nt-add" style="margin-bottom:6px;font-size:11px;padding:3px 10px;border:1px dashed var(--panel-border);border-radius:5px;width:100%;text-align:left;color:var(--text-dim)"
+    <button class="nt-add" style="margin-bottom:6px"
       onclick="addMilestone('${esc(projId)}',0,null)">+ milestone</button>
     ${l0.length > 0 ? `<span class="nt-layer-label">L0 · Strategic</span>` : ''}
     ${l0.map((m, idx) => {
@@ -1692,7 +1694,18 @@ function renderMilestoneCreator(projId, milestones) {
     }).join('')}
   </div>`;
 
-  el.innerHTML = progressBar + toggleHtml;
+  // Collapsed "Completed" section for done stones
+  const doneSection = doneStones.length ? `
+    <div style="margin-top:8px;border-top:1px solid var(--panel-border);padding-top:6px">
+      <div style="font-size:9px;font-family:var(--mono);color:var(--text-dim);cursor:pointer;letter-spacing:.05em;padding:2px 0"
+           onclick="const n=this.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'">
+        ▸ COMPLETED (${doneStones.length})</div>
+      <div style="display:none;margin-top:4px">
+        ${doneStones.map(m => `<div style="font-size:11px;color:var(--text-dim);text-decoration:line-through;padding:2px 4px;font-family:var(--mono)">${esc(m.text.slice(0,60))}</div>`).join('')}
+      </div>
+    </div>` : '';
+
+  el.innerHTML = progressBar + toggleHtml + doneSection;
 }
 
 // Tab = indent (L0→L1 under previous), Shift+Tab = unindent (L1→L0)
@@ -3022,6 +3035,8 @@ async function openDetail(idx) {
           <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
           <span class="dm-layer-title">${esc(title)}</span>
           <span class="dm-layer-count">${okrs.length} KRs</span>
+          <span style="margin-left:auto;font-size:10px;color:var(--text-dim);cursor:pointer;padding:0 4px;border-radius:3px;border:1px solid var(--panel-border)" onclick="const n=this.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'" title="왜 OKR이 필요한가?">?</span>
+          <div style="display:none;font-size:11px;color:var(--text-soft);line-height:1.6;padding:8px 10px;margin-top:6px;background:var(--panel-soft);border-radius:5px;border-left:2px solid var(--accent)">OKR은 North Star(장기 방향)과 오늘의 마일스톤 사이를 잇는 중간 레이어입니다. Objective는 분기 목표, Key Results는 그 달성을 측정하는 지표. OKR 없이 마일스톤만 쌓으면 각 작업이 실제로 무엇을 향하는지 모호해집니다.</div>
         </div>
         <div class="dm-okr-list">${okrs.length ? okrs.map(kr => {
           const m = kr.match(/^(K\d+):\s*(.+)/);
@@ -3052,10 +3067,12 @@ async function openDetail(idx) {
       const title = okrData.section || 'OKRs';
       // Keep collapsed by default; populate list content
       okrSection.innerHTML = `<div class="dm-layer dm-layer-collapsed">
-        <div class="dm-layer-head" onclick="this.parentElement.classList.toggle('dm-layer-collapsed');this.querySelector('.dm-layer-count').textContent=this.parentElement.classList.contains('dm-layer-collapsed')?'▸ expand':'▾ collapse'" style="cursor:pointer;opacity:.6">
+        <div class="dm-layer-head" onclick="if(event.target.dataset.why)return;this.parentElement.classList.toggle('dm-layer-collapsed');this.querySelector('.dm-layer-count').textContent=this.parentElement.classList.contains('dm-layer-collapsed')?'▸ expand':'▾ collapse'" style="cursor:pointer;opacity:.6">
           <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
           <span class="dm-layer-title">${esc(title)}</span>
           <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▸ ${okrs.length} KRs</span>
+          <span data-why="1" style="margin-left:auto;font-size:10px;color:var(--text-dim);cursor:pointer;padding:0 4px;border-radius:3px;border:1px solid var(--panel-border)" onclick="event.stopPropagation();const n=this.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'" title="왜 OKR이 필요한가?">?</span>
+          <div style="display:none;font-size:11px;color:var(--text-soft);line-height:1.6;padding:8px 10px;margin-top:6px;background:var(--panel-soft);border-radius:5px;border-left:2px solid var(--accent)">OKR은 North Star(장기 방향)과 오늘의 마일스톤 사이를 잇는 중간 레이어입니다. Objective는 분기 목표, Key Results는 그 달성을 측정하는 지표. OKR 없이 마일스톤만 쌓으면 각 작업이 실제로 무엇을 향하는지 모호해집니다.</div>
         </div>
         <div class="dm-okr-list">${okrs.length ? okrs.map(kr=>{const m=kr.match(/^(K\d+):\s*(.+)/);return`<div class="dm-okr-item"><span class="dm-okr-key">${m?esc(m[1]):'·'}</span><span class="dm-okr-text">${m?esc(m[2]):esc(kr)}</span></div>`;}).join(''):'<div style="font-size:12px;color:var(--text-dim)">No OKRs defined in spec doc</div>'}</div>
       </div>`;
