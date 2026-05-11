@@ -1564,8 +1564,6 @@ function renderMilestoneCreator(projId, milestones) {
       // needs_clarification: compact row with ? badge in meta; click ? → popup with explanation + answer input
       if (mStatus === 'needs_clarification') {
         const hasAnswer = !!(m.clarification_answer || '').trim();
-        // escJs: escape for use inside single-quoted JS attribute strings (HTML-esc + single-quote-esc)
-        const escJs = s => esc(s).replace(/'/g, '&#39;');
         const clarQ = escJs(m.clarification_question || 'Why is this milestone unclear? Please describe the task in more detail.');
         const clarA = escJs(m.clarification_answer || '');
         return `
@@ -1609,6 +1607,7 @@ function renderMilestoneCreator(projId, milestones) {
         return confirmHtml;
       }
       // User can only set pending↔queued; done is Claude-only
+      const escJs = s => esc(s).replace(/'/g, '&#39;');  // escape for single-quoted JS attrs
       const sc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)',pending_confirmation:'var(--accent)'}[mStatus]||'var(--panel-border)';
       const sbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'transparent',pending_confirmation:'rgba(204,120,92,.15)'}[mStatus]||'transparent';
       const sfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)',pending_confirmation:'var(--accent-deep)'}[mStatus]||'var(--text-dim)';
@@ -1665,9 +1664,7 @@ function renderMilestoneCreator(projId, milestones) {
         ? `<span style="font-size:9px;color:var(--accent);margin-left:3px" title="Added by user — Claude hasn't seen this yet">★</span>`
         : '';
 
-      const mCommentHtml = m.claude_comment
-        ? `<div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:2px 6px 3px;margin:2px 0 2px 54px;background:var(--panel-soft);border-radius:3px;border-left:2px solid ${mStatus==='queued'?'var(--accent)':'var(--panel-border)'}">Claude: ${esc(m.claude_comment)}</div>`
-        : '';
+      const mCommentHtml = '';  // replaced by comment badge in meta row
       return `
         <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
           ondragstart="_msDragStart(event,'${esc(m.id)}')"
@@ -1693,6 +1690,7 @@ function renderMilestoneCreator(projId, milestones) {
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
               ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)" title="Active cron monitor: ${esc(m.cron_job_id)}">cron</span>` : ''}
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${m.claude_ack?'acked':'review'}</span>` : ''}
+              ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}')">💬</span>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
             </div>
           </div>
@@ -3318,6 +3316,26 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
 }
 
 let _tmuxWatchInterval = null;
+
+function showCommentPopup(event, comment) {
+  document.getElementById('comment-popup')?.remove();
+  const popup = document.createElement('div');
+  popup.id = 'comment-popup';
+  popup.style.cssText = `position:fixed;z-index:9999;background:var(--panel);border:1px solid var(--accent-soft);
+    border-radius:8px;padding:10px 13px;max-width:280px;box-shadow:0 6px 24px rgba(0,0,0,.25);
+    font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--text)`;
+  const x = Math.min(event.clientX, window.innerWidth - 300);
+  const y = Math.min(event.clientY + 8, window.innerHeight - 120);
+  popup.style.left = x + 'px';
+  popup.style.top = y + 'px';
+  popup.innerHTML = `<div style="font-size:9px;color:var(--accent);margin-bottom:6px;letter-spacing:.05em">CLAUDE COMMENT</div>
+    <div style="color:var(--text)">${comment}</div>`;
+  document.body.appendChild(popup);
+  setTimeout(() => document.addEventListener('click', function h(e) {
+    if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', h); }
+  }), 100);
+}
+
 function showClarifyPopup(event, projId, mid, clarQ, clarA, hasAnswer) {
   document.getElementById('clarify-popup')?.remove();
   const popup = document.createElement('div');
