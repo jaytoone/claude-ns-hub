@@ -1523,6 +1523,7 @@ function renderMilestoneCreator(projId, milestones) {
       cursor:pointer; transition:background .08s; user-select:none; margin-bottom:1px; }
     .nt-row:hover { background:var(--panel-soft); }
     .nt-row:hover .nt-del { opacity:1; }
+    .nt-row.drag-over { border-top:2px solid var(--accent); }
     .nt-num { font-family:var(--mono); font-size:10px; color:var(--text-dim); flex-shrink:0; width:18px; text-align:right; padding-top:3px; }
     .nt-arrow { font-size:12px; flex-shrink:0; padding-top:2px; width:14px; color:var(--text-soft); font-weight:500; }
     .nt-check { width:17px; height:17px; border-radius:50%; flex-shrink:0; cursor:pointer;
@@ -1554,7 +1555,7 @@ function renderMilestoneCreator(projId, milestones) {
     .nt-new-badge { font-size:9px; color:var(--accent); margin-left:3px; cursor:default; }
   </style>
   <div>
-    <button class="nt-add" style="margin-bottom:6px"
+    <button class="nt-add" style="margin-bottom:8px;display:block;width:100%;text-align:center"
       onclick="addMilestone('${esc(projId)}',0,null)">+ milestone</button>
     ${l0.length > 0 ? `<span class="nt-layer-label">L0 · Strategic</span>` : ''}
     ${l0.map((m, idx) => {
@@ -1660,7 +1661,12 @@ function renderMilestoneCreator(projId, milestones) {
         ? `<div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:2px 6px 3px;margin:2px 0 2px 54px;background:var(--panel-soft);border-radius:3px;border-left:2px solid ${mStatus==='queued'?'var(--accent)':'var(--panel-border)'}">Claude: ${esc(m.claude_comment)}</div>`
         : '';
       return `
-        <div onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
+        <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
+          ondragstart="_msDragStart(event,'${esc(m.id)}')"
+          ondragover="_msDragOver(event)"
+          ondragleave="_msDragLeave(event)"
+          ondrop="_msDrop(event,'${esc(projId)}')"
+          onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
           <div class="nt-row ${mStatus==='done'?'nt-done':''}">
             <span class="nt-num">${num}.</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
@@ -1743,6 +1749,43 @@ async function handleMsTab(e, projId, mid) {
     const el = document.querySelector(`[data-ms-id="${CSS.escape(mid)}"]`);
     if (el) { el.focus({ preventScroll: true }); const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); window.getSelection().removeAllRanges(); window.getSelection().addRange(r); }
   }, 50);
+}
+
+// Milestone drag-to-reorder
+let _msDragId = null;
+function _msDragStart(e, mid) {
+  _msDragId = mid;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.4';
+}
+function _msDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function _msDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+async function _msDrop(e, projId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const targetMid = e.currentTarget.dataset.mid;
+  if (!_msDragId || _msDragId === targetMid) { _msDragId = null; return; }
+  // Collect all L0 draggable rows in current DOM order
+  const rows = Array.from(document.querySelectorAll('.nt-draggable-row'));
+  const order = rows.map(r => r.dataset.mid).filter(Boolean);
+  // Move dragged before target
+  const fromIdx = order.indexOf(_msDragId);
+  const toIdx = order.indexOf(targetMid);
+  if (fromIdx < 0 || toIdx < 0) { _msDragId = null; return; }
+  order.splice(fromIdx, 1);
+  order.splice(toIdx, 0, _msDragId);
+  _msDragId = null;
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/reorder`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({order})
+  });
+  loadMilestones(projId);
 }
 
 function toggleMsExpand(projId, mid) {

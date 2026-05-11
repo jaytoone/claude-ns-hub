@@ -98,12 +98,20 @@ def _parse_md_frontmatter(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---"):
         return {}
-    parts = text.split("---", 2)
-    if len(parts) < 3:
+    # Find the closing --- using line-by-line scan (avoids splitting on --- inside YAML values)
+    lines = text.splitlines(keepends=True)
+    end_idx = None
+    for i, line in enumerate(lines[1:], 1):
+        if line.rstrip("\r\n") == "---":
+            end_idx = i
+            break
+    if end_idx is None:
         return {}
     try:
-        data = _yaml.safe_load(parts[1]) or {}
-        data["_body"] = parts[2].strip()
+        fm_text = "".join(lines[1:end_idx])
+        body_text = "".join(lines[end_idx + 1:]).strip()
+        data = _yaml.safe_load(fm_text) or {}
+        data["_body"] = body_text
         return data
     except Exception:
         return {}
@@ -114,8 +122,10 @@ def _write_md_frontmatter(path: Path, data: dict):
     body = data.pop("_body", "")
     # Strip internal-only fields
     data.pop("file_path", None)
-    # Re-encode milestones/log as proper YAML types
-    text = "---\n" + _yaml.dump(data, allow_unicode=True, default_flow_style=False) + "---\n\n" + body
+    yaml_str = _yaml.dump(data, allow_unicode=True, default_flow_style=False)
+    # Ensure yaml_str doesn't accidentally contain a bare '---' line that would break parsing
+    yaml_str = re.sub(r'(?m)^---$', "'---'", yaml_str)
+    text = "---\n" + yaml_str + "---\n\n" + body
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
 
@@ -864,7 +874,7 @@ async def _expose_ports_to_tailscale():
 
 @app.on_event("startup")
 async def _start_milestone_watcher():
-    """Background cron: check completion-log.jsonl every 5 min → auto-mark queued milestones."""
+    """Background poller (every 5 min): auto-ack pending milestones + promote answered clarifications + completion-log sync."""
     async def _watch():
         while True:
             await asyncio.sleep(300)  # 5 minutes
@@ -873,38 +883,58 @@ async def _start_milestone_watcher():
                     if not proj_dir.is_dir():
                         continue
                     proj_id = proj_dir.name
-                    log_file = proj_dir / "completion-log.jsonl"
-                    if not log_file.exists():
-                        continue
-                    # Read completion log entries
-                    entries = []
-                    for line in log_file.read_text().splitlines():
-                        line = line.strip()
-                        if line:
-                            try: entries.append(json.loads(line))
-                            except Exception: pass
-                    if not entries:
-                        continue
-                    logged_mids = {e.get("milestone_id"): e for e in entries if e.get("milestone_id")}
-                    # Load milestones via internal function (normalized)
                     md = PROJECTS_DIR / proj_id / "north-star.md"
                     if not md.exists():
                         continue
                     proj = _parse_md_frontmatter(md)
-                    raw_ms = proj.get("milestones", []) if isinstance(proj, dict) else []
+                    if not isinstance(proj, dict) or not proj.get("name"):
+                        continue
+                    raw_ms = proj.get("milestones", [])
                     now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M")
+                    changed = False
+
+                    # Step 1: Auto-ack new unreviewed milestones
                     for m in raw_ms:
                         if not isinstance(m, dict): continue
-                        mid = str(m.get("id", "")).strip()
-                        if not mid: continue
-                        status = m.get("status", "pending")
-                        if status in ("done", "pending_confirmation") or m.get("done"): continue
-                        if mid in logged_mids:
-                            patch = {"status": "pending_confirmation", "done": False,
-                                     "pending_confirm_at": now_iso, "claude_ack": now_iso}
-                            m.update(patch)
-                            proj["milestones"] = raw_ms
-                            _save_project(proj_id, proj)
+                        if m.get("claude_ack") or m.get("status") in ("done", "pending_confirmation", "queued", "needs_clarification"):
+                            continue
+                        if m.get("status") != "pending": continue
+                        m["claude_ack"] = now_iso
+                        text = str(m.get("text", "")).strip()
+                        m["status"] = "queued" if len(text) > 15 else "needs_clarification"
+                        changed = True
+
+                    # Step 3: Promote answered clarifications → pending
+                    for m in raw_ms:
+                        if not isinstance(m, dict): continue
+                        if m.get("status") == "needs_clarification" and m.get("clarification_answer"):
+                            m["status"] = "pending"
+                            m["claude_ack"] = None  # reset so it gets re-reviewed
+                            changed = True
+
+                    # Completion-log sync: mark logged milestones as pending_confirmation
+                    log_file = proj_dir / "completion-log.jsonl"
+                    if log_file.exists():
+                        entries = []
+                        for line in log_file.read_text().splitlines():
+                            line = line.strip()
+                            if line:
+                                try: entries.append(json.loads(line))
+                                except Exception: pass
+                        logged_mids = {e.get("milestone_id") for e in entries if e.get("milestone_id")}
+                        for m in raw_ms:
+                            if not isinstance(m, dict): continue
+                            mid = str(m.get("id", "")).strip()
+                            status = m.get("status", "pending")
+                            if status in ("done", "pending_confirmation") or m.get("done"): continue
+                            if mid in logged_mids:
+                                m.update({"status": "pending_confirmation", "done": False,
+                                          "pending_confirm_at": now_iso, "claude_ack": m.get("claude_ack") or now_iso})
+                                changed = True
+
+                    if changed:
+                        proj["milestones"] = raw_ms
+                        _save_project(proj_id, proj)
             except Exception:
                 pass
     asyncio.create_task(_watch())
@@ -1125,6 +1155,26 @@ async def get_milestones(proj_id: str):
     return JSONResponse({"ok": True, "milestones": p.get("milestones", [])})
 
 
+@app.post("/api/northstar/{proj_id}/milestones/reorder")
+async def reorder_milestones(proj_id: str, request: Request):
+    """Reorder milestones by providing a new ordered list of IDs."""
+    data = await request.json()
+    new_order = data.get("order", [])
+    if not new_order:
+        return JSONResponse({"ok": False, "error": "order required"}, status_code=400)
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    ms = proj.get("milestones", [])
+    ms_map = {m.get("id"): m for m in ms if isinstance(m, dict) and m.get("id")}
+    reordered = [ms_map[mid] for mid in new_order if mid in ms_map]
+    leftover = [m for m in ms if isinstance(m, dict) and m.get("id") not in new_order]
+    proj["milestones"] = reordered + leftover
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True, "count": len(reordered)})
+
+
 @app.post("/api/northstar/{proj_id}/milestones")
 async def create_milestone(proj_id: str, request: Request):
     data = await request.json()
@@ -1237,6 +1287,8 @@ async def delete_milestone(proj_id: str, mid: str):
                           and m.get("parent_id") != mid]
     _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "removed": before - len(proj["milestones"])})
+
+
 
 
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/run")
@@ -1419,13 +1471,18 @@ async def execute_project(proj_id: str):
         }
         proj_dir = proj_dirs.get(proj_id, str(Path.home() / "Project" / proj_id))
 
-        # M24 fix: if tmux session already running, return status instead of spawning duplicate
+        # M24 fix: if tmux session already running, inject new milestones instead of spawning duplicate
         existing = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
         if existing.returncode == 0:
-            # Session already active — return status, don't duplicate
+            # Session alive — check if there are new unacked milestones to inject
+            new_pending = [m for m in active_ms if m.get("status") == "pending" and not m.get("claude_ack")]
+            if new_pending:
+                trigger = f"New milestones added — check GET {hub_api}/api/northstar/{proj_id}/milestones for pending items and process them now."
+                subprocess.run(["tmux", "send-keys", "-t", session_name, trigger, "Enter"], capture_output=True)
             return JSONResponse({
                 "ok": True, "mode": "tmux_active",
                 "session": session_name,
+                "new_injected": len(new_pending),
                 "message": f"Claude is already working on {proj_id} stones (session '{session_name}' active). Check live session for progress.",
             })
 
