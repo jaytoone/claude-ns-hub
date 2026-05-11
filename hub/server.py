@@ -1466,7 +1466,11 @@ async def execute_project(proj_id: str):
             )
             # Spawn tmux session — use TaskCreate/TaskUpdate (Claude Code built-in) for task tracking
             cron_prompt = (
-                f"[EXECUTE SYNC] Project {proj_id} — Execute clicked. PRIMARY GOAL: build a task list from queued milestones.\n\n"
+                f"[EXECUTE SYNC] Project {proj_id} — Execute clicked. PRIMARY GOAL: build a fresh task list from queued milestones.\n\n"
+                f"STEP 0 — RESET task list (continued session may have stale tasks):\n"
+                f"  1. Call TaskList to see existing tasks.\n"
+                f"  2. For each existing task: TaskUpdate(<id>, status='completed') to clear it.\n"
+                f"     (Do NOT keep stale tasks from previous work — start fresh for this Execute.)\n\n"
                 f"PRIMARY ACTION — TaskCreate per queued milestone:\n"
                 f"  For each milestone with status=queued in the list below:\n"
                 f'    TaskCreate(subject="<milestone_id>", description="<milestone text>")\n'
