@@ -1564,8 +1564,10 @@ function renderMilestoneCreator(projId, milestones) {
       // needs_clarification: compact row with ? badge in meta; click ? → popup with explanation + answer input
       if (mStatus === 'needs_clarification') {
         const hasAnswer = !!(m.clarification_answer || '').trim();
-        const clarQ = esc(m.clarification_question || 'Why is this milestone unclear? Please describe the task in more detail.');
-        const clarA = esc(m.clarification_answer || '');
+        // escJs: escape for use inside single-quoted JS attribute strings (HTML-esc + single-quote-esc)
+        const escJs = s => esc(s).replace(/'/g, '&#39;');
+        const clarQ = escJs(m.clarification_question || 'Why is this milestone unclear? Please describe the task in more detail.');
+        const clarA = escJs(m.clarification_answer || '');
         return `
           <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
             ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragend="_msDragEnd(event)" ondragover="_msDragOver(event)"
