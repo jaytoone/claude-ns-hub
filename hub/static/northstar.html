@@ -581,6 +581,15 @@ header {
 #dm-xterm .xterm-screen { height: 100%; }
 /* Mobile: full-screen terminal — eliminates position:fixed scroll jank entirely */
 @media (pointer: coarse) {
+  /* Mobile: make cards fully tappable with larger touch targets */
+  .ns-node { min-height: 80px; cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,.05); }
+  .ns-node-bottom { gap: 6px; flex-wrap: wrap; }
+  .ns-node-term, .ns-node-menu, .ns-node-exec { min-height: 28px; min-width: 28px;
+    display: flex; align-items: center; justify-content: center; padding: 4px 8px; }
+  .ns-node-name { font-size: 13px; }
+  /* Modal bottom row touch targets */
+  .dm-btn { min-height: 36px; font-size: 12px; }
+
   #ns-terminal-float {
     top: 44px !important; left: 0 !important; right: 0 !important;
     transform: none !important; -webkit-transform: none !important;
