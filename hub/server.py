@@ -1459,7 +1459,15 @@ async def execute_project(proj_id: str):
                 "claude", "--dangerously-skip-permissions", "--continue"
             ])
             import asyncio as _aio
-            await _aio.sleep(4)  # wait for claude + SessionStart hook to complete
+            # Wait for Claude + SessionStart hook to complete
+            # Hook deletes the prompt file when injected — use file deletion as ready signal
+            deadline = 12  # max wait seconds
+            elapsed = 0
+            while elapsed < deadline:
+                await _aio.sleep(1)
+                elapsed += 1
+                if not prompt_file.exists():
+                    break  # hook fired and deleted the file — Claude is ready
             subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"])
             return JSONResponse({
                 "ok": True, "mode": "tmux",

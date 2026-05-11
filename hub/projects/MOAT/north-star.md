@@ -97,19 +97,61 @@ log:
 - date: '2026-05-11'
   text: 'c08d8d9 chore: update omc retrieval log; f36f4ce chore: update omc retrieval
     log (+1 more)'
+- date: '2026-05-11'
+  text: '4af06db chore: update omc retrieval log; c08d8d9 chore: update omc retrieval
+    log (+1 more)'
 metric: Hub dashboard completeness score (%)
 milestones:
-- claude_ack: 2026-05-11T13:58
+- claude_ack: 2026-05-11T15:32
   done: false
   id: M42
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-11T13:58
-  queued_at: 2026-05-11T13:55
+  queued_at: 2026-05-11T15:32
   status: pending_confirmation
-  text: 마일스톤 드래그시 위아래 순서 변경 가능하도록 수정
+  text: 마일스톤 드래그시 위아래 순서 변경 가능하도록 수정 -> 안되는것들이 존재함 이유는 ?
   user_added_at: 2026-05-11T13:52
-- claude_ack: 2026-05-11T13:55
+- claude_ack: 2026-05-11T15:33
+  done: false
+  id: M43
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T15:33
+  queued_at: 2026-05-11T15:32
+  status: pending_confirmation
+  text: 모바일 화면에서의 ns card 가 데스크탑 환경과 동일한 사이즈 / 비율이 되도록 수정바람
+  user_added_at: 2026-05-11T14:42
+- claude_ack: 2026-05-11T15:34
+  done: false
+  id: M44
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T15:34
+  queued_at: 2026-05-11T15:32
+  status: pending_confirmation
+  text: '? 배지가 달린 곳에 응답을 적을 경우 해당 응답이 기록되도록 할것 (지금은 answer 버튼 클릭시 forget 됨)그리고 ? 배지
+    달린 마일스톤도 수정가능하도록해야함'
+  user_added_at: 2026-05-11T14:43
+- clarification_question: 이것은 구체적인 구현 요청인가요, 아니면 아키텍처 방향에 대한 질문인가요? 어떤 에이전트에게 위임하는
+    방식을 원하시나요?
+  claude_ack: 2026-05-11T15:34
+  claude_comment: '가능하지만 컨텍스트 문제 해결 방법이 핵심: (1) 위임 가능: claude --print로 각 마일스톤을 격리된
+    sub-agent에 전달 가능. 컨텍스트 오염 없음. (2) 컨텍스트 문제: 서브에이전트는 코드베이스를 처음부터 읽어야 함 (cold start).
+    --continue 연속성 없음. 이전 에이전트가 수정한 파일 상태 알 수 없음 → 충돌 위험. (3) 현재 단일세션 방식의 장점: --continue로
+    이전 맥락 유지, TodoWrite로 crash-safe 추적, 파일 충돌 없음. (4) 권장: 마일스톤이 독립적(다른 파일 수정)일 때만
+    sub-agent 위임. 같은 파일 수정하는 연속 마일스톤은 단일 세션 유지.'
+  cron_job_id: null
+  done: false
+  id: M15
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-10T19:38
+  queued_at: 2026-05-11T15:32
+  status: pending_confirmation
+  text: 마일스톤 관리를 개별 에이전트에게 위임가능한가 (컨텍스트 문제는 어떡하나 ? )
+  user_added_at: 2026-05-10T18:25
+- claude_ack: 2026-05-11T15:33
   claude_comment: OKR은 선택적입니다. NS(North Star)가 방향이라면, OKR은 분기별 실행 목표입니다. 소규모/1인 프로젝트에서는
     NS + Milestones만으로 충분하며 OKR 레이어는 팀 단위 정렬이 필요할 때 의미를 가집니다. 현재 MOAT 프로젝트는 OKR 없이
     NS + Milestone 구조로 운영하는 것이 맞습니다. OKR 섹션은 collapsed 기본값으로 유지됩니다.
@@ -118,12 +160,55 @@ milestones:
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-11T10:55
-  queued_at: 2026-05-11T13:54
+  queued_at: 2026-05-11T15:32
   status: pending_confirmation
   text: 왜 okr 이 필요한ㄱ ㅏ?  사용자가 ns detal card 에서 이 질문에 대한 claude 의 커맨트를 확인가능토록하라okr
     를 계속해서 지우지 않는 이유를 milestone ui 에 커맨트를 달도록하라 그리고 ? 배지에 대한 커맨트도 왜 달았는지를 알수있도록 하라
     -> 해당 작업 내용에 대한 rejection 은 마일스톤에 커맨트를 달도록해라. okr pane 에 달지말고
   user_added_at: 2026-05-11T10:50
+- clarification_question: '''Runtime week'' is vague — what needs to be implemented?
+    Weekly runtime summary, or something else?'
+  claude_ack: '2026-05-11T12:09:40+09:00'
+  done: false
+  id: M33
+  layer: 0
+  parent_id: null
+  status: needs_clarification
+  text: Runtime week
+  user_added_at: 2026-05-11T12:00
+- clarification_question: '''ai 와의 댓글 개념''이 무엇을 의미하는지 구체적으로 설명해주세요. 마일스톤에서 AI가 댓글을
+    달 수 있는 기능인가요? 어떤 화면에서, 어떤 형태로?'
+  claude_ack: '2026-05-11T12:34:51+09:00'
+  done: false
+  id: M35
+  layer: 0
+  parent_id: null
+  status: needs_clarification
+  text: ai 와의 댓글 개념
+  user_added_at: 2026-05-11T12:34
+- clarification_question: 이 마일스톤 텍스트가 job log 데이터와 섞인 것 같습니다. 실제 요청이 무엇인지 다시 입력해주세요.
+  claude_ack: 2026-05-11T13:04
+  done: false
+  id: M38
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T13:04
+  status: needs_clarification
+  text: 'JOBS ↻✓ 20260511-104118-749: Committed as `8e5e217`. The M26/M27/M28 fixes
+    are✓ 20260511-104201-980: `hub/static/northstar.html` has the M26/M27/M28 ch✓ 20260511-104209-631:
+    No action needed — verification passed. Won''t comm--- 이거 역순으로 수정하라고'
+  user_added_at: 2026-05-11T13:02
+- clarification_answer: ㅇ
+  clarification_answered_at: 2026-05-11T14:43
+  clarification_question: 어떤 pane을 제거하고 싶으신가요? detail card 안의 특정 섹션(OKR, Jobs, CTX
+    topics 등)인지 아니면 다른 UI 요소인지 알려주세요.
+  claude_ack: 2026-05-11T15:41
+  done: false
+  id: M39
+  layer: 0
+  parent_id: null
+  status: needs_clarification
+  text: 아래 보이는 해당 페인은 제거 가능하지 않나 왜 존재하나 ?
 - done: true
   id: M1
   layer: 0
@@ -205,24 +290,6 @@ milestones:
   status: done
   text: 대기중인 작업이 없다면 다음 큐를 바로 실행하도록해야한다. 그리고 유아이에서 등록된 마일스톤을 인지하는 시간을 줄이도록해야한다.
   user_added_at: 2026-05-10T18:24
-- clarification_question: 이것은 구체적인 구현 요청인가요, 아니면 아키텍처 방향에 대한 질문인가요? 어떤 에이전트에게 위임하는
-    방식을 원하시나요?
-  claude_ack: 2026-05-11T12:51
-  claude_comment: '가능하지만 컨텍스트 문제 해결 방법이 핵심: (1) 위임 가능: claude --print로 각 마일스톤을 격리된
-    sub-agent에 전달 가능. 컨텍스트 오염 없음. (2) 컨텍스트 문제: 서브에이전트는 코드베이스를 처음부터 읽어야 함 (cold start).
-    --continue 연속성 없음. 이전 에이전트가 수정한 파일 상태 알 수 없음 → 충돌 위험. (3) 현재 단일세션 방식의 장점: --continue로
-    이전 맥락 유지, TodoWrite로 crash-safe 추적, 파일 충돌 없음. (4) 권장: 마일스톤이 독립적(다른 파일 수정)일 때만
-    sub-agent 위임. 같은 파일 수정하는 연속 마일스톤은 단일 세션 유지.'
-  cron_job_id: null
-  done: false
-  id: M15
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-10T19:38
-  queued_at: 2026-05-11T12:50
-  status: pending_confirmation
-  text: 마일스톤 관리를 개별 에이전트에게 위임가능한가 (컨텍스트 문제는 어떡하나 ? )
-  user_added_at: 2026-05-10T18:25
 - clarification_question: '마일스톤에 대한 claude 커멘트/실시간 작업 확인 - 구체적으로 어떤 UI를 원하시나요? (예:
     진행 로그 표시, 현재 작업 중인 milestone 강조 등)'
   claude_ack: 2026-05-11T11:48
@@ -401,26 +468,6 @@ milestones:
   status: done
   text: confirm 된 스톤 (done상태) 은 ui 에서 자동삭제 되도록해야함
   user_added_at: 2026-05-11T11:25
-- clarification_question: '''Runtime week'' is vague — what needs to be implemented?
-    Weekly runtime summary, or something else?'
-  claude_ack: '2026-05-11T12:09:40+09:00'
-  done: false
-  id: M33
-  layer: 0
-  parent_id: null
-  status: needs_clarification
-  text: Runtime week
-  user_added_at: 2026-05-11T12:00
-- clarification_question: '''ai 와의 댓글 개념''이 무엇을 의미하는지 구체적으로 설명해주세요. 마일스톤에서 AI가 댓글을
-    달 수 있는 기능인가요? 어떤 화면에서, 어떤 형태로?'
-  claude_ack: '2026-05-11T12:34:51+09:00'
-  done: false
-  id: M35
-  layer: 0
-  parent_id: null
-  status: needs_clarification
-  text: ai 와의 댓글 개념
-  user_added_at: 2026-05-11T12:34
 - claude_ack: 2026-05-11T13:01
   done: true
   done_at: 2026-05-11T13:01
@@ -440,29 +487,6 @@ milestones:
   status: done
   text: 마일 스톤 생성 버튼 이전처럼 잘보이게 디자인 수정바람패널 가운데에 execute 처럼 보여지도록 ㅎ해야함
   user_added_at: 2026-05-11T13:01
-- clarification_question: 이 마일스톤 텍스트가 job log 데이터와 섞인 것 같습니다. 실제 요청이 무엇인지 다시 입력해주세요.
-  claude_ack: 2026-05-11T13:04
-  done: false
-  id: M38
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-11T13:04
-  status: needs_clarification
-  text: 'JOBS ↻✓ 20260511-104118-749: Committed as `8e5e217`. The M26/M27/M28 fixes
-    are✓ 20260511-104201-980: `hub/static/northstar.html` has the M26/M27/M28 ch✓ 20260511-104209-631:
-    No action needed — verification passed. Won''t comm--- 이거 역순으로 수정하라고'
-  user_added_at: 2026-05-11T13:02
-- clarification_answer: ㅇ
-  clarification_answered_at: 2026-05-11T14:43
-  clarification_question: 어떤 페인을 말씀하시는 건가요? detail card 안의 특정 섹션(OKR, Jobs, CTX topics
-    등)인지, 아니면 다른 UI 요소인지 알려주세요.
-  claude_ack: 2026-05-11T13:15
-  done: false
-  id: M39
-  layer: 0
-  parent_id: null
-  status: needs_clarification
-  text: 아래 보이는 해당 페인은 제거 가능하지 않나 왜 존재하나 ?
 - claude_ack: 2026-05-11T13:51
   done: true
   done_at: 2026-05-11T13:51
@@ -482,21 +506,15 @@ milestones:
   status: done
   text: TEST watcher auto-ack milestone
   user_added_at: 2026-05-11T13:44
-- claude_ack: null
+- claude_ack: 2026-05-11T15:56
   done: false
-  id: M43
+  id: M45
   layer: 0
   parent_id: null
-  text: 모바일 화면에서의 ns card 가 데스크탑 환경과 동일한 사이즈 / 비율이 되도록 수정바람
-  user_added_at: 2026-05-11T14:42
-- claude_ack: null
-  done: false
-  id: M44
-  layer: 0
-  parent_id: null
-  text: '? 배지가 달린 곳에 응답을 적을 경우 해당 응답이 기록되도록 할것 (지금은 answer 버튼 클릭시 forget 됨)그리고 ? 배지
-    달린 마일스톤도 수정가능하도록해야함'
-  user_added_at: 2026-05-11T14:43
+  queued_at: 2026-05-11T15:56
+  status: queued
+  text: 마일스톤 드래그하고 나서 , 위치이동하지 않았을때, 해당 pane 이 불투명해지는 문제가 생김 (다시 돌아오지않음)
+  user_added_at: 2026-05-11T15:50
 name: Claude-Hub
 note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
   first, then leverage it for content/career.

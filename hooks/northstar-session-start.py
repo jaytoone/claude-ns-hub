@@ -247,7 +247,7 @@ def main():
     lines.append( "  REPL idle → cron fires → works on first queued → done → idle → next task. Self-scheduling chain.")
 
     # Autonomous exec session detection: if pending-execute-prompt.txt exists,
-    # this session was spawned by Execute — inject directive immediately
+    # this session was spawned by Execute — inject directive and delete the file (one-shot)
     projects_dir = Path.home() / ".claude/hub/projects"
     auto_dispatched = False
     for pdir in projects_dir.iterdir():
@@ -258,6 +258,11 @@ def main():
             lines.append(f"Your FIRST action this session: Read('{prompt_file}') and execute every instruction in that file.")
             lines.append("Do NOT wait for user input. Start immediately after reading the file.")
             auto_dispatched = True
+            # Delete after injecting — prevents stale injection into future interactive sessions
+            try:
+                prompt_file.unlink()
+            except Exception:
+                pass
             break  # only one project at a time
 
     msg = "\n".join(lines)
