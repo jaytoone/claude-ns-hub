@@ -1054,6 +1054,22 @@ header {
     display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;user-select:none">⤡</div>
 </div>
 
+<!-- Live tmux session overlay — floats above detail modal -->
+<div id="tmux-live-overlay" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9000;
+  width:min(520px,92vw);background:#1a1916;border:1px solid #444;border-radius:10px;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;
+    background:#252220;border-bottom:1px solid #333">
+    <span style="font-family:var(--mono);font-size:11px;color:#cc785c">LIVE SESSION</span>
+    <div style="display:flex;gap:6px">
+      <button onclick="stopTmuxWatch()" style="background:none;border:1px solid #555;border-radius:4px;color:#e05252;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">■ stop</button>
+      <button onclick="toggleTmuxOverlay()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer">✕</button>
+    </div>
+  </div>
+  <div id="dm-tmux-output" style="font-size:10px;font-family:var(--mono);color:#d4cfc8;padding:10px;
+    max-height:240px;overflow-y:auto;white-space:pre-wrap;line-height:1.5"></div>
+</div>
+
 <!-- Delete confirm dialog (inside hub modal, not browser confirm) -->
 <div id="ns-del-confirm" style="display:none;position:absolute;inset:0;z-index:500;
   background:rgba(0,0,0,.55);border-radius:12px;align-items:center;justify-content:center">
@@ -3115,13 +3131,9 @@ function renderHierarchy(p) {
       </div>
       <!-- Job board: queued/running/done tasks -->
       <div id="dm-task-board" style="margin-top:8px"></div>
-      <!-- Live tmux session output -->
-      <div id="dm-tmux-live" style="display:none;margin-top:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.05em">LIVE SESSION</span>
-          <button onclick="stopTmuxWatch()" style="font-size:9px;font-family:var(--mono);background:none;border:1px solid var(--panel-border);border-radius:3px;padding:1px 6px;cursor:pointer;color:var(--text-dim)">■ stop</button>
-        </div>
-        <div id="dm-tmux-output" style="font-size:10px;font-family:var(--mono);background:#1a1916;color:#d4cfc8;padding:8px;border-radius:5px;max-height:160px;overflow-y:auto;white-space:pre-wrap;line-height:1.4"></div>
+      <!-- Live tmux session trigger button (full panel moved to overlay) -->
+      <div id="dm-tmux-trigger" style="display:none;margin-top:6px">
+        <button onclick="toggleTmuxOverlay()" style="font-size:10px;font-family:var(--mono);background:rgba(26,25,22,.9);border:1px solid #444;border-radius:4px;padding:3px 10px;cursor:pointer;color:#7ec8c8;width:100%;text-align:left">▶ View live session ↗</button>
       </div>
     </div>
 
@@ -3268,11 +3280,17 @@ function showClarifyPopup(event, items) {
   }), 100);
 }
 
+function toggleTmuxOverlay() {
+  const overlay = document.getElementById('tmux-live-overlay');
+  if (overlay) overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
+}
 function startTmuxWatch(projId) {
-  const panel = document.getElementById('dm-tmux-live');
   const output = document.getElementById('dm-tmux-output');
-  if (!panel || !output) return;
-  panel.style.display = 'block';
+  const trigger = document.getElementById('dm-tmux-trigger');
+  const overlay = document.getElementById('tmux-live-overlay');
+  if (!output) return;
+  if (trigger) trigger.style.display = 'block';
+  if (overlay) overlay.style.display = 'block';
   output.textContent = 'Connecting to session…';
   if (_tmuxWatchInterval) clearInterval(_tmuxWatchInterval);
   const poll = async () => {
@@ -3289,8 +3307,10 @@ function startTmuxWatch(projId) {
 }
 function stopTmuxWatch() {
   if (_tmuxWatchInterval) { clearInterval(_tmuxWatchInterval); _tmuxWatchInterval = null; }
-  const panel = document.getElementById('dm-tmux-live');
-  if (panel) panel.style.display = 'none';
+  const overlay = document.getElementById('tmux-live-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const trigger = document.getElementById('dm-tmux-trigger');
+  if (trigger) trigger.style.display = 'none';
 }
 
 async function loadTaskBoard(projId) {
@@ -3299,13 +3319,17 @@ async function loadTaskBoard(projId) {
   try {
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/task-board`);
     const d = await r.json();
-    const jobs = d.jobs || [];
+    const allJobs = d.jobs || [];
+    // Only show active jobs (queued/running) + last 3 completed
+    const activeJobs = allJobs.filter(j => j.status === 'queued' || j.status === 'running');
+    const recentDone = allJobs.filter(j => j.status !== 'queued' && j.status !== 'running').slice(0, 3);
+    const jobs = [...activeJobs, ...recentDone];
     if (!jobs.length) { board.innerHTML = ''; return; }
     const statusIcon = {queued:'○',running:'⟳',done:'✓',failed:'✕',timeout:'⏱'}
     const statusColor = {queued:'var(--text-dim)',running:'var(--accent)',done:'var(--green)',failed:'var(--red)',timeout:'var(--red)'}
     board.innerHTML = `
       <div style="font-size:9px;font-family:var(--mono);color:var(--text-dim);margin-bottom:4px;letter-spacing:.05em;margin-top:8px">
-        JOBS (${jobs.length}) <span style="cursor:pointer;color:var(--accent)" onclick="loadTaskBoard('${esc(projId)}')">↻</span>
+        JOBS${activeJobs.length ? ` (${activeJobs.length} active)` : ''} <span style="cursor:pointer;color:var(--accent)" onclick="loadTaskBoard('${esc(projId)}')">↻</span>
       </div>
       <div style="font-size:10px;font-family:var(--mono);line-height:1.7">
         ${jobs.map(j => {
