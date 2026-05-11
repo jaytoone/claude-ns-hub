@@ -73,6 +73,22 @@ def _ensure_watcher():
         stderr=subprocess.STDOUT,
         start_new_session=True,
     )
+    # Ensure hardened task watcher is running (crash-recovery + API error retry)
+    hardened_pid = Path("/tmp/hub-task-watcher.pid")
+    hardened_script = Path.home() / ".claude/hub/task-watcher-hardened.py"
+    if hardened_script.exists():
+        if hardened_pid.exists():
+            try:
+                os.kill(int(hardened_pid.read_text().strip()), 0)
+            except (OSError, ValueError):
+                hardened_pid.unlink(missing_ok=True)
+        if not hardened_pid.exists():
+            subprocess.Popen(
+                [sys.executable, str(hardened_script)],
+                stdout=open("/tmp/hub-task-watcher.log", "a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
     # Also ensure task-worker.sh is running
     worker_pid = Path("/tmp/hub-task-worker.pid")
     worker_sh = Path.home() / ".claude/hub/task-worker.sh"

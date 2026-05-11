@@ -1417,11 +1417,34 @@ async def execute_project(proj_id: str):
                 f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:60]}\""
                 for m in actionable
             )
-            # Include ALL milestones (not just actionable) for full sync
+            # Include ALL milestones for full sync context
             all_ms_lines = "\n".join(
                 f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:70]}\""
                 for m in active_ms
             )
+            # Write to persistent task queue (crash-recovery watcher picks this up)
+            task_queue_file = PROJECTS_DIR / proj_id / "task-queue.jsonl"
+            task_queue_file.parent.mkdir(parents=True, exist_ok=True)
+            sync_task = {
+                "id": f"sync-{ts}",
+                "type": "execute_sync",
+                "status": "pending",
+                "created_at": _dt_.now().isoformat(timespec="seconds"),
+                "prompt": (
+                    f"[EXECUTE SYNC] Project {proj_id} — user clicked Execute.\n\n"
+                    f"Step 1 — MILESTONE SYNC: Review ALL active stones. "
+                    f"PATCH claude_ack=now on {hub_api}/api/northstar/{proj_id}/milestones/MID. "
+                    f"Clear text → queued. Vague/incomplete → needs_clarification.\n\n"
+                    f"Step 2 — For each queued stone, implement it: "
+                    f"write completion-log.jsonl, PATCH pending_confirmation.\n\n"
+                    f"Step 3 — Update spec doc to reflect current milestone roadmap.\n\n"
+                    f"All active milestones:\n{all_ms_lines}"
+                )
+            }
+            with open(task_queue_file, "a") as f:
+                f.write(json.dumps(sync_task, ensure_ascii=False) + "\n")
+
+            # Also spawn tmux session for immediate processing (watcher handles retries)
             cron_prompt = (
                 f"[EXECUTE SYNC] Project {proj_id} — user just clicked Execute after setting milestones.\n\n"
                 f"Step 1 — MILESTONE SYNC: Review ALL active stones below. "
