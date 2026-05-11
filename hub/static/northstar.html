@@ -3746,6 +3746,29 @@ setInterval(async () => {
   const overlay = document.getElementById('detail-overlay');
   if (!overlay || !overlay.classList.contains('show')) render();
 }, 120000); // session pill only, every 2 min
+
+// Auto-refresh: swimlane every 30s, detail card milestones every 15s
+// Paused while any input/textarea is focused (user is typing)
+function _isUserTyping() {
+  const el = document.activeElement;
+  return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+}
+setInterval(async () => {
+  if (_isUserTyping()) return;
+  const overlay = document.getElementById('detail-overlay');
+  if (overlay && overlay.classList.contains('show')) {
+    // Detail card open — refresh its milestones
+    if (activeIdx !== null && projects[activeIdx]) loadMilestones(projects[activeIdx].id);
+  } else {
+    // Swimlane — reload project data + re-render
+    try {
+      const data = await fetch('/api/northstar').then(r => r.json());
+      projects = data;
+      projects.forEach(p => { p.milestones = p.milestones || []; });
+      render();
+    } catch(_) {}
+  }
+}, 30000); // 30s auto-refresh
 </script>
 </body>
 </html>
