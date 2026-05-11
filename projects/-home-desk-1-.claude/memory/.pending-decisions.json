@@ -1,11 +1,16 @@
 {
-  "captured_at": "2026-05-10T15:39:35.642013+00:00",
+  "captured_at": "2026-05-11T03:50:18.039405+00:00",
   "cwd": "/home/desk-1/.claude",
-  "turn_count": 2322,
+  "turn_count": 3242,
   "decisions": [
     {
-      "text": "achieved",
-      "context": "*JUDGMENT**: YES — outer goal achieved. **SCORE** (iter 1): - quality: 0.85 (clean API + UI separation) - completeness: 0.80 (both init/work modes) - ",
+      "text": "completed",
+      "context": "Now sorted by `completed_at` newest-first — `104118-749` completed at 10:46:13 (last completed, even though started earlier). Commit and log:",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "completed",
+      "context": "` newest-first — `104118-749` completed at 10:46:13 (last completed, even though started earlier). Commit and log:",
       "tag": "impl_complete"
     }
   ]
