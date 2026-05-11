@@ -167,11 +167,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.claude/hooks/hub-inbox-inject.py",
-            "timeout": 3
-          },
-          {
-            "type": "command",
             "command": "CHAT_MEMORY_SCOPE=global python3 $HOME/.claude/hooks/chat-memory.py"
           },
           {
