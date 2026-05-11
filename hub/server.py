@@ -1331,9 +1331,16 @@ async def get_task_board(proj_id: str):
             except Exception:
                 pass
 
-    board = sorted(jobs.values(), key=lambda j: (
-        0 if j["status"] == "running" else 1 if j["status"] == "queued" else 2
-    ))
+    def _sort_key(j):
+        grp = 0 if j["status"] == "running" else 1 if j["status"] == "queued" else 2
+        if grp < 2:
+            # active: newest task_id first
+            return (grp, tuple(-ord(c) for c in j["task_id"]))
+        # done: newest completed_at first; fallback to task_id
+        ca = j.get("completed_at") or ""
+        sort_str = ca if ca else j["task_id"]
+        return (grp, tuple(-ord(c) for c in sort_str))
+    board = sorted(jobs.values(), key=_sort_key)
     return JSONResponse({"ok": True, "jobs": board})
 
 
@@ -1442,35 +1449,50 @@ async def execute_project(proj_id: str):
                 "created_at": _dt_.now().isoformat(timespec="seconds"),
                 "prompt": (
                     f"[EXECUTE SYNC] Project {proj_id} — user clicked Execute.\n\n"
-                    f"Step 1 — MILESTONE SYNC: Review ALL active stones. "
-                    f"PATCH claude_ack=now on {hub_api}/api/northstar/{proj_id}/milestones/MID. "
+                    f"Step 1 — MILESTONE SYNC: GET {hub_api}/api/northstar/{proj_id}/milestones. "
+                    f"For each unreviewed (claude_ack=null): PATCH claude_ack=now. "
                     f"Clear text → queued. Vague/incomplete → needs_clarification.\n\n"
-                    f"Step 2 — For each queued stone, implement it: "
-                    f"write completion-log.jsonl, PATCH pending_confirmation.\n\n"
-                    f"Step 3 — Update spec doc to reflect current milestone roadmap.\n\n"
+                    f"Step 2 — TASK LIST: Use TodoWrite to create one task per queued milestone (status=pending). "
+                    f"Do NOT use CronCreate per milestone.\n\n"
+                    f"Step 3 — IMPLEMENT SEQUENTIALLY: For each task: "
+                    f"mark in_progress → implement → write completion-log.jsonl → "
+                    f"PATCH {hub_api}/api/northstar/{proj_id}/milestones/MID pending_confirmation → "
+                    f"mark completed. Repeat for all tasks.\n\n"
+                    f"Step 4 — Update spec doc via {hub_api}/api/northstar/{proj_id}/doc.\n\n"
                     f"All active milestones:\n{all_ms_lines}"
                 )
             }
             with open(task_queue_file, "a") as f:
                 f.write(json.dumps(sync_task, ensure_ascii=False) + "\n")
 
-            # Also spawn tmux session for immediate processing (watcher handles retries)
+            # Spawn tmux session — uses TaskCreate/TodoWrite (no per-milestone crons)
             cron_prompt = (
-                f"[EXECUTE SYNC] Project {proj_id} — user just clicked Execute after setting milestones.\n\n"
-                f"Step 1 — MILESTONE SYNC: Review ALL active stones below. "
+                f"[EXECUTE SYNC] Project {proj_id} — user clicked Execute.\n\n"
+                f"Step 1 — MILESTONE SYNC: GET {hub_api}/api/northstar/{proj_id}/milestones. "
                 f"For each unreviewed (claude_ack=null): PATCH claude_ack=now on "
                 f"{hub_api}/api/northstar/{proj_id}/milestones/MID. "
-                f"If text is clear → PATCH status=queued. "
-                f"If text is vague/incomplete → PATCH status=needs_clarification + clarification_question.\n\n"
-                f"Step 2 — CREATE CRONS: For each queued stone, create CronCreate("
-                f"cron='*/2 * * * *', recurring=False) that implements the stone, "
-                f"writes completion-log.jsonl, patches pending_confirmation, CronDeletes itself.\n\n"
-                f"Step 3 — SPEC DOC UPDATE: After syncing milestones, update the project spec doc. "
-                f"Read the current spec doc (if exists via {hub_api}/api/northstar/{proj_id}/doc), "
-                f"then update it to reflect the current milestone roadmap and progress. "
-                f"Save back via the project's markdown file. This publishes the updated plan.\n\n"
+                f"If text is clear (>15 chars) → PATCH status=queued. "
+                f"If vague/incomplete → PATCH status=needs_clarification + clarification_question.\n\n"
+                f"Step 2 — TASK LIST: Use TodoWrite to create one task per queued milestone "
+                f"(status=pending). This is your crash-safe work queue — do NOT use CronCreate per milestone.\n\n"
+                f"Step 3 — IMPLEMENT SEQUENTIALLY: For each task in your list:\n"
+                f"  a. TodoWrite: mark task in_progress\n"
+                f"  b. Implement the milestone (write/edit files as needed)\n"
+                f"  c. Append to ~/.claude/hub/projects/{proj_id}/completion-log.jsonl:\n"
+                f'     echo \'{{\"session_id\":\"exec\",\"milestone_id\":\"MID\",\"evidence\":\"summary\",\"timestamp\":\"\'}}\' >> ...\n'
+                f"  d. PATCH {hub_api}/api/northstar/{proj_id}/milestones/MID "
+                f'with {{\"status\":\"pending_confirmation\"}}\n'
+                f"  e. TodoWrite: mark task completed\n"
+                f"  Repeat until all tasks are completed.\n\n"
+                f"Step 4 — SPEC DOC: After all tasks done, update spec doc via "
+                f"{hub_api}/api/northstar/{proj_id}/doc to reflect current milestone progress.\n\n"
                 f"All active milestones:\n{all_ms_lines}"
             )
+            # Write prompt to file — avoids tmux paste-mode for multi-line text
+            prompt_file = PROJECTS_DIR / proj_id / "pending-execute-prompt.txt"
+            prompt_file.parent.mkdir(parents=True, exist_ok=True)
+            prompt_file.write_text(cron_prompt, encoding="utf-8")
+
             # Kill existing session if any, start fresh
             subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
             subprocess.Popen([
@@ -1478,15 +1500,17 @@ async def execute_project(proj_id: str):
                 "-c", proj_dir if Path(proj_dir).exists() else str(Path.home()),
                 "claude", "--dangerously-skip-permissions", "--continue"
             ])
-            # Wait for claude to start, then send the prompt
+            # Wait for claude to start, then inject a single-line pointer (avoids paste-mode)
             import asyncio as _aio
             await _aio.sleep(3)
-            subprocess.run(["tmux", "send-keys", "-t", session_name, cron_prompt, "Enter"])
+            # Single-line avoids tmux paste-mode; Claude reads the full prompt from the file
+            trigger = f"Read and execute instructions in {prompt_file}"
+            subprocess.run(["tmux", "send-keys", "-t", session_name, trigger, "Enter"])
             return JSONResponse({
                 "ok": True, "mode": "tmux",
                 "session": session_name,
                 "tasks_created": len(actionable),
-                "message": f"Spawned tmux session '{session_name}' — {len(actionable)} cron jobs being created"
+                "message": f"Spawned tmux session '{session_name}' — {len(actionable)} milestone(s) queued as tasks"
             })
 
         tasks_created = 0
@@ -1660,6 +1684,30 @@ async def kill_session_http(proj_id: str):
     _kill_session(proj_id)
     _pill_status.pop(proj_id, None)  # clear stuck waiting/active pill
     return {"ok": True, "killed": proj_id}
+
+
+@app.post("/api/northstar/{proj_id}/exec-inject")
+async def exec_inject(proj_id: str, request: Request):
+    """Send a message to the Execute-spawned tmux session via send-keys."""
+    data = await request.json()
+    prompt = data.get("prompt", "").strip()
+    if not prompt:
+        return JSONResponse({"ok": False, "error": "prompt required"}, status_code=400)
+    exec_session = f"claude-exec-{proj_id}"
+    check = subprocess.run(["tmux", "has-session", "-t", exec_session], capture_output=True)
+    if check.returncode != 0:
+        return JSONResponse({"ok": False, "error": "exec session not running"}, status_code=404)
+    subprocess.run(["tmux", "send-keys", "-t", exec_session, prompt, "Enter"], capture_output=True)
+    return JSONResponse({"ok": True})
+
+
+@app.delete("/api/northstar/{proj_id}/exec-session")
+async def kill_exec_session(proj_id: str):
+    """Kill the Execute-spawned tmux session (claude-exec-{proj_id})."""
+    exec_session = f"claude-exec-{proj_id}"
+    result = subprocess.run(["tmux", "kill-session", "-t", exec_session], capture_output=True)
+    killed = result.returncode == 0
+    return {"ok": True, "killed": killed, "session": exec_session}
 
 
 @app.get("/api/northstar/sessions")
