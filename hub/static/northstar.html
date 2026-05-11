@@ -1526,6 +1526,10 @@ function renderMilestoneCreator(projId, milestones) {
       cursor:pointer; transition:background .08s; user-select:none; margin-bottom:1px; }
     .nt-row:hover { background:var(--panel-soft); }
     .nt-row:hover .nt-del { opacity:1; }
+    .nt-drag-handle { font-family:var(--mono); font-size:10px; color:var(--text-dim); opacity:.3;
+      cursor:grab; user-select:none; padding:0 2px; transition:opacity .1s; line-height:1; }
+    .nt-row:hover .nt-drag-handle { opacity:.7; }
+    .nt-drag-handle:active { cursor:grabbing; }
     .nt-row.drag-over { border-top:2px solid var(--accent); }
     .nt-num { font-family:var(--mono); font-size:10px; color:var(--text-dim); flex-shrink:0; width:18px; text-align:right; padding-top:3px; }
     .nt-arrow { font-size:12px; flex-shrink:0; padding-top:2px; width:14px; color:var(--text-soft); font-weight:500; }
@@ -1679,6 +1683,7 @@ function renderMilestoneCreator(projId, milestones) {
           ondrop="_msDrop(event,'${esc(projId)}')"
           onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
           <div class="nt-row ${mStatus==='done'?'nt-done':''}">
+            <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
             <span class="nt-num">${num}.</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <button class="nt-check"
