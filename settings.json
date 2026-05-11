@@ -232,11 +232,6 @@
             "type": "command",
             "command": "/home/desk-1/.local/bin/backup-vault-filtered-gdrive.sh",
             "async": true
-          },
-          {
-            "type": "command",
-            "command": "python3 $HOME/.claude/hooks/northstar-session-update.py",
-            "async": true
           }
         ]
       },
