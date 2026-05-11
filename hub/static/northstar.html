@@ -3417,7 +3417,7 @@ function startTmuxWatch(projId) {
     } catch(_) {}
   };
   poll();
-  _tmuxWatchInterval = setInterval(poll, 3000);
+  _tmuxWatchInterval = setInterval(poll, 1000);
 }
 function stopTmuxWatch() {
   if (_tmuxWatchInterval) { clearInterval(_tmuxWatchInterval); _tmuxWatchInterval = null; }
