@@ -1599,7 +1599,7 @@ function renderMilestoneCreator(projId, milestones) {
               <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px">⏳</span>
               <div style="flex:1;font-size:12px;color:var(--text)">${esc(m.text)}</div>
               <div style="display:flex;gap:4px;flex-shrink:0;align-items:center">
-                ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}')">💬</span>` : ''}
+                ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}
                 <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
                   style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono)">✓ Confirm</button>
                 <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
@@ -1694,7 +1694,7 @@ function renderMilestoneCreator(projId, milestones) {
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
               ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)" title="Active cron monitor: ${esc(m.cron_job_id)}">cron</span>` : ''}
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${m.claude_ack?'acked':'review'}</span>` : ''}
-              ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}')">💬</span>` : ''}
+              ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
@@ -3323,23 +3323,47 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
 
 let _tmuxWatchInterval = null;
 
-function showCommentPopup(event, comment) {
+function showCommentPopup(event, comment, projId, mid) {
   document.getElementById('comment-popup')?.remove();
   const popup = document.createElement('div');
   popup.id = 'comment-popup';
   popup.style.cssText = `position:fixed;z-index:9999;background:var(--panel);border:1px solid var(--accent-soft);
-    border-radius:8px;padding:10px 13px;max-width:280px;box-shadow:0 6px 24px rgba(0,0,0,.25);
+    border-radius:8px;padding:10px 13px;max-width:300px;box-shadow:0 6px 24px rgba(0,0,0,.25);
     font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--text)`;
-  const x = Math.min(event.clientX, window.innerWidth - 300);
-  const y = Math.min(event.clientY + 8, window.innerHeight - 120);
+  const x = Math.min(event.clientX, window.innerWidth - 320);
+  const y = Math.min(event.clientY + 8, window.innerHeight - 160);
   popup.style.left = x + 'px';
   popup.style.top = y + 'px';
+  const replySection = projId && mid ? `
+    <div style="margin-top:8px;border-top:1px solid var(--panel-border);padding-top:8px">
+      <input id="comment-reply-input" type="text" placeholder="Reply to Claude…"
+        style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;
+          padding:4px 7px;font-family:var(--mono);font-size:10px;color:var(--text);box-sizing:border-box"
+        onkeydown="if(event.key==='Enter'){event.stopPropagation();submitCommentReply('${esc(projId)}','${esc(mid)}',this.value);document.getElementById('comment-popup')?.remove()}"
+        onclick="event.stopPropagation()">
+      <button onclick="event.stopPropagation();submitCommentReply('${esc(projId)}','${esc(mid)}',document.getElementById('comment-reply-input').value);document.getElementById('comment-popup')?.remove()"
+        style="margin-top:4px;width:100%;font-size:9px;font-family:var(--mono);padding:3px 0;border-radius:3px;
+          border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer">Send reply</button>
+    </div>` : '';
   popup.innerHTML = `<div style="font-size:9px;color:var(--accent);margin-bottom:6px;letter-spacing:.05em">CLAUDE COMMENT</div>
-    <div style="color:var(--text)">${comment}</div>`;
+    <div style="color:var(--text)">${comment}</div>${replySection}`;
   document.body.appendChild(popup);
+  if (projId && mid) {
+    setTimeout(() => popup.querySelector('#comment-reply-input')?.focus(), 50);
+  }
   setTimeout(() => document.addEventListener('click', function h(e) {
     if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', h); }
   }), 100);
+}
+
+async function submitCommentReply(projId, mid, reply) {
+  if (!reply?.trim()) return;
+  // Append reply as clarification_answer so Claude sees it on next session
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({clarification_answer: reply.trim()})
+  });
+  await loadMilestones(projId);
 }
 
 function showClarifyPopup(event, projId, mid, clarQ, clarA, hasAnswer) {
