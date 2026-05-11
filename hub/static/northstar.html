@@ -583,7 +583,7 @@ header {
 @media (pointer: coarse) {
   /* Mobile: make cards fully tappable with larger touch targets */
   .ns-node { min-height: 80px; cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,.05); }
-  .ns-node-bottom { gap: 6px; flex-wrap: wrap; }
+  .ns-node-bottom { gap: 4px; }
   .ns-node-term, .ns-node-menu, .ns-node-exec { min-height: 28px; min-width: 28px;
     display: flex; align-items: center; justify-content: center; padding: 4px 8px; }
   .ns-node-name { font-size: 13px; }
@@ -3027,8 +3027,9 @@ async function openDetail(idx) {
           <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
           <span class="dm-layer-title">${esc(title)}</span>
           <span class="dm-layer-count">${okrs.length} KRs</span>
-          <span style="margin-left:auto;font-size:10px;color:var(--text-dim);cursor:pointer;padding:0 4px;border-radius:3px;border:1px solid var(--panel-border)" onclick="const n=this.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'" title="왜 OKR이 필요한가?">?</span>
-          <div style="display:none;font-size:11px;color:var(--text-soft);line-height:1.6;padding:8px 10px;margin-top:6px;background:var(--panel-soft);border-radius:5px;border-left:2px solid var(--accent)">OKR은 North Star(장기 방향)과 오늘의 마일스톤 사이를 잇는 중간 레이어입니다. Objective는 분기 목표, Key Results는 그 달성을 측정하는 지표. OKR 없이 마일스톤만 쌓으면 각 작업이 실제로 무엇을 향하는지 모호해집니다.</div>
+          <span style="margin-left:auto;font-size:10px;color:var(--text-dim);cursor:pointer;padding:0 4px;border-radius:3px;border:1px solid var(--panel-border)" onclick="const n=this.nextElementSibling.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'" title="더보기">?</span>
+          <div style="width:100%;font-size:10px;color:var(--text-dim);margin-top:5px;padding:4px 8px;background:rgba(100,120,180,.06);border-radius:4px;border-left:2px solid rgba(100,120,180,.25);line-height:1.5">Claude keeps this: NS 장기 목표 ↔ 오늘의 마일스톤을 잇는 중간 레이어. 없으면 작업 방향이 모호해짐.</div>
+          <div style="display:none;font-size:11px;color:var(--text-soft);line-height:1.6;padding:8px 10px;margin-top:4px;background:var(--panel-soft);border-radius:5px;border-left:2px solid var(--accent)">OKR은 North Star(장기 방향)과 오늘의 마일스톤 사이를 잇는 중간 레이어입니다. Objective는 분기 목표, Key Results는 그 달성을 측정하는 지표. OKR 없이 마일스톤만 쌓으면 각 작업이 실제로 무엇을 향하는지 모호해집니다.</div>
         </div>
         <div class="dm-okr-list">${okrs.length ? okrs.map(kr => {
           const m = kr.match(/^(K\d+):\s*(.+)/);
@@ -3063,8 +3064,9 @@ async function openDetail(idx) {
           <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
           <span class="dm-layer-title">${esc(title)}</span>
           <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▸ ${okrs.length} KRs</span>
-          <span data-why="1" style="margin-left:auto;font-size:10px;color:var(--text-dim);cursor:pointer;padding:0 4px;border-radius:3px;border:1px solid var(--panel-border)" onclick="event.stopPropagation();const n=this.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'" title="왜 OKR이 필요한가?">?</span>
-          <div style="display:none;font-size:11px;color:var(--text-soft);line-height:1.6;padding:8px 10px;margin-top:6px;background:var(--panel-soft);border-radius:5px;border-left:2px solid var(--accent)">OKR은 North Star(장기 방향)과 오늘의 마일스톤 사이를 잇는 중간 레이어입니다. Objective는 분기 목표, Key Results는 그 달성을 측정하는 지표. OKR 없이 마일스톤만 쌓으면 각 작업이 실제로 무엇을 향하는지 모호해집니다.</div>
+          <span data-why="1" style="margin-left:auto;font-size:10px;color:var(--text-dim);cursor:pointer;padding:0 4px;border-radius:3px;border:1px solid var(--panel-border)" onclick="event.stopPropagation();const n=this.nextElementSibling.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'" title="더보기">?</span>
+          <div style="width:100%;font-size:10px;color:var(--text-dim);margin-top:5px;padding:4px 8px;background:rgba(100,120,180,.06);border-radius:4px;border-left:2px solid rgba(100,120,180,.25);line-height:1.5">Claude keeps this: NS 장기 목표 ↔ 오늘의 마일스톤을 잇는 중간 레이어. 없으면 작업 방향이 모호해짐.</div>
+          <div style="display:none;font-size:11px;color:var(--text-soft);line-height:1.6;padding:8px 10px;margin-top:4px;background:var(--panel-soft);border-radius:5px;border-left:2px solid var(--accent)">OKR은 North Star(장기 방향)과 오늘의 마일스톤 사이를 잇는 중간 레이어입니다. Objective는 분기 목표, Key Results는 그 달성을 측정하는 지표. OKR 없이 마일스톤만 쌓으면 각 작업이 실제로 무엇을 향하는지 모호해집니다.</div>
         </div>
         <div class="dm-okr-list">${okrs.length ? okrs.map(kr=>{const m=kr.match(/^(K\d+):\s*(.+)/);return`<div class="dm-okr-item"><span class="dm-okr-key">${m?esc(m[1]):'·'}</span><span class="dm-okr-text">${m?esc(m[2]):esc(kr)}</span></div>`;}).join(''):'<div style="font-size:12px;color:var(--text-dim)">No OKRs defined in spec doc</div>'}</div>
       </div>`;
@@ -3344,7 +3346,8 @@ async function loadTaskBoard(projId) {
     const d = await r.json();
     const allJobs = d.jobs || [];
     // Only show active jobs (queued/running) + last 3 completed
-    const activeJobs = allJobs.filter(j => j.status === 'queued' || j.status === 'running');
+    const activeJobs = allJobs.filter(j => j.status === 'queued' || j.status === 'running')
+      .sort((a, b) => b.task_id > a.task_id ? 1 : -1);  // newest first
     const recentDone = allJobs.filter(j => j.status !== 'queued' && j.status !== 'running')
       .sort((a, b) => (b.completed_at || b.task_id) > (a.completed_at || a.task_id) ? 1 : -1)
       .slice(0, 3);
