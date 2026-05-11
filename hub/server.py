@@ -208,6 +208,11 @@ def _load_projects() -> list:
                     data.setdefault("stage", "unassigned")  # lifecycle stage
                     if not isinstance(data.get("connections"), list):
                         data["connections"] = []
+                    # Auto-infer repo_path from standard project layout if not set
+                    if not data.get("repo_path"):
+                        _inferred = Path.home() / "Project" / proj_dir.name
+                        if _inferred.exists():
+                            data["repo_path"] = str(_inferred)
                     # Compute staleness
                     mtime = md.stat().st_mtime
                     data["last_updated"] = mtime
@@ -1390,6 +1395,23 @@ async def execute_project(proj_id: str):
     else:
         # TMUX SESSION MODE: spawn one persistent claude session, inject cron-creation prompt
         # CronCreate in this session = auto-retry on API errors (built-in resilience)
+
+        # Auto-promote acked pending → queued immediately on Execute click
+        # (background poller does this every 5 min, but Execute should trigger it now)
+        _promoted = False
+        for _m in milestones:
+            if isinstance(_m, dict) and _m.get("status") == "pending" and _m.get("claude_ack"):
+                _m["status"] = "queued"
+                _promoted = True
+        if _promoted:
+            import copy as _copy
+            _proj_to_save = _copy.deepcopy(proj)
+            _save_project(proj_id, _proj_to_save)
+            # Reload active_ms with updated statuses
+            proj = _parse_md_frontmatter(PROJECTS_DIR / proj_id / "north-star.md")
+            milestones = proj.get("milestones", [])
+            active_ms = [m for m in milestones if not m.get("done") and m.get("status") != "done"]
+
         actionable = [m for m in active_ms if m.get("status") in ("queued", "pending", "needs_clarification")][:5]
         session_name = f"claude-exec-{proj_id}"
         proj_dirs = {
@@ -1411,7 +1433,7 @@ async def execute_project(proj_id: str):
             return JSONResponse({
                 "ok": True, "mode": "tmux_active",
                 "session": session_name,
-                "tasks_created": len(new_pending),  # shown in EXECUTION LOG
+                "tasks_created": len(actionable),  # total actionable shown in EXECUTION LOG
                 "new_injected": len(new_pending),
                 "message": f"Claude is already working on {proj_id} stones (session '{session_name}' active). Check live session for progress.",
             })

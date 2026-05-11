@@ -1773,10 +1773,15 @@ function _msDragStart(e, mid) {
   e.currentTarget.style.opacity = '0.4';
 }
 function _msDragEnd(e) {
-  e.currentTarget.style.opacity = '';
+  if (e.currentTarget) e.currentTarget.style.opacity = '';
+  _msDragCleanup();
+}
+function _msDragCleanup() {
   if (_msDragEl) { _msDragEl.style.opacity = ''; _msDragEl = null; }
-  // Clean up any lingering drag-over classes on all rows
-  document.querySelectorAll('.nt-draggable-row.drag-over').forEach(el => el.classList.remove('drag-over'));
+  document.querySelectorAll('.nt-draggable-row').forEach(el => {
+    el.classList.remove('drag-over');
+    if (el.style.opacity === '0.4') el.style.opacity = '';
+  });
   _msDragId = null;
 }
 function _msDragOver(e) {
@@ -1791,7 +1796,7 @@ async function _msDrop(e, projId) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   const targetMid = e.currentTarget.dataset.mid;
-  if (!_msDragId || _msDragId === targetMid) { _msDragId = null; return; }
+  if (!_msDragId || _msDragId === targetMid) { _msDragCleanup(); return; }
   // Collect all L0 draggable rows in current DOM order (displayed newest-first = reversed)
   const rows = Array.from(document.querySelectorAll('.nt-draggable-row'));
   const domOrder = rows.map(r => r.dataset.mid).filter(Boolean);
