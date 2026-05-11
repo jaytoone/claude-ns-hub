@@ -1417,14 +1417,26 @@ async def execute_project(proj_id: str):
                 f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:60]}\""
                 for m in actionable
             )
+            # Include ALL milestones (not just actionable) for full sync
+            all_ms_lines = "\n".join(
+                f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:70]}\""
+                for m in active_ms
+            )
             cron_prompt = (
-                f"For project {proj_id}, create one CronCreate per stone below "
-                f"(cron='*/2 * * * *', recurring=False). Each cron should: "
-                f"(1) PATCH claude_ack=now on {hub_api}/api/northstar/{proj_id}/milestones/MID, "
-                f"(2) implement the stone or set needs_clarification, "
-                f"(3) write to ~/.claude/hub/projects/{proj_id}/completion-log.jsonl, "
-                f"(4) PATCH status=pending_confirmation, (5) CronDelete itself.\\n\\n"
-                f"Stones:\\n{stone_lines}"
+                f"[EXECUTE SYNC] Project {proj_id} — user just clicked Execute after setting milestones.\n\n"
+                f"Step 1 — MILESTONE SYNC: Review ALL active stones below. "
+                f"For each unreviewed (claude_ack=null): PATCH claude_ack=now on "
+                f"{hub_api}/api/northstar/{proj_id}/milestones/MID. "
+                f"If text is clear → PATCH status=queued. "
+                f"If text is vague/incomplete → PATCH status=needs_clarification + clarification_question.\n\n"
+                f"Step 2 — CREATE CRONS: For each queued stone, create CronCreate("
+                f"cron='*/2 * * * *', recurring=False) that implements the stone, "
+                f"writes completion-log.jsonl, patches pending_confirmation, CronDeletes itself.\n\n"
+                f"Step 3 — SPEC DOC UPDATE: After syncing milestones, update the project spec doc. "
+                f"Read the current spec doc (if exists via {hub_api}/api/northstar/{proj_id}/doc), "
+                f"then update it to reflect the current milestone roadmap and progress. "
+                f"Save back via the project's markdown file. This publishes the updated plan.\n\n"
+                f"All active milestones:\n{all_ms_lines}"
             )
             # Kill existing session if any, start fresh
             subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
