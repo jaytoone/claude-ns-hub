@@ -176,11 +176,6 @@
           {
             "type": "command",
             "command": "python3 $HOME/.claude/hooks/memory-keyword-trigger.py"
-          },
-          {
-            "type": "command",
-            "command": "bash $HOME/.claude/hooks/close-popup.sh",
-            "async": true
           }
         ]
       },
@@ -193,17 +188,6 @@
         ]
       }
     ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 $HOME/.claude/hooks/subagent_tracker.py",
-            "async": true
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "matcher": "",
@@ -211,17 +195,6 @@
           {
             "type": "command",
             "command": "python3 $HOME/.claude/hooks/northstar-notify-status.py",
-            "async": true
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "CLAUDE_HOOK_EVENT=SubagentStop python3 $HOME/.claude/hooks/subagent_tracker.py",
             "async": true
           }
         ]
@@ -262,11 +235,6 @@
           },
           {
             "type": "command",
-            "command": "python3 $HOME/.claude/hooks/utility-rate.py",
-            "async": true
-          },
-          {
-            "type": "command",
             "command": "/home/desk-1/.local/bin/backup-vault-filtered-gdrive.sh",
             "async": true
           },
@@ -301,11 +269,6 @@
             "command": "python3 $HOME/.claude/hooks/g2-fallback.py"
           }
         ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "hooks": []
       }
     ]
   },
