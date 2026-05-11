@@ -1569,6 +1569,9 @@ function renderMilestoneCreator(projId, milestones) {
         const clarQ = esc(m.clarification_question || 'Why is this milestone unclear? Please describe the task in more detail.');
         const clarA = esc(m.clarification_answer || '');
         return `
+          <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
+            ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragover="_msDragOver(event)"
+            ondragleave="_msDragLeave(event)" ondrop="_msDrop(event,'${esc(projId)}')">
           <div class="nt-row" style="opacity:.85">
             <span class="nt-num">${idx+1}.</span>
             <span class="nt-arrow"> </span>
@@ -1579,11 +1582,15 @@ function renderMilestoneCreator(projId, milestones) {
                 onclick="event.stopPropagation();showClarifyPopup(event,'${esc(projId)}','${esc(m.id)}','${clarQ}','${clarA}',${hasAnswer})">❓</span>
               <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
             </div>
+          </div>
           </div>`;
       }
       // pending_confirmation: show confirm/reopen buttons inline
       if (mStatus === 'pending_confirmation') {
         const confirmHtml = `
+          <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
+            ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragover="_msDragOver(event)"
+            ondragleave="_msDragLeave(event)" ondrop="_msDrop(event,'${esc(projId)}')">
           <div style="background:rgba(204,120,92,.08);border:1px solid var(--accent-soft);border-radius:5px;padding:6px 8px;margin-bottom:2px">
             <div class="nt-row" style="margin-bottom:0">
               <span class="nt-num">${idx+1}.</span>
@@ -1597,6 +1604,7 @@ function renderMilestoneCreator(projId, milestones) {
               </div>
             </div>
             ${m.claude_comment ? `<div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:3px 6px;margin-top:4px;background:var(--panel-soft);border-radius:3px;margin-left:24px;border-left:2px solid var(--accent)">Claude: ${esc(m.claude_comment)}</div>` : ''}
+          </div>
           </div>`;
         return confirmHtml;
       }
