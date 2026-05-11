@@ -21,3 +21,6 @@
 - [NS-Redesign] Flat table → swimlane hierarchy layout (L0=Strategic/L1=Domain/L2=Execution). parent+layer+position_x added to north-star.md schema. Free-form 2D canvas rejected (spatial rot). — 2026-05-08
 - [NS-Milestone] Memo pane → Milestone Creator with claude_ack. Max 2 layers (L0 goal + L1 sub). Stop hook writes claude_ack timestamp on commit match. Sequence: P1(schema)→P2(UI)→P3(hook)→P4(ack indicator)→P5(swimlane). — 2026-05-08
 - [NS-P5] Swimlane layout approved. User confirmed building P5 now. All projects start at layer 0; user sets parent/layer to define hierarchy. — 2026-05-08
+- [Hub-Bug] north-star.md frontmatter corruption: _write_md_frontmatter can split YAML across two `---` blocks, stranding fields like `name:` in the body → project disappears from swimlane. Fix: re-parse + merge orphaned fields back into frontmatter. — 2026-05-11
+- [Hub-Execute] Execute button flow: cron_prompt saved to pending-execute-prompt.txt, single-line trigger sent via tmux send-keys to avoid paste-mode. Live Session overlay polls /api/northstar/{proj}/tmux-output every 3s. — 2026-05-11
+- [Hub-Execute] Multi-cron dedup: northstar-session-start.py now instructs CronList check before CronCreate to prevent duplicate watchers across resumed sessions. — 2026-05-11

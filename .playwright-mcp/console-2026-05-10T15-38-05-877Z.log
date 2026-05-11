@@ -1,0 +1,11 @@
+[      42ms] [ERROR] TypeError: Failed to fetch
+    at a (https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6eedc03a-CvREKl-O.js:2:23391)
+    at Eh (https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6eedc03a-CvREKl-O.js:2:227746)
+    at d (https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6eedc03a-CvREKl-O.js:3:53585)
+    at Array.map (<anonymous>)
+    at o (https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6eedc03a-CvREKl-O.js:3:54017)
+    at https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6eedc03a-CvREKl-O.js:3:54125 @ https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6eedc03a-CvREKl-O.js:1
+[      57ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'bluetooth'. @ :0
+[      57ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'web-share'. @ :0
+[     628ms] [INFO] [O11Y] [DatadogRUM] Initialized {service: claude-ai, env: production, version: 840b6402e9} @ https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6eedc03a-CvREKl-O.js:1
+[    8641ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://claude.ai/v1/privacy-consents?prefix=cookies.:0

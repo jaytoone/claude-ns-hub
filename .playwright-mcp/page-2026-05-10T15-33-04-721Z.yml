@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e5]: Hub
+    - generic [ref=e6]:
+      - generic [ref=e9] [cursor=pointer]: North Star
+      - generic [ref=e12] [cursor=pointer]: CTX
+      - generic [ref=e15] [cursor=pointer]: Corpus
+      - generic [ref=e18] [cursor=pointer]: Market
+    - generic [ref=e19]:
+      - button "◑" [ref=e20] [cursor=pointer]
+      - button "open" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+        - generic [ref=e24]: open
+      - generic [ref=e25]: 00:33:04
+  - iframe [ref=e28]:
+    

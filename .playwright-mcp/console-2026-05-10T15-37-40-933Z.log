@@ -1,0 +1,12 @@
+[    2853ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://code.claude.com/cdn-cgi/rum?:0
+[    2989ms] ReferenceError: require is not defined
+    at <anonymous>:13:12
+    at m (https://code.claude.com/docs/_next/static/chunks/03.a91synrqpl.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:6692)
+    at https://code.claude.com/docs/_next/static/chunks/03.a91synrqpl.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:7506
+    at iv (https://code.claude.com/docs/_next/static/chunks/04._me6s18c-y.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:102040)
+    at up (https://code.claude.com/docs/_next/static/chunks/04._me6s18c-y.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:126079)
+    at ud (https://code.claude.com/docs/_next/static/chunks/04._me6s18c-y.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:125741)
+    at up (https://code.claude.com/docs/_next/static/chunks/04._me6s18c-y.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:126059)
+    at ud (https://code.claude.com/docs/_next/static/chunks/04._me6s18c-y.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:125741)
+    at up (https://code.claude.com/docs/_next/static/chunks/04._me6s18c-y.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:126124)
+    at ud (https://code.claude.com/docs/_next/static/chunks/04._me6s18c-y.js?dpl=dpl_E3wyVfjfKyAgz8yf8ZUDSH28DGHj:1:125741)

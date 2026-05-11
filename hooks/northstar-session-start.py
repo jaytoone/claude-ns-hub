@@ -232,9 +232,11 @@ def main():
             lines.append(f"  → Create cron for {mid}: '{text}'")
         lines.append("  Use CronCreate tool now if these crons don't already exist.")
 
-    # BACKGROUND WATCHER: always create — detects new milestones + answered clarifications mid-session
+    # BACKGROUND WATCHER: create only if not already running
     lines.append("")
     lines.append("BACKGROUND WATCHER (mandatory — create once per session):")
+    lines.append("  First call CronList — if any job already has 'task queue' in its prompt, skip CronCreate (already running).")
+    lines.append("  Otherwise create exactly ONE watcher:")
     lines.append(f"  CronCreate(cron='*/5 * * * *', recurring=True, prompt=")
     lines.append(f"    '{proj_id} task queue: GET http://100.119.82.4:9000/api/northstar/{proj_id}/milestones.")
     lines.append( "     Step 1 — NEW unacked: status=pending AND claude_ack=null.")
@@ -243,6 +245,20 @@ def main():
     lines.append( "     Step 3 — ANSWERED: needs_clarification AND clarification_answer set → PATCH status=pending.")
     lines.append( "     If nothing, output nothing.'")
     lines.append( "  REPL idle → cron fires → works on first queued → done → idle → next task. Self-scheduling chain.")
+
+    # Autonomous exec session detection: if pending-execute-prompt.txt exists,
+    # this session was spawned by Execute — inject directive immediately
+    projects_dir = Path.home() / ".claude/hub/projects"
+    auto_dispatched = False
+    for pdir in projects_dir.iterdir():
+        prompt_file = pdir / "pending-execute-prompt.txt"
+        if prompt_file.exists():
+            lines.append("")
+            lines.append("## AUTONOMOUS TASK DISPATCH (Execute button was clicked)")
+            lines.append(f"Your FIRST action this session: Read('{prompt_file}') and execute every instruction in that file.")
+            lines.append("Do NOT wait for user input. Start immediately after reading the file.")
+            auto_dispatched = True
+            break  # only one project at a time
 
     msg = "\n".join(lines)
 

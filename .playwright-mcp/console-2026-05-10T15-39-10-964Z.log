@@ -1,0 +1,9 @@
+[    1145ms] [ERROR] TypeError: Failed to fetch (a-api.anthropic.com)
+    at https://platform.claude.com/_next/static/chunks/35246-a60015caa070e216.js:14:1612
+    at a (https://platform.claude.com/_next/static/chunks/88520-616cc00edfb16974.js:2:1537)
+    at d (https://platform.claude.com/_next/static/chunks/88520-616cc00edfb16974.js:2:253071)
+    at Array.map (<anonymous>)
+    at https://platform.claude.com/_next/static/chunks/88520-616cc00edfb16974.js:2:253524
+    at https://platform.claude.com/_next/static/chunks/88520-616cc00edfb16974.js:2:245753
+    at n (https://platform.claude.com/_next/static/chunks/35246-a60015caa070e216.js:1:84953) @ https://platform.claude.com/_next/static/chunks/35246-a60015caa070e216.js:13
+[    2657ms] [WARNING] [Intercom] The App ID in your code snippet has not been set. Set it to your App ID found in settings to complete installation: https://app.intercom.com/a/apps/_/settings/web @ https://js.intercomcdn.com/frame-modern.5bd0dcec.js:0

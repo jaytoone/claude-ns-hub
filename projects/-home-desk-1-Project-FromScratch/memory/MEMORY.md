@@ -15,7 +15,12 @@
 - [Darwin-A v2]: DONE 2026-05-11 — stopped at 13/18 second half (sufficient signal). Final: 2/17 correct = Jaccard=0.057. Nonzero complementarity — jackrong35b solves Q105 and Q120 from darwin36b failures. Darwin-B launched immediately after.
 - [Darwin-B v1]: DONE 2026-05-11 — FAILED. 0/35 correct. ffn=0.45 too aggressive — broke MoE routing.
 - [Darwin-B v2]: DONE 2026-05-11 — SUCCESS. 7/35=20% correct. ffn=0.05, global=0.05, density=0.95. 146min eval. Trace-level mixing preserves MoE routing while importing jackrong chemistry knowledge. Key: MoE DARE-TIES needs ffn≤0.05.
-- [Darwin-B v3 plan]: CMA-ES genome search around ffn=[0.02-0.08] → target 10-15/35 → ~90% GPQA Diamond.
+- [Darwin-B genome search COMPLETE 2026-05-11]: ffn=0.03→11%, ffn=0.05→20%(BEST), ffn=0.08→9%, ffn=0.45→0%. Optimal: ffn=0.05. MoE DARE-TIES requires trace-level mixing only.
+- [Darwin-B v3a]: DONE 2026-05-11 — ffn=0.03: 4/35=11%. More conservative = worse. ffn=0.05 is the sweet spot.
+- [Darwin-B v3b]: DONE 2026-05-11 — ffn=0.08: 3/35=9%. More aggressive = worse. Confirmed ffn=0.05 optimal.
+- [M16 DONE 2026-05-11 — CRITICAL FAILURE]: darwin_b_merged_best (ffn=0.05) full 198Q eval: ~47% GPQA (85/181 evaluated). darwin36b baseline 82%. DARE-TIES merge at ffn=0.05 DESTROYED general reasoning: gained 7 chemistry Qs but lost 33+ general knowledge Qs. Net: -35pp. Root cause: Even 5% FFN blend contaminates routing for non-chemistry questions. Failure-Q-only evaluation was misleading — need full 198Q to assess genome fitness.
+- [Darwin-B FINAL VERDICT]: DARE-TIES weight averaging fundamentally incompatible with MoE architecture even at trace-level. Cannot use weight interpolation between different MoE models. Must use inference-time ensemble (no merge) or Darwin-C (GSPO) for capability improvement.
+- [GPU policy confirmed]: GPU4 blocked by darwin_oai_server (53GB), GPU6/7 reserved. Effective GPUs: 0,1,2,3,5 only. jackrong35b needs 3 fully-free GPUs minimum (118GB model + 21GB MoE forward).
 - [Gate 3 SFT 200-step RESULT]: 2026-05-09 — darwin36b + jackrong27b traces, 200 steps: 4-5/35 failure Qs correct (11-14%). Baseline 0%. Signal confirmed — teacher trace SFT works!
 - [Gate 3 SFT 1000-step]: RUNNING on GPUs 4-5. Cron 14c36e1f monitors. Auto-eval will launch when done.
 - [live-inf]: launched 2026-05-09 — goal=reach ≥88% GPQA Diamond. Cron monitoring SFT 1k completion.

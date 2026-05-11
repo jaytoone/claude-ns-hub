@@ -1,0 +1,2 @@
+[      26ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://100.119.82.4:9000/northstar.html?project=MOAT:0
+[      36ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://100.119.82.4:9000/favicon.ico:0

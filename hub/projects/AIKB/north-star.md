@@ -10,6 +10,8 @@ log:
   text: live-inf 8 iterations → score 0.992, all dims 0.85+
 - date: '2026-05-08'
   text: Demo video + web remote (iPad accessible @ LT-1:8888)
+- date: '2026-05-11'
+  text: AccessibilityService MVP v2 — KeyInterceptorService bound, capabilities=8 confirmed
 metric: Physical keyboard hit rate on release APK
 milestones:
 - done: true
@@ -19,8 +21,7 @@ milestones:
 - done: true
   text: Demo video (poc_demo_v3.mp4) + web remote @ LT-1:8888
 - done: false
-  text: MVP — Kotlin+Compose migration, full settings UI, SAF file picker, minSdk
-    26
+  text: 'MVP — AccessibilityService global key intercept ✅ | Kotlin+Compose migration, SAF file picker, minSdk 26 pending'
 - done: false
   text: QA — 3 real devices × 2 keyboards, 98/100 hit rate
 - done: false
@@ -28,7 +29,7 @@ milestones:
 name: AIKB
 note: BT HID keyboard → Android content controller. K1/K2/K3 = NUMPAD_1/2/3 confirmed.
 parent: FromScratch
-position_x: 0
+position_x: 3
 repo_path: ''
 status: on-track
 target: 98/100 on 3 real devices × 2 keyboards

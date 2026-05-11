@@ -1,0 +1,40 @@
+- generic [ref=e2]:
+  - navigation "Sidebar" [ref=e7]:
+    - generic [ref=e8]:
+      - generic:
+        - link "Home":
+          - /url: /new
+          - img "Claude"
+      - button "Open sidebar" [ref=e10] [cursor=pointer]:
+        - generic [ref=e11]:
+          - img [ref=e13]
+          - img [ref=e16]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - link "New chat" [ref=e22] [cursor=pointer]:
+          - /url: /new
+          - generic:
+            - img [ref=e26]
+            - generic:
+              - generic: New chat
+        - link "Search" [ref=e30] [cursor=pointer]:
+          - /url: "#"
+          - generic:
+            - img [ref=e33]
+            - generic:
+              - generic: Search
+      - generic [ref=e35]:
+        - link "Chats" [ref=e37] [cursor=pointer]:
+          - /url: /recents
+          - generic:
+            - img [ref=e40]
+            - generic:
+              - generic: Chats
+        - link "Projects" [ref=e44] [cursor=pointer]:
+          - /url: /projects
+          - generic:
+            - img [ref=e47]
+            - generic:
+              - generic: Projects
+  - region "Notifications (F8)":
+    - list

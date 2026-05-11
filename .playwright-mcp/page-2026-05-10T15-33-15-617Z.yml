@@ -1,0 +1,117 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e5]: Hub
+    - generic [ref=e6]:
+      - generic [ref=e9] [cursor=pointer]: North Star
+      - generic [ref=e12] [cursor=pointer]: CTX
+      - generic [ref=e15] [cursor=pointer]: Corpus
+      - generic [ref=e18] [cursor=pointer]: Market
+    - generic [ref=e19]:
+      - button "◑" [ref=e20] [cursor=pointer]
+      - button "open" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+        - generic [ref=e24]: open
+      - generic [ref=e25]: 00:33:14
+  - iframe [ref=e28]:
+    - generic [ref=f4e3]:
+      - banner [ref=f4e4]:
+        - generic [ref=f4e5]:
+          - generic [ref=f4e6]: North Star
+          - generic [ref=f4e7]: project goals
+        - generic [ref=f4e8]:
+          - button "+ node" [ref=f4e9] [cursor=pointer]
+          - button "⇤" [ref=f4e24] [cursor=pointer]
+          - button "↻ refresh" [ref=f4e11] [cursor=pointer]
+          - generic [ref=f4e12]: 00:33:06
+      - generic [ref=f4e14]:
+        - img
+        - generic [ref=f4e15]:
+          - generic "Double-click to rename" [ref=f4e16]: HI-TECH
+          - generic [ref=f4e17]:
+            - generic [ref=f4e26] [cursor=pointer]:
+              - generic [ref=f4e27]:
+                - generic [ref=f4e29]: EI
+                - generic "Click to open terminal" [ref=f4e30]
+              - generic [ref=f4e32]:
+                - generic [ref=f4e33]: 0%
+                - generic [ref=f4e34]: —
+                - generic "Open Claude session" [ref=f4e35]: ›_ claude
+                - generic "More actions" [ref=f4e36]: ⋮
+            - generic [ref=f4e38] [cursor=pointer]:
+              - generic [ref=f4e39]:
+                - generic [ref=f4e41]: Clone
+                - generic "Click to open terminal" [ref=f4e42]
+              - generic [ref=f4e44]:
+                - generic [ref=f4e45]: 0%
+                - generic [ref=f4e46]: —
+                - generic "Open Claude session" [ref=f4e47]: ›_ claude
+                - generic "More actions" [ref=f4e48]: ⋮
+            - generic [ref=f4e50] [cursor=pointer]:
+              - generic [ref=f4e51]:
+                - generic [ref=f4e53]: FreeOS
+                - generic "Click to open terminal" [ref=f4e54]
+              - generic [ref=f4e56]:
+                - generic [ref=f4e57]: 0%
+                - generic [ref=f4e58]: —
+                - generic "Open Claude session" [ref=f4e59]: ›_ claude
+                - generic "More actions" [ref=f4e60]: ⋮
+        - generic [ref=f4e18]:
+          - generic "Double-click to rename" [ref=f4e19]: Vertical
+          - generic [ref=f4e20]:
+            - generic [ref=f4e62] [cursor=pointer]:
+              - generic [ref=f4e63]:
+                - generic [ref=f4e65]: FromScratch
+                - generic "Click to open terminal" [ref=f4e66]
+              - generic [ref=f4e69]:
+                - generic [ref=f4e70]: 11.9%
+                - generic [ref=f4e71]: 05-11
+                - generic "Open Claude session" [ref=f4e72]: ›_ claude
+                - generic "More actions" [ref=f4e73]: ⋮
+            - generic [ref=f4e75] [cursor=pointer]:
+              - generic [ref=f4e76]:
+                - generic [ref=f4e78]: Claude-Hub
+                - generic "Click to open terminal" [ref=f4e79]
+              - generic [ref=f4e82]:
+                - generic [ref=f4e83]: 40%
+                - generic [ref=f4e84]: 05-10
+                - generic "Open Claude session" [ref=f4e85]: ›_ claude
+                - generic "More actions" [ref=f4e86]: ⋮
+        - generic [ref=f4e21]:
+          - generic "Double-click to rename" [ref=f4e22]: SVTool
+          - generic [ref=f4e23]:
+            - generic [ref=f4e88] [cursor=pointer]:
+              - generic [ref=f4e89]:
+                - generic [ref=f4e91]: AIKB
+                - generic "Click to open terminal" [ref=f4e92]
+              - generic [ref=f4e94]:
+                - generic [ref=f4e95]: 9.8Mhit rate
+                - generic [ref=f4e96]: 05-08
+                - generic "Open Claude session" [ref=f4e97]: ›_ claude
+                - generic "More actions" [ref=f4e98]: ⋮
+            - generic [ref=f4e100] [cursor=pointer]:
+              - generic [ref=f4e101]:
+                - generic [ref=f4e103]: HugwartsBanana
+                - generic "Click to open terminal" [ref=f4e104]
+              - generic [ref=f4e107]:
+                - generic [ref=f4e108]: done
+                - generic [ref=f4e109]: 05-11
+                - generic "Open Claude session" [ref=f4e110]: ›_ claude
+                - generic "More actions" [ref=f4e111]: ⋮
+            - generic [ref=f4e113] [cursor=pointer]:
+              - generic [ref=f4e114]:
+                - generic [ref=f4e116]: FRWP
+                - generic "Click to open terminal" [ref=f4e117]
+              - generic [ref=f4e119]:
+                - generic [ref=f4e120]: 0%
+                - generic [ref=f4e121]: 05-11
+                - generic "Open Claude session" [ref=f4e122]: ›_ claude
+                - generic "More actions" [ref=f4e123]: ⋮
+            - generic [ref=f4e125] [cursor=pointer]:
+              - generic [ref=f4e126]:
+                - generic [ref=f4e128]: CTX
+                - generic "Click to open terminal" [ref=f4e129]
+              - generic [ref=f4e132]:
+                - generic [ref=f4e133]: done
+                - generic [ref=f4e134]: 05-10
+                - generic "Open Claude session" [ref=f4e135]: ›_ claude
+                - generic "More actions" [ref=f4e136]: ⋮

@@ -21,8 +21,7 @@ import ptyprocess
 
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
-NORTHSTAR_DATA = HERE / "northstar.json"        # legacy fallback
-PROJECTS_DIR = HERE / "projects"                 # new: per-project markdown files
+PROJECTS_DIR = HERE / "projects"
 
 HOST = os.environ.get("HUB_HOST", "0.0.0.0")
 PORT = int(os.environ.get("HUB_PORT", "9000"))
@@ -131,7 +130,7 @@ def _write_md_frontmatter(path: Path, data: dict):
 
 
 def _load_projects() -> list:
-    """Load all projects from projects/*/north-star.md, fallback to northstar.json."""
+    """Load all projects from projects/*/north-star.md."""
     projects = []
     if PROJECTS_DIR.exists():
         for proj_dir in sorted(PROJECTS_DIR.iterdir()):
@@ -210,9 +209,6 @@ def _load_projects() -> list:
                     data["last_updated"] = mtime
                     data["stale"] = (time.time() - mtime) > (14 * 86400)
                     projects.append(data)
-    if not projects and NORTHSTAR_DATA.exists():
-        # Legacy fallback
-        projects = json.loads(NORTHSTAR_DATA.read_text())
     return projects
 
 
@@ -253,8 +249,6 @@ async def northstar_save(request: Request):
             proj_id = p.get("id", p.get("name", "").lower().replace(" ", "-"))
             if proj_id:
                 _save_project(proj_id, {k: v for k, v in p.items() if k not in ("stale","last_updated","file_path")})
-        # Also keep legacy JSON in sync
-        NORTHSTAR_DATA.write_text(json.dumps(data, ensure_ascii=False, indent=2))
     return JSONResponse({"ok": True})
 
 
@@ -1344,79 +1338,6 @@ async def get_tmux_output(proj_id: str, lines: int = 20):
     return JSONResponse({"ok": True, "running": True, "session": session_name, "output": output})
 
 
-@app.get("/api/northstar/{proj_id}/task-board")
-async def get_task_board(proj_id: str):
-    """Return queued + running + completed tasks for a project (job board view)."""
-    queue_dir = HERE / "task-queue"
-    results_dir = HERE / "task-results"
-    locks_dir = HERE / "task-locks"
-    pattern = f"task-{proj_id}-*"
-
-    jobs = {}
-    # Queued (task file exists, no result, no lock)
-    for f in sorted((queue_dir).glob(pattern) if queue_dir.exists() else []):
-        tid = f.stem
-        result = results_dir / f"{tid}.json"
-        lock = locks_dir / f"{tid}.lock"
-        if not result.exists() and not lock.exists():
-            jobs[tid] = {"status": "queued", "task_id": tid, "output": None}
-
-    # Running (lock exists, no result)
-    for f in sorted((locks_dir).glob(pattern) if locks_dir.exists() else []):
-        tid = f.stem
-        result = results_dir / f"{tid}.json"
-        if not result.exists():
-            jobs[tid] = {"status": "running", "task_id": tid, "output": None}
-
-    # Completed (result exists)
-    if results_dir.exists():
-        for f in sorted(results_dir.glob(pattern), key=lambda x: x.stat().st_mtime, reverse=True)[:10]:
-            try:
-                data = __import__("json").loads(f.read_text())
-                tid = f.stem
-                jobs[tid] = {
-                    "status": data.get("status", "done"),
-                    "task_id": tid,
-                    "output": (data.get("output") or "")[:200],
-                    "completed_at": data.get("completed_at", ""),
-                }
-            except Exception:
-                pass
-
-    def _sort_key(j):
-        grp = 0 if j["status"] == "running" else 1 if j["status"] == "queued" else 2
-        if grp < 2:
-            # active: newest task_id first
-            return (grp, tuple(-ord(c) for c in j["task_id"]))
-        # done: newest completed_at first; fallback to task_id
-        ca = j.get("completed_at") or ""
-        sort_str = ca if ca else j["task_id"]
-        return (grp, tuple(-ord(c) for c in sort_str))
-    board = sorted(jobs.values(), key=_sort_key)
-    return JSONResponse({"ok": True, "jobs": board})
-
-
-@app.get("/api/northstar/{proj_id}/task-results")
-async def get_task_results(proj_id: str, limit: int = 5):
-    """Return recent task execution results for a project."""
-    results_dir = HERE / "task-results"
-    if not results_dir.exists():
-        return JSONResponse({"ok": True, "results": []})
-    results = []
-    pattern = f"task-{proj_id}-*"
-    files = sorted(results_dir.glob(pattern), key=lambda f: f.stat().st_mtime, reverse=True)
-    for f in files[:limit]:
-        try:
-            data = __import__("json").loads(f.read_text())
-            results.append({
-                "task_id": data.get("task_id", f.stem),
-                "status": data.get("status", "?"),
-                "output": (data.get("output", "") or "")[:400],
-                "completed_at": data.get("completed_at", ""),
-            })
-        except Exception:
-            pass
-    return JSONResponse({"ok": True, "results": results})
 
 
 @app.post("/api/northstar/{proj_id}/execute")
@@ -1496,53 +1417,27 @@ async def execute_project(proj_id: str):
                 f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:70]}\""
                 for m in active_ms
             )
-            # Write to persistent task queue (crash-recovery watcher picks this up)
-            task_queue_file = PROJECTS_DIR / proj_id / "task-queue.jsonl"
-            task_queue_file.parent.mkdir(parents=True, exist_ok=True)
-            sync_task = {
-                "id": f"sync-{ts}",
-                "type": "execute_sync",
-                "status": "pending",
-                "created_at": _dt_.now().isoformat(timespec="seconds"),
-                "prompt": (
-                    f"[EXECUTE SYNC] Project {proj_id} — user clicked Execute.\n\n"
-                    f"Step 1 — MILESTONE SYNC: GET {hub_api}/api/northstar/{proj_id}/milestones. "
-                    f"For each unreviewed (claude_ack=null): PATCH claude_ack=now. "
-                    f"Clear text → queued. Vague/incomplete → needs_clarification.\n\n"
-                    f"Step 2 — TASK LIST: Use TodoWrite to create one task per queued milestone (status=pending). "
-                    f"Do NOT use CronCreate per milestone.\n\n"
-                    f"Step 3 — IMPLEMENT SEQUENTIALLY: For each task: "
-                    f"mark in_progress → implement → write completion-log.jsonl → "
-                    f"PATCH {hub_api}/api/northstar/{proj_id}/milestones/MID pending_confirmation → "
-                    f"mark completed. Repeat for all tasks.\n\n"
-                    f"Step 4 — Update spec doc via {hub_api}/api/northstar/{proj_id}/doc.\n\n"
-                    f"All active milestones:\n{all_ms_lines}"
-                )
-            }
-            with open(task_queue_file, "a") as f:
-                f.write(json.dumps(sync_task, ensure_ascii=False) + "\n")
-
-            # Spawn tmux session — uses TaskCreate/TodoWrite (no per-milestone crons)
+            # Spawn tmux session — use TaskCreate/TaskUpdate (Claude Code built-in) for task tracking
             cron_prompt = (
                 f"[EXECUTE SYNC] Project {proj_id} — user clicked Execute.\n\n"
                 f"Step 1 — MILESTONE SYNC: GET {hub_api}/api/northstar/{proj_id}/milestones. "
-                f"For each unreviewed (claude_ack=null): PATCH claude_ack=now on "
-                f"{hub_api}/api/northstar/{proj_id}/milestones/MID. "
-                f"If text is clear (>15 chars) → PATCH status=queued. "
-                f"If vague/incomplete → PATCH status=needs_clarification + clarification_question.\n\n"
-                f"Step 2 — TASK LIST: Use TodoWrite to create one task per queued milestone "
-                f"(status=pending). This is your crash-safe work queue — do NOT use CronCreate per milestone.\n\n"
-                f"Step 3 — IMPLEMENT SEQUENTIALLY: For each task in your list:\n"
-                f"  a. TodoWrite: mark task in_progress\n"
-                f"  b. Implement the milestone (write/edit files as needed)\n"
-                f"  c. Append to ~/.claude/hub/projects/{proj_id}/completion-log.jsonl:\n"
-                f'     echo \'{{\"session_id\":\"exec\",\"milestone_id\":\"MID\",\"evidence\":\"summary\",\"timestamp\":\"\'}}\' >> ...\n'
+                f"For each unreviewed (claude_ack=null): PATCH claude_ack=now. "
+                f"Clear text (>15 chars) → PATCH status=queued. "
+                f"Vague → PATCH status=needs_clarification + clarification_question.\n\n"
+                f"Step 2 — CREATE TASKS: For each queued milestone, call TaskCreate with:\n"
+                f'  - subject: milestone ID (e.g. "M42")\n'
+                f'  - description: milestone text\n'
+                f"  This creates Claude Code built-in tasks (TaskCreate tool — NOT TodoWrite).\n\n"
+                f"Step 3 — IMPLEMENT SEQUENTIALLY: For each task:\n"
+                f"  a. TaskUpdate(id, status='in_progress')\n"
+                f"  b. Implement the milestone (read/write/edit files)\n"
+                f"  c. Write completion log:\n"
+                f'     echo \'{{\"session_id\":\"exec\",\"milestone_id\":\"MID\",\"evidence\":\"...\",\"timestamp\":\"DATE\"}}\' >> ~/.claude/hub/projects/{proj_id}/completion-log.jsonl\n'
                 f"  d. PATCH {hub_api}/api/northstar/{proj_id}/milestones/MID "
-                f'with {{\"status\":\"pending_confirmation\"}}\n'
-                f"  e. TodoWrite: mark task completed\n"
-                f"  Repeat until all tasks are completed.\n\n"
-                f"Step 4 — SPEC DOC: After all tasks done, update spec doc via "
-                f"{hub_api}/api/northstar/{proj_id}/doc to reflect current milestone progress.\n\n"
+                f'{{\"status\":\"pending_confirmation\"}}\n'
+                f"  e. TaskUpdate(id, status='completed')\n"
+                f"  Repeat for all tasks.\n\n"
+                f"Step 4 — SPEC DOC: Update spec via {hub_api}/api/northstar/{proj_id}/doc.\n\n"
                 f"All active milestones:\n{all_ms_lines}"
             )
             # Write prompt to file — avoids tmux paste-mode for multi-line text
@@ -1551,18 +1446,14 @@ async def execute_project(proj_id: str):
             prompt_file.write_text(cron_prompt, encoding="utf-8")
 
             # Kill existing session if any, start fresh
+            # SessionStart hook detects pending-execute-prompt.txt and injects directive automatically
+            # No tmux send-keys needed — hook fires at session start before first user turn
             subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
             subprocess.Popen([
                 "tmux", "new-session", "-d", "-s", session_name,
                 "-c", proj_dir if Path(proj_dir).exists() else str(Path.home()),
                 "claude", "--dangerously-skip-permissions", "--continue"
             ])
-            # Wait for claude to start, then inject a single-line pointer (avoids paste-mode)
-            import asyncio as _aio
-            await _aio.sleep(3)
-            # Single-line avoids tmux paste-mode; Claude reads the full prompt from the file
-            trigger = f"Read and execute instructions in {prompt_file}"
-            subprocess.run(["tmux", "send-keys", "-t", session_name, trigger, "Enter"])
             return JSONResponse({
                 "ok": True, "mode": "tmux",
                 "session": session_name,

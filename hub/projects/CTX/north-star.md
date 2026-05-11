@@ -70,6 +70,14 @@ log:
   text: '411b6a2 [hang-in] refactor(eval): unify 3 eval-pipeline tokenizers via monolith
     bm25-memory.tokenize (PR-3 re-author); 7c25f50 [hang-in] docs: add MAINTAINERS.md
     (per #1 — area-of-ownership split) (+1 more)'
+- date: '2026-05-11'
+  text: '3031cbd feat(plugin): add README + LICENSE + bump version to 0.3.19 for marketplace
+    submission; 411b6a2 [hang-in] refactor(eval): unify 3 eval-pipeline tokenizers
+    via monolith bm25-memory.tokenize (PR-3 re-author) (+1 more)'
+- date: '2026-05-11'
+  text: '4800157 chore: add ctx-pro CLI stub + update signal-log snapshot (May 11);
+    3031cbd feat(plugin): add README + LICENSE + bump version to 0.3.19 for marketplace
+    submission (+1 more)'
 metric: PyPI downloads/week
 milestones:
 - done: true
@@ -118,7 +126,9 @@ milestones:
   pending_confirm_at: 2026-05-11T00:36
   status: pending_confirmation
   text: Reach 50 active installs (beyond downloads)
-- clarification_question: 'M9 tracking infrastructure is live: wow-tracker.py initialized
+- clarification_answer: i don't understand why u badge this milesone as unclear.
+  clarification_answered_at: 2026-05-11T12:17
+  clarification_question: 'M9 tracking infrastructure is live: wow-tracker.py initialized
     with streak 1/3 (633→912 downloads/wk, +44.1% WoW). Next target ≥1,004/wk by May
     18. Two more consecutive weeks needed. What growth actions should I execute? Options:
     (a) Write distribution content for new channels (Reddit r/ClaudeAI, Discord),
@@ -158,11 +168,33 @@ milestones:
   status: pending_confirmation
   text: 'Respond to d9ng GitHub replies on PRs #4/#5 + production hardening thread'
   user_added_at: 2026-05-10T18:10
+- claude_ack: 2026-05-11T14:36
+  done: false
+  id: M13
+  layer: 0
+  parent_id: null
+  text: 영상 만들기
+  user_added_at: 2026-05-11T12:16
+- claude_ack: null
+  done: false
+  id: M14
+  layer: 0
+  parent_id: null
+  text: '영상 만들기 — CTX demo video (PIP: screen_recording_new.mp4 + IMG_1655.MOV face
+    cam)'
+  user_added_at: 2026-05-11T14:40
+- claude_ack: null
+  done: false
+  id: M15
+  layer: 0
+  parent_id: null
+  text: hub-market 에 보여지는 pypi 트렌드를 daily bar graph 로 전환 (지금은 weekly 로 되어있음)
+  user_added_at: 2026-05-11T14:46
 name: CTX
 note: 'Claude Code memory + context retrieval plugin. PyPI 696/wk (+10% WoW), HN 4pts,
   GitHub 4 stars. Next gate: cloud infra decision → Pro paywall.'
 parent: MOAT
-position_x: 3
+position_x: 2
 stage: unassigned
 status: on-track
 target: '1000'

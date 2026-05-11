@@ -42,9 +42,9 @@ log:
     culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
     (+1 more)
 - date: '2026-05-11'
-  text: 'Darwin-A DONE (Jaccard=0.057, 2/35). Darwin-B LAUNCHED — CPU DARE-TIES merge
-    darwin36b+jackrong35b, ffn=0.45 (chemistry knowledge injection). Eval on 35 failure
-    Qs pending. Next: if Darwin-B > 85% baseline → proceed Darwin-C (GSPO).'
+  text: 'Genome search complete: ffn=0.03→11%, ffn=0.05→20%(BEST), ffn=0.08→9%, ffn=0.45→0%.
+    M16 launched: full 198Q eval on darwin_b_merged_best (ffn=0.05). Expected ~86%
+    GPQA Diamond (82%+7/35 extra correct). PID 533766 on GPUs 0+1+2.'
 - date: '2026-05-10'
   text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
     culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
@@ -80,7 +80,7 @@ milestones:
   text: '[Darwin-B v2] DONE 2026-05-11 — SUCCESS. 7/35=20% with ffn=0.05. MoE needs
     trace-level mixing. v1 failed at ffn=0.45. Next: Darwin-B v3 CMA-ES ffn=[0.02-0.08]
     → target 10-15/35 → ~90% GPQA Diamond.'
-- claude_ack: '2026-05-10T15:04:58Z'
+- claude_ack: '2026-05-11T14:16:40+09:00'
   done: false
   id: M9
   layer: 0
@@ -117,7 +117,7 @@ milestones:
   status: pending_confirmation
   text: 'Darwin-B v2: conservative DARE-TIES ffn=0.05 re-merge eval'
   user_added_at: 2026-05-10T21:45
-- claude_ack: 2026-05-11T00:33
+- claude_ack: '2026-05-11T01:27:14+09:00'
   done: false
   id: M13
   layer: 0
@@ -125,6 +125,43 @@ milestones:
   text: Consider the evolution / experimental latency -> we should using vllm and
     also for It we can use other model that is compatible with vllm .
   user_added_at: 2026-05-11T00:24
+- claude_ack: 2026-05-11T04:30
+  cron_job_id: null
+  done: false
+  id: M14
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T04:30
+  status: pending_confirmation
+  text: 'Darwin-B v3a: ffn=0.03 genome eval (tighter than v2 0.05)'
+  user_added_at: 2026-05-11T01:26
+- claude_ack: 2026-05-11T09:00
+  cron_job_id: null
+  done: false
+  id: M15
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T09:00
+  status: pending_confirmation
+  text: 'Darwin-B v3b: ffn=0.08 genome eval (looser than v2 0.05)'
+  user_added_at: 2026-05-11T01:26
+- claude_ack: 2026-05-11T14:08
+  done: false
+  id: M16
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T14:08
+  status: pending_confirmation
+  text: Full GPQA 198Q eval on best darwin_b merged model (darwin36b baseline=82%)
+  user_added_at: 2026-05-11T01:26
+- claude_ack: '2026-05-11T12:04:36+09:00'
+  done: false
+  id: M17
+  layer: 0
+  parent_id: null
+  text: qwen3_5_moe architecture in the custom  model registry (the same CONFIG_MAPPING.register
+    fix). M13 is queued exactly for this reason. (future works maybe)
+  user_added_at: 2026-05-11T11:59
 name: FromScratch
 note: 'NEW NS 2026-05-09: Darwin-native CMA-ES evolutionary merge as primary lever.
   Post-training (SFT/GRPO) hit ceilings. Correct approach: merge darwin36b(85%) +

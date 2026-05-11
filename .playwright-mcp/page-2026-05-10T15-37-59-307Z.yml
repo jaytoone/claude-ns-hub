@@ -1,0 +1,40 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - generic:
+      - generic:
+        - navigation "Sidebar":
+          - generic [ref=e6]:
+            - generic:
+              - link "Home":
+                - /url: /new
+                - img "Claude"
+            - button "Open sidebar" [ref=e8] [cursor=pointer]:
+              - generic [ref=e9]:
+                - img [ref=e11]
+                - img [ref=e14]
+          - generic:
+            - link:
+              - /url: /new
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+          - generic:
+            - link:
+              - /url: "#"
+              - generic:
+                - generic:
+                  - img
+          - generic:
+            - link:
+              - /url: /recents
+              - generic:
+                - generic:
+                  - img
+            - link:
+              - /url: /projects
+              - generic:
+                - generic:
+                  - img
+  - region "Notifications (F8)":
+    - list

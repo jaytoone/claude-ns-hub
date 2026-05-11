@@ -91,7 +91,7 @@ north_stars:
   target: '> 60% accuracy'
 note: Fixed Risk-Reward Win-ratio Prediction — ML crypto/stock trading strategy
 parent: MOAT
-position_x: 2
+position_x: 1
 status: behind
 target: '> 0 (breakeven)'
 unit: ''

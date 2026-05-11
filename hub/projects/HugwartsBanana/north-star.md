@@ -407,6 +407,29 @@ log:
   text: 1f75c36 v1.23.441 20260511 - SevenZero 결제 버튼 점검 안내 오버레이 (클릭 불가 + '점검 중' 텍스트);
     c125d40 v1.23.440 20260511 - SevenZero 결제 버튼 임시 점검 숨김 (NEXT_PUBLIC_SEVENZERO_ENABLED=true
     일 때만 노출) (+1 more)
+- date: '2026-05-11'
+  text: f278b88 v1.23.442 20260511 - 로컬 dev 환경에서 테스트 패키지(₩100) 표시 (모든 유저); 1f75c36
+    v1.23.441 20260511 - SevenZero 결제 버튼 점검 안내 오버레이 (클릭 불가 + '점검 중' 텍스트) (+1 more)
+- date: '2026-05-11'
+  text: 40942a0 v1.23.443 20260511 - SevenZero 결제 에러 시 PG 실제 메시지 표시 (CC66 → '생년월일
+    불일치' 등); f278b88 v1.23.442 20260511 - 로컬 dev 환경에서 테스트 패키지(₩100) 표시 (모든 유저) (+1
+    more)
+- date: '2026-05-11'
+  text: 9c5d9da v1.23.444 20260511 - SevenZero 결제 버튼 점검 안내 제거 (정상화); 40942a0 v1.23.443
+    20260511 - SevenZero 결제 에러 시 PG 실제 메시지 표시 (CC66 → '생년월일 불일치' 등) (+1 more)
+- date: '2026-05-11'
+  text: 1b50787 v1.23.445 20260511 - fix 계정 탈퇴 세션 만료 버그 (getSession → refreshSession);
+    9c5d9da v1.23.444 20260511 - SevenZero 결제 버튼 점검 안내 제거 (정상화) (+1 more)
+- date: '2026-05-11'
+  text: e1afeda v1.23.446 20260511 - fix 탈퇴 확인 모달 즉시 닫힘 버그; 1b50787 v1.23.445 20260511
+    - fix 계정 탈퇴 세션 만료 버그 (getSession → refreshSession) (+1 more)
+- date: '2026-05-11'
+  text: ce2fe2b v1.23.447 20260511 - fix AccountSettings 탈퇴 세션 만료 버그 (getSession →
+    refreshSession); e1afeda v1.23.446 20260511 - fix 탈퇴 확인 모달 즉시 닫힘 버그 (+1 more)
+- date: '2026-05-11'
+  text: b95b479 v1.23.448 20260511 - fix 탈퇴 확인 클릭 무효화 버그 (stale closure); ce2fe2b
+    v1.23.447 20260511 - fix AccountSettings 탈퇴 세션 만료 버그 (getSession → refreshSession)
+    (+1 more)
 metric: Weekly new payers
 milestones:
 - claude_ack: null
@@ -534,6 +557,20 @@ milestones:
   layer: 0
   parent_id: null
   text: Playwright MCP + Stop Hook research notes
+- claude_ack: 2026-05-11T12:25
+  done: false
+  id: M11
+  layer: 0
+  parent_id: null
+  text: 홈피드 게시물 확대시 여백이 많이 보이지 않도록해야함 -> 예를 들어 영상 재생시 검은 여백이 많이 보이게됨.
+  user_added_at: 2026-05-11T12:05
+- claude_ack: 2026-05-11T13:11
+  done: false
+  id: M12
+  layer: 0
+  parent_id: null
+  text: 서버 불안정성 -> 대응안이 무엇인가 ? 우리는 실시간 디테일 로그가 필요하다. → ux
+  user_added_at: 2026-05-11T13:09
 name: HugwartsBanana
 note: 'Korean Shorts monetization compliance pipeline. OMTM: payers/week. Core bottleneck:
   Activation (wrong Aha path — Automation Studio 403 users/1.5% vs Directors 10 users/71.4%).
@@ -541,7 +578,7 @@ note: 'Korean Shorts monetization compliance pipeline. OMTM: payers/week. Core b
   COGS floor: 3x rule → 29,900 KRW tier requires <30 lipsync Shorts/month cap. Next
   action: M0 diagnostic sprint this week.'
 parent: FromScratch
-position_x: 1
+position_x: 0
 repo_path: ''
 status: behind
 target: 5 new payers/week by Week 10
