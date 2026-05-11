@@ -1364,13 +1364,16 @@ async function loadMilestones(projId) {
   _msProjectId = projId;
   const el = document.getElementById('dm-ms-creator');
   if (!el) return;
+  // Skip if renderMultiNSLeftPanel already owns the panel for this project
+  if (window.__multiNSActive === projId) return;
   try {
     // Try multi-NS endpoint first
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars`);
     const data = await r.json();
     const nsList = data.north_stars || [];
     if (nsList.length > 1) {
-      renderMultiNS(projId, nsList);
+      // Multi-NS handled by renderMultiNSLeftPanel — don't clobber
+      return;
     } else if (nsList.length === 1) {
       renderMilestoneCreator(projId, nsList[0].milestones || []);
     } else {
@@ -2851,6 +2854,7 @@ async function commitRename(el, projId) {
 
 function closeDetail() {
   activeIdx = null;
+  window.__multiNSActive = null;  // clear multi-NS lock
   document.getElementById('detail-overlay').classList.remove('show');
   stopTmuxWatch();
   render();
@@ -3318,6 +3322,7 @@ function renderHierarchy(p) {
 }
 
 function renderMultiNSLeftPanel(p, nsList, okrData) {
+  window.__multiNSActive = p.id;  // prevent loadMilestones from clobbering
   const dmLeft = document.getElementById('dm-left');
   const sc = s => s==='behind'?'var(--red)':s==='exploring'?'var(--yellow,#d4a017)':'var(--green)';
   let cur = 0;
