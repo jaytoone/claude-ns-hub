@@ -1006,7 +1006,10 @@ header {
 
     <!-- Header -->
     <div class="dm-header">
-      <span class="dm-title" id="dm-title">—</span>
+      <div style="flex:1;min-width:0">
+        <span class="dm-title" id="dm-title">—</span>
+        <div id="dm-proj-dir" style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.7"></div>
+      </div>
       <span class="dm-status-pill" id="dm-status-pill"></span>
       <button class="dm-close" onclick="closeDetail()">×</button>
     </div>
@@ -3061,6 +3064,8 @@ async function openDetail(idx) {
   const overlay = document.getElementById('detail-overlay');
   overlay.classList.add('show');
   document.getElementById('dm-title').textContent = p.name;
+  const dirEl = document.getElementById('dm-proj-dir');
+  if (dirEl) dirEl.textContent = p.repo_path || '';
   const pill = document.getElementById('dm-status-pill');
   pill.textContent = STATUS_LABEL[p.status] || p.status;
   pill.className = `dm-status-pill ${p.status || 'paused'}`;
@@ -3406,8 +3411,9 @@ function startTmuxWatch(projId) {
       const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/tmux-output?lines=25`);
       const d = await r.json();
       if (!d.running) { output.textContent = '(session ended)'; stopTmuxWatch(); return; }
+      const atBottom = output.scrollHeight - output.scrollTop - output.clientHeight < 40;
       output.textContent = d.output || '(waiting for output…)';
-      output.scrollTop = output.scrollHeight;
+      if (atBottom) output.scrollTop = output.scrollHeight;  // only auto-scroll if already at bottom
     } catch(_) {}
   };
   poll();
