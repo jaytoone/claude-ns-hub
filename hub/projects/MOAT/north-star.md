@@ -207,7 +207,7 @@ milestones:
   id: M39
   layer: 0
   parent_id: null
-  status: needs_clarification
+  status: pending
   text: 아래 보이는 해당 페인은 제거 가능하지 않나 왜 존재하나 ?
 - done: true
   id: M1
@@ -506,13 +506,14 @@ milestones:
   status: done
   text: TEST watcher auto-ack milestone
   user_added_at: 2026-05-11T13:44
-- claude_ack: 2026-05-11T15:56
+- claude_ack: 2026-05-11T16:00
   done: false
   id: M45
   layer: 0
   parent_id: null
+  pending_confirm_at: 2026-05-11T16:00
   queued_at: 2026-05-11T15:56
-  status: queued
+  status: pending_confirmation
   text: 마일스톤 드래그하고 나서 , 위치이동하지 않았을때, 해당 pane 이 불투명해지는 문제가 생김 (다시 돌아오지않음)
   user_added_at: 2026-05-11T15:50
 name: Claude-Hub

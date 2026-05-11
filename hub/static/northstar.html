@@ -1568,7 +1568,7 @@ function renderMilestoneCreator(projId, milestones) {
         const clarA = esc(m.clarification_answer || '');
         return `
           <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
-            ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragover="_msDragOver(event)"
+            ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragend="_msDragEnd(event)" ondragover="_msDragOver(event)"
             ondragleave="_msDragLeave(event)" ondrop="_msDrop(event,'${esc(projId)}')">
           <div class="nt-row" style="opacity:.85">
             <span class="nt-num">${idx+1}.</span>
@@ -1587,7 +1587,7 @@ function renderMilestoneCreator(projId, milestones) {
       if (mStatus === 'pending_confirmation') {
         const confirmHtml = `
           <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
-            ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragover="_msDragOver(event)"
+            ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragend="_msDragEnd(event)" ondragover="_msDragOver(event)"
             ondragleave="_msDragLeave(event)" ondrop="_msDrop(event,'${esc(projId)}')">
           <div style="background:rgba(204,120,92,.08);border:1px solid var(--accent-soft);border-radius:5px;padding:6px 8px;margin-bottom:2px">
             <div class="nt-row" style="margin-bottom:0">
@@ -1759,10 +1759,19 @@ async function handleMsTab(e, projId, mid) {
 
 // Milestone drag-to-reorder
 let _msDragId = null;
+let _msDragEl = null;
 function _msDragStart(e, mid) {
   _msDragId = mid;
+  _msDragEl = e.currentTarget;
   e.dataTransfer.effectAllowed = 'move';
   e.currentTarget.style.opacity = '0.4';
+}
+function _msDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  if (_msDragEl) { _msDragEl.style.opacity = ''; _msDragEl = null; }
+  // Clean up any lingering drag-over classes on all rows
+  document.querySelectorAll('.nt-draggable-row.drag-over').forEach(el => el.classList.remove('drag-over'));
+  _msDragId = null;
 }
 function _msDragOver(e) {
   e.preventDefault();
