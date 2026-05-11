@@ -1502,7 +1502,7 @@ function renderMilestoneCreator(projId, milestones) {
     : acked > 0 ? `◈ ${acked}/${milestones.length}` : '';
 
   if (!milestones.length) {
-    el.innerHTML = '<div style="color:var(--text-dim);font-size:11px;padding:4px 0">No milestones yet.</div>';
+    el.innerHTML = `<button class="nt-add" style="margin-bottom:6px;font-size:11px;padding:3px 10px;border:1px dashed var(--panel-border);border-radius:5px;width:100%;text-align:left;color:var(--text-dim)" onclick="addMilestone('${esc(projId)}',0,null)">+ milestone</button><div style="color:var(--text-dim);font-size:11px;padding:4px 0">No milestones yet.</div>`;
     return;
   }
 
@@ -1565,7 +1565,7 @@ function renderMilestoneCreator(projId, milestones) {
           <div class="nt-row" style="background:rgba(90,120,200,.06);border:1px solid rgba(90,120,200,.25);border-radius:5px;padding:6px 8px;margin-bottom:2px;flex-direction:column;gap:4px">
             <div style="display:flex;align-items:center;gap:6px">
               <span class="nt-num">${idx+1}.</span>
-              <span style="font-size:11px;color:#7b9fd4;font-family:var(--mono)">❓</span>
+              <span style="font-size:11px;color:#7b9fd4;font-family:var(--mono);cursor:pointer" title="Click to see why Claude flagged this" onclick="event.stopPropagation();showClarifyPopup(event,[{id:'${esc(m.id)}',text:'${esc(m.text)}',q:'${esc(m.clarification_question||'Why is this milestone unclear? Please describe the task in more detail.')}'}])">❓</span>
               <div style="flex:1;font-size:12px;color:var(--text)">${esc(m.text)}</div>
               <button onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')" class="nt-del" style="opacity:1">✕</button>
             </div>
@@ -1737,7 +1737,7 @@ async function handleMsTab(e, projId, mid) {
   // Refocus on the same item after re-render
   setTimeout(() => {
     const el = document.querySelector(`[data-ms-id="${CSS.escape(mid)}"]`);
-    if (el) { el.focus(); const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); window.getSelection().removeAllRanges(); window.getSelection().addRange(r); }
+    if (el) { el.focus({ preventScroll: true }); const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); window.getSelection().removeAllRanges(); window.getSelection().addRange(r); }
   }, 50);
 }
 
@@ -1881,11 +1881,14 @@ async function addMilestone(projId, layer, parentId) {
     body: JSON.stringify({layer, parent_id: parentId, text: ''}),
   });
   await loadMilestones(projId);
-  // Focus the new item for immediate editing
+  // New milestone is at top (newest-first order); scroll it into view without overshooting
   setTimeout(() => {
     const items = document.querySelectorAll('#dm-ms-creator .nt-text');
-    if (items.length) items[items.length - 1].focus();
-  }, 100);
+    if (items.length) {
+      items[0].scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      items[0].focus({ preventScroll: true });
+    }
+  }, 50);
 }
 
 function nsDelCancel() {
@@ -1998,13 +2001,6 @@ function nodeCard(p, idx) {
   const stageBadge = (stage === 'focused' || stage === 'commercialized')
     ? `<span class="ns-stage-badge ${stage}">${stage === 'focused' ? 'FOCUS' : 'LIVE'}</span>` : '';
   const pid = esc(p.id||p.name);
-  // Clarification badge: after pid is defined
-  const clarifyMs = (p.milestones||[]).filter(m => m.status === 'needs_clarification');
-  window[`clarify_${pid}`] = clarifyMs.map(m=>({id:m.id,text:m.text,q:m.clarification_question||''}));
-  const clarifyBadge = clarifyMs.length
-    ? `<span style="font-size:9px;color:#7b9fd4;cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid rgba(90,120,200,.3);font-family:var(--mono)"
-        onclick="event.stopPropagation();showClarifyPopup(event,window['clarify_${pid}'])">❓${clarifyMs.length}</span>`
-    : '';
   return `<div class="ns-node ${active} ${stageClass}" data-idx="${idx}" data-pid="${pid}" draggable="true">
     ${stageBadge}
     <div class="ns-node-top">
@@ -2018,7 +2014,6 @@ function nodeCard(p, idx) {
     <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
     <div class="ns-node-bottom">
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
-      ${clarifyBadge}
       <span class="ns-node-date">${esc(logDate)}</span>
       <span class="ns-node-term" title="Open Claude session"
         onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_ claude</span>
@@ -2631,7 +2626,6 @@ function nodeHtml(p, idx) {
   const sessClass = sKey === 'active' ? 'live' : '';
   const sessDot = sKey === 'active' ? '●' : sKey?.startsWith('idle') ? '○' : '·';
   const active = idx === activeIdx ? 'active' : '';
-  const hasClarify = (p.milestones||[]).some(m => (m.status||'') === 'needs_clarification');
   return `<div class="ns-node ${active}" data-proj-idx="${idx}" data-proj-id="${esc(p.id||p.name)}" data-layer="${p.layer||0}" draggable="true">
     <div class="ns-node-top">
       <span class="ns-node-sdot" style="background:${dotColor}"></span>
@@ -2640,7 +2634,6 @@ function nodeHtml(p, idx) {
         onblur="commitRename(this,'${esc(p.id||p.name)}')"
         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
         >${esc(p.name)}</span>
-      ${hasClarify ? `<span title="Claude needs clarification on a milestone" style="font-size:9px;color:#7b9fd4;cursor:default">❓</span>` : ''}
       <span class="ns-node-sess-dot ${sessClass}" title="Click for terminal"
         onclick="event.stopPropagation();_openWithTerminal(${idx},'${esc(p.id||p.name)}')">${sessDot}</span>
     </div>
@@ -3162,9 +3155,6 @@ function renderHierarchy(p) {
       </div>
       <div id="dm-ms-save-status" style="font-size:10px;color:var(--text-dim);font-family:var(--mono)"></div>
       <div id="dm-ms-creator" style="font-size:12px;font-family:var(--mono);color:var(--text-dim)">Loading…</div>
-      <div style="margin-top:8px">
-        <button class="dm-btn" style="font-size:11px" onclick="addMilestone('${esc(p.id)}', 0, null)">+ milestone</button>
-      </div>
     </div>
 
     <!-- Note (moved from right pane) -->
@@ -3232,7 +3222,6 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
           <span class="dm-layer-count" id="dm-ms-ack-badge">${doneMs}/${totalMs}</span>
         </div>
         <div id="dm-ms-creator" style="font-size:12px">Loading…</div>
-        <button class="dm-ms-add-btn" onclick="addMilestone('${esc(p.id)}',0,null)" style="margin-top:8px;font-family:var(--mono);font-size:11px;background:none;border:1px dashed var(--panel-border);border-radius:5px;padding:4px 10px;color:var(--text-dim);cursor:pointer;width:100%;text-align:left">+ milestone</button>
       </div>`;
 
     // Load milestones for current NS page
