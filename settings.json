@@ -186,6 +186,14 @@
             "command": "python3 $HOME/.claude/hooks/chat-memory.py"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/close-popup.sh"
+          }
+        ]
       }
     ],
     "Notification": [
@@ -244,6 +252,14 @@
             "async": true
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/utility-rate.py"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -267,6 +283,26 @@
           {
             "type": "command",
             "command": "python3 $HOME/.claude/hooks/g2-fallback.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/subagent_tracker.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CLAUDE_HOOK_EVENT=SubagentStop python3 $HOME/.claude/hooks/subagent_tracker.py"
           }
         ]
       }
