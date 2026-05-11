@@ -210,9 +210,21 @@ def _load_projects() -> list:
                         data["connections"] = []
                     # Auto-infer repo_path from standard project layout if not set
                     if not data.get("repo_path"):
-                        _inferred = Path.home() / "Project" / proj_dir.name
-                        if _inferred.exists():
-                            data["repo_path"] = str(_inferred)
+                        _project_root = Path.home() / "Project"
+                        _target = proj_dir.name.lower()
+                        if _project_root.exists():
+                            for _candidate in _project_root.iterdir():
+                                if _candidate.is_dir() and _candidate.name.lower() == _target:
+                                    data["repo_path"] = str(_candidate)
+                                    break
+                                # Also check nested dirs (e.g., Project/VIDraft/HugwartsBanana)
+                                if _candidate.is_dir():
+                                    for _nested in _candidate.iterdir():
+                                        if _nested.is_dir() and _nested.name.lower() == _target:
+                                            data["repo_path"] = str(_nested)
+                                            break
+                                    if data.get("repo_path"):
+                                        break
                     # Compute staleness
                     mtime = md.stat().st_mtime
                     data["last_updated"] = mtime
