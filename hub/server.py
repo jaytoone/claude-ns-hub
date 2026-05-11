@@ -908,15 +908,19 @@ async def _start_milestone_watcher():
                     now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M")
                     changed = False
 
-                    # Step 1: Auto-ack new unreviewed milestones
+                    # Step 1: Auto-ack new unreviewed milestones (ack only — keep status=pending)
+                    # Promotion to "queued" is now ONLY done via Execute button (per user policy)
                     for m in raw_ms:
                         if not isinstance(m, dict): continue
                         if m.get("claude_ack") or m.get("status") in ("done", "pending_confirmation", "queued", "needs_clarification"):
                             continue
                         if m.get("status") != "pending": continue
                         m["claude_ack"] = now_iso
+                        # Vague text still gets routed to needs_clarification (not queued)
                         text = str(m.get("text", "")).strip()
-                        m["status"] = "queued" if len(text) > 15 else "needs_clarification"
+                        if len(text) <= 15:
+                            m["status"] = "needs_clarification"
+                        # Clear text: stays pending — user must click Execute to promote to queued
                         changed = True
 
                     # Step 3: Promote answered clarifications → pending
