@@ -6,7 +6,7 @@
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "20000",
     "DISABLE_COST_WARNINGS": "1",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5-20251001",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-5-20250929",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-7",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_REMOTE_NOTIFY_URL": "http://localhost:6789/notify",
@@ -114,7 +114,6 @@
       "/home/desk-1/.claude"
     ]
   },
-  "model": "sonnet",
   "hooks": {
     "SessionStart": [
       {
@@ -340,8 +339,8 @@
       }
     }
   },
+  "awaySummaryEnabled": false,
   "autoUpdatesChannel": "stable",
   "skipDangerousModePermissionPrompt": true,
-  "mcpServers": {},
-  "awaySummaryEnabled": false
+  "mcpServers": {}
 }
