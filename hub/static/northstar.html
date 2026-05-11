@@ -1557,6 +1557,7 @@ function renderMilestoneCreator(projId, milestones) {
       onclick="addMilestone('${esc(projId)}',0,null)">+ milestone</button>
     ${l0.length > 0 ? `<span class="nt-layer-label">L0 · Strategic</span>` : ''}
     ${l0.map((m, idx) => {
+      const escJs = s => esc(s).replace(/'/g, '&#39;');  // escape for single-quoted JS attrs
       const children = l1.filter(c => c.parent_id === m.id);
       // 3-state: pending / queued / done
       // state derives from m.status field (new) or m.done (old compat)
@@ -1594,11 +1595,12 @@ function renderMilestoneCreator(projId, milestones) {
               <span class="nt-num">${idx+1}.</span>
               <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px">⏳</span>
               <div style="flex:1;font-size:12px;color:var(--text)">${esc(m.text)}</div>
-              <div style="display:flex;gap:4px;flex-shrink:0">
+              <div style="display:flex;gap:4px;flex-shrink:0;align-items:center">
                 <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
                   style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono)">✓ Confirm</button>
                 <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
                   style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono)">↩ Reopen</button>
+                <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
               </div>
             </div>
             ${m.claude_comment ? `<div style="font-size:10px;color:var(--text-dim);font-family:var(--mono);padding:3px 6px;margin-top:4px;background:var(--panel-soft);border-radius:3px;margin-left:24px;border-left:2px solid var(--accent)">Claude: ${esc(m.claude_comment)}</div>` : ''}
@@ -1607,7 +1609,6 @@ function renderMilestoneCreator(projId, milestones) {
         return confirmHtml;
       }
       // User can only set pending↔queued; done is Claude-only
-      const escJs = s => esc(s).replace(/'/g, '&#39;');  // escape for single-quoted JS attrs
       const sc = {done:'var(--green)',queued:'var(--accent)',pending:'var(--panel-border)',pending_confirmation:'var(--accent)'}[mStatus]||'var(--panel-border)';
       const sbg = {done:'var(--green)',queued:'var(--accent-soft)',pending:'transparent',pending_confirmation:'rgba(204,120,92,.15)'}[mStatus]||'transparent';
       const sfg = {done:'#fff',queued:'var(--accent-deep)',pending:'var(--text-dim)',pending_confirmation:'var(--accent-deep)'}[mStatus]||'var(--text-dim)';
