@@ -2705,9 +2705,9 @@ async function commitRename(el, projId) {
 // ── Detail modal (centered overlay) ──────────────────────────────────────────
 
 function closeDetail() {
-  // Terminal stays open (floating) — independent of detail modal
   activeIdx = null;
   document.getElementById('detail-overlay').classList.remove('show');
+  stopTmuxWatch();
   render();
 }
 
