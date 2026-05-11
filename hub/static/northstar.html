@@ -1579,7 +1579,7 @@ function renderMilestoneCreator(projId, milestones) {
             <div class="nt-meta">
               <span style="font-size:11px;color:#7b9fd4;cursor:pointer" title="Click to see why Claude flagged this"
                 onclick="event.stopPropagation();showClarifyPopup(event,'${esc(projId)}','${esc(m.id)}','${clarQ}','${clarA}',${hasAnswer})">❓</span>
-              <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
+              <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
           </div>`;
@@ -1601,7 +1601,7 @@ function renderMilestoneCreator(projId, milestones) {
                   style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono)">✓ Confirm</button>
                 <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
                   style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono)">↩ Reopen</button>
-                <button class="nt-del" style="opacity:1" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
+                <button class="nt-del" style="opacity:1" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
               </div>
             </div>
           </div>
@@ -1644,7 +1644,7 @@ function renderMilestoneCreator(projId, milestones) {
               onclick="event.stopPropagation()"
             >${esc(c.text)}</div>
             ${cs!=='done' ? `<span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${cAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${c.claude_ack?'acked':'review'}</span>` : ''}
-            <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${esc(c.text)}')">✕</button>
+            <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${escJs(c.text.slice(0,60))}')">✕</button>
           </div>`;
       }).join('');
 
@@ -1692,7 +1692,7 @@ function renderMilestoneCreator(projId, milestones) {
               ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)" title="Active cron monitor: ${esc(m.cron_job_id)}">cron</span>` : ''}
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${m.claude_ack?'acked':'review'}</span>` : ''}
               ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}')">💬</span>` : ''}
-              <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${esc(m.text)}')">✕</button>
+              <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
           ${mCommentHtml}
