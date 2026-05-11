@@ -1529,6 +1529,9 @@ function renderMilestoneCreator(projId, milestones) {
       cursor:pointer; transition:background .08s; user-select:none; margin-bottom:1px; }
     .nt-row:hover { background:var(--panel-soft); }
     .nt-row:hover .nt-del { opacity:1; }
+    .nt-mid { font-family:var(--mono); font-size:9px; color:var(--text-dim); padding:1px 4px;
+      border-radius:3px; background:var(--panel-soft); flex-shrink:0; line-height:1.3;
+      letter-spacing:.02em; user-select:text; }
     .nt-drag-handle { font-family:var(--mono); font-size:12px; color:var(--text-dim); opacity:.45;
       cursor:grab; user-select:none; padding:2px 5px; margin-right:2px; transition:opacity .1s, background .1s;
       line-height:1; border-radius:3px; display:inline-block; flex-shrink:0; }
@@ -1649,6 +1652,7 @@ function renderMilestoneCreator(projId, milestones) {
         return `
           <div class="nt-sub-row ${cs==='done'?'nt-done':''}">
             <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
+            <span class="nt-mid" title="Milestone ID">${esc(c.id)}</span>
             <button class="nt-check" ${cBtnAttrs}
               style="border:1px solid ${csc};background:${csbg};color:${csfg};cursor:default;opacity:${cs==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:0 4px;font-size:7px;letter-spacing:.03em;min-width:26px${!canToggle?';cursor:not-allowed':''}"
             >${csIcon}</button>
@@ -1692,6 +1696,7 @@ function renderMilestoneCreator(projId, milestones) {
           <div class="nt-row ${mStatus==='done'?'nt-done':''}">
             <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
             <span class="nt-num">${num}.</span>
+            <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <button class="nt-check"
               ${mBtnAttrs}
