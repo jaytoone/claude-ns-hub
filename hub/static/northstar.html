@@ -1666,7 +1666,7 @@ function renderMilestoneCreator(projId, milestones) {
   // Notion-style numbered toggles
   const toggleHtml = `
   <style>
-    .nt-row { display:flex; align-items:center; gap:6px; padding:5px 4px 5px 6px;
+    .nt-row { display:flex; align-items:flex-start; gap:6px; padding:5px 4px 5px 6px;
       cursor:pointer; transition:background .08s; user-select:none;
       border-bottom:1px solid var(--panel-border); }
     .nt-draggable-row:last-child .nt-row { border-bottom:none; }
@@ -1861,7 +1861,7 @@ function renderMilestoneCreator(projId, milestones) {
             ${mStatus === 'queued' ? `<span class="nt-priority-tag" title="Queued — Claude will execute this next">▶</span>` : ''}
             <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
-            <div style="display:flex;flex-direction:row;gap:3px;flex-shrink:0;align-self:center;align-items:center">
+            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-self:flex-start;align-items:flex-start">
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'acked':'review'}</span>` : ''}
               <button class="nt-check"
                 ${mBtnAttrs}
