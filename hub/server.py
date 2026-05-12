@@ -1438,19 +1438,34 @@ async def execute_project(proj_id: str):
         }
         proj_dir = proj_dirs.get(proj_id, str(Path.home() / "Project" / proj_id))
 
-        # M24 fix: if tmux session already running, inject new milestones instead of spawning duplicate
+        # M24 fix: if tmux session already running, inject trigger if there are queued/pending items
         existing = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
         if existing.returncode == 0:
-            # Session alive — check if there are new unacked milestones to inject
+            # Session alive — check if any milestones need attention (queued or new unacked)
             new_pending = [m for m in active_ms if m.get("status") == "pending" and not m.get("claude_ack")]
-            if new_pending:
-                trigger = f"New milestones added — check GET {hub_api}/api/northstar/{proj_id}/milestones for pending items and process them now."
-                subprocess.run(["tmux", "send-keys", "-t", session_name, trigger, "Enter"], capture_output=True)
+            new_queued = [m for m in active_ms if m.get("status") == "queued"]
+            needs_trigger = new_pending or new_queued
+            if needs_trigger:
+                # Write minimal trigger prompt and send "go" to wake idle session
+                _pf = PROJECTS_DIR / proj_id / "pending-execute-prompt.txt"
+                _pf.parent.mkdir(parents=True, exist_ok=True)
+                _ms_snap = "\n".join(
+                    f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:60]}\""
+                    for m in (new_queued + new_pending)
+                )
+                _pf.write_text(
+                    f"[EXECUTE SYNC] New milestones need processing — process ALL queued milestones now.\n\n"
+                    f"GET {hub_api}/api/northstar/{proj_id}/milestones for current state.\n"
+                    f"TaskCreate + implement each queued milestone sequentially.\n\n"
+                    f"Newly queued:\n{_ms_snap}",
+                    encoding="utf-8"
+                )
+                subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"], capture_output=True)
             return JSONResponse({
                 "ok": True, "mode": "tmux_active",
                 "session": session_name,
                 "tasks_created": len(actionable),  # total actionable shown in EXECUTION LOG
-                "new_injected": len(new_pending),
+                "new_injected": len(needs_trigger),
                 "message": f"Claude is already working on {proj_id} stones (session '{session_name}' active). Check live session for progress.",
             })
 
