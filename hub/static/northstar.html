@@ -1572,21 +1572,23 @@ function renderMilestoneCreator(projId, milestones) {
   try { expanded = JSON.parse(localStorage.getItem(expandKey) || '{}'); } catch(_) {}
 
   // M32: hide confirmed (done) stones — show only active milestones
-  // M82: pending_confirmation sorted below queued/pending so they don't crowd the top
-  // M78: new/unreviewed stones (user_added_at && !claude_ack) always float to top; within status, newest first
-  const _STATUS_ORDER = { queued: 0, pending: 1, needs_clarification: 2, pending_confirmation: 3 };
+  // M78: new/unreviewed stones (user_added_at && !claude_ack) always float to top
+  // M86: preserve server array order as tiebreaker so newest-inserted milestones stay at top
+  //      pending_confirmation always sinks to bottom (needs user action, not Claude action)
   const l0 = milestones
     .filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done)
     .sort((a, b) => {
+      // 1. Unreviewed (just added by user, not yet acked) → top
       const aNew = (a.user_added_at && !a.claude_ack) ? 1 : 0;
       const bNew = (b.user_added_at && !b.claude_ack) ? 1 : 0;
       if (aNew !== bNew) return bNew - aNew;
-      const aStat = _STATUS_ORDER[a.status||'pending'] ?? 1;
-      const bStat = _STATUS_ORDER[b.status||'pending'] ?? 1;
-      if (aStat !== bStat) return aStat - bStat;
-      const aTime = a.user_added_at ? new Date(a.user_added_at).getTime() : 0;
-      const bTime = b.user_added_at ? new Date(b.user_added_at).getTime() : 0;
-      return bTime - aTime;
+      // 2. pending_confirmation → bottom (awaiting user confirm, lower urgency)
+      const aConf = a.status === 'pending_confirmation' ? 1 : 0;
+      const bConf = b.status === 'pending_confirmation' ? 1 : 0;
+      if (aConf !== bConf) return aConf - bConf;
+      // 3. Stable: preserve server array order (Array.sort is stable in V8)
+      //    New milestones inserted at index 0 server-side will naturally appear first
+      return 0;
     });
   const doneStones = milestones.filter(m => (m.layer || 0) === 0 && ((m.status||'') === 'done' || m.done));
   const l1 = milestones.filter(m => (m.layer || 0) === 1 && (m.status||'') !== 'done' && !m.done);
@@ -1612,6 +1614,34 @@ function renderMilestoneCreator(projId, milestones) {
   const starPct88 = Math.round(projectPct(_p88) * 100);
   const dl88 = _p88.deadline ? deadlineBadge(_p88.deadline) : null;
   const daysLeft88 = _p88.deadline ? Math.ceil((new Date(_p88.deadline) - new Date()) / 86400000) : null;
+  // M83: weekly progress bar — design candidates:
+  //
+  // Option A — Weekly Velocity Bar (recommended for cards):
+  //   Show milestones completed THIS week vs. weekly target pace.
+  //   target_pace = total_active_milestones / weeks_remaining (from deadline).
+  //   Bar fills 0→100%: 100% = completed exactly on pace this week. Green = on pace, red = behind.
+  //   Label: "3/5 this wk" (done/target). Reset every Monday (use ISO week number).
+  //   Computed: weeklyDone = milestones.filter(m => m.done && sameISOWeek(m.done_at, now)).length
+  //             weeklyTarget = Math.max(1, Math.ceil(activeMilestones / weeksLeft))
+  //             pct = Math.min(100, Math.round(weeklyDone / weeklyTarget * 100))
+  //
+  // Option B — Week Cells Strip (already in detail modal via M58):
+  //   Reuse the M58 segmented week-cell strip as a mini version on the card.
+  //   8 cells = 8 remaining weeks; filled = elapsed, hollow = future.
+  //   Compact: 8×5px cells with 2px gap. Good for deadline awareness.
+  //
+  // Option C — Burndown Spark (advanced):
+  //   Mini sparkline: x=weeks elapsed, y=milestones remaining vs. ideal burndown.
+  //   Needs per-milestone done_at timestamps. Visual but complex.
+  //
+  // Option D — Weekly Streak Counter:
+  //   Count consecutive weeks with ≥1 milestone done. Shown as "🔥3w" or "streak:3w".
+  //   Motivational, no math needed beyond counting done_at week numbers.
+  //
+  // Best fit for the existing 3-bar row (star-arc | deadline | milestone):
+  //   Add a 4th bar "weekly" = Option A velocity bar. Position: after milestone bar.
+  //   Data source: milestone done_at timestamps (add to PATCH /milestones/<id> response).
+  //   Fallback when no done_at data: hide the bar or show dashed empty state.
   // deadline bar: 0% = lots of time left, 100% = overdue; use 180d window
   const dlWindow = 180;
   const dlBarPct = daysLeft88 !== null ? Math.max(0, Math.min(100, Math.round((1 - Math.max(0, daysLeft88) / dlWindow) * 100))) : 0;
@@ -1849,15 +1879,19 @@ function renderMilestoneCreator(projId, milestones) {
                 style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:1px 5px;font-size:8px;letter-spacing:.03em;line-height:1.3"
               >${stateLabel}</button>
             </div>
-            <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
-              contenteditable="true"
-              data-ms-id="${esc(m.id)}"
-              onclick="event.stopPropagation()"
-              onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
-              onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-            >${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:1px 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}${esc(m.text)}${mNewBadge}${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star">★ ${esc(m.star_relation)}</div>` : (m.claude_comment ? `<div class="nt-star-rel" style="opacity:.65" title="Claude comment">${esc(m.claude_comment.slice(0,100))}${m.claude_comment.length>100?'…':''}</div>` : '')}</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+              <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
+                contenteditable="true"
+                data-ms-id="${esc(m.id)}"
+                onclick="event.stopPropagation()"
+                onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
+                onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
+              >${esc(m.text)}</div>
+              ${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star">★ ${esc(m.star_relation)}</div>` : (m.claude_comment ? `<div class="nt-star-rel" style="opacity:.65" title="Claude comment">${esc(m.claude_comment.slice(0,100))}${m.claude_comment.length>100?'…':''}</div>` : '')}
+            </div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
+              ${(!m.claude_ack && m.user_added_at) ? `<span style="font-size:9px;color:var(--accent);flex-shrink:0" title="Added by user — Claude hasn't seen this yet">★</span>` : ''}
               ${m.user_added_at ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.6;border:1px solid var(--panel-border);border-radius:3px;padding:0 4px" title="Stone added ${esc(m.user_added_at)}">+${esc((m.user_added_at||'').slice(5,16).replace('T',' '))}</span>` : ''}
               ${mStatus !== 'done' ? `<button class="nt-why" title="Why does this stone matter? (star-stone relation)" onclick="event.stopPropagation();generateStarRelation('${esc(projId)}','${esc(m.id)}',this)">★?</button>` : ''}
               <button class="nt-why" title="Chat about this milestone (M59)" style="font-size:9px;opacity:${(_msConversations[m.id]||[]).length>0?'1':'.45'}" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment||'')}','${esc(projId)}','${esc(m.id)}')">${(_msConversations[m.id]||[]).length>0 ? (_msConversations[m.id].length+' msg') : 'msg'}</button>
@@ -2298,7 +2332,9 @@ function nsDelCancel() {
 }
 
 async function confirmDeleteMs(projId, mid, text) {
-  const label = (text || 'this stone').trim().slice(0, 60);
+  const label = (text || '').trim().slice(0, 60);
+  // M91: empty milestone — skip confirmation, delete immediately
+  if (!label) { await deleteMs(projId, mid); return; }
   const d = document.getElementById('ns-del-confirm');
   const lbl = document.getElementById('ns-del-label');
   const ok = document.getElementById('ns-del-ok');
@@ -2351,7 +2387,11 @@ async function generateStarRelation(projId, msId, btn) {
 })();
 
 async function _openWithTerminal(origIdx, projId) {
-  // Terminal is now a floating panel — just open it directly, no detail modal
+  // M90: exec-running → show live session overlay directly from the card badge
+  if (_sessionStatus[projId] === 'exec-running') {
+    startTmuxWatch(projId);
+    return;
+  }
   openTerminal(projId);
 }
 
@@ -2441,7 +2481,7 @@ function nodeCard(p, idx) {
         onblur="saveNodeName(this,'${pid}')"
         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
         >${esc(p.name)}</span>
-      <span class="ns-sess-pill ${sessPill.cls}" onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')" title="Click to open terminal">${sessPill.label}</span>
+      <span class="ns-sess-pill ${sessPill.cls}" title="Live session status">${sessPill.label}</span>
     </div>
     <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
     <div class="ns-node-bottom">
@@ -2640,9 +2680,8 @@ function render() {
   }
   window._dropOnGhost = _dropOnGhost;
   // Apply card alignment + draw connection lines
-  // Double-rAF: first frame triggers layout, second reads final positions
-  applyAlign();
-  requestAnimationFrame(() => requestAnimationFrame(() => drawParentLines()));
+  // rAF so offsetWidth is available when applyAlign reads card dimensions
+  requestAnimationFrame(() => { applyAlign(); requestAnimationFrame(() => drawParentLines()); });
   _nodeTouchDrag(); // touch drag for iPad/mobile
 }
 
@@ -2822,8 +2861,28 @@ function getAlign() { return localStorage.getItem('ns-card-align') || 'left'; }
 function applyAlign() {
   const key = getAlign();
   const opt = ALIGN_OPTIONS.find(o => o.key === key) || ALIGN_OPTIONS[0];
+  // 'left' = free positioning — cards keep their saved position_x, no override
+  if (key === 'left') {
+    const btn = document.getElementById('align-btn');
+    if (btn) btn.textContent = opt.icon + ' align';
+    return;
+  }
+  // Other modes: recompute left offsets based on alignment
   document.querySelectorAll('.ns-lane-nodes').forEach(el => {
-    el.style.justifyContent = opt.justify;
+    const cards = [...el.children].filter(c => c.style.position === 'absolute');
+    if (!cards.length) return;
+    const containerW = el.clientWidth;
+    const widths = cards.map(c => c.offsetWidth || 160);
+    const totalW = widths.reduce((s, w) => s + w, 0) + (cards.length - 1) * 8;
+    let startX = 8, gap = 8;
+    if (key === 'center')  startX = Math.max(8, Math.round((containerW - totalW) / 2));
+    else if (key === 'right') startX = Math.max(8, containerW - totalW - 8);
+    else if (key === 'spread' && cards.length > 1) {
+      const usedW = widths.reduce((s, w) => s + w, 0);
+      gap = Math.max(8, Math.round((containerW - usedW - 16) / (cards.length - 1)));
+    }
+    let x = startX;
+    cards.forEach((card, i) => { card.style.left = x + 'px'; x += widths[i] + gap; });
   });
   const btn = document.getElementById('align-btn');
   if (btn) btn.textContent = opt.icon + ' align';
@@ -2834,9 +2893,9 @@ function cycleAlign() {
   const idx = ALIGN_OPTIONS.findIndex(o => o.key === cur);
   const next = ALIGN_OPTIONS[(idx + 1) % ALIGN_OPTIONS.length];
   localStorage.setItem('ns-card-align', next.key);
-  applyAlign();
   render();
-  requestAnimationFrame(() => requestAnimationFrame(() => drawParentLines()));
+  // M78: apply after render so offsetWidth is available for repositioning
+  requestAnimationFrame(() => { applyAlign(); drawParentLines(); });
 }
 
 // ── Lane label management ─────────────────────────────────────────────────────
@@ -3426,6 +3485,12 @@ async function killSession() {
   if (projId && projId !== '—') {
     _sessionStatus[projId] = 'none';
     render(); // redraw cards with updated pill
+    // M89: immediately clear exec session list so UI reflects kill without waiting for 5s poll
+    const execList = document.getElementById('dm-exec-sessions');
+    if (execList) execList.innerHTML = '';
+    const execBtn = document.getElementById('dm-exec-btn');
+    if (execBtn) { execBtn.textContent = '▶ Execute'; execBtn.title = 'Execute: init milestones or process queued work'; }
+    clearInterval(window._execPollTimer); // stop poll; restart after kill completes
     // Persist to server
     fetch(`/api/northstar/${encodeURIComponent(projId)}/session-status`, {
       method: 'PATCH', headers: {'Content-Type':'application/json'},
@@ -3435,13 +3500,26 @@ async function killSession() {
 
   if (_termWs && _termWs.readyState === 1) {
     _termWs.send('\x00kill-session');
-    setTimeout(() => { if (_termWs) { _termWs.close(); _termWs = null; } closeTerminal(); }, 300);
+    setTimeout(() => {
+      if (_termWs) { _termWs.close(); _termWs = null; }
+      closeTerminal();
+      // M89: re-poll exec sessions after kill to confirm disappearance
+      if (window._refreshExecState) {
+        setTimeout(window._refreshExecState, 800);
+        window._execPollTimer = setInterval(window._refreshExecState, 5000);
+      }
+    }, 300);
   } else {
     if (projId && projId !== '—') {
       await fetch(`/api/northstar/${encodeURIComponent(projId)}/session`, { method: 'DELETE' }).catch(() => {});
     }
     if (_termWs) { _termWs.close(); _termWs = null; }
     closeTerminal();
+    // M89: re-poll exec sessions after kill
+    if (window._refreshExecState) {
+      setTimeout(window._refreshExecState, 500);
+      window._execPollTimer = setInterval(window._refreshExecState, 5000);
+    }
   }
 }
 
@@ -3942,7 +4020,7 @@ async function loadTaskBoard(projId) {
         <span style="background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>
         <button onclick="loadTaskBoard('${esc(projId)}')" title="Refresh" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:0;line-height:1;transition:color .1s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">↻</button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:2px;border-radius:6px;overflow-y:auto;max-height:200px;border:1px solid var(--panel-border)">
+      <div style="display:flex;flex-direction:column;gap:0;border-radius:6px;overflow-y:auto;max-height:120px;border:1px solid var(--panel-border)">
         ${jobs.map(j => {
           const isRunning = j.status === 'running';
           const col = statusColor[j.status] || 'var(--text-dim)';
@@ -4012,6 +4090,7 @@ function renderRight(p, topics, docData) {
     _refreshExecState();
     clearInterval(window._execPollTimer);
     window._execPollTimer = setInterval(_refreshExecState, 5000);
+    window._refreshExecState = _refreshExecState; // M89: expose globally so killSession can restart poll
   }
 
   // Right panel: note + init if needed
