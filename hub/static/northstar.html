@@ -109,18 +109,30 @@ header {
   box-shadow: 0 0 0 1px var(--accent);
 }
 .ns-lane-nodes {
-  flex: 1; display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch;
+  flex: 1; display: flex; flex-wrap: nowrap; gap: 12px; align-items: stretch;
   min-height: 84px; padding: 8px 12px;
   border-left: 2px solid var(--panel-border);
   border-radius: 0 8px 8px 0; transition: border-color .1s, background .1s;
+  /* M76: column grid lines — one line every (card-width + gap) = 160px */
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent 159px,
+    var(--panel-border) 159px,
+    var(--panel-border) 160px,
+    transparent 160px,
+    transparent 172px
+  );
+  background-size: 172px 100%;
+  background-position: 0 0;
 }
 .ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
 .ns-node.drop-before { border-left: 2px solid var(--accent); }
 .ns-node.drop-after  { border-right: 2px solid var(--accent); }
-/* M76: ghost column slots for snap-to-column drag */
-.ns-col-ghost { min-width:148px; width:148px; min-height:80px; border:1px dashed var(--panel-border);
-  border-radius:8px; opacity:.28; flex-shrink:0; transition:opacity .1s, border-color .1s, background .1s; }
-.ns-col-ghost.drag-hover { opacity:.7; border-color:var(--accent); background:var(--accent-soft); }
+/* M76: ghost column slots — clean empty-column targets */
+.ns-col-ghost { min-width:148px; width:148px; min-height:76px; border:1px dashed var(--panel-border);
+  border-radius:8px; opacity:.22; flex-shrink:0; transition:opacity .12s, border-color .12s, background .12s; }
+.ns-col-ghost.drag-hover { opacity:.8; border-color:var(--accent); background:var(--accent-soft); }
 /* ── Project node card ── */
 .ns-node {
   width: 154px; background: var(--panel); border: 1px solid var(--panel-border);
@@ -617,6 +629,15 @@ header {
   #dm-xterm .xterm-rows { touch-action: pan-y; -webkit-user-select: text !important; }
   /* Paste button visible */
   #ns-terminal-drag-hdr { flex-wrap: wrap; gap: 6px; }
+}
+
+/* M80: minimized terminal — class-based beats media-query specificity */
+#ns-terminal-float.ns-term-minimized {
+  height: 40px !important;
+  overflow: hidden !important;
+}
+#ns-terminal-float.ns-term-minimized #dm-xterm {
+  display: none !important;
 }
 
 /* iPad / large tablet: coarse pointer but wide enough to float — don't use full width */
@@ -1560,7 +1581,12 @@ function renderMilestoneCreator(projId, milestones) {
   try { expanded = JSON.parse(localStorage.getItem(expandKey) || '{}'); } catch(_) {}
 
   // M32: hide confirmed (done) stones — show only active milestones
-  const l0 = milestones.filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done).reverse();
+  // M82: pending_confirmation sorted below queued/pending so they don't crowd the top
+  const _STATUS_ORDER = { queued: 0, pending: 1, needs_clarification: 2, pending_confirmation: 3 };
+  const l0 = milestones
+    .filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done)
+    .reverse()
+    .sort((a, b) => (_STATUS_ORDER[a.status||'pending'] ?? 1) - (_STATUS_ORDER[b.status||'pending'] ?? 1));
   const doneStones = milestones.filter(m => (m.layer || 0) === 0 && ((m.status||'') === 'done' || m.done));
   const l1 = milestones.filter(m => (m.layer || 0) === 1 && (m.status||'') !== 'done' && !m.done);
   const doneTotal = milestones.filter(m => (m.status||'') === 'done' || m.done).length;
@@ -1642,6 +1668,10 @@ function renderMilestoneCreator(projId, milestones) {
     .nt-layer-label:first-child { padding-top:2px; }
     .nt-new-badge { font-size:9px; color:var(--accent); margin-left:3px; cursor:default; }
     .nt-table { border:1px solid var(--panel-border); border-radius:6px; overflow:hidden; margin-bottom:8px; }
+    /* M81: queued stones show execution-priority indicator */
+    .nt-draggable-row[data-status="queued"] .nt-row { border-left:2px solid var(--accent); padding-left:4px; }
+    .nt-priority-tag { font-family:var(--mono); font-size:8px; color:var(--accent); letter-spacing:.04em;
+      opacity:.75; flex-shrink:0; padding-top:3px; }
     .nt-table .nt-draggable-row { display:block; }
   </style>
   <div>
@@ -1770,7 +1800,7 @@ function renderMilestoneCreator(projId, milestones) {
 
       const mCommentHtml = '';  // replaced by comment badge in meta row
       return `
-        <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
+        <div class="nt-draggable-row" data-mid="${esc(m.id)}" data-status="${esc(mStatus)}" draggable="true"
           ondragstart="_msDragStart(event,'${esc(m.id)}')"
           ondragover="_msDragOver(event)"
           ondragleave="_msDragLeave(event)"
@@ -1778,6 +1808,7 @@ function renderMilestoneCreator(projId, milestones) {
           onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
           <div class="nt-row ${mStatus==='done'?'nt-done':''}">
             <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
+            ${mStatus === 'queued' ? `<span class="nt-priority-tag" title="Queued — Claude will execute this next">▶</span>` : ''}
             <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-self:flex-start;align-items:flex-start">
@@ -1796,7 +1827,9 @@ function renderMilestoneCreator(projId, milestones) {
             >${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:1px 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}${esc(m.text)}${mNewBadge}${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star">★ ${esc(m.star_relation)}</div>` : ''}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
+              ${m.user_added_at ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.6;border:1px solid var(--panel-border);border-radius:3px;padding:0 4px" title="Stone added ${esc(m.user_added_at)}">+${esc((m.user_added_at||'').slice(5,16).replace('T',' '))}</span>` : ''}
               ${mStatus !== 'done' ? `<button class="nt-why" title="Why does this stone matter? (star-stone relation)" onclick="event.stopPropagation();generateStarRelation('${esc(projId)}','${esc(m.id)}',this)">★?</button>` : ''}
+              <button class="nt-why" title="Chat about this milestone (M59)" style="font-size:9px;opacity:${(_msConversations[m.id]||[]).length>0?'1':'.45'}" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment||'')}','${esc(projId)}','${esc(m.id)}')">${(_msConversations[m.id]||[]).length>0 ? (_msConversations[m.id].length+' msg') : 'msg'}</button>
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
@@ -2298,32 +2331,22 @@ async function refreshSessionStatus() {
       fetch('/api/exec-sessions')
     ]);
     _sessionStatus = await sessR.json();
-    // M77: badge reflects only PTY live-session state; exec state shown via execute button
-    await execR.json();
+    // M77: exec-running overlays PTY state; badge shows exec (live Execute) state primarily
+    const execData = await execR.json();
+    for (const s of (execData.sessions || [])) {
+      _sessionStatus[s.proj_id] = 'exec-running';
+    }
   } catch(_) {}
 }
 
 function buildSessPill(s) {
-  if (!s || s === 'dead' || s === 'none')
-    return { cls: '', label: '' };  // no pill when no session
-  if (s === 'detached')
-    return { cls: 'ns-sess-detached', label: 'detached' };
-  if (s === 'active' || s === 'running' || s === 'ACTIVE')
-    return { cls: 'ns-sess-running', label: 'ACTIVE' };
-  if (s === 'exec-running')
-    return { cls: 'ns-sess-running', label: 'exec' };
-  if (s === 'waiting' || s === 'wait')
-    return { cls: 'ns-sess-waiting', label: 'wait' };
-  if (s === 'done')
-    return { cls: 'ns-sess-done', label: 'done' };
-  if (s === 'idle' || s === 'IDLE')
-    return { cls: 'ns-sess-idle', label: 'idle' };
-  if (s.startsWith('idle:')) {
-    const secs = parseInt(s.split(':')[1]);
-    const label = secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs/60)}m` : `${Math.round(secs/3600)}h`;
-    return { cls: 'ns-sess-idle', label };
-  }
-  return { cls: 'ns-sess-idle', label: 'idle' };
+  // M77: badge shows exec/live-session state only — PTY terminal states are hidden from badge
+  if (!s || s === 'dead' || s === 'none') return { cls: '', label: '' };
+  if (s === 'exec-running')  return { cls: 'ns-sess-running', label: 'live' };
+  if (s === 'waiting' || s === 'wait') return { cls: 'ns-sess-waiting', label: 'wait' };
+  if (s === 'done')          return { cls: 'ns-sess-done',    label: 'done' };
+  // PTY states (active, idle:N, detached) — no badge; terminal indicator is the terminal button itself
+  return { cls: '', label: '' };
 }
 
 function sessCell(projId) {
@@ -3336,17 +3359,15 @@ function closeTerminal() {
 
 function minimizeTerminal() {
   const float = document.getElementById('ns-terminal-float');
-  const xterm = document.getElementById('dm-xterm');
   const btn = document.getElementById('ns-term-min-btn');
   _termMinimized = !_termMinimized;
   if (_termMinimized) {
     float.dataset.lastH = float.style.height || '680px';
-    float.style.height = '36px';
-    xterm.style.display = 'none';
+    float.classList.add('ns-term-minimized');
     btn.textContent = '□';
   } else {
-    float.style.height = float.dataset.lastH || '680px';
-    xterm.style.display = '';
+    float.classList.remove('ns-term-minimized');
+    float.style.setProperty('height', float.dataset.lastH || '680px', 'important');
     btn.textContent = '—';
     setTimeout(() => _termFit?.fit(), 80);
   }
@@ -3495,20 +3516,18 @@ async function openDetail(idx) {
   if (nsList.length > 1) {
     renderMultiNSLeftPanel(p, nsList, okrData);
   } else {
-    // OKR section for single-NS (update after already rendered by renderHierarchy)
+    // OKR tree inside NS layer
     if (okrSection) {
       const okrs = okrData.okrs || [];
-      const title = okrData.section || 'OKRs';
-      // Keep collapsed by default; populate list content
-      okrSection.innerHTML = `<div class="dm-layer">
-        <div class="dm-layer-head" onclick="if(event.target.dataset.why)return;this.parentElement.classList.toggle('dm-layer-collapsed');this.querySelector('.dm-layer-count').textContent=this.parentElement.classList.contains('dm-layer-collapsed')?'▸ expand':'▾ collapse'" style="cursor:pointer">
-          <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
-          <span class="dm-layer-title">${esc(title)}</span>
-          <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▾ ${okrs.length} KRs</span>
-          <div style="width:100%;font-size:10px;color:var(--text-dim);margin-top:5px;padding:4px 8px;background:rgba(100,120,180,.06);border-radius:4px;border-left:2px solid rgba(100,120,180,.25);line-height:1.5">North Star(장기) ↔ 마일스톤(오늘) 사이를 잇는 분기 단위 레이어. 방향 없이 마일스톤만 쌓으면 무엇을 위한 작업인지 모호해집니다.</div>
-        </div>
-        <div class="dm-okr-list">${okrs.length ? okrs.map(kr=>{const m=kr.match(/^(K\d+):\s*(.+)/);return`<div class="dm-okr-item"><span class="dm-okr-key">${m?esc(m[1]):'·'}</span><span class="dm-okr-text">${m?esc(m[2]):esc(kr)}</span></div>`;}).join(''):'<div style="font-size:12px;color:var(--text-dim)">No OKRs defined in spec doc</div>'}</div>
-      </div>`;
+      okrSection.innerHTML = okrs.length ? okrs.map((kr, i) => {
+        const m = kr.match(/^(K\d+):\s*(.+)/);
+        const isLast = i === okrs.length - 1;
+        return `<div style="display:flex;align-items:flex-start;gap:5px;padding:2px 0">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--panel-border);flex-shrink:0;line-height:1.6">${isLast?'└─':'├─'}</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:600;flex-shrink:0">${m?esc(m[1]):'·'}</span>
+          <span style="font-size:11px;color:var(--text-soft);line-height:1.5">${m?esc(m[2]):esc(kr)}</span>
+        </div>`;
+      }).join('') : '';
     }
     loadMilestones(p.id);
   }
@@ -3548,7 +3567,6 @@ function renderHierarchy(p) {
         <div class="dm-layer-icon ns" title="North Star metric">☆</div>
         <span class="dm-layer-title">North Star</span>
       </div>
-      <div class="dm-metric-name">${esc(p.metric || '—')}</div>
       <div class="dm-gauge-wrap">
         <svg width="200" height="110" viewBox="0 0 200 110">
           <path class="gauge-track" d="${bgPath}" stroke-width="11"/>
@@ -3558,11 +3576,6 @@ function renderHierarchy(p) {
           <text x="${cx}" y="${cy-4}" text-anchor="middle"
             font-family="JetBrains Mono,monospace" font-size="8" fill="var(--text-dim)">of target</text>
         </svg>
-      </div>
-      <div class="dm-ns-meta">
-        <span class="dm-current" style="color:${color}">${esc(p.current||'—')}</span>
-        <span class="dm-sep">→</span>
-        <span class="dm-target">${esc(p.target||'—')}</span>
       </div>
       <div class="dm-deadline" id="dm-deadline-row" style="display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:center;position:relative">
         <span style="font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.04em">deadline</span>
@@ -3576,7 +3589,30 @@ function renderHierarchy(p) {
           style="position:absolute;opacity:0;pointer-events:none;width:0;height:0"
           onchange="saveDeadline('${esc(p.id||p.name)}',this.value)">
       </div>
-      ${p.deadline ? (() => { const dl=deadlineBadge(p.deadline); const pct=Math.max(0,Math.min(100,100-Math.round(Math.max(0,(new Date(p.deadline)-new Date())/86400000)/365*100))); return `<div style="height:3px;background:var(--panel-border);border-radius:2px;overflow:hidden;margin:3px 0"><div style="height:100%;width:${pct}%;background:${dl.color};border-radius:2px;transition:width .3s"></div></div>`; })() : ''}
+      ${p.deadline ? (() => {
+        const dl = deadlineBadge(p.deadline);
+        const daysLeft = Math.ceil((new Date(p.deadline) - new Date()) / 86400000);
+        // M58: segmented weekly timeline — cells represent remaining weeks
+        if (daysLeft <= 0) {
+          return `<div style="margin:4px 0 2px"><div style="display:flex;gap:2px">${Array.from({length:8},()=>`<div style="flex:1;height:5px;border-radius:2px;background:${dl.color};opacity:.7"></div>`).join('')}</div><div style="font-family:var(--mono);font-size:8px;color:${dl.color};margin-top:2px;text-align:right">${Math.abs(daysLeft)}d overdue</div></div>`;
+        }
+        const weeksLeft = Math.ceil(daysLeft / 7);
+        // Show up to 8 cells; each cell = 1 week remaining
+        const totalCells = Math.min(8, weeksLeft);
+        // Proportion filled = how far into deadline window (assuming ~365d total window)
+        const windowDays = Math.max(daysLeft, 30);
+        const elapsedFrac = Math.max(0, 1 - daysLeft / Math.max(windowDays, 1));
+        const filledCells = Math.round(elapsedFrac * totalCells);
+        return `<div style="margin:5px 0 2px">
+          <div style="display:flex;gap:2px">${Array.from({length:totalCells},(_,i)=>`<div title="Week ${i+1}${i<filledCells?' (elapsed)':' remaining'}" style="flex:1;height:5px;border-radius:2px;transition:background .2s;background:${i<filledCells?dl.color:'var(--panel-border)'};opacity:${i<filledCells?0.8:0.4}"></div>`).join('')}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:2px">
+            <span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">now</span>
+            <span style="font-family:var(--mono);font-size:8px;color:${dl.color}">${weeksLeft}w left</span>
+          </div>
+        </div>`;
+      })() : ''}
+      <!-- OKR tree — injected after fetch, sits inside NS layer -->
+      <div id="dm-okr-section" style="margin-top:6px"></div>
       <!-- Spec doc slot — injected by renderRight, shown near NS section top -->
       <div id="dm-spec-slot" style="margin-top:6px"></div>
       <!-- Task execution results (shown after Execute is clicked) -->
@@ -3586,22 +3622,13 @@ function renderHierarchy(p) {
       </div>
       <!-- Job board: queued/running/done tasks -->
       <div id="dm-task-board" style="margin-top:8px"></div>
-      <!-- Live tmux session trigger button (full panel moved to overlay) -->
-      <div id="dm-tmux-trigger" style="display:none;margin-top:6px">
-        <button onclick="toggleTmuxOverlay()" style="font-size:10px;font-family:var(--mono);background:rgba(26,25,22,.9);border:1px solid #444;border-radius:4px;padding:3px 10px;cursor:pointer;color:#7ec8c8;width:100%;text-align:left">▶ View live session ↗</button>
-      </div>
-    </div>
-
-    <!-- Layer 2: OKRs (collapsed by default — click header to expand) -->
-    <div id="dm-okr-section">
-      <div class="dm-layer dm-layer-collapsed">
-        <div class="dm-layer-head" onclick="this.parentElement.classList.toggle('dm-layer-collapsed')"
-          style="cursor:pointer;opacity:.6">
-          <div class="dm-layer-icon okr">K</div>
-          <span class="dm-layer-title">OKRs</span>
-          <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▸ expand</span>
-        </div>
-        <div class="dm-okr-list" style="display:none"></div>
+      <!-- Live tmux session trigger button (M79: polished) -->
+      <div id="dm-tmux-trigger" style="display:none;margin-top:8px">
+        <button onclick="toggleTmuxOverlay()" style="display:flex;align-items:center;gap:8px;font-size:11px;font-family:var(--mono);background:linear-gradient(135deg,rgba(20,40,38,.92) 0%,rgba(13,30,48,.92) 100%);border:1px solid rgba(78,200,180,.25);border-radius:8px;padding:8px 14px;cursor:pointer;color:#7ec8c8;width:100%;backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.04);letter-spacing:.02em;transition:border-color .15s,box-shadow .15s">
+          <span style="width:8px;height:8px;border-radius:50%;background:#4ecdc4;flex-shrink:0;box-shadow:0 0 6px #4ecdc4;animation:sess-pulse 1.5s ease-in-out infinite"></span>
+          <span style="flex:1;text-align:left">View live session</span>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0"><path d="M3 13L13 3M7 3h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
 
@@ -3670,9 +3697,8 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
           </svg>
         </div>
         ${p.deadline?`<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>`:''}
+        <div id="dm-okr-section" style="margin-top:6px"></div>
       </div>
-
-      <div id="dm-okr-section"></div>
 
       <div id="dm-spec-slot" style="margin:8px 0 4px"></div>
 
@@ -3685,19 +3711,19 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
         <div id="dm-ms-creator" style="font-size:12px">Loading…</div>
       </div>`;
 
-    // Populate OKR section (same as single-NS path)
+    // OKR tree inside NS layer
     const okrSection = document.getElementById('dm-okr-section');
     if (okrSection && okrData) {
       const okrs = okrData.okrs || [];
-      const title = okrData.section || 'OKRs';
-      okrSection.innerHTML = `<div class="dm-layer dm-layer-collapsed">
-        <div class="dm-layer-head" onclick="this.parentElement.classList.toggle('dm-layer-collapsed');this.querySelector('.dm-layer-count').textContent=this.parentElement.classList.contains('dm-layer-collapsed')?'▸ expand':'▾ collapse'" style="cursor:pointer;opacity:.6">
-          <div class="dm-layer-icon okr">K</div>
-          <span class="dm-layer-title">${esc(title)}</span>
-          <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▸ ${okrs.length} KRs</span>
-        </div>
-        <div class="dm-okr-list">${okrs.length ? okrs.map(kr=>{const m=kr.match(/^(K\d+):\s*(.+)/);return`<div class="dm-okr-item"><span class="dm-okr-key">${m?esc(m[1]):'·'}</span><span class="dm-okr-text">${m?esc(m[2]):esc(kr)}</span></div>`;}).join(''):'<div style="font-size:12px;color:var(--text-dim)">No OKRs defined</div>'}</div>
-      </div>`;
+      okrSection.innerHTML = okrs.length ? okrs.map((kr, i) => {
+        const m = kr.match(/^(K\d+):\s*(.+)/);
+        const isLast = i === okrs.length - 1;
+        return `<div style="display:flex;align-items:flex-start;gap:5px;padding:2px 0">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--panel-border);flex-shrink:0;line-height:1.6">${isLast?'└─':'├─'}</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:600;flex-shrink:0">${m?esc(m[1]):'·'}</span>
+          <span style="font-size:11px;color:var(--text-soft);line-height:1.5">${m?esc(m[2]):esc(kr)}</span>
+        </div>`;
+      }).join('') : '';
     }
 
     // Load milestones for current NS page
@@ -3926,16 +3952,26 @@ async function loadTaskBoard(projId) {
     const statusIcon = {queued:'○',running:'⟳',done:'✓',failed:'✕',timeout:'⏱'}
     const statusColor = {queued:'var(--text-dim)',running:'var(--accent)',done:'var(--green)',failed:'var(--red)',timeout:'var(--red)'}
     board.innerHTML = `
-      <div style="font-size:9px;font-family:var(--mono);color:var(--text-dim);margin-bottom:4px;letter-spacing:.05em;margin-top:8px">
-        TASKS${jobs.length ? ` (${jobs.length} active)` : ''} <span style="cursor:pointer;color:var(--accent)" onclick="loadTaskBoard('${esc(projId)}')">↻</span>
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.06em;margin:10px 0 5px;text-transform:uppercase">
+        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style="opacity:.6"><rect x="1" y="4" width="14" height="2" rx="1"/><rect x="1" y="8" width="14" height="2" rx="1"/><rect x="1" y="12" width="9" height="2" rx="1"/></svg>
+        <span>Task Queue</span>
+        <span style="background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>
+        <button onclick="loadTaskBoard('${esc(projId)}')" title="Refresh" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:0;line-height:1;transition:color .1s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">↻</button>
       </div>
-      <div style="font-size:10px;font-family:var(--mono);line-height:1.7">
+      <div style="display:flex;flex-direction:column;gap:2px;border-radius:6px;overflow:hidden;border:1px solid var(--panel-border)">
         ${jobs.map(j => {
-          const icon = statusIcon[j.status] || '?';
+          const isRunning = j.status === 'running';
           const col = statusColor[j.status] || 'var(--text-dim)';
-          const label = j.task_id.replace(`task-${projId}-`,'').slice(0,24);
-          const out = j.output ? `: ${j.output.split('\n')[0].slice(0,50)}` : '';
-          return `<div style="color:${col}">${icon} <span style="color:var(--text-dim)">${esc(label)}</span>${esc(out)}</div>`;
+          const label = j.task_id.replace(`task-${projId}-`,'').slice(0,32);
+          const out = j.output ? j.output.split('\n')[0].slice(0,50) : '';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 9px;background:var(--panel-soft);font-family:var(--mono);border-bottom:1px solid var(--panel-border);transition:background .1s" onmouseover="this.style.background='var(--bg-deep)'" onmouseout="this.style.background='var(--panel-soft)'">
+            <span style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0;${isRunning?'box-shadow:0 0 5px '+col+';animation:sess-pulse 1.2s ease-in-out infinite':'opacity:.5'}"></span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:10px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(label)}</div>
+              ${out ? `<div style="font-size:9px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">${esc(out)}</div>` : ''}
+            </div>
+            <span style="font-size:8px;color:${col};letter-spacing:.04em;flex-shrink:0;text-transform:uppercase">${j.status}</span>
+          </div>`;
         }).join('')}
       </div>`;
   } catch(_) {}
@@ -3959,7 +3995,7 @@ function renderRight(p, topics, docData) {
       style="background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:500"
       onclick="executeProject('${esc(p.id)}',this)" title="Execute: init milestones or process queued work">▶ Execute</button>`;
     specSlot.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap">${execBtn}${specBtn}</div>
-      <div id="dm-exec-sessions" style="margin-top:4px;font-family:var(--mono);font-size:9px;color:var(--text-dim)"></div>`;
+      <div id="dm-exec-sessions" style="margin-top:5px"></div>`;
     // M60+: restore exec button state + show running exec sessions list
     const _refreshExecState = () => {
       fetch('/api/exec-sessions').then(r=>r.json()).then(d=>{
@@ -3974,11 +4010,17 @@ function renderRight(p, topics, docData) {
         }
         if (info) {
           if (running.length > 0) {
-            info.innerHTML = running.map(s =>
-              `<span style="color:var(--green);margin-right:8px">▶ ${esc(s.session||s.proj_id)} <span style="opacity:.6">${(s.created||'').slice(11,16)}</span></span>`
-            ).join('');
+            info.innerHTML = `<div style="margin-top:6px;border-radius:7px;overflow:hidden;border:1px solid rgba(61,139,94,.22)">` + running.map((s,i) => `
+              <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(61,139,94,.06);${i<running.length-1?'border-bottom:1px solid rgba(61,139,94,.12)':''}">
+                <span style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(61,139,94,.5);animation:sess-pulse 1.5s ease-in-out infinite"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-family:var(--mono);font-size:10px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.session||s.proj_id)}</div>
+                  <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:1px;letter-spacing:.03em">started ${(s.created||'').slice(11,16)}</div>
+                </div>
+                <span style="font-family:var(--mono);font-size:8px;color:var(--green);background:rgba(61,139,94,.12);border-radius:4px;padding:1px 5px;letter-spacing:.04em;text-transform:uppercase">live</span>
+              </div>`).join('') + `</div>`;
           } else {
-            info.textContent = '';
+            info.innerHTML = '';
           }
         }
       }).catch(()=>{});
