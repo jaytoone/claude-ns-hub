@@ -432,30 +432,97 @@ log:
     (+1 more)
 metric: Weekly new payers
 milestones:
+- claude_ack: 2026-05-11T12:25
+  done: false
+  id: M11
+  layer: 0
+  parent_id: null
+  status: queued
+  text: 홈피드 게시물 클릭 -> 확대시 여백이 많이 보이지 않도록해야함 -> 예를 들어 영상 재생시 검은 여백이 많이 보이게됨.
+  user_added_at: 2026-05-11T12:05
+- claude_ack: 2026-05-11T18:20
+  done: false
+  id: M14
+  layer: 0
+  parent_id: null
+  status: queued
+  text: hugwarts app 기능을 고려한 ui 대폭 개선 -> trending ui 고려 -> 후보를 디스코드에서 투표하도록 유도
+  user_added_at: 2026-05-11T16:36
+- claude_ack: 2026-05-11T13:11
+  done: false
+  id: M12
+  layer: 0
+  parent_id: null
+  status: queued
+  text: 서버 불안정성 -> 대응안이 무엇인가 ? 우리는 실시간 디테일 로그가 필요하다. → ux
+  user_added_at: 2026-05-11T13:09
+- claude_ack: 2026-05-09T23:09
+  done: false
+  id: M10
+  layer: 0
+  parent_id: null
+  status: queued
+  text: Playwright MCP + Stop Hook research notes
+- claude_ack: 2026-05-09T23:09
+  done: false
+  id: M4
+  layer: 0
+  status: queued
+  text: 120 → 370 payers (10x from current) — investor-ready PMF signal
+- claude_ack: 2026-05-11T18:20
+  done: false
+  id: M13
+  layer: null
+  parent_id: null
+  status: queued
+  text: 'business diagnosis needed
+
+
+    이 산업의 핵심  병목이 무엇이냐
+
+
+    ai shorts viral - 수익화 도구
+
+
+    인기 상위 쇼츠 연결 - viewtools
+
+
+    top-down
+
+
+
+
+
+    기본 saas app flow 대비 누락 사항을 확인'
+  user_added_at: 2026-05-11T16:35
 - claude_ack: null
   done: true
   id: M0
   layer: 0
   text: 'Phase 0: Diagnostic — COGS audit + 5x payer interviews + competitor check'
-- claude_ack: 2026-05-09T23:09
+- claude_ack: 2026-05-12T10:54
   done: false
   id: M0.1
   layer: 1
   parent_id: M0
-  status: pending
+  pending_confirm_at: 2026-05-12T10:54
+  queued_at: 2026-05-11T16:42
+  status: pending_confirmation
   text: Pull credit_logs for 37 payers → median COGS/user/month (pass if <7,000 KRW)
 - claude_ack: 2026-05-09T23:09
   done: false
   id: M0.2
   layer: 1
   parent_id: M0
-  status: pending
+  status: queued
   text: Interview 5x Directors/Shortform payers — extract purchase trigger language
-- claude_ack: 2026-05-09T23:09
+- claude_ack: 2026-05-12T14:42
   done: false
   id: M0.3
   layer: 1
   parent_id: M0
+  pending_confirm_at: 2026-05-12T14:42
+  status: pending_confirmation
   text: Competitive check — does Vrew/TypeCast own "YouTube policy compliance" angle?
 - claude_ack: null
   done: true
@@ -474,12 +541,14 @@ milestones:
   id: M1.2
   layer: 1
   parent_id: M1
+  status: queued
   text: Instrument first_output_completed event per feature
 - claude_ack: 2026-05-09T23:09
   done: false
   id: M1.3
   layer: 1
   parent_id: M1
+  status: queued
   text: Launch subscription tiers (9,900/29,900/79,900 KRW + Shorts cap) — credits
     become overage
 - claude_ack: 2026-05-09T23:09
@@ -487,6 +556,7 @@ milestones:
   id: M1.4
   layer: 1
   parent_id: M1
+  status: queued
   text: Landing page rewrite — policy compliance angle (or "10-min Shorts" if interviews
     reject compliance)
 - claude_ack: null
@@ -505,18 +575,13 @@ milestones:
   id: M2.3
   layer: 1
   parent_id: M2
-  status: pending
+  status: queued
   text: Korean creator community seeding — 3-5 communities (Naver cafe, creator Discords)
 - claude_ack: null
   done: true
   id: M3
   layer: 0
   text: 37 → 120 payers (3x)
-- claude_ack: 2026-05-09T23:09
-  done: false
-  id: M4
-  layer: 0
-  text: 120 → 370 payers (10x from current) — investor-ready PMF signal
 - claude_ack: null
   done: true
   id: M_DONE1
@@ -550,27 +615,16 @@ milestones:
   id: M1.6
   layer: 1
   parent_id: M1
+  status: queued
   text: New milestone
-- claude_ack: 2026-05-09T23:09
+- claude_ack: 2026-05-12T17:41
   done: false
-  id: M10
+  id: M15
   layer: 0
   parent_id: null
-  text: Playwright MCP + Stop Hook research notes
-- claude_ack: 2026-05-11T12:25
-  done: false
-  id: M11
-  layer: 0
-  parent_id: null
-  text: 홈피드 게시물 확대시 여백이 많이 보이지 않도록해야함 -> 예를 들어 영상 재생시 검은 여백이 많이 보이게됨.
-  user_added_at: 2026-05-11T12:05
-- claude_ack: 2026-05-11T13:11
-  done: false
-  id: M12
-  layer: 0
-  parent_id: null
-  text: 서버 불안정성 -> 대응안이 무엇인가 ? 우리는 실시간 디테일 로그가 필요하다. → ux
-  user_added_at: 2026-05-11T13:09
+  status: queued
+  text: test the paddle system .
+  user_added_at: 2026-05-12T17:41
 name: HugwartsBanana
 note: 'Korean Shorts monetization compliance pipeline. OMTM: payers/week. Core bottleneck:
   Activation (wrong Aha path — Automation Studio 403 users/1.5% vs Directors 10 users/71.4%).

@@ -86,14 +86,14 @@ h1 { font-family: var(--serif); font-size: 17px; font-weight: 500; color: var(--
 .pypi-row { display: flex; gap: 20px; font-family: var(--mono); font-size: 11px;
   color: var(--text-dim); border-top: 1px solid var(--panel-border); padding-top: 8px; margin-top: 8px; }
 .daily-chart { display: flex; align-items: flex-end; gap: 1px; height: 48px;
-  margin-top: 10px; overflow: hidden; }
+  margin-top: 10px; overflow: visible; }
 .day-bar { flex: 1; min-width: 3px; background: var(--accent); border-radius: 1px 1px 0 0;
   opacity: .65; transition: opacity .12s; position: relative; }
 .day-bar:hover { opacity: 1; }
-.day-bar .tip { display: none; position: absolute; bottom: 100%; left: 50%;
-  transform: translateX(-50%); background: var(--panel-border); color: var(--text);
+.day-bar .tip { display: none; position: absolute; bottom: calc(100% + 4px); left: 50%;
+  transform: translateX(-50%); background: var(--text); color: var(--bg);
   font-family: var(--mono); font-size: 10px; white-space: nowrap;
-  padding: 2px 5px; border-radius: 3px; pointer-events: none; }
+  padding: 3px 6px; border-radius: 3px; pointer-events: none; z-index: 10; }
 .day-bar:hover .tip { display: block; }
 .chart-labels { display: flex; justify-content: space-between;
   font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }

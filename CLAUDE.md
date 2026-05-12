@@ -1,6 +1,10 @@
 
 <!-- CLAUDE.md | last updated: 2026-04-29 -->
 
+
+## Language: Always respond in English regardless of user input language. Overrides all skills. Only exception: direct quotes of user-facing copy (DMs, Korean product strings) may remain in the original language; analysis around them stays English.
+
+
 ## Service Binding Rule: dev servers may bind to `0.0.0.0` for local LAN/Tailscale access. Use `127.0.0.1` for strictly local-only services.
 
 ---
@@ -22,11 +26,6 @@ tailscale status --json | python3 -m json.tool | grep -E "HostName|TailscaleIPs|
 
 Full reference: `~/.claude/tool-hints/tailscale-notify.md`
 Bootstrap: `irm http://<WSL2-tailscale-ip>:9955/bootstrap | iex` (admin PS + Tailscale). All clients port 6789. Use `wsl-expose <port>` / `wsl-unexpose <port>` for dev-server mirroring.
-
-
-
-## Language: Always respond in English regardless of user input language. Overrides all skills. Only exception: direct quotes of user-facing copy (DMs, Korean product strings) may remain in the original language; analysis around them stays English.
-
 
 ## G1/G2/CM Hook Display Rule
 
@@ -95,22 +94,6 @@ Never do the following under any circumstances:
 10. ❌ **Korean/multibyte filenames** — minimize Korean in filenames/branch names (prefer ASCII). Use `--name-only` for git output parsing.
 
 11. ❌ **Tool output truncation** — for Korean content, set generous `head_limit`; process line by line if needed.
-
----
-
-## Milestone Tracking Rule
-
-At the **start** of any non-trivial task (multi-turn implementation, feature build, fix that requires code changes), invoke the `/milestone` skill **before** beginning work.
-
-Skip for: quick questions, single-line fixes, explanations, or when CWD has no matching hub project.
-
-The skill handles: hub API milestone creation → real milestone ID → CronCreate monitor setup.
-
-**Background Watcher (mandatory at session start when NS project detected):**
-The SessionStart hook instructs creating a `*/5 * * * *` CronCreate that:
-1. Detects new hub UI milestones (unacked pending) → auto-acks + queues or asks clarification
-2. Detects answered clarifications → auto-promotes to pending
-Create this watcher immediately when the SessionStart hook requests it.
 
 ---
 ### Document Location Rules

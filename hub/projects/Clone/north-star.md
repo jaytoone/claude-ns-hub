@@ -51,7 +51,8 @@ milestones:
 name: Clone
 note: SVTool — Clone project
 parent: null
-position_x: 1
+position_x: 758
+repo_path: ''
 stage: unassigned
 status: paused
 target: —

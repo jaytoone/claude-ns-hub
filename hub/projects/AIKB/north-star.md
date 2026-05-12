@@ -11,7 +11,8 @@ log:
 - date: '2026-05-08'
   text: Demo video + web remote (iPad accessible @ LT-1:8888)
 - date: '2026-05-11'
-  text: AccessibilityService MVP v2 — KeyInterceptorService bound, capabilities=8 confirmed
+  text: AccessibilityService MVP v2 — KeyInterceptorService bound, capabilities=8
+    confirmed
 metric: Physical keyboard hit rate on release APK
 milestones:
 - done: true
@@ -21,15 +22,24 @@ milestones:
 - done: true
   text: Demo video (poc_demo_v3.mp4) + web remote @ LT-1:8888
 - done: false
-  text: 'MVP — AccessibilityService global key intercept ✅ | Kotlin+Compose migration, SAF file picker, minSdk 26 pending'
+  text: MVP — AccessibilityService global key intercept ✅ | Kotlin+Compose migration,
+    SAF file picker, minSdk 26 pending
 - done: false
   text: QA — 3 real devices × 2 keyboards, 98/100 hit rate
 - done: false
   text: Release APK
+- claude_ack: null
+  done: false
+  id: M7
+  layer: 0
+  parent_id: null
+  text: keyboard action should work withiout app in backward, and also work when phone
+    is 화면 꺼짐
+  user_added_at: 2026-05-12T10:43
 name: AIKB
 note: BT HID keyboard → Android content controller. K1/K2/K3 = NUMPAD_1/2/3 confirmed.
 parent: FromScratch
-position_x: 3
+position_x: 266
 repo_path: ''
 status: on-track
 target: 98/100 on 3 real devices × 2 keyboards

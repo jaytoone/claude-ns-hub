@@ -134,13 +134,13 @@ milestones:
     (a) Write distribution content for new channels (Reddit r/ClaudeAI, Discord),
     (b) Plugin marketplace submission (overlaps M7), (c) Set up weekly Monday cron
     to auto-snapshot + alert if WoW <10%.'
-  claude_ack: 2026-05-11T00:38
+  claude_ack: 2026-05-12T12:22
   done: false
   id: M9
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-11T00:38
-  status: needs_clarification
+  status: pending_confirmation
   text: Sustain 3 consecutive weeks of +10% WoW PyPI growth
 - claude_ack: 2026-05-11T00:38
   done: false
@@ -168,33 +168,63 @@ milestones:
   status: pending_confirmation
   text: 'Respond to d9ng GitHub replies on PRs #4/#5 + production hardening thread'
   user_added_at: 2026-05-10T18:10
-- claude_ack: 2026-05-11T14:36
+- claude_ack: 2026-05-12T12:26
   done: false
   id: M13
   layer: 0
   parent_id: null
+  pending_confirm_at: 2026-05-12T12:26
+  queued_at: 2026-05-12T09:48
+  status: pending_confirmation
   text: 영상 만들기
   user_added_at: 2026-05-11T12:16
-- claude_ack: null
+- claude_ack: 2026-05-12T12:26
   done: false
   id: M14
   layer: 0
   parent_id: null
+  pending_confirm_at: 2026-05-12T12:26
+  status: pending_confirmation
   text: '영상 만들기 — CTX demo video (PIP: screen_recording_new.mp4 + IMG_1655.MOV face
     cam)'
   user_added_at: 2026-05-11T14:40
-- claude_ack: null
+- claude_ack: 2026-05-12T12:25
   done: false
   id: M15
   layer: 0
   parent_id: null
+  pending_confirm_at: 2026-05-12T12:25
+  status: pending_confirmation
   text: hub-market 에 보여지는 pypi 트렌드를 daily bar graph 로 전환 (지금은 weekly 로 되어있음)
   user_added_at: 2026-05-11T14:46
+- claude_ack: 2026-05-12T13:45
+  done: false
+  id: M16
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T12:27
+  status: pending_confirmation
+  text: from collected videos, tkae https://youtu.be/PzqRRYHHpbw?si=CZSfoz6y_IcBr9D0 you
+    can find the related popular video from same channel -> extract the script and
+    then normalization how he make the video script -> then i will record a new one
+    just using the framed script method.
+  user_added_at: 2026-05-12T11:49
+- claude_ack: 2026-05-12T17:41
+  done: false
+  id: M17
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T17:41
+  status: pending_confirmation
+  text: ctx channel mamanger 's pypi 's bar mouseover effect is not working ocrrectly,
+    maybe it should show the detail value on it
+  user_added_at: 2026-05-12T17:38
 name: CTX
 note: 'Claude Code memory + context retrieval plugin. PyPI 696/wk (+10% WoW), HN 4pts,
   GitHub 4 stars. Next gate: cloud infra decision → Pro paywall.'
 parent: MOAT
-position_x: 2
+position_x: 495
+repo_path: ''
 stage: unassigned
 status: on-track
 target: '1000'

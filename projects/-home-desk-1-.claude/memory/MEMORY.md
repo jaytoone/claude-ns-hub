@@ -8,3 +8,4 @@
 - [task-watcher-hardened] task-watcher-hardened.py: exponential backoff 30s→10min for 429/529, max 8 retries, persistent task-queue.jsonl crash recovery — 2026-05-11
 - [hub-ui-v2] /live without dropping todos — execute remaining spec items (hierarchical milestone tree, zellij, multi-goal tabs) — 2026-05-09
 - [milestone-cron] Each queued milestone managed by Claude cron until done — polls hub API, marks pending_confirmation on completion — 2026-05-10
+- [hooks-removed] Deprecated hooks removed from ~/.claude/settings.json: hub-inbox-inject.py (session-inbox flow, replaced by Execute+SessionStart), close-popup.sh (sentinel popup), subagent_tracker.py (stream-log only), utility-rate.py (CTX metric). Kept: stop-decision-capture.py (bm25-memory depends on it) — 2026-05-11

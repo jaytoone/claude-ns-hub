@@ -132,38 +132,38 @@ log:
     log (+1 more)'
 metric: Hub dashboard completeness score (%)
 milestones:
-- claude_ack: now
-  done: false
+- claude_ack: 2026-05-12T17:15
+  done: true
+  done_at: 2026-05-12T17:15
   id: M91
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T16:24
-  status: pending_confirmation
+  status: done
   text: why the empty milestone not directly delete ?
   user_added_at: 2026-05-12T16:17
-- claude_ack: now
-  done: false
-  id: M78
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-12T16:23
-  status: pending_confirmation
-  text: align shoud work either.
-  user_added_at: 2026-05-12T16:16
-- claude_ack: 2026-05-12T15:59
+- claude_ack: 2026-05-12T17:36
   claude_comment: killSession() now immediately clears dm-exec-sessions and resets
     exec button. _refreshExecState exposed globally so kill can restart poll after
     300-800ms delay confirming session gone.
+  conversation:
+  - role: user
+    text: no its not directly change the execute buttons icon (>> to execute)
+    ts: '2026-05-12T08:32:32.931Z'
   done: false
   id: M89
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-12T15:59
+  star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
+    there is some delaytion on live session kill -> live session list disappers. solve
+    this problem. u can shorten latency or show some load ui , whatever . -> how would
+    u solve this ?'
   status: pending_confirmation
   text: there is some delaytion on live session kill -> live session list disappers. solve
-    this problem. u can shorten latency or show some load ui , whatever .
+    this problem. u can shorten latency or show some load ui , whatever . -> how would
+    u solve this ?
   user_added_at: 2026-05-12T15:38
-- claude_ack: 2026-05-12T15:34
+- claude_ack: 2026-05-12T17:23
   done: false
   id: M87
   layer: 0
@@ -171,28 +171,29 @@ milestones:
   pending_confirm_at: 2026-05-12T15:34
   status: pending_confirmation
   text: the claude's comments about relateions between stones and the stars should
-    be shwon in a new modeal like comment modoal.
+    be shwon in a new modeal like comment modoal. -> others work find but why m83
+    's msg is not clickable ?
   user_added_at: 2026-05-12T15:24
-- claude_ack: 2026-05-12T15:59
+- claude_ack: 2026-05-12T17:17
   claude_comment: Task queue pane max-height reduced from 200px to 120px (~3 tasks
     visible). overflow-y:auto ensures scrolling for more tasks. Gap between rows removed
     for tighter fit.
-  done: false
+  done: true
+  done_at: 2026-05-12T17:17
   id: M85
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T15:26
-  status: pending_confirmation
+  status: done
   text: make task queus pane and scrollable. -> the task queue pane size should shows
     only 3 tasks and if want to see oother tasks, scroll.
   user_added_at: 2026-05-12T15:13
-- claude_ack: now
-  done: false
+- claude_ack: 2026-05-12T17:17
+  done: true
+  done_at: 2026-05-12T17:17
   id: M92
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T16:54
-  status: pending_confirmation
+  status: done
   text: 모바일 환경에서 드래그 버튼으로만 스톤 페인 이동가능하도록
   user_added_at: 2026-05-12T16:29
 - claude_ack: now
@@ -227,7 +228,7 @@ milestones:
   text: new milestone keep added in below the queued panes. it should added on the
     top of the list,
   user_added_at: 2026-05-12T15:37
-- claude_ack: now
+- claude_ack: 2026-05-12T17:33
   done: false
   id: M88
   layer: 0
@@ -235,7 +236,8 @@ milestones:
   pending_confirm_at: 2026-05-12T15:34
   status: pending_confirmation
   text: the prograss bars (star - arc, deadline,  milestone) should be locate on the
-    same pane. it should show in horizontally parallele.
+    same pane. but it should show in horizontally parallelel and like current vertically)
+    -> horizontal bar should be show on ,
   user_added_at: 2026-05-12T15:26
 - claude_ack: now
   claude_comment: '## Weekly Progress Bar Design Options
@@ -326,13 +328,13 @@ milestones:
   text: 💬progress bar 를 가지고 weekly 를 표현할수있는 방법을 고안해보기 바람. comment 로 달아놓아. 이 마일스톤에
     .
   user_added_at: 2026-05-12T14:52
-- claude_ack: now
-  done: false
+- claude_ack: 2026-05-12T17:27
+  done: true
+  done_at: 2026-05-12T17:27
   id: M90
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T16:23
-  status: pending_confirmation
+  status: done
   text: view live session can removed but it's function can be inherit to the 'session
     list button ' which is showing "claude-exec-MOAT" like,
   user_added_at: 2026-05-12T15:40
@@ -1039,11 +1041,49 @@ milestones:
   status: done
   text: 완료된 job 은 jobs pane 에서 지워줄것 그리고 jobs -> tasks 로 수정하기바람,
   user_added_at: 2026-05-12T10:54
+- claude_ack: 2026-05-12T17:27
+  done: true
+  done_at: 2026-05-12T17:27
+  id: M78
+  layer: 0
+  parent_id: null
+  status: done
+  text: review badge stone should be on the toppest in stone list.
+  user_added_at: 2026-05-12T17:20
+- claude_ack: 2026-05-12T17:29
+  done: false
+  id: M93
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T17:29
+  status: pending_confirmation
+  text: '"> claude" button in ns-card should open csk -c terminal (previously worked
+    as not the current live session thigns )'
+  user_added_at: 2026-05-12T17:21
+- claude_ack: 2026-05-12T17:29
+  done: false
+  id: M94
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T17:29
+  status: pending_confirmation
+  text: black stone should be on the top
+  user_added_at: 2026-05-12T17:25
+- claude_ack: 2026-05-12T17:33
+  done: false
+  id: M95
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T17:33
+  status: pending_confirmation
+  text: when clickclaude-exec-MOATstarted 17:21session pane -> show up the live session
+    previously worke,d (as view live session )
+  user_added_at: 2026-05-12T17:25
 name: Claude-Hub
 note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
   first, then leverage it for content/career.
 parent: null
-position_x: 547
+position_x: 362
 repo_path: ''
 stage: unassigned
 target: '100'

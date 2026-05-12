@@ -1,3 +1,12 @@
+## Current State (2026-05-11)
+
+### LT-1 Crash Fix (2026-05-11)
+- Crash: 0x9F DRIVER_POWER_STATE_FAILURE on S4 hibernate (May 7) — BugcheckCode=0x9F, SleepInProgress=4
+- Fix 1: Fast Startup disabled (`HiberbootEnabled=0` in registry)
+- Fix 2: Nahimic (4 services) stopped + disabled — NahimicService, NahimicBTLink, NahimicXVAD, Nahimic_Mirroring
+- Fix 3: NVIDIA driver updated 577.05 → 596.36 (RTX 5070 Laptop)
+- ClaudeNotifyListener: Running ✅ (AtStartup trigger holding)
+
 ## Current State (2026-05-06)
 
 ### SSH / Connectivity

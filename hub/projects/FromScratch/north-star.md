@@ -53,8 +53,64 @@ log:
   text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
     culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
     (+1 more)
+- date: '2026-05-12'
+  text: 23d61fc 🎯 Isolation tests DEFINITIVE — Mamba2×GDN interaction is the real
+    culprit; a50ba0c 5/5 on DS FINAL REJECT — 4-patch fix insufficient, pivot to mcore
+    (+1 more)
 metric: GPQA Diamond single-model score
 milestones:
+- claude_ack: 2026-05-11T19:37
+  done: false
+  id: M9
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T19:37
+  queued_at: 2026-05-11T00:04
+  status: pending_confirmation
+  text: '[Darwin-C] GSPO on darwin36b: MoE-stable RL (arXiv:2507.18071) with router
+    weight freeze for first 20 steps + load-balance aux loss. Avoids expert-activation
+    volatility. (~4h Gate 0 test)'
+- claude_ack: 2026-05-11T19:40
+  done: false
+  id: M10
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T19:40
+  queued_at: 2026-05-11T00:04
+  status: pending_confirmation
+  text: '[Darwin-D] Speculative decoding eval: darwin28b draft + darwin36b target
+    → 2-3x faster eval if tokenizers match. Enables rapid CMA-ES fitness evaluation.'
+- claude_ack: 2026-05-11T19:40
+  done: false
+  id: M17
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T19:40
+  queued_at: 2026-05-11T19:37
+  status: pending_confirmation
+  text: qwen3_5_moe architecture in the custom  model registry (the same CONFIG_MAPPING.register
+    fix). M13 is queued exactly for this reason. (future works maybe)
+  user_added_at: 2026-05-11T11:59
+- claude_ack: 2026-05-11T19:40
+  done: false
+  id: M13
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T19:40
+  queued_at: 2026-05-11T19:37
+  status: pending_confirmation
+  text: Consider the evolution / experimental latency -> we should using vllm and
+    also for It we can use other model that is compatible with vllm .
+  user_added_at: 2026-05-11T00:24
+- claude_ack: 2026-05-11T23:32
+  done: false
+  id: M11
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-11T23:32
+  queued_at: 2026-05-11T00:04
+  status: pending_confirmation
+  text: 'Final: ≥93% single-model GPQA Diamond via Darwin evolutionary merge'
 - done: true
   text: 'Phase 1: Clean trace gen — 119 traces (fixed corruption: all traces were
     garbage)'
@@ -80,95 +136,61 @@ milestones:
   text: '[Darwin-B v2] DONE 2026-05-11 — SUCCESS. 7/35=20% with ffn=0.05. MoE needs
     trace-level mixing. v1 failed at ffn=0.45. Next: Darwin-B v3 CMA-ES ffn=[0.02-0.08]
     → target 10-15/35 → ~90% GPQA Diamond.'
-- claude_ack: '2026-05-11T14:16:40+09:00'
-  done: false
-  id: M9
-  layer: 0
-  parent_id: null
-  queued_at: 2026-05-11T00:04
-  status: queued
-  text: '[Darwin-C] GSPO on darwin36b: MoE-stable RL (arXiv:2507.18071) with router
-    weight freeze for first 20 steps + load-balance aux loss. Avoids expert-activation
-    volatility. (~4h Gate 0 test)'
-- claude_ack: '2026-05-10T15:04:58Z'
-  done: false
-  id: M10
-  layer: 0
-  parent_id: null
-  queued_at: 2026-05-11T00:04
-  status: queued
-  text: '[Darwin-D] Speculative decoding eval: darwin28b draft + darwin36b target
-    → 2-3x faster eval if tokenizers match. Enables rapid CMA-ES fitness evaluation.'
-- claude_ack: '2026-05-10T15:04:58Z'
-  done: false
-  id: M11
-  layer: 0
-  parent_id: null
-  queued_at: 2026-05-11T00:04
-  status: queued
-  text: 'Final: ≥93% single-model GPQA Diamond via Darwin evolutionary merge'
-- claude_ack: 2026-05-11T00:38
+- claude_ack: 2026-05-11T19:36
   cron_job_id: null
-  done: false
+  done: true
+  done_at: 2026-05-11T19:36
   id: M12
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T00:38
-  status: pending_confirmation
+  status: done
   text: 'Darwin-B v2: conservative DARE-TIES ffn=0.05 re-merge eval'
   user_added_at: 2026-05-10T21:45
-- claude_ack: '2026-05-11T01:27:14+09:00'
-  done: false
-  id: M13
-  layer: 0
-  parent_id: null
-  text: Consider the evolution / experimental latency -> we should using vllm and
-    also for It we can use other model that is compatible with vllm .
-  user_added_at: 2026-05-11T00:24
-- claude_ack: 2026-05-11T04:30
+- claude_ack: 2026-05-11T19:36
   cron_job_id: null
-  done: false
+  done: true
+  done_at: 2026-05-11T19:36
   id: M14
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T04:30
-  status: pending_confirmation
+  status: done
   text: 'Darwin-B v3a: ffn=0.03 genome eval (tighter than v2 0.05)'
   user_added_at: 2026-05-11T01:26
-- claude_ack: 2026-05-11T09:00
+- claude_ack: 2026-05-11T19:35
   cron_job_id: null
-  done: false
+  done: true
+  done_at: 2026-05-11T19:35
   id: M15
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T09:00
-  status: pending_confirmation
+  status: done
   text: 'Darwin-B v3b: ffn=0.08 genome eval (looser than v2 0.05)'
   user_added_at: 2026-05-11T01:26
-- claude_ack: 2026-05-11T14:08
-  done: false
+- claude_ack: 2026-05-11T19:35
+  done: true
+  done_at: 2026-05-11T19:35
   id: M16
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T14:08
-  status: pending_confirmation
+  status: done
   text: Full GPQA 198Q eval on best darwin_b merged model (darwin36b baseline=82%)
   user_added_at: 2026-05-11T01:26
-- claude_ack: '2026-05-11T12:04:36+09:00'
+- claude_ack: null
   done: false
-  id: M17
+  id: M18
   layer: 0
   parent_id: null
-  text: qwen3_5_moe architecture in the custom  model registry (the same CONFIG_MAPPING.register
-    fix). M13 is queued exactly for this reason. (future works maybe)
-  user_added_at: 2026-05-11T11:59
+  text: we need much faster star acheivement way using vllm like things . research
+    on it and comment on stone,
+  user_added_at: 2026-05-12T17:24
 name: FromScratch
 note: 'NEW NS 2026-05-09: Darwin-native CMA-ES evolutionary merge as primary lever.
   Post-training (SFT/GRPO) hit ceilings. Correct approach: merge darwin36b(85%) +
   jackrong35b via DARE-TIES with GPQA fitness function. Complementary error profiling
   + speculative decoding for faster eval cycles.'
 parent: null
-position_x: 0
+position_x: 8
+repo_path: ''
 stage: unassigned
 status: pivoting
 target: 93.9%

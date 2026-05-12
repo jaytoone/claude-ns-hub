@@ -7,39 +7,27 @@ current: negative
 deadline: ''
 layer: 2
 log:
+- date: '2026-05-11'
+  text: 'Blood Flow: Canvas vascular viz + TradingView 3-pane chart (ST+OBV+Slope)
+    + mobile opt + tech bottleneck map (9 themes, XYL/ECL/ZS blocked). Chart API :8056.'
+- date: '2026-05-11'
+  text: 'Blood Flow Scanner: Canvas vascular viz + TradingView chart overlay (ST+OBV
+    3-pane) + mobile opt + tech bottleneck mapping (9 themes, XYL/ECL/ZS blocked).
+    Chart API port 8056.'
 - date: '2026-05-08'
   text: 'ST+OBV 전략 백테스트 완료: US Tier2 avg EV +1.5%, KR avg EV +1.3%. 혈관도 MVE (Dash)
     구현'
 - date: '2026-05-07'
   text: 'Phase 3 result: 23/25 symbols negative EV. Only SHIB/SUI (meme/high-vol)
     showed positive. Pattern-based reversal strategies insufficient.'
-- date: '2026-05-07'
-  text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
-    sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
-- date: '2026-05-08'
-  text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
-    sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
-- date: '2026-05-09'
-  text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
-    sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
-- date: '2026-05-10'
-  text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
-    sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
 - date: '2026-05-11'
   text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
     sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
+- date: '2026-05-12'
+  text: '71b2a9e pre-format backup: commit all working state; cb30da4 monitor: 3-tier
+    sync monitoring (half-hour reconcile + warning telegram + daily report) (+1 more)'
 metric: Strategy EV after fees (25-symbol avg)
-milestones:
-- clarification_question: The milestone text is empty. What task should this milestone
-    represent for the FRWP project?
-  claude_ack: '2026-05-11T00:00:00Z'
-  done: false
-  id: M1
-  layer: 0
-  parent_id: null
-  status: needs_clarification
-  text: ''
-  user_added_at: 2026-05-10T18:50
+milestones: []
 name: FRWP
 north_stars:
 - current: negative (paper +$87 but sample size small)
@@ -55,7 +43,7 @@ north_stars:
   name: FRWP Crypto Strategy
   status: behind
   target: '> 0% (breakeven)'
-- current: +1.5% IS avg (not OOS validated)
+- current: +1.5% IS avg EV. Bottleneck stocks overlaid on vascular viz.
   id: st_obv_scanner
   metric: OOS walk-forward EV (Tier 2 stocks)
   milestones:
@@ -64,7 +52,9 @@ north_stars:
   - done: true
     text: Supertrend + dollar-volume OBV backtest engine
   - done: true
-    text: 3-tier volume filter + full universe scan
+    text: 3-tier volume filter + full universe scan (87K trades)
+  - done: true
+    text: Bottleneck stocks overlay (9 tech themes mapped to tickers)
   - done: false
     text: Walk-forward OOS validation (2024H1→2024H2)
   - done: false
@@ -72,16 +62,21 @@ north_stars:
   name: ST+OBV Stock Scanner
   status: exploring
   target: '> +0.5% per trade OOS'
-- current: MVE built — unvalidated
+- current: Canvas viz + TV chart overlay + mobile + bottleneck map. OOS validation
+    pending.
   id: blood_flow
   metric: Blockage→breakout accuracy (30d forward)
   milestones:
   - done: true
-    text: Blockage score formula + sector aggregation
+    text: Blockage score formula + sector aggregation (OBV$ + ST)
   - done: true
-    text: Dash interactive visualization (port 8055)
+    text: Canvas vascular viz (zoom/pan, particles, mobile-responsive)
   - done: true
     text: Sector drilldown + WHY explainability panel
+  - done: true
+    text: TradingView chart overlay (OHLCV + ST + OBV + Slope + VP)
+  - done: true
+    text: 'Tech bottleneck mapping (9 themes: HBM/cooling/gases/water/Li/cyber)'
   - done: false
     text: 'Historical backtest: blockage→forward returns validation'
   - done: false
@@ -91,7 +86,8 @@ north_stars:
   target: '> 60% accuracy'
 note: Fixed Risk-Reward Win-ratio Prediction — ML crypto/stock trading strategy
 parent: MOAT
-position_x: 1
+position_x: 756
+repo_path: ''
 status: behind
 target: '> 0 (breakeven)'
 unit: ''

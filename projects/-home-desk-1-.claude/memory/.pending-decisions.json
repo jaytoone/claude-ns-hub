@@ -1,11 +1,21 @@
 {
-  "captured_at": "2026-05-11T05:44:54.707935+00:00",
+  "captured_at": "2026-05-12T05:09:40.918273+00:00",
   "cwd": "/home/desk-1/.claude",
-  "turn_count": 3551,
+  "turn_count": 5016,
   "decisions": [
     {
-      "text": "done",
-      "context": "ng completion and marking M43 done:",
+      "text": "Fixed",
+      "context": "consistent table row with: - Fixed-width left column (status/badges) - Flexible text column - Fixed-width right column (delete) - Horizontal dividers ",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "Fixed",
+      "context": "es) - Flexible text column - Fixed-width right column (delete) - Horizontal dividers between rows",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "fixed",
+      "context": "**Layout fixed.** Before → After: - **Before**: `[text squeezed] [✓ Confirm][↩ Reopen][✕]` - **After**: `[⏳][✓][↩] [text fills remaining width] [✕]` R",
       "tag": "impl_complete"
     }
   ]

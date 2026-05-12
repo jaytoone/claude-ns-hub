@@ -12,3 +12,7 @@
 - [FIXED] video-lipsync worker 미시작 버그: lipsync-worker 첫 호출도 fire-and-forget → metadata=NULL로 영구 stuck. 동일 패턴, 동일 수정 (v48 배포 2026-05-08). ginipickofficial 5개 job 345크레딧 환불 완료
 - [FIXED] SevenZero 결제 후 크레딧 미지급 버그: refreshSession() 없이 getSession() 캐시 토큰 사용 → 401 → credits never given. Fix: refreshSession() 강제 갱신 + 실패 시 logAttempt({status:'failed'}) 추가. v1.23.439 배포 2026-05-11. SevenZero 버튼 임시 숨김(v1.23.440), 재활성화: Vercel env NEXT_PUBLIC_SEVENZERO_ENABLED=true
 - [UX] SevenZero 결제 에러 시 실제 에러 메시지(result_msg)를 사용자에게 표시 — CC66 등 PG 에러코드 대신 한국어 설명 직접 노출 (2026-05-11)
+- [DONE] M0.2 인터뷰 이메일 5명 발송 완료 (36.1m5vie, maumpoint1, fumeeihuey, baghyangsug13, planele123) — 2026-05-11
+- [DONE] 계정 탈퇴 flow 검증 완료 (AccountModal stale closure 버그 포함 v1.23.445-448 수정 배포) — 2026-05-11
+- [CREDENTIAL] Paddle live account: vidraftofficial@gmail.com / Cutechicken99! — saved to ~/.claude/env/shared.env 2026-05-11
+- [STRATEGY] M0.3 경쟁사 포지셔닝 확인: Vrew/TypeCast/Supertone 모두 "YouTube AI 정책 컴플라이언스" 앵글 미점유. 추천 포지셔닝: "내 얼굴+AI 클론 목소리=YPP 컴플라이언트 Shorts". 다음: 네이버 카페/DC Inside에서 "유튜브 AI 정책" 언급 2-3개 확인 → HIGH 신뢰도 — 2026-05-12
