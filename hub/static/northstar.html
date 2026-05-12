@@ -1534,6 +1534,14 @@ function renderMilestoneCreator(projId, milestones) {
   // Claude manages all state transitions; users can only add/delete
   const canToggle = false;
 
+  // Populate conversation thread cache for comment popup
+  milestones.forEach(m => {
+    try {
+      _msConversations[m.id] = Array.isArray(m.conversation) ? m.conversation
+        : (m.conversation ? JSON.parse(m.conversation) : []);
+    } catch(_) { _msConversations[m.id] = []; }
+  });
+
   // Track which L0 items are expanded (localStorage)
   const expandKey = `ms-expand-${projId}`;
   let expanded = {};
@@ -1664,7 +1672,7 @@ function renderMilestoneCreator(projId, milestones) {
               <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px">⏳</span>
               <div style="flex:1;font-size:12px;color:var(--text)">${esc(m.text)}</div>
               <div style="display:flex;gap:4px;flex-shrink:0;align-items:center">
-                ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}
+                ${m.claude_comment ? (() => { const cnt = (_msConversations[m.id]||[]).length; return `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">${cnt > 0 ? cnt+' ' : ''}msg</span>`; })() : ''}
                 <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
                   style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono)">✓ Confirm</button>
                 <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
@@ -1892,6 +1900,83 @@ async function _msDrop(e, projId) {
 // ── Touch drag for milestone reordering (mobile support) ───────────────────
 let _touchDragMid = null, _touchDragEl = null, _touchDragProjId = null;
 let _touchDragGhost = null, _touchDragOffsetX = 0, _touchDragOffsetY = 0;
+let _nodeTouchSrc = null, _nodeTouchIdx = null, _nodeTouchGhost = null, _nodeTouchOX = 0, _nodeTouchOY = 0;
+let _msConversations = {}; // mid → [{role,text,ts}] conversation thread cache
+
+function _nodeTouchDrag() {
+  document.querySelectorAll('.ns-node').forEach(node => {
+    node.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      const rect = node.getBoundingClientRect();
+      _nodeTouchSrc = node;
+      _nodeTouchIdx = +node.dataset.idx;
+      _nodeTouchOX = t.clientX - rect.left;
+      _nodeTouchOY = t.clientY - rect.top;
+      _nodeTouchGhost = node.cloneNode(true);
+      _nodeTouchGhost.style.cssText = `position:fixed;pointer-events:none;opacity:0.7;z-index:9999;
+        width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;
+        background:var(--panel);border:1px solid var(--accent);border-radius:6px;`;
+      document.body.appendChild(_nodeTouchGhost);
+      node.style.opacity = '0.35';
+    }, {passive: true});
+
+    node.addEventListener('touchmove', e => {
+      if (!_nodeTouchSrc || _nodeTouchSrc !== node) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      _nodeTouchGhost.style.left = (t.clientX - _nodeTouchOX) + 'px';
+      _nodeTouchGhost.style.top  = (t.clientY - _nodeTouchOY) + 'px';
+      document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const tgt = el?.closest('.ns-node');
+      if (tgt && tgt !== node) {
+        const pSrc = projects[_nodeTouchIdx], pTgt = projects[+tgt.dataset.idx];
+        if (pSrc && pTgt && (parseInt(pSrc.layer)||0) === (parseInt(pTgt.layer)||0)) {
+          const r = tgt.getBoundingClientRect();
+          tgt.classList.add(t.clientX < r.left + r.width/2 ? 'drop-before' : 'drop-after');
+        }
+      }
+    }, {passive: false});
+
+    node.addEventListener('touchend', async e => {
+      if (!_nodeTouchSrc || _nodeTouchSrc !== node) return;
+      node.style.opacity = '';
+      if (_nodeTouchGhost) { _nodeTouchGhost.remove(); _nodeTouchGhost = null; }
+      document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
+      const t = e.changedTouches[0];
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const tgt = el?.closest('.ns-node');
+      if (tgt && tgt !== node) {
+        const pSrc = projects[_nodeTouchIdx], pTgt = projects[+tgt.dataset.idx];
+        if (pSrc && pTgt && (parseInt(pSrc.layer)||0) === (parseInt(pTgt.layer)||0)) {
+          const layer = parseInt(pSrc.layer)||0;
+          const lane = document.getElementById(`lane-nodes-${layer}`);
+          const domOrder = [...(lane?.querySelectorAll('.ns-node')||[])]
+            .map(el => projects.find(p => (p.id||p.name) === el.dataset.pid)).filter(Boolean);
+          const r = tgt.getBoundingClientRect();
+          const insertBefore = t.clientX < r.left + r.width/2;
+          const without = domOrder.filter(p => (p.id||p.name) !== (pSrc.id||pSrc.name));
+          const tIdx = without.findIndex(p => (p.id||p.name) === (pTgt.id||pTgt.name));
+          if (tIdx >= 0) {
+            without.splice(insertBefore ? tIdx : tIdx + 1, 0, pSrc);
+            const saves = without.map((p, pos) => {
+              p.position_x = pos;
+              return fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+                method:'PATCH', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({position_x: pos}),
+              });
+            });
+            render();
+            requestAnimationFrame(() => requestAnimationFrame(() => drawParentLines()));
+            Promise.all(saves);
+          }
+        }
+      }
+      _nodeTouchSrc = null; _nodeTouchIdx = null;
+    });
+  });
+}
 
 function _msTouchSetup(projId) {
   document.querySelectorAll('.nt-draggable-row').forEach(row => {
@@ -2156,8 +2241,15 @@ async function _openWithTerminal(origIdx, projId) {
 
 async function refreshSessionStatus() {
   try {
-    const r = await fetch('/api/northstar/sessions');
-    _sessionStatus = await r.json();
+    const [sessR, execR] = await Promise.all([
+      fetch('/api/northstar/sessions'),
+      fetch('/api/exec-sessions')
+    ]);
+    _sessionStatus = await sessR.json();
+    const execData = await execR.json();
+    for (const s of (execData.sessions || [])) {
+      _sessionStatus[s.proj_id] = 'exec-running';
+    }
   } catch(_) {}
 }
 
@@ -2168,6 +2260,8 @@ function buildSessPill(s) {
     return { cls: 'ns-sess-detached', label: 'detached' };
   if (s === 'active' || s === 'running' || s === 'ACTIVE')
     return { cls: 'ns-sess-running', label: 'ACTIVE' };
+  if (s === 'exec-running')
+    return { cls: 'ns-sess-running', label: 'exec' };
   if (s === 'waiting' || s === 'wait')
     return { cls: 'ns-sess-waiting', label: 'wait' };
   if (s === 'done')
@@ -2186,6 +2280,7 @@ function sessCell(projId) {
   const s = _sessionStatus[projId];
   if (!s || s === 'dead') return `<span class="sess-dot sess-none"><span class="sess-indicator"></span>—</span>`;
   if (s === 'active') return `<span class="sess-dot sess-active"><span class="sess-indicator"></span>live</span>`;
+  if (s === 'exec-running') return `<span class="sess-dot sess-active"><span class="sess-indicator"></span>exec</span>`;
   if (s.startsWith('idle:')) {
     const secs = parseInt(s.split(':')[1]);
     const label = secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs/60)}m` : `${Math.round(secs/3600)}h`;
@@ -2438,6 +2533,7 @@ function render() {
   // Double-rAF: first frame triggers layout, second reads final positions
   applyAlign();
   requestAnimationFrame(() => requestAnimationFrame(() => drawParentLines()));
+  _nodeTouchDrag(); // touch drag for iPad/mobile
 }
 
 // Inline rename in swimlane
@@ -2867,8 +2963,8 @@ function nodeHtml(p, idx) {
     }
   }
   const sKey = _sessionStatus[p.id || p.name];
-  const sessClass = sKey === 'active' ? 'live' : '';
-  const sessDot = sKey === 'active' ? '●' : sKey?.startsWith('idle') ? '○' : '·';
+  const sessClass = (sKey === 'active' || sKey === 'exec-running') ? 'live' : '';
+  const sessDot = (sKey === 'active' || sKey === 'exec-running') ? '●' : sKey?.startsWith('idle') ? '○' : '·';
   const active = idx === activeIdx ? 'active' : '';
   return `<div class="ns-node ${active}" data-proj-idx="${idx}" data-proj-id="${esc(p.id||p.name)}" data-layer="${p.layer||0}" draggable="true">
     <div class="ns-node-top">
@@ -3414,6 +3510,11 @@ function renderHierarchy(p) {
         <span class="dm-layer-title">Milestones</span>
         <span class="dm-layer-count" id="dm-ms-ack-badge"></span>
       </div>
+      <div style="font-size:9px;font-family:var(--mono);color:var(--text-dim);margin:2px 0 6px;display:flex;align-items:center;gap:4px;opacity:.75">
+        <span>◎ stones</span>
+        <span style="opacity:.5">→</span>
+        <span style="color:var(--accent)">☆ ${esc(p.metric || 'North Star')}</span>
+      </div>
       <div id="dm-ms-save-status" style="font-size:10px;color:var(--text-dim);font-family:var(--mono)"></div>
       <div id="dm-ms-creator" style="font-size:12px;font-family:var(--mono);color:var(--text-dim)">Loading…</div>
     </div>
@@ -3531,42 +3632,81 @@ function showCommentPopup(event, comment, projId, mid) {
   const popup = document.createElement('div');
   popup.id = 'comment-popup';
   popup.style.cssText = `position:fixed;z-index:9999;background:var(--panel);border:1px solid var(--accent-soft);
-    border-radius:8px;padding:10px 13px;max-width:300px;box-shadow:0 6px 24px rgba(0,0,0,.25);
+    border-radius:8px;padding:10px 13px;max-width:310px;min-width:240px;box-shadow:0 6px 24px rgba(0,0,0,.25);
     font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--text)`;
-  const x = Math.min(event.clientX, window.innerWidth - 320);
-  const y = Math.min(event.clientY + 8, window.innerHeight - 160);
+  const x = Math.min(event.clientX, window.innerWidth - 330);
+  const y = Math.min(event.clientY + 8, window.innerHeight - 220);
   popup.style.left = x + 'px';
   popup.style.top = y + 'px';
-  const replySection = projId && mid ? `
-    <div style="margin-top:8px;border-top:1px solid var(--panel-border);padding-top:8px">
-      <input id="comment-reply-input" type="text" placeholder="Reply to Claude…"
+
+  function buildThreadHtml() {
+    const thread = _msConversations[mid] || [];
+    if (!thread.length) return '';
+    return `<div id="comment-thread" style="margin:7px 0 0;border-top:1px solid var(--panel-border);padding-top:7px;max-height:180px;overflow-y:auto">` +
+      thread.map(msg => `<div style="margin-bottom:6px">
+        <div style="font-size:9px;color:${msg.role==='user'?'var(--text-dim)':'var(--accent)'}">
+          ${msg.role==='user'?'you':'claude'} · ${(msg.ts||'').slice(11,16)}</div>
+        <div style="font-size:11px;color:var(--text);margin-top:1px">${esc(msg.text)}</div>
+      </div>`).join('') + `</div>`;
+  }
+
+  function buildReplyInput() {
+    if (!projId || !mid) return '';
+    return `<div style="margin-top:8px;border-top:1px solid var(--panel-border);padding-top:8px">
+      <input id="comment-reply-input" type="text" placeholder="Reply…"
         style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;
           padding:4px 7px;font-family:var(--mono);font-size:10px;color:var(--text);box-sizing:border-box"
-        onkeydown="if(event.key==='Enter'){event.stopPropagation();submitCommentReply('${esc(projId)}','${esc(mid)}',this.value);document.getElementById('comment-popup')?.remove()}"
+        onkeydown="if(event.key==='Enter'){event.stopPropagation();_doCommentReply('${esc(projId)}','${esc(mid)}',this)}"
         onclick="event.stopPropagation()">
-      <button onclick="event.stopPropagation();submitCommentReply('${esc(projId)}','${esc(mid)}',document.getElementById('comment-reply-input').value);document.getElementById('comment-popup')?.remove()"
+      <button onclick="event.stopPropagation();_doCommentReply('${esc(projId)}','${esc(mid)}',document.getElementById('comment-reply-input'))"
         style="margin-top:4px;width:100%;font-size:9px;font-family:var(--mono);padding:3px 0;border-radius:3px;
-          border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer">Send reply</button>
-    </div>` : '';
-  popup.innerHTML = `<div style="font-size:9px;color:var(--accent);margin-bottom:6px;letter-spacing:.05em">CLAUDE COMMENT</div>
-    <div style="color:var(--text)">${comment}</div>${replySection}`;
-  document.body.appendChild(popup);
-  if (projId && mid) {
-    setTimeout(() => popup.querySelector('#comment-reply-input')?.focus(), 50);
+          border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer">Send</button>
+    </div>`;
   }
+
+  popup.innerHTML = `<div style="font-size:9px;color:var(--accent);margin-bottom:6px;letter-spacing:.05em">CLAUDE COMMENT</div>
+    <div style="color:var(--text-soft)">${esc(comment)}</div>
+    <div id="comment-thread-area">${buildThreadHtml()}</div>
+    ${buildReplyInput()}`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.querySelector('#comment-reply-input')?.focus(), 50);
   setTimeout(() => document.addEventListener('click', function h(e) {
     if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', h); }
   }), 100);
 }
 
-async function submitCommentReply(projId, mid, reply) {
-  if (!reply?.trim()) return;
-  // Append reply as clarification_answer so Claude sees it on next session
-  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+async function _doCommentReply(projId, mid, inputEl) {
+  const reply = inputEl?.value?.trim();
+  if (!reply) return;
+  // Append to in-memory cache
+  const thread = _msConversations[mid] || [];
+  const entry = { role: 'user', text: reply, ts: new Date().toISOString() };
+  thread.push(entry);
+  _msConversations[mid] = thread;
+  // Update popup thread area in-place
+  const threadArea = document.getElementById('comment-thread-area');
+  if (threadArea) {
+    let threadEl = threadArea.querySelector('#comment-thread');
+    if (!threadEl) {
+      threadEl = document.createElement('div');
+      threadEl.id = 'comment-thread';
+      threadEl.style.cssText = 'margin:7px 0 0;border-top:1px solid var(--panel-border);padding-top:7px;max-height:180px;overflow-y:auto';
+      threadArea.appendChild(threadEl);
+    }
+    const msgDiv = document.createElement('div');
+    msgDiv.style.marginBottom = '6px';
+    msgDiv.innerHTML = `<div style="font-size:9px;color:var(--text-dim)">you · ${entry.ts.slice(11,16)}</div>
+      <div style="font-size:11px;color:var(--text);margin-top:1px">${esc(reply)}</div>`;
+    threadEl.appendChild(msgDiv);
+    threadEl.scrollTop = threadEl.scrollHeight;
+  }
+  // Clear input
+  if (inputEl) inputEl.value = '';
+  // Persist to server and refresh milestone badge count
+  fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({clarification_answer: reply.trim()})
-  });
-  await loadMilestones(projId);
+    body: JSON.stringify({conversation: thread})
+  }).then(() => loadMilestones(projId)).catch(() => {});
 }
 
 function showClarifyPopup(event, projId, mid, clarQ, clarA, hasAnswer) {
@@ -3645,6 +3785,10 @@ function startTmuxWatch(projId) {
       if (!d.running) {
         output.textContent = '(session ended)';
         stopTmuxWatch();
+        // Sync session status and update swimlane node dots
+        await refreshSessionStatus();
+        const overlay2 = document.getElementById('detail-overlay');
+        if (!overlay2 || !overlay2.classList.contains('show')) render();
         // Reset execute button to idle
         const execBtn = document.getElementById('dm-exec-btn');
         if (execBtn) { execBtn.textContent = '▶ Execute'; execBtn.classList.remove('running','exec-loading'); }
@@ -4096,12 +4240,12 @@ document.getElementById('doc-overlay').addEventListener('click', e => {
 
 loadData();
 // Reactive-only: no auto-refresh polling. ↻ refresh button for manual reload.
-// Session status updates every 2 min (lightweight, no render when detail open).
+// Session status (PTY + exec sessions) updates every 10s.
 setInterval(async () => {
   await refreshSessionStatus();
   const overlay = document.getElementById('detail-overlay');
   if (!overlay || !overlay.classList.contains('show')) render();
-}, 120000); // session pill only, every 2 min
+}, 10000); // exec session sync every 10s
 
 // Auto-refresh: swimlane every 30s, detail card milestones every 15s
 // Paused while any input/textarea is focused (user is typing)
