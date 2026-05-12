@@ -5,7 +5,7 @@ connections:
 - FromScratch
 - HugwartsBanana
 current: '60'
-deadline: '2026-08-31'
+deadline: '2026-05-13'
 id: MOAT
 layer: 1
 links: ''
@@ -100,115 +100,580 @@ log:
 - date: '2026-05-11'
   text: '4af06db chore: update omc retrieval log; c08d8d9 chore: update omc retrieval
     log (+1 more)'
+- date: '2026-05-11'
+  text: 'bfa6de2 chore: update omc retrieval log; add live-inf-test.md; 4af06db chore:
+    update omc retrieval log (+1 more)'
+- date: '2026-05-11'
+  text: '8f45005 chore: update omc retrieval log; bfa6de2 chore: update omc retrieval
+    log; add live-inf-test.md (+1 more)'
+- date: '2026-05-11'
+  text: '0501443 chore: update omc retrieval log; 8f45005 chore: update omc retrieval
+    log (+1 more)'
+- date: '2026-05-11'
+  text: '2b4f550 chore: update omc retrieval log; 0501443 chore: update omc retrieval
+    log (+1 more)'
+- date: '2026-05-11'
+  text: 'bdcc479 chore: update omc retrieval log; 2b4f550 chore: update omc retrieval
+    log (+1 more)'
+- date: '2026-05-11'
+  text: '1a6547e chore: update omc retrieval log; bdcc479 chore: update omc retrieval
+    log (+1 more)'
+- date: '2026-05-11'
+  text: '66a4bb3 chore: update omc retrieval log; 1a6547e chore: update omc retrieval
+    log (+1 more)'
+- date: '2026-05-11'
+  text: '2c1b7c8 chore: update omc retrieval log; 66a4bb3 chore: update omc retrieval
+    log (+1 more)'
+- date: '2026-05-11'
+  text: 'ff6d295 chore: update omc retrieval log; 2c1b7c8 chore: update omc retrieval
+    log (+1 more)'
+- date: '2026-05-11'
+  text: '34130b7 chore: update omc retrieval log; ff6d295 chore: update omc retrieval
+    log (+1 more)'
 metric: Hub dashboard completeness score (%)
 milestones:
-- claude_ack: 2026-05-11T15:32
+- claude_ack: now
   done: false
+  id: M91
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T16:24
+  status: pending_confirmation
+  text: why the empty milestone not directly delete ?
+  user_added_at: 2026-05-12T16:17
+- claude_ack: now
+  done: false
+  id: M78
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T16:23
+  status: pending_confirmation
+  text: align shoud work either.
+  user_added_at: 2026-05-12T16:16
+- claude_ack: 2026-05-12T15:59
+  claude_comment: killSession() now immediately clears dm-exec-sessions and resets
+    exec button. _refreshExecState exposed globally so kill can restart poll after
+    300-800ms delay confirming session gone.
+  done: false
+  id: M89
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T15:59
+  status: pending_confirmation
+  text: there is some delaytion on live session kill -> live session list disappers. solve
+    this problem. u can shorten latency or show some load ui , whatever .
+  user_added_at: 2026-05-12T15:38
+- claude_ack: 2026-05-12T15:34
+  done: false
+  id: M87
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T15:34
+  status: pending_confirmation
+  text: the claude's comments about relateions between stones and the stars should
+    be shwon in a new modeal like comment modoal.
+  user_added_at: 2026-05-12T15:24
+- claude_ack: 2026-05-12T15:59
+  claude_comment: Task queue pane max-height reduced from 200px to 120px (~3 tasks
+    visible). overflow-y:auto ensures scrolling for more tasks. Gap between rows removed
+    for tighter fit.
+  done: false
+  id: M85
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T15:26
+  status: pending_confirmation
+  text: make task queus pane and scrollable. -> the task queue pane size should shows
+    only 3 tasks and if want to see oother tasks, scroll.
+  user_added_at: 2026-05-12T15:13
+- claude_ack: now
+  done: false
+  id: M92
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T16:54
+  status: pending_confirmation
+  text: 모바일 환경에서 드래그 버튼으로만 스톤 페인 이동가능하도록
+  user_added_at: 2026-05-12T16:29
+- claude_ack: now
+  claude_comment: 'Fixed: badge shows exec/live-session state only (no PTY states).
+    Removed onclick from ns-sess-pill (no longer opens terminal on click). Fixed 💬
+    badge inside contenteditable — moved outside to prevent textContent pollution.
+    Moved mNewBadge and star_relation outside contenteditable div.'
+  done: false
+  id: M77
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T14:35
+  status: pending_confirmation
+  text: use current ns-card 's terminal badge status as a live session state only,
+    it's showing claldue-terminals status too now . fix it. -> when user clicked it,
+    it should now open the claude terminal anymoroe.and when i liked a reopen / confrim
+    in other stone pane
+  user_added_at: 2026-05-12T14:20
+- claude_ack: now
+  claude_comment: 'Server now inserts new milestones at index 0 (prepend). Client
+    sort changed to stable: unreviewed first, then pending_confirmation last, then
+    preserve server order. New milestones always appear at top.'
+  done: false
+  id: M86
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T15:59
+  star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
+    new milestone keep added in below the queued panes. it should added on the top
+    of the list,'
+  status: pending_confirmation
+  text: new milestone keep added in below the queued panes. it should added on the
+    top of the list,
+  user_added_at: 2026-05-12T15:37
+- claude_ack: now
+  done: false
+  id: M88
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T15:34
+  status: pending_confirmation
+  text: the prograss bars (star - arc, deadline,  milestone) should be locate on the
+    same pane. it should show in horizontally parallele.
+  user_added_at: 2026-05-12T15:26
+- claude_ack: now
+  claude_comment: '## Weekly Progress Bar Design Options
+
+
+    Goal: express "how far through the week toward the deadline" visually using a
+    progress bar.
+
+
+    ---
+
+
+    **Option A — Week-cell strip (recommended)**
+
+    Render N cells (one per remaining week). Cells before today filled, cells after
+    today empty. Clean, scannable.
+
+    ```
+
+    [■][■][■][□][□]  Week 3/5
+
+    ```
+
+    Pros: immediately shows "how many weeks left" + elapsed position. Cons: needs
+    deadline set.
+
+
+    ---
+
+
+    **Option B — Weekly velocity bar**
+
+    Bar = (milestones done this week) / (target pace per week). Green if on pace,
+    red if behind.
+
+    ```
+
+    ▓▓▓▓░░░░  4/7 this week
+
+    ```
+
+    Pros: shows output rate, not just time. Cons: requires defining "target pace"
+    per project.
+
+
+    ---
+
+
+    **Option C — Deadline countdown arc (mini)**
+
+    Mini half-arc gauge (same as NS arc) showing % of deadline window elapsed. Pair
+    with D-N badge.
+
+    Pros: visually distinct, reuses existing arc component. Cons: abstract, harder
+    to read at a glance.
+
+
+    ---
+
+
+    **Option D — Burndown sparkline**
+
+    Tiny 20px sparkline: remaining milestones over the last 7 days. Slope shows pace.
+
+    Pros: shows trend, not just snapshot. Cons: requires historical data.
+
+
+    ---
+
+
+    **Recommendation**: Option A (week-cells) for deadline UI, Option B (velocity)
+    for milestone pane header. Both are implementable with existing data (deadline
+    field + milestone done timestamps).'
+  conversation:
+  - role: user
+    text: where is meta row in ui ?
+    ts: '2026-05-12T06:31:39.022Z'
+  done: false
+  id: M83
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T15:03
+  star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
+    u can add the logs on when the stones are added to the ui . if needed u can add
+    the more columns for future moentizations / valuable user datas (just for now
+    save them in local later-> db server )'
+  status: pending_confirmation
+  text: 💬progress bar 를 가지고 weekly 를 표현할수있는 방법을 고안해보기 바람. comment 로 달아놓아. 이 마일스톤에
+    .
+  user_added_at: 2026-05-12T14:52
+- claude_ack: now
+  done: false
+  id: M90
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T16:23
+  status: pending_confirmation
+  text: view live session can removed but it's function can be inherit to the 'session
+    list button ' which is showing "claude-exec-MOAT" like,
+  user_added_at: 2026-05-12T15:40
+- claude_ack: 2026-05-12T15:36
+  done: true
+  done_at: 2026-05-12T15:36
+  id: M66
+  layer: 0
+  parent_id: null
+  status: done
+  text: tmux session - ui live sync should be perfectly managed (when session killed,
+    ui should notice that the session is killed (idle) , if the sesison is working
+    -> u should show that the session is working.
+  user_added_at: 2026-05-12T11:25
+- claude_ack: 2026-05-12T15:35
+  done: true
+  done_at: 2026-05-12T15:35
+  id: M67
+  layer: 0
+  parent_id: null
+  status: done
+  text: northstar-session-start.py (SessionStart hook)가 여전히 존재하고, 세션 시작 시 CronCreate
+    지시를  system-reminder로 주입합니다 — 그래서 매 세션마다 cron이 생성되는 것입니다.
+  user_added_at: 2026-05-12T11:42
+- claude_ack: 2026-05-12T15:35
+  done: true
+  done_at: 2026-05-12T15:35
+  id: M68
+  layer: 0
+  parent_id: null
+  status: done
+  text: in a layer , the ns -card should be movable in horizontal freely. (freely
+    located)
+  user_added_at: 2026-05-12T11:43
+- claude_ack: 2026-05-12T15:35
+  done: true
+  done_at: 2026-05-12T15:35
+  id: M69
+  layer: 0
+  parent_id: null
+  status: done
+  text: drag button not works, fix this . to be dragged.
+  user_added_at: 2026-05-12T12:03
+- claude_ack: 2026-05-12T15:35
+  done: true
+  done_at: 2026-05-12T15:35
+  id: M75
+  layer: 0
+  parent_id: null
+  status: done
+  text: deadline is not working . when i set a new one it just not appliedto ui .
+    -> when d day's not changing .
+  user_added_at: 2026-05-12T12:48
+- claude_ack: 2026-05-12T15:35
+  done: true
+  done_at: 2026-05-12T15:35
+  id: M70
+  layer: 0
+  parent_id: null
+  status: done
+  text: why we need okr ? -> (in user questions, not a command the claude should make
+    a comment on the stone pane -> make the system for it and comment on this stone)
+  user_added_at: 2026-05-12T12:04
+- claude_ack: 2026-05-12T15:34
+  claude_comment: Already implemented in previous session. Verified in current session.
+  done: true
+  done_at: 2026-05-12T15:34
+  id: M76
+  layer: 0
+  parent_id: null
+  status: done
+  text: draw a column grid line in ns -card dashboard which has 3 layers now. so user
+    can drag a ns-card into that grid freely.
+  user_added_at: 2026-05-12T14:00
+- claude_ack: 2026-05-12T15:33
+  claude_comment: Prettier task queue, session list, and view live session button
+    implemented.
+  done: true
+  done_at: 2026-05-12T15:33
+  id: M79
+  layer: 0
+  parent_id: null
+  star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
+    make prettier ui ux on ''session list / task list / view live session button'''
+  status: done
+  text: make prettier ui ux on 'session list / task list / view live session button'
+  user_added_at: 2026-05-12T14:26
+- claude_ack: 2026-05-12T15:33
+  claude_comment: 'Mobile minimize fixed: CSS class .ns-term-minimized beats media
+    query specificity.'
+  done: true
+  done_at: 2026-05-12T15:33
+  id: M80
+  layer: 0
+  parent_id: null
+  star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
+    claude-terminal minimalize doesn''t work on mobile env (the window doens''t minize,
+    the text only diasppears, bug.)'
+  status: done
+  text: claude-terminal minimalize doesn't work on mobile env (the window doens't
+    minize, the text only diasppears, bug.)
+  user_added_at: 2026-05-12T14:29
+- claude_ack: 2026-05-12T15:33
+  claude_comment: Already implemented in previous session. Verified in current session.
+  done: true
+  done_at: 2026-05-12T15:33
+  id: M81
+  layer: 0
+  parent_id: null
+  status: done
+  text: u should notice / draw that user can notice the belowest stones (which is
+    queued) would has the priority.
+  user_added_at: 2026-05-12T14:35
+- claude_ack: 2026-05-12T15:33
+  done: true
+  done_at: 2026-05-12T15:33
+  id: M84
+  layer: 0
+  parent_id: null
+  status: done
+  text: the milestones 'saved' message should shown in the line "◎ stones→☆ Hub dashboard
+    completeness score (%)" so not 방해하다 the prograss bars,
+  user_added_at: 2026-05-12T15:11
+- claude_ack: 2026-05-12T15:30
+  claude_comment: Already implemented in previous session. Verified in current session.
+  done: true
+  done_at: 2026-05-12T15:30
+  id: M82
+  layer: 0
+  parent_id: null
+  status: done
+  text: comfirm/ reopen milstones should not be above the other status stones.
+  user_added_at: 2026-05-12T14:52
+- claude_ack: 2026-05-12T15:32
+  claude_comment: Chat/reply button added to all milestone rows. Conversation accumulates.
+  conversation:
+  - role: user
+    text: add some comment here,
+    ts: '2026-05-12T05:12:03.618Z'
+  done: true
+  done_at: 2026-05-12T15:32
+  id: M59
+  layer: 0
+  parent_id: null
+  status: done
+  text: mdf💬💬💬💬💬💬💬💬ai 와 채팅한다는 개념으로 milestone 에 대한 작업 내용 및 대화 이어가기가 진행되면 좋을것 (미래 이야기)
+    -> 사용자의 응답이 reply button 과 함께 commnet 에서 사라지는 것이 아니라 , 누적되어야함 일정 수준.
+  user_added_at: 2026-05-12T10:37
+- claude_ack: 2026-05-12T14:52
+  done: true
+  done_at: 2026-05-12T14:52
+  id: M54
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-12T10:17
+  status: done
+  text: Live session 스탑시 제대로 해당 세션 킬되는지 점검하라
+  user_added_at: 2026-05-12T00:21
+- claude_ack: 2026-05-12T14:52
+  done: true
+  done_at: 2026-05-12T14:52
+  id: M55
+  layer: 0
+  parent_id: null
+  status: done
+  text: iPad env, the Claude terminal (pty) size should not use the whole width but
+    to reduce to the size of current 3/5
+  user_added_at: 2026-05-12T00:23
+- claude_ack: 2026-05-12T15:06
+  done: true
+  done_at: 2026-05-12T15:06
+  id: M61
+  layer: 0
+  parent_id: null
+  status: done
+  text: execute 버튼 클릭시, live session 이 열리기 가지 의 로딩 스피너 / 로딩 ui 가 필요할 것 (execute 버튼에
+    보여준다던지 - 사용자가 기다려야한다는 느낌을 주는것)
+  user_added_at: 2026-05-12T10:49
+- claude_ack: 2026-05-12T15:06
+  done: true
+  done_at: 2026-05-12T15:06
+  id: M64
+  layer: 0
+  parent_id: null
+  status: done
+  text: if live session  killed, the execute button should be return into idle state
+    isn't it ?
+  user_added_at: 2026-05-12T11:03
+- clarification_answer: watch it agian,
+  clarification_answered_at: 2026-05-12T12:39
+  clarification_question: This milestone was submitted with no text. What task or
+    goal did you have in mind?
+  claude_ack: 2026-05-12T14:52
+  done: true
+  done_at: 2026-05-12T14:52
+  id: M74
+  layer: 0
+  parent_id: null
+  status: done
+  text: the live session list should sho on ly the pj related things not the others
+    (ex, moat 's session list should show on moat not the ctx, also should how the
+    full session name like tmux .... not the 'moat'
+  user_added_at: 2026-05-12T12:37
+- claude_ack: 2026-05-12T13:53
+  done: true
+  done_at: 2026-05-12T13:53
+  id: M71
+  layer: 0
+  parent_id: null
+  status: done
+  text: when modifing the deadline -> u can show up the tiny calender for ui ux
+  user_added_at: 2026-05-12T12:10
+- clarification_question: Text appears cut off at 'sh' — could you complete the request?
+    (e.g. 'why the ns-card terminal status should show X' or 'should not show Y')
+  claude_ack: 2026-05-12T13:52
+  done: true
+  done_at: 2026-05-12T13:52
+  id: M72
+  layer: 0
+  parent_id: null
+  status: done
+  text: why the ns-card 's terminal status showing 'exec' even though i kill the clalude
+    termaianl , is it caused by the live session ? cause live session was on working
+    status. ihitnk u should divide there status in ui, make the perfect method for
+    it.
+  user_added_at: 2026-05-12T12:17
+- claude_ack: 2026-05-12T12:39
+  done: true
+  done_at: 2026-05-12T12:39
+  id: M73
+  layer: 0
+  parent_id: null
+  status: done
+  text: '? badge doens''t show up the claude''s reply on it fix it pls .'
+  user_added_at: 2026-05-12T12:19
+- claude_ack: 2026-05-12T10:34
+  done: true
+  done_at: 2026-05-12T10:34
+  id: M53
+  layer: 0
+  parent_id: null
+  status: done
+  text: 마일스톤 페인 드래그가 너무 민감함, 페인 왼쪽에 드래그 버튼으로 드래그 할수있도록 유도하는게 나음
+  user_added_at: 2026-05-11T23:49
+- claude_ack: 2026-05-12T10:36
+  done: true
+  done_at: 2026-05-12T10:36
+  id: M47
+  layer: 0
+  parent_id: null
+  status: done
+  text: 마일스톤 번호 표시하도록 (마일 스톤 페인에) 현재는 넘버링용 번호만 보이는데 세션에 보이는 마일스톤 넘버가 보여져야함
+  user_added_at: 2026-05-11T23:47
+- claude_ack: 2026-05-12T10:36
+  done: true
+  done_at: 2026-05-12T10:36
+  id: M52
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-12T09:28
+  status: done
+  text: 골 에대한 프로그래스 진행률 로직이 실제 상태를 반영하도록 개선해야함
+  user_added_at: 2026-05-11T23:48
+- claude_ack: 2026-05-12T12:04
+  done: true
+  done_at: 2026-05-12T12:04
+  id: M56
+  layer: 0
+  parent_id: null
+  status: done
+  text: 데드라인 시각화 -> 수정가능하도록 설정하고 데드라인 남은 프로그래스 시각화
+  user_added_at: 2026-05-12T09:19
+- claude_ack: 2026-05-11T23:42
+  done: true
+  done_at: 2026-05-11T23:42
+  id: M49
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-11T22:11
+  status: done
+  text: each ns-card's dir should be shown in the deatail card -> 카드 디테일 해더에 옅은색으로
+    표시
+  user_added_at: 2026-05-11T16:57
+- claude_ack: 2026-05-11T23:42
+  done: true
+  done_at: 2026-05-11T23:42
   id: M42
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T13:58
-  queued_at: 2026-05-11T15:32
-  status: pending_confirmation
-  text: 마일스톤 드래그시 위아래 순서 변경 가능하도록 수정 -> 안되는것들이 존재함 이유는 ?
+  queued_at: 2026-05-11T22:13
+  status: done
+  text: 드래그 핸들을 마일스톤페인에 살짝 표시해 ,
   user_added_at: 2026-05-11T13:52
-- claude_ack: 2026-05-11T15:33
-  done: false
-  id: M43
+- claude_ack: 2026-05-11T23:42
+  done: true
+  done_at: 2026-05-11T23:42
+  id: M45
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T15:33
-  queued_at: 2026-05-11T15:32
-  status: pending_confirmation
-  text: 모바일 화면에서의 ns card 가 데스크탑 환경과 동일한 사이즈 / 비율이 되도록 수정바람
-  user_added_at: 2026-05-11T14:42
-- claude_ack: 2026-05-11T15:34
-  done: false
-  id: M44
+  queued_at: 2026-05-11T21:42
+  status: done
+  text: 마일스톤 드래그하고 나서 , 위치이동하지 않았을때, 해당 pane 이 불투명해지는 문제가 생김 (다시 돌아오지않음)
+  user_added_at: 2026-05-11T15:50
+- claude_ack: 2026-05-11T20:42
+  done: true
+  done_at: 2026-05-11T20:42
+  id: M46
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T15:34
-  queued_at: 2026-05-11T15:32
-  status: pending_confirmation
-  text: '? 배지가 달린 곳에 응답을 적을 경우 해당 응답이 기록되도록 할것 (지금은 answer 버튼 클릭시 forget 됨)그리고 ? 배지
-    달린 마일스톤도 수정가능하도록해야함'
-  user_added_at: 2026-05-11T14:43
+  queued_at: 2026-05-11T16:25
+  status: done
+  text: 클로드가 마일스톤에 단 댓글이 글자가 회색이라잘 보이지 않고 -> ? 배지 처럼 커멘트 배지를 만들어서 클릭시 보여지도록 수정바람
+  user_added_at: 2026-05-11T16:18
 - clarification_question: 이것은 구체적인 구현 요청인가요, 아니면 아키텍처 방향에 대한 질문인가요? 어떤 에이전트에게 위임하는
     방식을 원하시나요?
-  claude_ack: 2026-05-11T15:34
+  claude_ack: 2026-05-11T20:32
   claude_comment: '가능하지만 컨텍스트 문제 해결 방법이 핵심: (1) 위임 가능: claude --print로 각 마일스톤을 격리된
     sub-agent에 전달 가능. 컨텍스트 오염 없음. (2) 컨텍스트 문제: 서브에이전트는 코드베이스를 처음부터 읽어야 함 (cold start).
     --continue 연속성 없음. 이전 에이전트가 수정한 파일 상태 알 수 없음 → 충돌 위험. (3) 현재 단일세션 방식의 장점: --continue로
     이전 맥락 유지, TodoWrite로 crash-safe 추적, 파일 충돌 없음. (4) 권장: 마일스톤이 독립적(다른 파일 수정)일 때만
     sub-agent 위임. 같은 파일 수정하는 연속 마일스톤은 단일 세션 유지.'
   cron_job_id: null
-  done: false
+  done: true
+  done_at: 2026-05-11T20:32
   id: M15
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-10T19:38
   queued_at: 2026-05-11T15:32
-  status: pending_confirmation
+  status: done
   text: 마일스톤 관리를 개별 에이전트에게 위임가능한가 (컨텍스트 문제는 어떡하나 ? )
   user_added_at: 2026-05-10T18:25
-- claude_ack: 2026-05-11T15:33
-  claude_comment: OKR은 선택적입니다. NS(North Star)가 방향이라면, OKR은 분기별 실행 목표입니다. 소규모/1인 프로젝트에서는
-    NS + Milestones만으로 충분하며 OKR 레이어는 팀 단위 정렬이 필요할 때 의미를 가집니다. 현재 MOAT 프로젝트는 OKR 없이
-    NS + Milestone 구조로 운영하는 것이 맞습니다. OKR 섹션은 collapsed 기본값으로 유지됩니다.
-  done: false
-  id: M30
+- claude_ack: 2026-05-11T16:18
+  done: true
+  done_at: 2026-05-11T16:18
+  id: M43
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T10:55
   queued_at: 2026-05-11T15:32
-  status: pending_confirmation
-  text: 왜 okr 이 필요한ㄱ ㅏ?  사용자가 ns detal card 에서 이 질문에 대한 claude 의 커맨트를 확인가능토록하라okr
-    를 계속해서 지우지 않는 이유를 milestone ui 에 커맨트를 달도록하라 그리고 ? 배지에 대한 커맨트도 왜 달았는지를 알수있도록 하라
-    -> 해당 작업 내용에 대한 rejection 은 마일스톤에 커맨트를 달도록해라. okr pane 에 달지말고
-  user_added_at: 2026-05-11T10:50
-- clarification_question: '''Runtime week'' is vague — what needs to be implemented?
-    Weekly runtime summary, or something else?'
-  claude_ack: '2026-05-11T12:09:40+09:00'
-  done: false
-  id: M33
-  layer: 0
-  parent_id: null
-  status: needs_clarification
-  text: Runtime week
-  user_added_at: 2026-05-11T12:00
-- clarification_question: '''ai 와의 댓글 개념''이 무엇을 의미하는지 구체적으로 설명해주세요. 마일스톤에서 AI가 댓글을
-    달 수 있는 기능인가요? 어떤 화면에서, 어떤 형태로?'
-  claude_ack: '2026-05-11T12:34:51+09:00'
-  done: false
-  id: M35
-  layer: 0
-  parent_id: null
-  status: needs_clarification
-  text: ai 와의 댓글 개념
-  user_added_at: 2026-05-11T12:34
-- clarification_question: 이 마일스톤 텍스트가 job log 데이터와 섞인 것 같습니다. 실제 요청이 무엇인지 다시 입력해주세요.
-  claude_ack: 2026-05-11T13:04
-  done: false
-  id: M38
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-11T13:04
-  status: needs_clarification
-  text: 'JOBS ↻✓ 20260511-104118-749: Committed as `8e5e217`. The M26/M27/M28 fixes
-    are✓ 20260511-104201-980: `hub/static/northstar.html` has the M26/M27/M28 ch✓ 20260511-104209-631:
-    No action needed — verification passed. Won''t comm--- 이거 역순으로 수정하라고'
-  user_added_at: 2026-05-11T13:02
-- clarification_answer: ㅇ
-  clarification_answered_at: 2026-05-11T14:43
-  clarification_question: 어떤 pane을 제거하고 싶으신가요? detail card 안의 특정 섹션(OKR, Jobs, CTX
-    topics 등)인지 아니면 다른 UI 요소인지 알려주세요.
-  claude_ack: 2026-05-11T15:41
-  done: false
-  id: M39
-  layer: 0
-  parent_id: null
-  status: pending
-  text: 아래 보이는 해당 페인은 제거 가능하지 않나 왜 존재하나 ?
+  status: done
+  text: 모바일 화면에서의 ns card 가 데스크탑 환경과 동일한 사이즈 / 비율이 되도록 수정바람
+  user_added_at: 2026-05-11T14:42
 - done: true
   id: M1
   layer: 0
@@ -506,22 +971,80 @@ milestones:
   status: done
   text: TEST watcher auto-ack milestone
   user_added_at: 2026-05-11T13:44
-- claude_ack: 2026-05-11T16:00
-  done: false
-  id: M45
+- claude_ack: 2026-05-11T20:32
+  done: true
+  done_at: 2026-05-11T20:32
+  id: M48
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T16:00
-  queued_at: 2026-05-11T15:56
-  status: pending_confirmation
-  text: 마일스톤 드래그하고 나서 , 위치이동하지 않았을때, 해당 pane 이 불투명해지는 문제가 생김 (다시 돌아오지않음)
-  user_added_at: 2026-05-11T15:50
+  queued_at: 2026-05-11T16:25
+  status: done
+  text: 신규 마일스톤 추가후 execute 클릭시 EXECUTION LOG[오후 4:23:24] Dispatched 0 task(s)… 만
+    보여지고 아무런 반응이 안나옴 해결하기바람 /live 스킬로
+  user_added_at: 2026-05-11T16:23
+- claude_ack: 2026-05-11T20:42
+  done: true
+  done_at: 2026-05-11T20:42
+  id: M50
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-11T19:27
+  status: done
+  text: claude comment 에 대한 답변을 달 수 있게 설정해야함 -> 대화가 이어지는거지,
+  user_added_at: 2026-05-11T16:59
+- claude_ack: 2026-05-11T20:29
+  done: true
+  done_at: 2026-05-11T20:29
+  id: M51
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-11T19:27
+  status: done
+  text: Disable live session scroll down when user scroll in the terminal
+  user_added_at: 2026-05-11T19:24
+- claude_ack: 2026-05-12T12:03
+  done: true
+  done_at: 2026-05-12T12:03
+  id: M57
+  layer: 0
+  parent_id: null
+  status: done
+  text: 마일스톤 드래그 버튼이 드래그안되, 기존에 잇던 마일스톤에도 동일하게 적용해야하는거아닌가 ? 그리고 현재 업데이트되는 hub dash
+    관련 내용들은 moat 카드에만 적용하는게 아니라 범용 카드에 동일하게 적용하는 것임
+  user_added_at: 2026-05-12T10:34
+- claude_ack: 2026-05-12T12:00
+  done: true
+  done_at: 2026-05-12T12:00
+  id: M60
+  layer: 0
+  parent_id: null
+  status: done
+  text: ns-detail card 닫으면 live session 이 살아있더라도 execute 버튼이 idle 상태로 돌아옴.
+  user_added_at: 2026-05-12T10:39
+- claude_ack: 2026-05-12T11:59
+  done: true
+  done_at: 2026-05-12T11:59
+  id: M62
+  layer: 0
+  parent_id: null
+  status: done
+  text: live session stop -> kill 로 변경하고 진행 시 confrim 모달 띄워야한다.
+  user_added_at: 2026-05-12T10:53
+- claude_ack: 2026-05-12T11:59
+  done: true
+  done_at: 2026-05-12T11:59
+  id: M63
+  layer: 0
+  parent_id: null
+  status: done
+  text: 완료된 job 은 jobs pane 에서 지워줄것 그리고 jobs -> tasks 로 수정하기바람,
+  user_added_at: 2026-05-12T10:54
 name: Claude-Hub
 note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
   first, then leverage it for content/career.
 parent: null
-position_x: 1
-repo_path: /home/desk-1/.claude/hub
+position_x: 547
+repo_path: ''
 stage: unassigned
 target: '100'
 unit: '%'

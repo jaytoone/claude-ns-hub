@@ -2486,7 +2486,9 @@ function nodeCard(p, idx) {
         onblur="saveNodeName(this,'${pid}')"
         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
         >${esc(p.name)}</span>
-      <span class="ns-sess-pill ${sessPill.cls}" title="Live session status">${sessPill.label}</span>
+      <span class="ns-sess-pill ${sessPill.cls}" title="View live session"
+        onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')"
+        style="${sessPill.cls ? 'cursor:pointer' : ''}">${sessPill.label}</span>
     </div>
     <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
     <div class="ns-node-bottom">
@@ -3703,14 +3705,7 @@ function renderHierarchy(p) {
       </div>
       <!-- Job board: queued/running/done tasks -->
       <div id="dm-task-board" style="margin-top:8px"></div>
-      <!-- Live tmux session trigger button (M79: polished) -->
-      <div id="dm-tmux-trigger" style="display:none;margin-top:8px">
-        <button onclick="toggleTmuxOverlay()" style="display:flex;align-items:center;gap:8px;font-size:11px;font-family:var(--mono);background:linear-gradient(135deg,rgba(20,40,38,.92) 0%,rgba(13,30,48,.92) 100%);border:1px solid rgba(78,200,180,.25);border-radius:8px;padding:8px 14px;cursor:pointer;color:#7ec8c8;width:100%;backdrop-filter:blur(8px);box-shadow:0 2px 12px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.04);letter-spacing:.02em;transition:border-color .15s,box-shadow .15s">
-          <span style="width:8px;height:8px;border-radius:50%;background:#4ecdc4;flex-shrink:0;box-shadow:0 0 6px #4ecdc4;animation:sess-pulse 1.5s ease-in-out infinite"></span>
-          <span style="flex:1;text-align:left">View live session</span>
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0"><path d="M3 13L13 3M7 3h6v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
+      <!-- M90: "View live session" button removed — use the session pill on the card instead -->
     </div>
 
     <!-- Layer 3: Milestones — numbered toggle (primary, editable) -->
@@ -3974,10 +3969,8 @@ async function killExecSession() {
 function startTmuxWatch(projId) {
   _tmuxWatchProjId = projId;
   const output = document.getElementById('dm-tmux-output');
-  const trigger = document.getElementById('dm-tmux-trigger');
   const overlay = document.getElementById('tmux-live-overlay');
   if (!output) return;
-  if (trigger) trigger.style.display = 'block';
   if (overlay) overlay.style.display = 'block';
   output.textContent = 'Connecting to session…';
   if (_tmuxWatchInterval) clearInterval(_tmuxWatchInterval);
@@ -4015,8 +4008,6 @@ function stopTmuxWatch() {
   if (_tmuxWatchInterval) { clearInterval(_tmuxWatchInterval); _tmuxWatchInterval = null; }
   const overlay = document.getElementById('tmux-live-overlay');
   if (overlay) overlay.style.display = 'none';
-  const trigger = document.getElementById('dm-tmux-trigger');
-  if (trigger) trigger.style.display = 'none';
 }
 
 async function loadTaskBoard(projId) {
