@@ -151,20 +151,9 @@ def main():
     # CRON PROTOCOL removed: server.py _start_milestone_watcher asyncio task handles
     # completion-log → pending_confirmation promotion every 5 min. No per-milestone crons needed.
 
-    # BACKGROUND WATCHER: create only if not already running
-    lines.append("")
-    lines.append("BACKGROUND WATCHER (mandatory — create once per session):")
-    lines.append("  First call CronList — if any job already has 'task queue' in its prompt, skip CronCreate (already running).")
-    lines.append("  Otherwise create exactly ONE watcher:")
-    lines.append(f"  CronCreate(cron='*/5 * * * *', recurring=True, prompt=")
-    lines.append(f"    '{proj_id} task queue: GET http://100.119.82.4:9000/api/northstar/{proj_id}/milestones.")
-    lines.append( "     Step 1 — NEW unacked: status=pending AND claude_ack=null.")
-    lines.append( "       For each: PATCH claude_ack=now. If clear (>15 chars) → keep status=pending. If vague → needs_clarification + question.")
-    lines.append( "       (Promotion to queued is user-only via Execute button — do NOT auto-promote here.)")
-    lines.append( "     Step 2 — WORK: (skip — Execute button + exec session handle implementation. Do NOT auto-implement here.)")
-    lines.append( "     Step 3 — ANSWERED: needs_clarification AND clarification_answer set → PATCH status=pending.")
-    lines.append( "     If nothing, output nothing.'")
-    lines.append( "  REPL idle → cron fires → works on first queued → done → idle → next task. Self-scheduling chain.")
+    # BACKGROUND WATCHER removed: server.py _start_milestone_watcher asyncio task handles
+    # all state transitions (ack, completion-log sync, clarification promotion) every 5 min.
+    # No CronCreate needed.
 
     # Autonomous exec session detection: if pending-execute-prompt.txt exists,
     # this session was spawned by Execute — inject full content directly (no file read needed)
