@@ -59,25 +59,25 @@ log:
     (+1 more)
 metric: GPQA Diamond single-model score
 milestones:
-- claude_ack: 2026-05-11T19:37
-  done: false
+- claude_ack: 2026-05-12T18:28
+  done: true
+  done_at: 2026-05-12T18:28
   id: M9
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T19:37
   queued_at: 2026-05-11T00:04
-  status: pending_confirmation
+  status: done
   text: '[Darwin-C] GSPO on darwin36b: MoE-stable RL (arXiv:2507.18071) with router
     weight freeze for first 20 steps + load-balance aux loss. Avoids expert-activation
     volatility. (~4h Gate 0 test)'
-- claude_ack: 2026-05-11T19:40
-  done: false
+- claude_ack: 2026-05-12T18:28
+  done: true
+  done_at: 2026-05-12T18:28
   id: M10
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-11T19:40
   queued_at: 2026-05-11T00:04
-  status: pending_confirmation
+  status: done
   text: '[Darwin-D] Speculative decoding eval: darwin28b draft + darwin36b target
     → 2-3x faster eval if tokenizers match. Enables rapid CMA-ES fitness evaluation.'
 - claude_ack: 2026-05-11T19:40
@@ -97,8 +97,7 @@ milestones:
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-11T19:40
-  queued_at: 2026-05-11T19:37
-  status: pending_confirmation
+  status: pending
   text: Consider the evolution / experimental latency -> we should using vllm and
     also for It we can use other model that is compatible with vllm .
   user_added_at: 2026-05-11T00:24
@@ -189,7 +188,7 @@ note: 'NEW NS 2026-05-09: Darwin-native CMA-ES evolutionary merge as primary lev
   jackrong35b via DARE-TIES with GPQA fitness function. Complementary error profiling
   + speculative decoding for faster eval cycles.'
 parent: null
-position_x: 8
+position_x: 318
 repo_path: ''
 stage: unassigned
 status: pivoting

@@ -163,16 +163,21 @@ milestones:
     this problem. u can shorten latency or show some load ui , whatever . -> how would
     u solve this ?
   user_added_at: 2026-05-12T15:38
-- claude_ack: 2026-05-12T17:23
+- claude_ack: 2026-05-12T20:19
+  claude_comment: 'The session-start hook already surfaces CONVERSATION REPLIES AWAITING
+    CLAUDE with full reply protocol. Claude now actively replies and acts on user
+    messages at session start. This session: replied to M89 (button icon feedback),
+    M83 (meta row location), M59 (added comment). The mechanism is the UserPromptSubmit
+    hook which injects pending replies into context. No code change needed — the protocol
+    is working.'
   done: false
   id: M87
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-12T15:34
   status: pending_confirmation
-  text: the claude's comments about relateions between stones and the stars should
-    be shwon in a new modeal like comment modoal. -> others work find but why m83
-    's msg is not clickable ?
+  text: Why don’t Claude reply on users reply and if action needed Claude act for
+    the uesers replies
   user_added_at: 2026-05-12T15:24
 - claude_ack: 2026-05-12T17:17
   claude_comment: Task queue pane max-height reduced from 200px to 120px (~3 tasks
@@ -196,45 +201,45 @@ milestones:
   status: done
   text: 모바일 환경에서 드래그 버튼으로만 스톤 페인 이동가능하도록
   user_added_at: 2026-05-12T16:29
-- claude_ack: now
+- claude_ack: 2026-05-12T17:58
   claude_comment: 'Fixed: badge shows exec/live-session state only (no PTY states).
     Removed onclick from ns-sess-pill (no longer opens terminal on click). Fixed 💬
     badge inside contenteditable — moved outside to prevent textContent pollution.
     Moved mNewBadge and star_relation outside contenteditable div.'
-  done: false
+  done: true
+  done_at: 2026-05-12T17:58
   id: M77
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T14:35
-  status: pending_confirmation
+  status: done
   text: use current ns-card 's terminal badge status as a live session state only,
     it's showing claldue-terminals status too now . fix it. -> when user clicked it,
     it should now open the claude terminal anymoroe.and when i liked a reopen / confrim
     in other stone pane
   user_added_at: 2026-05-12T14:20
-- claude_ack: now
+- claude_ack: 2026-05-12T17:58
   claude_comment: 'Server now inserts new milestones at index 0 (prepend). Client
     sort changed to stable: unreviewed first, then pending_confirmation last, then
     preserve server order. New milestones always appear at top.'
-  done: false
+  done: true
+  done_at: 2026-05-12T17:58
   id: M86
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T15:59
   star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
     new milestone keep added in below the queued panes. it should added on the top
     of the list,'
-  status: pending_confirmation
+  status: done
   text: new milestone keep added in below the queued panes. it should added on the
     top of the list,
   user_added_at: 2026-05-12T15:37
-- claude_ack: 2026-05-12T17:33
-  done: false
+- claude_ack: 2026-05-12T17:58
+  done: true
+  done_at: 2026-05-12T17:58
   id: M88
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T15:34
-  status: pending_confirmation
+  status: done
   text: the prograss bars (star - arc, deadline,  milestone) should be locate on the
     same pane. but it should show in horizontally parallelel and like current vertically)
     -> horizontal bar should be show on ,
@@ -469,7 +474,11 @@ milestones:
   text: comfirm/ reopen milstones should not be above the other status stones.
   user_added_at: 2026-05-12T14:52
 - claude_ack: 2026-05-12T15:32
-  claude_comment: Chat/reply button added to all milestone rows. Conversation accumulates.
+  claude_comment: 'Each milestone acts as a chat thread between you and Claude. You
+    leave replies in the conversation, Claude reads them at session start via the
+    hook, responds, and takes action if needed. M87 extends this: Claude will auto-reply
+    and execute actions inline. Future: Claude can propose sub-milestones, add estimates,
+    or schedule follow-ups directly from the thread.'
   conversation:
   - role: user
     text: add some comment here,
@@ -1050,40 +1059,160 @@ milestones:
   status: done
   text: review badge stone should be on the toppest in stone list.
   user_added_at: 2026-05-12T17:20
-- claude_ack: 2026-05-12T17:29
-  done: false
+- claude_ack: 2026-05-12T17:58
+  done: true
+  done_at: 2026-05-12T17:58
   id: M93
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T17:29
-  status: pending_confirmation
+  status: done
   text: '"> claude" button in ns-card should open csk -c terminal (previously worked
     as not the current live session thigns )'
   user_added_at: 2026-05-12T17:21
-- claude_ack: 2026-05-12T17:29
+- claude_ack: 2026-05-12T17:58
+  done: true
+  done_at: 2026-05-12T17:58
+  id: M95
+  layer: 0
+  parent_id: null
+  status: done
+  text: when clickclaude-exec-MOATstarted 17:21session pane -> show up the live session
+    previously worke,d (as view live session )
+  user_added_at: 2026-05-12T17:25
+- claude_ack: 2026-05-12T17:58
+  done: true
+  done_at: 2026-05-12T17:58
+  id: M96
+  layer: 0
+  parent_id: null
+  status: done
+  text: dead line is not chaning ata ll (even if i selected a new day .
+  user_added_at: 2026-05-12T17:43
+- claude_ack: 2026-05-12T17:58
+  done: true
+  done_at: 2026-05-12T17:58
+  id: M97
+  layer: 0
+  parent_id: null
+  status: done
+  text: can u show 'idle' text on the 'execute button'  if the live session is idle
+  user_added_at: 2026-05-12T17:43
+- claude_ack: now
+  done: false
+  id: M98
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T17:55
+  status: pending_confirmation
+  text: restore the session list's click motion (rm double click motion , onely one
+    click -> if session terminal is opened, close terminal, if not -> open terminal)
+  user_added_at: 2026-05-12T17:44
+- claude_ack: 2026-05-12T17:55
+  done: false
+  id: M99
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T17:55
+  status: pending_confirmation
+  text: when live session is openend, if user click claude-exec-MOAT -> session pane
+    again, termnial should be close.
+  user_added_at: 2026-05-12T17:53
+- claude_ack: now
   done: false
   id: M94
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T17:29
+  pending_confirm_at: 2026-05-12T18:01
   status: pending_confirmation
-  text: black stone should be on the top
-  user_added_at: 2026-05-12T17:25
-- claude_ack: 2026-05-12T17:33
+  text: blank stone should be on the toppest.
+  user_added_at: 2026-05-12T17:57
+- claude_ack: now
   done: false
-  id: M95
+  id: M100
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T17:33
+  pending_confirm_at: 2026-05-12T18:09
   status: pending_confirmation
-  text: when clickclaude-exec-MOATstarted 17:21session pane -> show up the live session
-    previously worke,d (as view live session )
-  user_added_at: 2026-05-12T17:25
+  text: sometimes, the claude terminal minimization not work (only text dissaper,
+    why )
+  user_added_at: 2026-05-12T18:05
+- clarification_answer: You should reply on this store prompt
+  clarification_answered_at: 2026-05-12T20:34
+  clarification_question: 'Voice note was hard to parse. Are you asking me to: (A)
+    add a claude_comment to each stone describing what it does, or (B) something about
+    the stone pane layout (table vs list)? Can you clarify what "the batch" refers
+    to?'
+  claude_ack: now
+  done: false
+  id: M101
+  layer: 0
+  parent_id: null
+  status: queued
+  text: is the stone pane table format ? or  ? You should comment in the stones message
+    box I mean the comment comment box we made we made already on the rip top of the
+    storm pain the batch you know what I’m saying
+  user_added_at: 2026-05-12T18:06
+- claude_ack: now
+  done: false
+  id: M102
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T18:26
+  status: pending_confirmation
+  text: The deadline progress bar should on the top of the star progress bar
+  user_added_at: 2026-05-12T18:22
+- claude_ack: now
+  done: false
+  id: M103
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T18:34
+  status: pending_confirmation
+  text: You should prevent the blinking in the storm pain while the live session is
+    working or if is there any other meso to prevent blinking apply apply them act
+    before maybe you need some research on it for variety actionable way
+  user_added_at: 2026-05-12T18:25
+- claude_ack: now
+  done: false
+  id: M104
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T18:34
+  status: pending_confirmation
+  text: You can remove the pain below the complete stones list
+  user_added_at: 2026-05-12T18:27
+- claude_ack: 2026-05-12T20:20
+  claude_comment: Progress bars now use 10-block segmented style (each block = 10%).
+    Deadline bar shows time consumption as filled blocks — empty blocks = remaining
+    time. Star-arc and milestone bars also segmented. Gap between segments for visual
+    clarity.
+  done: false
+  id: M105
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T20:20
+  status: pending_confirmation
+  text: I don’t u divide the progress bars into blocks and also the deadline bar should
+    be expressed as a consumption so user can notice how many times are remaining
+    go ans useable now
+  user_added_at: 2026-05-12T19:51
+- claude_ack: 2026-05-12T20:20
+  claude_comment: 'Fixed mobile calendar: replaced hidden 0x0 input (which blocks
+    mobile touch) with a <label> wrapper. The date input now uses position:absolute;inset:0;width:100%;height:100%
+    so it fully covers the label area and receives native touch events on iOS/Android.'
+  done: false
+  id: M109
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T20:20
+  status: pending_confirmation
+  text: Deadline calendar is not clickable in mobile environment
+  user_added_at: 2026-05-12T20:15
 name: Claude-Hub
 note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
   first, then leverage it for content/career.
 parent: null
-position_x: 362
+position_x: 377
 repo_path: ''
 stage: unassigned
 target: '100'

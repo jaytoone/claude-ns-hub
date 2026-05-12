@@ -19,7 +19,7 @@ milestones:
 name: FreeOS
 note: VERTICAL FreeOS project
 parent: null
-position_x: 719
+position_x: 704
 repo_path: ''
 stage: unassigned
 status: paused

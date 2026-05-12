@@ -1,7 +1,7 @@
 ---
 category: Vertical
 current: ~0 new payers/week (37 total as of 2026-04-08)
-deadline: ''
+deadline: '2026-05-12'
 layer: 2
 log:
 - date: '2026-05-08'

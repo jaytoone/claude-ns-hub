@@ -1870,12 +1870,25 @@ async def get_exec_sessions():
             if not claude_running:
                 continue
 
+            # M97: detect idle — Claude at prompt, not processing a task
+            pane_out = subprocess.run(
+                ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-5"],
+                capture_output=True, text=True
+            ).stdout
+            # Strip ANSI codes for pattern matching
+            import re as _re
+            clean = _re.sub(r'\x1b\[[0-9;]*[mKHJ]', '', pane_out).strip()
+            last_line = clean.splitlines()[-1].strip() if clean.splitlines() else ''
+            # Claude Code idle prompt ends with "> " or "? " or shows the caret prompt
+            idle = bool(_re.search(r'[>?]\s*$', last_line))
+
             from datetime import datetime as _dt
             sessions.append({
                 "session": session_name,
                 "proj_id": proj_id,
                 "created": _dt.fromtimestamp(created_ts).isoformat() if created_ts else "",
                 "alive": True,
+                "idle": idle,
             })
     return JSONResponse({"ok": True, "sessions": sessions})
 
