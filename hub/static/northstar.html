@@ -1651,17 +1651,22 @@ function renderMilestoneCreator(projId, milestones) {
   const dlWindow = 180;
   const dlBarPct = daysLeft88 !== null ? Math.max(0, Math.min(100, Math.round((1 - Math.max(0, daysLeft88) / dlWindow) * 100))) : 0;
   const starColor = starPct88 >= 80 ? 'var(--green)' : starPct88 >= 40 ? 'var(--accent)' : 'var(--text-dim)';
-  // M88: horizontal bar rows — label · [bar fills width] · value — stacked vertically
-  const _barRow = (label, pct, barColor, valueText, valueColor) =>
-    `<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">` +
-    `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.04em;width:54px;flex-shrink:0">${label}</span>` +
-    `<div style="flex:1;height:4px;background:var(--panel-border);border-radius:2px;overflow:hidden">` +
-    `<div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width .3s"></div></div>` +
-    `<span style="font-family:var(--mono);font-size:8px;color:${valueColor};flex-shrink:0;min-width:36px;text-align:right">${valueText}</span>` +
-    `</div>`;
+  // M105: block-style bar rows — 10 segments, filled=consumed, empty=remaining
+  const _barRow = (label, pct, barColor, valueText, valueColor) => {
+    const N = 10;
+    const filled = Math.min(N, Math.round(pct / 10));
+    const segs = Array.from({length: N}, (_, i) =>
+      `<div style="flex:1;height:6px;border-radius:1px;background:${i < filled ? barColor : 'var(--panel-border)'}"></div>`
+    ).join('');
+    return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">` +
+      `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.04em;width:54px;flex-shrink:0">${label}</span>` +
+      `<div style="flex:1;display:flex;gap:2px">${segs}</div>` +
+      `<span style="font-family:var(--mono);font-size:8px;color:${valueColor};flex-shrink:0;min-width:36px;text-align:right">${valueText}</span>` +
+      `</div>`;
+  };
   const progressBar = `<div style="margin-bottom:10px">` +
-    _barRow('star-arc', starPct88, starColor, starPct88+'%', starColor) +
     _barRow('deadline', dlBarPct, dl88 ? dl88.color : 'var(--panel-border)', dl88 ? dl88.text : '—', dl88 ? dl88.color : 'var(--text-dim)') +
+    _barRow('star-arc', starPct88, starColor, starPct88+'%', starColor) +
     _barRow('milestone', msPct, 'var(--green)', doneTotal+'/'+milestones.length, 'var(--text-dim)') +
     `</div>`;
 
@@ -1911,7 +1916,7 @@ function renderMilestoneCreator(projId, milestones) {
   // Progress bars go into NS section, not milestone pane
   const nsBarSlot = document.getElementById('dm-ns-bars');
   if (nsBarSlot) nsBarSlot.innerHTML = progressBar;
-  el.innerHTML = toggleHtml + doneSection;
+  el.innerHTML = toggleHtml; // M104: doneSection removed
 }
 
 // Tab = indent (L0→L1 under previous), Shift+Tab = unindent (L1→L0)
@@ -2752,18 +2757,15 @@ async function saveDeadline(projId, dateStr) {
   p.deadline = dateStr;
   render();
   // Update deadline button in the open detail modal (render() only redraws swimlane cards)
-  // dm-deadline-row is the <button> itself in renderHierarchy, not a container
   const dlRow = document.getElementById('dm-deadline-row');
   if (dlRow) {
     const dl = deadlineBadge(dateStr);
-    // dlRow may be the button itself OR a container with a child button
-    const btn = dlRow.tagName === 'BUTTON' ? dlRow : dlRow.querySelector('button');
-    if (btn) {
-      btn.style.color = dl.color;
-      Array.from(btn.childNodes).forEach(n => {
-        if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) n.textContent = dl.text;
-      });
-    }
+    // M109: dm-deadline-row is now a <label>; update its color + first text node
+    const target = dlRow.tagName === 'BUTTON' ? dlRow : dlRow.querySelector('button') || dlRow;
+    target.style.color = dl.color;
+    Array.from(target.childNodes).forEach(n => {
+      if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) n.textContent = dl.text;
+    });
   }
   // Reload milestone creator so progress bars reflect new deadline
   if (typeof loadMilestones === 'function' && projId) loadMilestones(projId);
@@ -3279,6 +3281,7 @@ async function commitRename(el, projId) {
 function closeDetail() {
   activeIdx = null;
   window.__multiNSActive = null;  // clear multi-NS lock
+  window.__nsLPCur = 0;           // reset NS page for next open
   document.getElementById('detail-overlay').classList.remove('show');
   stopTmuxWatch();
   render();
@@ -3679,15 +3682,13 @@ function renderHierarchy(p) {
         <span style="color:var(--text-dim);opacity:.7">◎ →</span>
         <span style="color:${color};font-weight:600">${Math.round(pct*100)}%</span>
         <span style="opacity:.3">·</span>
-        <button id="dm-deadline-row" onclick="document.getElementById('dm-deadline-input').showPicker?document.getElementById('dm-deadline-input').showPicker():document.getElementById('dm-deadline-input').focus()"
-          style="background:none;border:none;padding:0;cursor:pointer;font-family:var(--mono);font-size:11px;color:${p.deadline ? deadlineBadge(p.deadline).color : 'var(--text-dim)'}"
-          title="Click to change deadline">
+        <label id="dm-deadline-row" style="position:relative;display:inline-flex;align-items:center;cursor:pointer;font-family:var(--mono);font-size:11px;color:${p.deadline ? deadlineBadge(p.deadline).color : 'var(--text-dim)'}" title="Tap to change deadline">
           ${p.deadline ? esc(deadlineBadge(p.deadline).text) : '+ deadline'}
-        </button>
-        <input type="date" id="dm-deadline-input" value="${esc(p.deadline||'')}"
-          style="position:absolute;opacity:0;width:0;height:0"
-          onchange="saveDeadline('${esc(p.id||p.name)}',this.value)"
-          oninput="saveDeadline('${esc(p.id||p.name)}',this.value)">
+          <input type="date" id="dm-deadline-input" value="${esc(p.deadline||'')}"
+            style="position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:none;padding:0;margin:0"
+            onchange="saveDeadline('${esc(p.id||p.name)}',this.value)"
+            oninput="saveDeadline('${esc(p.id||p.name)}',this.value)">
+        </label>
         <span style="opacity:.3">·</span>
         <span id="dm-ns-ms-count" style="color:var(--text-dim)">${doneCount}/${p.milestones.length}</span>
         <span id="dm-ms-save-status" style="margin-left:auto;font-size:9px;color:var(--green,#4caf50)"></span>
@@ -3727,7 +3728,8 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
   window.__multiNSActive = p.id;  // prevent loadMilestones from clobbering
   const dmLeft = document.getElementById('dm-left');
   const sc = s => s==='behind'?'var(--red)':s==='exploring'?'var(--yellow,#d4a017)':'var(--green)';
-  let cur = 0;
+  // Preserve current page across auto-refreshes; clamp to valid range
+  let cur = Math.min(window.__nsLPCur || 0, Math.max(0, nsList.length - 1));
   let touchStartX = 0;
 
   function showPage() {
@@ -3811,6 +3813,7 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
   window.__nsLPGo = idx => {
     if (idx < 0 || idx >= nsList.length) return;
     cur = idx;
+    window.__nsLPCur = cur; // persist so auto-refresh can restore position
     showPage();
   };
 
@@ -3985,9 +3988,8 @@ function startTmuxWatch(projId) {
         await refreshSessionStatus();
         const overlay2 = document.getElementById('detail-overlay');
         if (!overlay2 || !overlay2.classList.contains('show')) render();
-        // Reset execute button to idle
-        const execBtn = document.getElementById('dm-exec-btn');
-        if (execBtn) { execBtn.textContent = '▶ Execute'; execBtn.classList.remove('running','exec-loading'); }
+        // M89: let _refreshExecState drive the button back to idle — don't reset directly
+        if (window._refreshExecState) window._refreshExecState();
         return;
       }
       // First confirmed-running poll: clear loading state on execute button
@@ -4505,6 +4507,9 @@ setInterval(async () => {
   if (_isUserTyping()) return;
   // Skip auto-refresh while live tmux session is active — avoids blink during exec
   if (_tmuxWatchInterval) return;
+  // M103: also skip when exec session running but terminal closed (session list visible)
+  const execSessions = document.getElementById('dm-exec-sessions');
+  if (execSessions && execSessions.children.length > 0) return;
   const overlay = document.getElementById('detail-overlay');
   if (overlay && overlay.classList.contains('show')) {
     // Detail card open — refresh milestones (works for both multi-NS and single-NS)
