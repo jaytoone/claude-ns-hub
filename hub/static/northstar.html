@@ -1790,8 +1790,6 @@ function renderMilestoneCreator(projId, milestones) {
               <div style="flex:1;font-size:12px;color:var(--text);min-width:0;overflow-wrap:anywhere;padding-top:1px">
                 ${m.claude_comment ? (() => { const cnt = (_msConversations[m.id]||[]).length; return `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:0 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">${cnt > 0 ? cnt+' ' : ''}msg</span>`; })() : ''}
                 ${esc(m.text)}
-                ${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star" style="margin-top:3px">★ ${esc(m.star_relation)}</div>` : ''}
-                ${(!m.star_relation && m.claude_comment) ? `<div class="nt-star-rel" title="Claude's comment" style="margin-top:3px;opacity:.7">${esc(m.claude_comment.slice(0,100))}${m.claude_comment.length>100?'…':''}</div>` : ''}
               </div>
               <button class="nt-del" style="opacity:1;padding-top:2px" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
@@ -1885,13 +1883,12 @@ function renderMilestoneCreator(projId, milestones) {
                 onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
                 onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
               >${esc(m.text)}</div>
-              ${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star">★ ${esc(m.star_relation)}</div>` : (m.claude_comment ? `<div class="nt-star-rel" style="opacity:.65" title="Claude comment">${esc(m.claude_comment.slice(0,100))}${m.claude_comment.length>100?'…':''}</div>` : '')}
             </div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
               ${(!m.claude_ack && m.user_added_at) ? `<span style="font-size:9px;color:var(--accent);flex-shrink:0" title="Added by user — Claude hasn't seen this yet">★</span>` : ''}
               ${m.user_added_at ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.6;border:1px solid var(--panel-border);border-radius:3px;padding:0 4px" title="Stone added ${esc(m.user_added_at)}">+${esc((m.user_added_at||'').slice(5,16).replace('T',' '))}</span>` : ''}
-              ${mStatus !== 'done' ? `<button class="nt-why" title="Why does this stone matter? (star-stone relation)" onclick="event.stopPropagation();generateStarRelation('${esc(projId)}','${esc(m.id)}',this)">★?</button>` : ''}
+              ${mStatus !== 'done' ? `<button class="nt-why" title="${m.star_relation ? 'Why this stone matters (click to view)' : 'Generate: why does this stone matter?'}" style="opacity:${m.star_relation?'1':'.45'}" onclick="event.stopPropagation();${m.star_relation ? `showStarRelModal('${escJs(m.star_relation)}','${escJs(m.text.slice(0,60))}')` : `generateStarRelation('${esc(projId)}','${esc(m.id)}',this)`}">★</button>` : ''}
               <button class="nt-why" title="Chat about this milestone (M59)" style="font-size:9px;opacity:${(_msConversations[m.id]||[]).length>0?'1':'.45'}" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment||'')}','${esc(projId)}','${esc(m.id)}')">${(_msConversations[m.id]||[]).length>0 ? (_msConversations[m.id].length+' msg') : 'msg'}</button>
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
@@ -2349,6 +2346,26 @@ async function deleteMs(projId, mid) {
   await loadMilestones(projId);
 }
 
+function showStarRelModal(relation, stoneText) {
+  let overlay = document.getElementById('star-rel-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'star-rel-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45)';
+    overlay.innerHTML = `<div style="background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:20px 22px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+      <div style="font-size:9px;font-family:var(--mono);color:var(--accent);letter-spacing:.06em;margin-bottom:6px">★ WHY THIS STONE MATTERS</div>
+      <div id="star-rel-stone" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:10px;opacity:.7"></div>
+      <div id="star-rel-body" style="font-size:13px;color:var(--text);line-height:1.6"></div>
+      <button onclick="document.getElementById('star-rel-overlay').remove()" style="margin-top:14px;font-size:11px;font-family:var(--mono);background:none;border:1px solid var(--panel-border);border-radius:5px;padding:3px 12px;cursor:pointer;color:var(--text-dim)">close</button>
+    </div>`;
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('star-rel-stone').textContent = stoneText;
+  document.getElementById('star-rel-body').textContent = relation;
+  overlay.style.display = 'flex';
+}
+
 // M65/M70: generate star-stone relation + OKR rationale for a milestone
 async function generateStarRelation(projId, msId, btn) {
   const orig = btn.textContent;
@@ -2362,7 +2379,10 @@ async function generateStarRelation(projId, msId, btn) {
     const p = projects.find(x => (x.id||x.name) === projId);
     if (p) {
       const ms = (p.milestones || []).find(m => m.id === msId);
-      if (ms) { ms.star_relation = r.rationale; }
+      if (ms) {
+        ms.star_relation = r.rationale;
+        showStarRelModal(r.rationale, ms.text.slice(0, 60));
+      }
     }
     await loadMilestones(projId);
   }
