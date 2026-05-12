@@ -1413,7 +1413,8 @@ async def execute_project(proj_id: str):
         # CronCreate in this session = auto-retry on API errors (built-in resilience)
 
         # On Execute: ack any unreviewed milestones first, then promote all acked pending → queued
-        _now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M")
+        from datetime import datetime as _dt_exec
+        _now_iso = _dt_exec.now().strftime("%Y-%m-%dT%H:%M")
         _promoted = False
         for _m in milestones:
             if not isinstance(_m, dict) or _m.get("done"): continue
@@ -1452,6 +1453,7 @@ async def execute_project(proj_id: str):
             new_pending = [m for m in active_ms if m.get("status") == "pending" and not m.get("claude_ack")]
             new_queued = [m for m in active_ms if m.get("status") == "queued"]
             needs_trigger = new_pending or new_queued
+            _trigger_sent = False
             if needs_trigger:
                 # Write minimal trigger prompt and send "go" to wake idle session
                 _pf = PROJECTS_DIR / proj_id / "pending-execute-prompt.txt"
@@ -1467,13 +1469,29 @@ async def execute_project(proj_id: str):
                     f"Newly queued:\n{_ms_snap}",
                     encoding="utf-8"
                 )
-                subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"], capture_output=True)
+                # Only send "go" if session is idle (at ❯ prompt) — never interrupt mid-processing
+                _pane_output = subprocess.run(
+                    ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-3"],
+                    capture_output=True, text=True
+                ).stdout
+                _processing_indicators = ("Transmut", "Pondering", "Cogitat", "Simmer", "Stew",
+                                          "Drizzl", "Whirl", "Wibbl", "Finagl", "Churn",
+                                          "Kneading", "Newspapering", "thinking")
+                _is_processing = any(ind in _pane_output for ind in _processing_indicators)
+                if not _is_processing:
+                    subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"], capture_output=True)
+                    _trigger_sent = True
+                else:
+                    _trigger_sent = False  # prompt file updated but "go" skipped — Claude will finish then pick up
             return JSONResponse({
                 "ok": True, "mode": "tmux_active",
                 "session": session_name,
-                "tasks_created": len(actionable),  # total actionable shown in EXECUTION LOG
-                "new_injected": len(needs_trigger),
-                "message": f"Claude is already working on {proj_id} stones (session '{session_name}' active). Check live session for progress.",
+                "tasks_created": len(actionable),
+                "new_injected": len(needs_trigger) if needs_trigger else 0,
+                "triggered": _trigger_sent if needs_trigger else False,
+                "message": "Session active — trigger sent" if (needs_trigger and _trigger_sent) else
+                           "Session processing — prompt queued, will pick up when idle" if (needs_trigger and not _trigger_sent) else
+                           f"Session active — no new work",
             })
 
         if actionable:
