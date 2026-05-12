@@ -173,6 +173,7 @@ def _load_projects() -> list:
                                 "clarification_answer": m.get("clarification_answer") or None,
                                 "clarification_answered_at": m.get("clarification_answered_at") or None,
                                 "claude_comment": m.get("claude_comment") or None,
+                                "conversation": m.get("conversation") or None,
                             }
                             norm_ms.append(entry)
                         elif isinstance(m, str):
@@ -1247,6 +1248,9 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
             for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id", "claude_comment"):
                 if k in data:
                     m[k] = data[k] if data[k] else None
+            # conversation: accumulated chat thread — allow empty list (don't coerce to None)
+            if "conversation" in data:
+                m["conversation"] = data["conversation"]
             # Status: user can set pending/queued; done is Claude-only (set via done=True or status=done)
             new_status = data.get("status")
             if new_status in ("pending", "queued"):
@@ -1517,7 +1521,7 @@ async def execute_project(proj_id: str):
                 f"  (Use Claude Code built-in TaskCreate tool. NOT TodoWrite.)\n\n"
                 f"PRE-STEP — Sync unreviewed (only if claude_ack=null exists):\n"
                 f"  PATCH {hub_api}/api/northstar/{proj_id}/milestones/<id>:\n"
-                f"    claude_ack=now. Clear text (>15 chars) → status=queued. Vague → status=needs_clarification + clarification_question.\n\n"
+                f"    claude_ack=now. Keep status=pending (promotion already done by server). Vague → status=needs_clarification + clarification_question.\n\n"
                 f"IMPLEMENT each task sequentially:\n"
                 f"  1. TaskUpdate(<id>, status='in_progress')\n"
                 f"  2. Edit/write files to implement the milestone.\n"
