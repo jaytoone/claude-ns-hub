@@ -2637,9 +2637,11 @@ function render() {
     node.addEventListener('dragstart', e => {
       _dragSrc = node; _dragIdx = +node.dataset.idx;
       const rect = node.getBoundingClientRect();
-      _dragOffsetX = e.clientX - rect.left;
+      _dragOffsetX = Math.round(e.clientX - rect.left);
+      const _dragOffsetY = Math.round(e.clientY - rect.top);
       node.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setDragImage(node, _dragOffsetX, _dragOffsetY);
     });
     node.addEventListener('dragend', () => {
       node.classList.remove('dragging');
