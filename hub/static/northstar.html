@@ -2580,16 +2580,10 @@ function render() {
       _dragSrc = null; _dragIdx = null;
       render();
       requestAnimationFrame(() => drawParentLines());
-      const saves = [fetch(`/api/northstar/${encodeURIComponent(pSrc.id||pSrc.name)}/layout`, {
+      fetch(`/api/northstar/${encodeURIComponent(pSrc.id||pSrc.name)}/layout`, {
         method:'PATCH', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({position_x: newX}),
-      })];
       });
-      // Optimistic: render immediately, save in background
-      _dragSrc = null; _dragIdx = null;
-      render();
-      requestAnimationFrame(() => requestAnimationFrame(() => drawParentLines()));
-      Promise.all(saves); // fire-and-forget
     });
   });
 
