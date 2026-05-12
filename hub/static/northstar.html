@@ -1570,22 +1570,20 @@ function renderMilestoneCreator(projId, milestones) {
   try { expanded = JSON.parse(localStorage.getItem(expandKey) || '{}'); } catch(_) {}
 
   // M32: hide confirmed (done) stones — show only active milestones
-  // M78: new/unreviewed stones (user_added_at && !claude_ack) always float to top
+  // M78: any stone with "review" badge (!claude_ack) floats to top; pending_confirmation always sinks
   // M86: preserve server array order as tiebreaker so newest-inserted milestones stay at top
-  //      pending_confirmation always sinks to bottom (needs user action, not Claude action)
   const l0 = milestones
     .filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done)
     .sort((a, b) => {
-      // 1. Unreviewed (just added by user, not yet acked) → top
-      const aNew = (a.user_added_at && !a.claude_ack) ? 1 : 0;
-      const bNew = (b.user_added_at && !b.claude_ack) ? 1 : 0;
-      if (aNew !== bNew) return bNew - aNew;
-      // 2. pending_confirmation → bottom (awaiting user confirm, lower urgency)
+      // 1. pending_confirmation → bottom (needs user action, regardless of ack status)
       const aConf = a.status === 'pending_confirmation' ? 1 : 0;
       const bConf = b.status === 'pending_confirmation' ? 1 : 0;
       if (aConf !== bConf) return aConf - bConf;
+      // 2. Review badge (!claude_ack) → top among non-pending_confirmation
+      const aNew = !a.claude_ack ? 1 : 0;
+      const bNew = !b.claude_ack ? 1 : 0;
+      if (aNew !== bNew) return bNew - aNew;
       // 3. Stable: preserve server array order (Array.sort is stable in V8)
-      //    New milestones inserted at index 0 server-side will naturally appear first
       return 0;
     });
   const doneStones = milestones.filter(m => (m.layer || 0) === 0 && ((m.status||'') === 'done' || m.done));
@@ -1883,6 +1881,7 @@ function renderMilestoneCreator(projId, milestones) {
                 onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
                 onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
               >${esc(m.text)}</div>
+              ${m.star_relation ? `<div class="nt-star-rel" title="Why this stone matters">${esc(m.star_relation)}</div>` : ''}
             </div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
@@ -2418,8 +2417,8 @@ async function _openWithTerminal(origIdx, projId) {
     startTmuxWatch(projId);
     return;
   }
-  // M77: PTY terminal states — card badge is decorative, no action on click
-  // (use the ›_ claude button in the detail modal to open the PTY terminal)
+  // Open floating PTY terminal
+  openTerminal(projId);
 }
 
 async function refreshSessionStatus() {
@@ -3982,10 +3981,18 @@ async function killExecSession() {
   await new Promise(r => setTimeout(r, 2000));
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/exec-session`, {method:'DELETE'}).catch(()=>{});
   if (output) output.textContent = '(session killed)';
-  // Reset execute button to idle
+  // Reset execute button + immediately clear session list (M89: no lag after kill)
   window._execLaunchBtn = null;
   const execBtn = document.getElementById('dm-exec-btn');
   if (execBtn) { execBtn.textContent = '▶ Execute'; execBtn.classList.remove('running', 'exec-loading'); }
+  const execInfo = document.getElementById('dm-exec-sessions');
+  if (execInfo) execInfo.innerHTML = '';
+  // Re-poll after kill to confirm disappearance
+  clearInterval(window._execPollTimer);
+  if (window._refreshExecState) {
+    setTimeout(window._refreshExecState, 500);
+    window._execPollTimer = setInterval(window._refreshExecState, 5000);
+  }
 }
 
 function startTmuxWatch(projId) {
