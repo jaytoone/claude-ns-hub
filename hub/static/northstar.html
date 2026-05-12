@@ -1861,7 +1861,7 @@ function renderMilestoneCreator(projId, milestones) {
             ${mStatus === 'queued' ? `<span class="nt-priority-tag" title="Queued — Claude will execute this next">▶</span>` : ''}
             <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
-            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-self:flex-start;align-items:flex-start">
+            <div style="display:flex;flex-direction:row;gap:3px;flex-shrink:0;align-self:flex-start;align-items:center">
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'acked':'review'}</span>` : ''}
               <button class="nt-check"
                 ${mBtnAttrs}
@@ -4070,10 +4070,15 @@ function renderRight(p, topics, docData) {
         const info = document.getElementById('dm-exec-sessions');
         const running = (d.sessions||[]).filter(s => s.proj_id === p.id);
         if (b && running.length > 0) {
-          b.textContent = '▶▶'; b.style.opacity = '1';
-          b.title = `Session running since ${(running[0].created||'').slice(11,16)||'?'}`;
+          // M97: show 'idle' if session is running but Claude is at prompt
+          const isIdle = running.some(s => s.idle);
+          b.textContent = isIdle ? 'idle' : '▶▶';
+          b.style.opacity = '1';
+          b.style.color = isIdle ? 'var(--text-dim)' : '';
+          b.title = `Session ${isIdle ? 'idle' : 'running'} since ${(running[0].created||'').slice(11,16)||'?'}`;
         } else if (b) {
           b.textContent = '▶ Execute';
+          b.style.color = '';
         }
         if (info) {
           if (running.length > 0) {
