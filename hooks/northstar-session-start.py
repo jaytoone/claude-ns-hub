@@ -218,19 +218,8 @@ def main():
     lines.append("  The Stop hook reads this file to mark milestones as pending_confirmation.")
     lines.append("  User confirms within 24h → done. No log entry = Jaccard fallback only.")
 
-    # CRON PROTOCOL: create crons for queued milestones if not already watching
-    if queued:
-        lines.append("")
-        lines.append("CRON PROTOCOL (mandatory for queued milestones):")
-        lines.append("  Each QUEUED milestone needs a CronCreate job (every 15 min) that:")
-        lines.append("  1. Checks completion-log.jsonl for this milestone_id")
-        lines.append(f"  2. If found: PATCH http://100.119.82.4:9000/api/northstar/{proj_id}/milestones/MX with status=pending_confirmation, then CronDelete this job")
-        lines.append("  3. If not found: continue monitoring")
-        for m in queued[:3]:
-            mid = m.get('id', '?')
-            text = m.get('text', '')[:50]
-            lines.append(f"  → Create cron for {mid}: '{text}'")
-        lines.append("  Use CronCreate tool now if these crons don't already exist.")
+    # CRON PROTOCOL removed: server.py _start_milestone_watcher asyncio task handles
+    # completion-log → pending_confirmation promotion every 5 min. No per-milestone crons needed.
 
     # BACKGROUND WATCHER: create only if not already running
     lines.append("")
