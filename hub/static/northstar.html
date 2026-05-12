@@ -3290,6 +3290,7 @@ function openTerminal(projId) {
   float.style.display = 'flex';
   document.getElementById('ns-term-proj').textContent = projId;
   _termMinimized = false;
+  float.classList.remove('ns-term-minimized'); // reset if reopened while minimized
   document.getElementById('dm-xterm').style.display = '';
   document.getElementById('ns-term-min-btn').textContent = '—';
   float.style.height = float.dataset.lastH || '680px';
@@ -3473,12 +3474,13 @@ function minimizeTerminal() {
   const btn = document.getElementById('ns-term-min-btn');
   _termMinimized = !_termMinimized;
   if (_termMinimized) {
-    float.dataset.lastH = float.style.height || '680px';
+    float.dataset.lastH = float.style.height || float.offsetHeight + 'px' || '680px';
+    float.style.removeProperty('height'); // clear any !important inline height so CSS class wins
     float.classList.add('ns-term-minimized');
     btn.textContent = '□';
   } else {
     float.classList.remove('ns-term-minimized');
-    float.style.setProperty('height', float.dataset.lastH || '680px', 'important');
+    float.style.height = float.dataset.lastH || '680px';
     btn.textContent = '—';
     setTimeout(() => _termFit?.fit(), 80);
   }
