@@ -1684,16 +1684,14 @@ function renderMilestoneCreator(projId, milestones) {
               <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
               <span class="nt-num">${idx+1}.</span>
               <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
-              <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px">⏳</span>
-              <div style="flex:1;font-size:12px;color:var(--text)">${esc(m.text)}</div>
-              <div style="display:flex;gap:4px;flex-shrink:0;align-items:center">
-                ${m.claude_comment ? (() => { const cnt = (_msConversations[m.id]||[]).length; return `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">${cnt > 0 ? cnt+' ' : ''}msg</span>`; })() : ''}
-                <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
-                  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono)">✓ Confirm</button>
-                <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
-                  style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono)">↩ Reopen</button>
-                <button class="nt-del" style="opacity:1" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
-              </div>
+              <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px;flex-shrink:0">⏳</span>
+              ${m.claude_comment ? (() => { const cnt = (_msConversations[m.id]||[]).length; return `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);flex-shrink:0" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">${cnt > 0 ? cnt+' ' : ''}msg</span>`; })() : ''}
+              <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
+                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono);flex-shrink:0">✓</button>
+              <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
+                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono);flex-shrink:0">↩</button>
+              <div style="flex:1;font-size:12px;color:var(--text);min-width:0;overflow-wrap:anywhere">${esc(m.text)}</div>
+              <button class="nt-del" style="opacity:1" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
           </div>`;
