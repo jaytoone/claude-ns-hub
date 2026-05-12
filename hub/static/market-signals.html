@@ -85,11 +85,18 @@ h1 { font-family: var(--serif); font-size: 17px; font-weight: 500; color: var(--
 .pypi-delta { font-family: var(--mono); font-size: 12px; margin-bottom: 8px; }
 .pypi-row { display: flex; gap: 20px; font-family: var(--mono); font-size: 11px;
   color: var(--text-dim); border-top: 1px solid var(--panel-border); padding-top: 8px; margin-top: 8px; }
-.sparkline { display: flex; align-items: flex-end; gap: 2px; height: 28px;
-  margin-top: 10px; }
-.spark-bar { width: 8px; background: var(--accent); border-radius: 2px 2px 0 0;
-  opacity: .7; transition: opacity .12s; }
-.spark-bar:hover { opacity: 1; }
+.daily-chart { display: flex; align-items: flex-end; gap: 1px; height: 48px;
+  margin-top: 10px; overflow: hidden; }
+.day-bar { flex: 1; min-width: 3px; background: var(--accent); border-radius: 1px 1px 0 0;
+  opacity: .65; transition: opacity .12s; position: relative; }
+.day-bar:hover { opacity: 1; }
+.day-bar .tip { display: none; position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%); background: var(--panel-border); color: var(--text);
+  font-family: var(--mono); font-size: 10px; white-space: nowrap;
+  padding: 2px 5px; border-radius: 3px; pointer-events: none; }
+.day-bar:hover .tip { display: block; }
+.chart-labels { display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }
 
 /* GitHub */
 .issue-row { padding: 7px 0; border-bottom: 1px solid var(--panel-border);
@@ -157,7 +164,7 @@ function esc(s) {
     ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
-function renderPypi(pypi, history) {
+function renderPypi(pypi, dailyDays) {
   const el = document.getElementById("card-pypi");
   if (!pypi || pypi.error) {
     el.innerHTML = `<div class="card-title">PyPI <span class="card-badge">ctx-retriever</span></div>
@@ -169,18 +176,26 @@ function renderPypi(pypi, history) {
   const col   = pct > 15 ? "var(--green)" : pct < -15 ? "var(--red)" : "var(--text-dim)";
   const delta = `<span style="color:${col}">${sign}${pct}% vs baseline</span>`;
 
-  const weeks  = history.map(h => (h.pypi && h.pypi.week != null) ? h.pypi.week : 0);
-  const maxW   = Math.max(...weeks, 1);
-  const bars   = weeks.map(v => {
-    const h = Math.round((v / maxW) * 24);
-    return `<div class="spark-bar" style="height:${h}px" title="${v}/wk"></div>`;
-  }).join("");
+  let chartHtml = "";
+  if (dailyDays && dailyDays.length > 1) {
+    const maxD = Math.max(...dailyDays.map(d => d.downloads), 1);
+    const bars = dailyDays.map(d => {
+      const h = Math.max(2, Math.round((d.downloads / maxD) * 44));
+      const label = d.date.slice(5); // MM-DD
+      return `<div class="day-bar" style="height:${h}px"><span class="tip">${label}: ${d.downloads}</span></div>`;
+    }).join("");
+    const first = dailyDays[0].date.slice(5);
+    const last  = dailyDays[dailyDays.length - 1].date.slice(5);
+    chartHtml = `
+      <div class="daily-chart">${bars}</div>
+      <div class="chart-labels"><span>${first}</span><span>${last}</span></div>`;
+  }
 
   el.innerHTML = `
     <div class="card-title">PyPI <span class="card-badge">ctx-retriever</span></div>
     <div class="pypi-big">${pypi.week ?? "—"}<span>/wk</span></div>
     <div class="pypi-delta">${delta}</div>
-    ${weeks.length > 1 ? `<div class="sparkline">${bars}</div>` : ""}
+    ${chartHtml}
     <div class="pypi-row">
       <span>${pypi.day ?? "—"}/day</span>
       <span>${pypi.month ?? "—"}/mo</span>
@@ -221,10 +236,14 @@ function renderHN(hn) {
 async function load(forceRefresh = false) {
   document.getElementById("btn-refresh").disabled = true;
   const url = forceRefresh ? "/api/market-signals?refresh=true" : "/api/market-signals";
+  const dailyUrl = forceRefresh ? "/api/pypi-daily?refresh=true&days=30" : "/api/pypi-daily?days=30";
   try {
-    const d = await fetch(url).then(r => r.json());
+    const [d, daily] = await Promise.all([
+      fetch(url).then(r => r.json()),
+      fetch(dailyUrl).then(r => r.json()).catch(() => ({ days: [] })),
+    ]);
     const sig = d.signals || {};
-    renderPypi(sig.pypi, d.history || []);
+    renderPypi(sig.pypi, daily.days || []);
     renderGH(sig.github || []);
     renderHN(sig.hn || []);
     const age = d.cached_at ? new Date(d.cached_at * 1000).toLocaleTimeString() : "—";
