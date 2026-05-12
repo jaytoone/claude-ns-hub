@@ -4077,6 +4077,10 @@ function renderRight(p, topics, docData) {
         }
         if (info) {
           if (running.length > 0) {
+            // Only re-render if session count changed (avoid blink on every 5s poll)
+            const newKey = running.map(s=>s.session||s.proj_id).join(',');
+            if (info.dataset.sessionKey === newKey) return; // no change — skip DOM update
+            info.dataset.sessionKey = newKey;
             // M95: clicking session row opens live tmux overlay (replaces removed "View live session" button)
             info.innerHTML = `<div style="margin-top:6px;border-radius:7px;overflow:hidden;border:1px solid rgba(61,139,94,.22)">` + running.map((s,i) => `
               <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(61,139,94,.06);${i<running.length-1?'border-bottom:1px solid rgba(61,139,94,.12)':''};cursor:pointer"
@@ -4463,6 +4467,8 @@ function _isUserTyping() {
 }
 setInterval(async () => {
   if (_isUserTyping()) return;
+  // Skip auto-refresh while live tmux session is active — avoids blink during exec
+  if (_tmuxWatchInterval) return;
   const overlay = document.getElementById('detail-overlay');
   if (overlay && overlay.classList.contains('show')) {
     // Detail card open — refresh its milestones
