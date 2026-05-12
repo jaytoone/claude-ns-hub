@@ -1576,6 +1576,10 @@ function renderMilestoneCreator(projId, milestones) {
   const l0 = milestones
     .filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done)
     .sort((a, b) => {
+      // 0. blank stone (just created, no text) → absolute top
+      const aBlank = !(a.text||'').trim() ? 1 : 0;
+      const bBlank = !(b.text||'').trim() ? 1 : 0;
+      if (aBlank !== bBlank) return bBlank - aBlank;
       // 1. pending_confirmation → bottom (needs user action, regardless of ack status)
       const aConf = a.status === 'pending_confirmation' ? 1 : 0;
       const bConf = b.status === 'pending_confirmation' ? 1 : 0;
@@ -4086,17 +4090,16 @@ function renderRight(p, topics, docData) {
             const newKey = running.map(s=>s.session||s.proj_id).join(',');
             if (info.dataset.sessionKey === newKey) return; // no change — skip DOM update
             info.dataset.sessionKey = newKey;
-            // M95: click → open; M98/M99: click when open → close (toggle); dblclick → close
-            const _toggleTmux = (pid) => {
+            // M95/M98: toggle live overlay — open if closed, close if open
+            window._toggleTmux = (pid) => {
               const overlay = document.getElementById('tmux-live-overlay');
               if (overlay && overlay.style.display !== 'none') stopTmuxWatch();
               else startTmuxWatch(pid);
             };
             info.innerHTML = `<div style="margin-top:6px;border-radius:7px;overflow:hidden;border:1px solid rgba(61,139,94,.22)">` + running.map((s,i) => `
               <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(61,139,94,.06);${i<running.length-1?'border-bottom:1px solid rgba(61,139,94,.12)':''};cursor:pointer"
-                title="Click to open/close live session · Double-click to close"
-                onclick="_toggleTmux('${esc(p.id)}')"
-                ondblclick="event.stopPropagation();stopTmuxWatch()">
+                title="Click to open/close terminal"
+                onclick="_toggleTmux('${esc(p.id)}')">
                 <span style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(61,139,94,.5);animation:sess-pulse 1.5s ease-in-out infinite"></span>
                 <div style="flex:1;min-width:0">
                   <div style="font-family:var(--mono);font-size:10px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.session||s.proj_id)}</div>
@@ -4470,20 +4473,42 @@ setInterval(async () => {
   if (!overlay || !overlay.classList.contains('show')) render();
 }, 10000); // exec session sync every 10s
 
-// Auto-refresh: swimlane every 30s, detail card milestones every 15s
+// Auto-refresh: swimlane every 30s, detail card every 15s
 // Paused while any input/textarea is focused (user is typing)
 function _isUserTyping() {
   const el = document.activeElement;
   return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 }
+
+// Refresh detail card — handles both multi-NS and single-NS projects
+async function _refreshDetailCard(projId) {
+  try {
+    const nsResp = await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]}));
+    const nsList = nsResp.north_stars || [];
+    if (nsList.length > 1) {
+      // Multi-NS: update the stored list and re-render the left panel
+      // Re-fetch OKRs to keep them in sync
+      const okrData = await fetch(`/api/northstar/${encodeURIComponent(projId)}/okrs`).then(r=>r.json()).catch(()=>({ok:false,okrs:[]}));
+      const p = activeIdx !== null ? projects[activeIdx] : null;
+      if (p) renderMultiNSLeftPanel(p, nsList, okrData);
+    } else {
+      // Single-NS: standard loadMilestones
+      window.__multiNSActive = null;
+      loadMilestones(projId);
+    }
+  } catch(_) {}
+}
+
 setInterval(async () => {
   if (_isUserTyping()) return;
   // Skip auto-refresh while live tmux session is active — avoids blink during exec
   if (_tmuxWatchInterval) return;
   const overlay = document.getElementById('detail-overlay');
   if (overlay && overlay.classList.contains('show')) {
-    // Detail card open — refresh its milestones
-    if (activeIdx !== null && projects[activeIdx]) loadMilestones(projects[activeIdx].id);
+    // Detail card open — refresh milestones (works for both multi-NS and single-NS)
+    if (activeIdx !== null && projects[activeIdx]) {
+      _refreshDetailCard(projects[activeIdx].id);
+    }
   } else {
     // Swimlane — reload project data + re-render
     try {
@@ -4493,7 +4518,7 @@ setInterval(async () => {
       render();
     } catch(_) {}
   }
-}, 30000); // 30s auto-refresh
+}, 15000); // 15s auto-refresh for detail card responsiveness
 </script>
 </body>
 </html>
