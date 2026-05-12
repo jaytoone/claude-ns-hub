@@ -1774,6 +1774,8 @@ function renderMilestoneCreator(projId, milestones) {
               ${mBtnAttrs}
               style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:0 5px;font-size:8px;letter-spacing:.03em;min-width:30px"
             >${stateLabel}</button>
+            ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em;flex-shrink:0">${m.claude_ack?'acked':'review'}</span>` : ''}
+            ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);flex-shrink:0" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}
             <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
               data-ms-id="${esc(m.id)}"
@@ -1783,9 +1785,6 @@ function renderMilestoneCreator(projId, milestones) {
             >${esc(m.text)}${mNewBadge}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
-              ${m.cron_job_id ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)" title="Active cron monitor: ${esc(m.cron_job_id)}">cron</span>` : ''}
-              ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${m.claude_ack?'acked':'review'}</span>` : ''}
-              ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft)" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
@@ -2569,7 +2568,7 @@ function renameNode(el, projId) {
 async function saveDeadline(projId, dateStr) {
   if (!dateStr) return;
   await fetch(`/api/northstar/${encodeURIComponent(projId)}`, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({deadline: dateStr})
   }).catch(()=>{});
   // Update in-memory project and re-render
@@ -3893,7 +3892,6 @@ function renderRight(p, topics, docData) {
         const b = document.getElementById('dm-exec-btn');
         const info = document.getElementById('dm-exec-sessions');
         const running = (d.sessions||[]).filter(s => s.proj_id === p.id);
-        const allSessions = d.sessions||[];
         if (b && running.length > 0) {
           b.textContent = '▶▶'; b.style.opacity = '1';
           b.title = `Session running since ${(running[0].created||'').slice(11,16)||'?'}`;
@@ -3901,9 +3899,9 @@ function renderRight(p, topics, docData) {
           b.textContent = '▶ Execute';
         }
         if (info) {
-          if (allSessions.length > 0) {
-            info.innerHTML = allSessions.map(s =>
-              `<span style="color:${s.proj_id===p.id?'var(--green)':'var(--text-dim)'};margin-right:8px">▶ ${esc(s.proj_id)} <span style="opacity:.6">${(s.created||'').slice(11,16)}</span></span>`
+          if (running.length > 0) {
+            info.innerHTML = running.map(s =>
+              `<span style="color:var(--green);margin-right:8px">▶ ${esc(s.proj_id)} <span style="opacity:.6">${(s.created||'').slice(11,16)}</span></span>`
             ).join('');
           } else {
             info.textContent = '';
