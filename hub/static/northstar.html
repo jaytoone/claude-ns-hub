@@ -615,6 +615,18 @@ header {
   #ns-terminal-drag-hdr { flex-wrap: wrap; gap: 6px; }
 }
 
+/* iPad / large tablet: coarse pointer but wide enough to float — don't use full width */
+@media (pointer: coarse) and (min-width: 768px) {
+  #ns-terminal-float {
+    width: min(680px, 78vw) !important;
+    left: 50% !important; right: auto !important;
+    transform: translateX(-50%) translateZ(0) !important;
+    -webkit-transform: translateX(-50%) translateZ(0) !important;
+    border-radius: 10px !important; border: 1px solid #333 !important;
+  }
+  #dm-xterm { width: 100% !important; height: calc(72svh - 40px) !important; }
+}
+
 /* ── Detail Overlay (centered modal — replaces side drawer) ──────────────────── */
 .detail-overlay {
   display: none; position: fixed; inset: 0; z-index: 100;
@@ -1635,8 +1647,11 @@ function renderMilestoneCreator(projId, milestones) {
       // needs_clarification: compact row with ? badge in meta; click ? → popup with explanation + answer input
       if (mStatus === 'needs_clarification') {
         const hasAnswer = !!(m.clarification_answer || '').trim();
-        const clarQ = escJs(m.clarification_question || 'Why is this milestone unclear? Please describe the task in more detail.');
-        const clarA = escJs(m.clarification_answer || '');
+        // Use data-* attributes to avoid inline JS string escaping issues with apostrophes/special chars
+        const clarDataAttrs = `data-projid="${esc(projId)}" data-mid="${esc(m.id)}" `
+          + `data-clarq="${esc(m.clarification_question || 'Why is this milestone unclear? Please describe the task in more detail.')}" `
+          + `data-clara="${esc(m.clarification_answer || '')}" data-has-answer="${hasAnswer}"`;
+        const clarOnClick = `event.stopPropagation();const d=this.dataset;showClarifyPopup(event,d.projid,d.mid,d.clarq,d.clara,d.hasAnswer==='true')`;
         return `
           <div class="nt-draggable-row" data-mid="${esc(m.id)}" draggable="true"
             ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragend="_msDragEnd(event)" ondragover="_msDragOver(event)"
@@ -1648,11 +1663,11 @@ function renderMilestoneCreator(projId, milestones) {
             <span class="nt-arrow"> </span>
             <button class="nt-check" style="border:1px solid #7b9fd4;background:rgba(90,120,200,.1);color:#7b9fd4;cursor:pointer;border-radius:4px;width:auto;padding:0 5px;font-size:8px;letter-spacing:.03em;min-width:30px"
               title="Click to see why Claude flagged this"
-              onclick="event.stopPropagation();showClarifyPopup(event,'${esc(projId)}','${esc(m.id)}','${clarQ}','${clarA}',${hasAnswer})">?</button>
+              ${clarDataAttrs} onclick="${clarOnClick}">?</button>
             <div class="nt-text" style="color:var(--text-soft)">${esc(m.text)}</div>
             <div class="nt-meta">
               <span style="font-size:11px;color:#7b9fd4;cursor:pointer" title="Click to see why Claude flagged this"
-                onclick="event.stopPropagation();showClarifyPopup(event,'${esc(projId)}','${esc(m.id)}','${clarQ}','${clarA}',${hasAnswer})">❓</span>
+                ${clarDataAttrs} onclick="${clarOnClick}">❓</span>
               <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
@@ -1840,12 +1855,18 @@ async function handleMsTab(e, projId, mid) {
 // Milestone drag-to-reorder
 let _msDragId = null;
 let _msDragEl = null;
+let _msDragHandleActive = false;
+// Track whether mousedown landed on a drag handle (e.target in dragstart is the row, not the handle)
+document.addEventListener('mousedown', e => {
+  _msDragHandleActive = !!e.target?.closest('.nt-drag-handle');
+}, true);
 function _msDragStart(e, mid) {
   // Only allow drag when initiated from the explicit drag handle (M53)
-  if (!e.target || !e.target.classList || !e.target.classList.contains('nt-drag-handle')) {
+  if (!_msDragHandleActive) {
     e.preventDefault();
     return;
   }
+  _msDragHandleActive = false;
   _msDragId = mid;
   _msDragEl = e.currentTarget;
   e.dataTransfer.effectAllowed = 'move';
@@ -3400,14 +3421,12 @@ async function openDetail(idx) {
       const okrs = okrData.okrs || [];
       const title = okrData.section || 'OKRs';
       // Keep collapsed by default; populate list content
-      okrSection.innerHTML = `<div class="dm-layer dm-layer-collapsed">
-        <div class="dm-layer-head" onclick="if(event.target.dataset.why)return;this.parentElement.classList.toggle('dm-layer-collapsed');this.querySelector('.dm-layer-count').textContent=this.parentElement.classList.contains('dm-layer-collapsed')?'▸ expand':'▾ collapse'" style="cursor:pointer;opacity:.6">
+      okrSection.innerHTML = `<div class="dm-layer">
+        <div class="dm-layer-head" onclick="if(event.target.dataset.why)return;this.parentElement.classList.toggle('dm-layer-collapsed');this.querySelector('.dm-layer-count').textContent=this.parentElement.classList.contains('dm-layer-collapsed')?'▸ expand':'▾ collapse'" style="cursor:pointer">
           <div class="dm-layer-icon okr" title="Quarterly OKRs">K</div>
           <span class="dm-layer-title">${esc(title)}</span>
-          <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▸ ${okrs.length} KRs</span>
-          <span data-why="1" style="margin-left:auto;font-size:10px;color:var(--text-dim);cursor:pointer;padding:0 4px;border-radius:3px;border:1px solid var(--panel-border)" onclick="event.stopPropagation();const n=this.nextElementSibling.nextElementSibling;n.style.display=n.style.display==='none'?'block':'none'" title="더보기">?</span>
-          <div style="width:100%;font-size:10px;color:var(--text-dim);margin-top:5px;padding:4px 8px;background:rgba(100,120,180,.06);border-radius:4px;border-left:2px solid rgba(100,120,180,.25);line-height:1.5">Claude keeps this: NS 장기 목표 ↔ 오늘의 마일스톤을 잇는 중간 레이어. 없으면 작업 방향이 모호해짐.</div>
-          <div style="display:none;font-size:11px;color:var(--text-soft);line-height:1.6;padding:8px 10px;margin-top:4px;background:var(--panel-soft);border-radius:5px;border-left:2px solid var(--accent)">OKR은 North Star(장기 방향)과 오늘의 마일스톤 사이를 잇는 중간 레이어입니다. Objective는 분기 목표, Key Results는 그 달성을 측정하는 지표. OKR 없이 마일스톤만 쌓으면 각 작업이 실제로 무엇을 향하는지 모호해집니다.</div>
+          <span class="dm-layer-count" style="font-size:9px;color:var(--text-dim)">▾ ${okrs.length} KRs</span>
+          <div style="width:100%;font-size:10px;color:var(--text-dim);margin-top:5px;padding:4px 8px;background:rgba(100,120,180,.06);border-radius:4px;border-left:2px solid rgba(100,120,180,.25);line-height:1.5">North Star(장기) ↔ 마일스톤(오늘) 사이를 잇는 분기 단위 레이어. 방향 없이 마일스톤만 쌓으면 무엇을 위한 작업인지 모호해집니다.</div>
         </div>
         <div class="dm-okr-list">${okrs.length ? okrs.map(kr=>{const m=kr.match(/^(K\d+):\s*(.+)/);return`<div class="dm-okr-item"><span class="dm-okr-key">${m?esc(m[1]):'·'}</span><span class="dm-okr-text">${m?esc(m[2]):esc(kr)}</span></div>`;}).join(''):'<div style="font-size:12px;color:var(--text-dim)">No OKRs defined in spec doc</div>'}</div>
       </div>`;
@@ -3466,13 +3485,17 @@ function renderHierarchy(p) {
         <span class="dm-sep">→</span>
         <span class="dm-target">${esc(p.target||'—')}</span>
       </div>
-      <div class="dm-deadline" id="dm-deadline-row" style="display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:center">
+      <div class="dm-deadline" id="dm-deadline-row" style="display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:center;position:relative">
         <span style="font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.04em">deadline</span>
+        <button onclick="document.getElementById('dm-deadline-input').showPicker?document.getElementById('dm-deadline-input').showPicker():document.getElementById('dm-deadline-input').focus()"
+          style="display:inline-flex;align-items:center;gap:4px;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;padding:2px 7px;cursor:pointer;font-family:var(--mono);font-size:11px;color:${p.deadline ? deadlineBadge(p.deadline).color : 'var(--text-dim)'}"
+          title="Click to pick date">
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor" style="flex-shrink:0;opacity:.7"><rect x="1" y="3" width="14" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M1 7h14M5 1v4M11 1v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          ${p.deadline ? esc(deadlineBadge(p.deadline).text) : 'set date'}
+        </button>
         <input type="date" id="dm-deadline-input" value="${esc(p.deadline||'')}"
-          style="font-family:var(--mono);font-size:11px;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;color:var(--text);padding:2px 6px;outline:none;cursor:pointer"
-          onchange="saveDeadline('${esc(p.id||p.name)}',this.value)"
-          title="Click to set deadline">
-        ${p.deadline ? `<span style="font-family:var(--mono);font-size:10px;color:${deadlineBadge(p.deadline).color}">${esc(deadlineBadge(p.deadline).text)}</span>` : ''}
+          style="position:absolute;opacity:0;pointer-events:none;width:0;height:0"
+          onchange="saveDeadline('${esc(p.id||p.name)}',this.value)">
       </div>
       ${p.deadline ? (() => { const dl=deadlineBadge(p.deadline); const pct=Math.max(0,Math.min(100,100-Math.round(Math.max(0,(new Date(p.deadline)-new Date())/86400000)/365*100))); return `<div style="height:3px;background:var(--panel-border);border-radius:2px;overflow:hidden;margin:3px 0"><div style="height:100%;width:${pct}%;background:${dl.color};border-radius:2px;transition:width .3s"></div></div>`; })() : ''}
       <!-- Spec doc slot — injected by renderRight, shown near NS section top -->
