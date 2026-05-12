@@ -1594,7 +1594,7 @@ function renderMilestoneCreator(projId, milestones) {
       cursor:pointer; transition:background .08s; user-select:none; margin-bottom:1px; }
     .nt-row:hover { background:var(--panel-soft); }
     .nt-row:hover .nt-del { opacity:1; }
-    .nt-mid { font-family:var(--mono); font-size:9px; color:var(--text-dim); padding:1px 4px;
+    .nt-mid { font-family:var(--mono); font-size:9px; color:var(--accent); padding:1px 5px;
       border-radius:3px; background:var(--panel-soft); flex-shrink:0; line-height:1.3;
       letter-spacing:.02em; user-select:text; }
     .nt-drag-handle { font-family:var(--mono); font-size:12px; color:var(--text-dim); opacity:.45;
@@ -1658,7 +1658,7 @@ function renderMilestoneCreator(projId, milestones) {
             ondragleave="_msDragLeave(event)" ondrop="_msDrop(event,'${esc(projId)}')">
           <div class="nt-row" style="opacity:.85">
             <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
-            <span class="nt-num">${idx+1}.</span>
+            
             <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow"> </span>
             <button class="nt-check" style="border:1px solid #7b9fd4;background:rgba(90,120,200,.1);color:#7b9fd4;cursor:pointer;border-radius:4px;width:auto;padding:0 5px;font-size:8px;letter-spacing:.03em;min-width:30px"
@@ -1682,7 +1682,7 @@ function renderMilestoneCreator(projId, milestones) {
           <div style="background:rgba(204,120,92,.08);border:1px solid var(--accent-soft);border-radius:5px;padding:6px 8px;margin-bottom:2px">
             <div class="nt-row" style="margin-bottom:0">
               <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
-              <span class="nt-num">${idx+1}.</span>
+              
               <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
               <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px;flex-shrink:0">⏳</span>
               ${m.claude_comment ? (() => { const cnt = (_msConversations[m.id]||[]).length; return `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);flex-shrink:0" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">${cnt > 0 ? cnt+' ' : ''}msg</span>`; })() : ''}
@@ -1721,7 +1721,7 @@ function renderMilestoneCreator(projId, milestones) {
         const cAckTitle = c.claude_ack ? `AI acknowledged (${c.claude_ack})` : 'Not yet reviewed by AI';
         return `
           <div class="nt-sub-row ${cs==='done'?'nt-done':''}">
-            <span class="nt-num" style="width:22px">${num}.${ci+1}</span>
+            
             <span class="nt-mid" title="Milestone ID">${esc(c.id)}</span>
             <button class="nt-check" ${cBtnAttrs}
               style="border:1px solid ${csc};background:${csbg};color:${csfg};cursor:default;opacity:${cs==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:0 4px;font-size:7px;letter-spacing:.03em;min-width:26px${!canToggle?';cursor:not-allowed':''}"
@@ -1765,7 +1765,7 @@ function renderMilestoneCreator(projId, milestones) {
           onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
           <div class="nt-row ${mStatus==='done'?'nt-done':''}">
             <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
-            <span class="nt-num">${num}.</span>
+            
             <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <button class="nt-check"
