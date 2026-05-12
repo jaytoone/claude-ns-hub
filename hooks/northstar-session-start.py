@@ -135,23 +135,7 @@ def main():
     milestones = ms_data.get("milestones", [])
     queued = [m for m in milestones if m.get("status") == "queued"]
     pending = [m for m in milestones if not m.get("done") and (m.get("status") or "pending") == "pending"]
-    # Auto-queue forgotten pending (acked but never moved forward) if no queued exist
-    if not queued:
-        forgotten = [m for m in pending if m.get("claude_ack")]
-        for m in forgotten[:1]:  # queue first forgotten one
-            try:
-                req = urllib.request.Request(
-                    f"{hub}/api/northstar/{proj_id}/milestones/{m['id']}",
-                    data=json.dumps({"status": "queued"}).encode(),
-                    headers={"Content-Type": "application/json"},
-                    method="PATCH"
-                )
-                urllib.request.urlopen(req, timeout=3)
-                m["status"] = "queued"
-                queued = [m]
-                pending = [x for x in pending if x.get("id") != m.get("id")]
-            except Exception:
-                pass
+    # Auto-queue removed: pending → queued only via Execute button click (user policy)
     needs_clarification = [m for m in milestones if m.get("status") == "needs_clarification"]
     answered = [m for m in needs_clarification if (m.get("clarification_answer") or "").strip()]
     unanswered = [m for m in needs_clarification if not (m.get("clarification_answer") or "").strip()]
