@@ -2030,25 +2030,40 @@ let _nodeTouchSrc = null, _nodeTouchIdx = null, _nodeTouchGhost = null, _nodeTou
 let _msConversations = {}; // mid → [{role,text,ts}] conversation thread cache
 
 function _nodeTouchDrag() {
+  const DRAG_THRESHOLD = 8; // px movement before drag activates
   document.querySelectorAll('.ns-node').forEach(node => {
+    let _touchStartX = 0, _touchStartY = 0, _dragActive = false;
+
     node.addEventListener('touchstart', e => {
       if (e.touches.length !== 1) return;
       const t = e.touches[0];
       const rect = node.getBoundingClientRect();
+      _touchStartX = t.clientX;
+      _touchStartY = t.clientY;
+      _dragActive = false;
       _nodeTouchSrc = node;
       _nodeTouchIdx = +node.dataset.idx;
       _nodeTouchOX = t.clientX - rect.left;
       _nodeTouchOY = t.clientY - rect.top;
-      _nodeTouchGhost = node.cloneNode(true);
-      _nodeTouchGhost.style.cssText = `position:fixed;pointer-events:none;opacity:0.7;z-index:9999;
-        width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;
-        background:var(--panel);border:1px solid var(--accent);border-radius:6px;`;
-      document.body.appendChild(_nodeTouchGhost);
-      node.style.opacity = '0.35';
+      _nodeTouchGhost = null;
     }, {passive: true});
 
     node.addEventListener('touchmove', e => {
       if (!_nodeTouchSrc || _nodeTouchSrc !== node) return;
+      const t = e.touches[0];
+      if (!_dragActive) {
+        const dx = t.clientX - _touchStartX, dy = t.clientY - _touchStartY;
+        if (Math.sqrt(dx*dx + dy*dy) < DRAG_THRESHOLD) return; // not yet a drag
+        // Threshold crossed — activate drag
+        _dragActive = true;
+        const rect = node.getBoundingClientRect();
+        _nodeTouchGhost = node.cloneNode(true);
+        _nodeTouchGhost.style.cssText = `position:fixed;pointer-events:none;opacity:0.7;z-index:9999;
+          width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;
+          background:var(--panel);border:1px solid var(--accent);border-radius:6px;`;
+        document.body.appendChild(_nodeTouchGhost);
+        node.style.opacity = '0.35';
+      }
       e.preventDefault();
       const t = e.touches[0];
       _nodeTouchGhost.style.left = (t.clientX - _nodeTouchOX) + 'px';
@@ -2059,7 +2074,15 @@ function _nodeTouchDrag() {
       if (!_nodeTouchSrc || _nodeTouchSrc !== node) return;
       node.style.opacity = '';
       if (_nodeTouchGhost) { _nodeTouchGhost.remove(); _nodeTouchGhost = null; }
+      const wasDrag = _dragActive;
+      _dragActive = false;
       const t = e.changedTouches[0];
+      if (!wasDrag) {
+        // Short tap — fire click to open detail modal
+        _nodeTouchSrc = null; _nodeTouchIdx = null;
+        node.click();
+        return;
+      }
       const pSrc = projects[_nodeTouchIdx];
       if (!pSrc) { _nodeTouchSrc = null; _nodeTouchIdx = null; return; }
       // Detect which lane the finger landed in
