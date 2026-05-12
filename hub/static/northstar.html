@@ -3679,13 +3679,35 @@ function renderRight(p, topics, docData) {
     const execBtn = `<button class="dm-btn" id="dm-exec-btn"
       style="background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:500"
       onclick="executeProject('${esc(p.id)}',this)" title="Execute: init milestones or process queued work">▶ Execute</button>`;
-    specSlot.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap">${execBtn}${specBtn}</div>`;
-    // M60: restore exec button state if session is already running
-    fetch(`/api/northstar/${encodeURIComponent(p.id)}/tmux-output?lines=1`)
-      .then(r=>r.json()).then(d=>{
+    specSlot.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap">${execBtn}${specBtn}</div>
+      <div id="dm-exec-sessions" style="margin-top:4px;font-family:var(--mono);font-size:9px;color:var(--text-dim)"></div>`;
+    // M60+: restore exec button state + show running exec sessions list
+    const _refreshExecState = () => {
+      fetch('/api/exec-sessions').then(r=>r.json()).then(d=>{
         const b = document.getElementById('dm-exec-btn');
-        if (b && d.running) { b.textContent = '◉'; b.title = 'Live session active — click to re-check'; }
+        const info = document.getElementById('dm-exec-sessions');
+        const running = (d.sessions||[]).filter(s => s.proj_id === p.id);
+        const allSessions = d.sessions||[];
+        if (b && running.length > 0) {
+          b.textContent = '▶▶'; b.style.opacity = '1';
+          b.title = `Session running since ${(running[0].created||'').slice(11,16)||'?'}`;
+        } else if (b) {
+          b.textContent = '▶ Execute';
+        }
+        if (info) {
+          if (allSessions.length > 0) {
+            info.innerHTML = allSessions.map(s =>
+              `<span style="color:${s.proj_id===p.id?'var(--green)':'var(--text-dim)'};margin-right:8px">▶ ${esc(s.proj_id)} <span style="opacity:.6">${(s.created||'').slice(11,16)}</span></span>`
+            ).join('');
+          } else {
+            info.textContent = '';
+          }
+        }
       }).catch(()=>{});
+    };
+    _refreshExecState();
+    clearInterval(window._execPollTimer);
+    window._execPollTimer = setInterval(_refreshExecState, 5000);
   }
 
   // Right panel: note + init if needed

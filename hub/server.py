@@ -1515,7 +1515,7 @@ async def execute_project(proj_id: str):
             subprocess.Popen([
                 "tmux", "new-session", "-d", "-s", session_name,
                 "-c", proj_dir if Path(proj_dir).exists() else str(Path.home()),
-                "claude", "--dangerously-skip-permissions", "--continue"
+                "claude", "--dangerously-skip-permissions"
             ])
             import asyncio as _aio
             # Wait for Claude + SessionStart hook to complete
@@ -1730,6 +1730,29 @@ async def kill_exec_session(proj_id: str):
     result = subprocess.run(["tmux", "kill-session", "-t", exec_session], capture_output=True)
     killed = result.returncode == 0
     return {"ok": True, "killed": killed, "session": exec_session}
+
+
+@app.get("/api/exec-sessions")
+async def get_exec_sessions():
+    """Return all running claude-exec-* tmux sessions with metadata."""
+    result = subprocess.run(
+        ["tmux", "list-sessions", "-F", "#{session_name}:#{session_created}:#{session_windows}"],
+        capture_output=True, text=True
+    )
+    sessions = []
+    for line in result.stdout.splitlines():
+        parts = line.split(":", 2)
+        if len(parts) >= 1 and parts[0].startswith("claude-exec-"):
+            proj_id = parts[0][len("claude-exec-"):]
+            created_ts = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+            from datetime import datetime as _dt
+            sessions.append({
+                "session": parts[0],
+                "proj_id": proj_id,
+                "created": _dt.fromtimestamp(created_ts).isoformat() if created_ts else "",
+                "alive": True,
+            })
+    return JSONResponse({"ok": True, "sessions": sessions})
 
 
 @app.get("/api/northstar/sessions")
