@@ -2065,7 +2065,6 @@ function _nodeTouchDrag() {
         node.style.opacity = '0.35';
       }
       e.preventDefault();
-      const t = e.touches[0];
       _nodeTouchGhost.style.left = (t.clientX - _nodeTouchOX) + 'px';
       _nodeTouchGhost.style.top  = (t.clientY - _nodeTouchOY) + 'px';
     }, {passive: false});
