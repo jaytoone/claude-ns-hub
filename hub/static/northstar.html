@@ -2481,9 +2481,8 @@ async function generateStarRelation(projId, msId, btn) {
 })();
 
 async function _openWithTerminal(origIdx, projId) {
-  // M77/M90: card badge is for exec-running (live session) only
-  // exec-running → show live session overlay
-  if (_sessionStatus[projId] === 'exec-running') {
+  // M77/M90: card badge is for exec-running/exec-idle (live session) only
+  if (_sessionStatus[projId] === 'exec-running' || _sessionStatus[projId] === 'exec-idle') {
     startTmuxWatch(projId);
     return;
   }
@@ -2501,7 +2500,8 @@ async function refreshSessionStatus() {
     // M77: exec-running overlays PTY state; badge shows exec (live Execute) state primarily
     const execData = await execR.json();
     for (const s of (execData.sessions || [])) {
-      _sessionStatus[s.proj_id] = 'exec-running';
+      // M124: distinguish idle exec session (Claude at prompt) from active (processing)
+      _sessionStatus[s.proj_id] = s.idle ? 'exec-idle' : 'exec-running';
     }
   } catch(_) {}
 }
@@ -2510,6 +2510,7 @@ function buildSessPill(s) {
   // M77: badge shows exec/live-session state only — PTY terminal states are hidden from badge
   if (!s || s === 'dead' || s === 'none') return { cls: '', label: '' };
   if (s === 'exec-running')  return { cls: 'ns-sess-running', label: 'live' };
+  if (s === 'exec-idle')    return { cls: 'ns-sess-idle',    label: 'idle' };
   if (s === 'waiting' || s === 'wait') return { cls: 'ns-sess-waiting', label: 'wait' };
   if (s === 'done')          return { cls: 'ns-sess-done',    label: 'done' };
   // PTY states (active, idle:N, detached) — no badge; terminal indicator is the terminal button itself
@@ -3263,8 +3264,8 @@ function nodeHtml(p, idx) {
   }
   const sKey = _sessionStatus[p.id || p.name];
   // M77: badge shows exec-running state only; PTY active/idle are not surfaced on the card
-  const sessClass = sKey === 'exec-running' ? 'live' : '';
-  const sessDot = sKey === 'exec-running' ? '●' : '·';
+  const sessClass = sKey === 'exec-running' ? 'live' : sKey === 'exec-idle' ? 'idle' : '';
+  const sessDot = (sKey === 'exec-running' || sKey === 'exec-idle') ? '●' : '·';
   const active = idx === activeIdx ? 'active' : '';
   return `<div class="ns-node ${active}" data-proj-idx="${idx}" data-proj-id="${esc(p.id||p.name)}" data-layer="${p.layer||0}" draggable="true">
     <div class="ns-node-top">
@@ -3553,7 +3554,8 @@ function minimizeTerminal() {
     float.classList.remove('ns-term-minimized');
     float.style.height = float.dataset.lastH || '680px';
     btn.textContent = '—';
-    setTimeout(() => _termFit?.fit(), 80);
+    // M127: fit at 80ms, 200ms, 400ms — CSS transition takes time, single call is too early
+    [80, 200, 400].forEach(d => setTimeout(() => _termFit?.fit(), d));
   }
 }
 

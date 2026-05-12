@@ -1521,53 +1521,60 @@ async def execute_project(proj_id: str):
         }
         proj_dir = proj_dirs.get(proj_id, str(Path.home() / "Project" / proj_id))
 
-        # M24 fix: if tmux session already running, inject trigger if there are queued/pending items
+        # M24/M123/M125: if tmux session exists, verify Claude is alive before injecting
         existing = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
         if existing.returncode == 0:
-            # Session alive — check if any milestones need attention (queued or new unacked)
-            new_pending = [m for m in active_ms if m.get("status") == "pending" and not m.get("claude_ack")]
-            new_queued = [m for m in active_ms if m.get("status") == "queued"]
-            needs_trigger = new_pending or new_queued
-            _trigger_sent = False
-            if needs_trigger:
-                # Write minimal trigger prompt and send "go" to wake idle session
-                _pf = PROJECTS_DIR / proj_id / "pending-execute-prompt.txt"
-                _pf.parent.mkdir(parents=True, exist_ok=True)
-                _ms_snap = "\n".join(
-                    f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:60]}\""
-                    for m in (new_queued + new_pending)
-                )
-                _pf.write_text(
-                    f"[EXECUTE SYNC] New milestones need processing — process ALL queued milestones now.\n\n"
-                    f"GET {hub_api}/api/northstar/{proj_id}/milestones for current state.\n"
-                    f"TaskCreate + implement each queued milestone sequentially.\n\n"
-                    f"Newly queued:\n{_ms_snap}",
-                    encoding="utf-8"
-                )
-                # Only send "go" if session is idle (at ❯ prompt) — never interrupt mid-processing
-                _pane_output = subprocess.run(
-                    ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-3"],
-                    capture_output=True, text=True
-                ).stdout
-                _processing_indicators = ("Transmut", "Pondering", "Cogitat", "Simmer", "Stew",
-                                          "Drizzl", "Whirl", "Wibbl", "Finagl", "Churn",
-                                          "Kneading", "Newspapering", "thinking")
-                _is_processing = any(ind in _pane_output for ind in _processing_indicators)
-                if not _is_processing:
-                    subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"], capture_output=True)
-                    _trigger_sent = True
-                else:
-                    _trigger_sent = False  # prompt file updated but "go" skipped — Claude will finish then pick up
-            return JSONResponse({
-                "ok": True, "mode": "tmux_active",
-                "session": session_name,
-                "tasks_created": len(actionable),
-                "new_injected": len(needs_trigger) if needs_trigger else 0,
-                "triggered": _trigger_sent if needs_trigger else False,
-                "message": "Session active — trigger sent" if (needs_trigger and _trigger_sent) else
-                           "Session processing — prompt queued, will pick up when idle" if (needs_trigger and not _trigger_sent) else
-                           f"Session active — no new work",
-            })
+            # M123: check Claude process is alive (not just a bare shell after Claude exited)
+            _pane_cmds = subprocess.run(
+                ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
+                capture_output=True, text=True
+            ).stdout.splitlines()
+            _cmds = [c.strip() for c in _pane_cmds if c.strip()]
+            _claude_alive = any(c not in _SHELLS for c in _cmds) if _cmds else False
+            if _claude_alive:
+                # Session alive with Claude running — inject trigger if milestones need attention
+                new_pending = [m for m in active_ms if m.get("status") == "pending" and not m.get("claude_ack")]
+                new_queued = [m for m in active_ms if m.get("status") == "queued"]
+                needs_trigger = new_pending or new_queued
+                _trigger_sent = False
+                if needs_trigger:
+                    _pf = PROJECTS_DIR / proj_id / "pending-execute-prompt.txt"
+                    _pf.parent.mkdir(parents=True, exist_ok=True)
+                    _ms_snap = "\n".join(
+                        f"  {m.get('id')} [{m.get('status')}]: \"{m.get('text','')[:60]}\""
+                        for m in (new_queued + new_pending)
+                    )
+                    _pf.write_text(
+                        f"[EXECUTE SYNC] New milestones need processing — process ALL queued milestones now.\n\n"
+                        f"GET {hub_api}/api/northstar/{proj_id}/milestones for current state.\n"
+                        f"TaskCreate + implement each queued milestone sequentially.\n\n"
+                        f"Newly queued:\n{_ms_snap}",
+                        encoding="utf-8"
+                    )
+                    _pane_output = subprocess.run(
+                        ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-3"],
+                        capture_output=True, text=True
+                    ).stdout
+                    _processing_indicators = ("Transmut", "Pondering", "Cogitat", "Simmer", "Stew",
+                                              "Drizzl", "Whirl", "Wibbl", "Finagl", "Churn",
+                                              "Kneading", "Newspapering", "thinking")
+                    _is_processing = any(ind in _pane_output for ind in _processing_indicators)
+                    if not _is_processing:
+                        subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"], capture_output=True)
+                        _trigger_sent = True
+                return JSONResponse({
+                    "ok": True, "mode": "tmux_active",
+                    "session": session_name,
+                    "tasks_created": len(actionable),
+                    "new_injected": len(needs_trigger) if needs_trigger else 0,
+                    "triggered": _trigger_sent if needs_trigger else False,
+                    "message": "Session active — trigger sent" if (needs_trigger and _trigger_sent) else
+                               "Session processing — prompt queued, will pick up when idle" if (needs_trigger and not _trigger_sent) else
+                               "Session active — no new work",
+                })
+            else:
+                # M123: Claude exited — stale shell session. Kill so fresh start below can proceed.
+                subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
 
         if actionable:
             stone_lines = "\n".join(
@@ -1884,8 +1891,10 @@ async def get_exec_sessions():
             import re as _re
             clean = _re.sub(r'\x1b\[[0-9;]*[mKHJ]', '', pane_out).strip()
             last_line = clean.splitlines()[-1].strip() if clean.splitlines() else ''
-            # Claude Code idle prompt ends with "> " or "? " or shows the caret prompt
-            idle = bool(_re.search(r'[>?]\s*$', last_line))
+            # Claude Code idle: ends with "> "/"? " caret, OR bypass-permissions mode prompt
+            idle = bool(_re.search(r'[>?]\s*$', last_line)) or \
+                   bool(_re.search(r'bypass permissions', clean, _re.IGNORECASE)) or \
+                   bool(_re.search(r'shift\+tab to cycle', clean, _re.IGNORECASE))
 
             from datetime import datetime as _dt
             sessions.append({
