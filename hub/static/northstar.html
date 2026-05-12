@@ -1876,7 +1876,6 @@ function renderMilestoneCreator(projId, milestones) {
                 onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
                 onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
               >${esc(m.text)}</div>
-              ${m.star_relation ? `<div class="nt-star-rel" title="Why this stone matters">${esc(m.star_relation)}</div>` : ''}
             </div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
