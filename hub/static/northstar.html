@@ -1770,19 +1770,20 @@ function renderMilestoneCreator(projId, milestones) {
             
             <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
-            <button class="nt-check"
-              ${mBtnAttrs}
-              style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:0 5px;font-size:8px;letter-spacing:.03em;min-width:30px"
-            >${stateLabel}</button>
-            ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" >${m.claude_ack?'acked':'review'}</span>` : ''}
-            ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);flex-shrink:0" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}
+            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-items:stretch;min-width:34px">
+              <button class="nt-check"
+                ${mBtnAttrs}
+                style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:1px 5px;font-size:8px;letter-spacing:.03em;line-height:1.3"
+              >${stateLabel}</button>
+              ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="text-align:center">${m.claude_ack?'acked':'review'}</span>` : ''}
+            </div>
             <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
               data-ms-id="${esc(m.id)}"
               onclick="event.stopPropagation()"
               onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
               onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-            >${esc(m.text)}${mNewBadge}</div>
+            >${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:1px 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}${esc(m.text)}${mNewBadge}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
