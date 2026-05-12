@@ -1416,7 +1416,7 @@ async def execute_project(proj_id: str):
         # (background poller does this every 5 min, but Execute should trigger it now)
         _promoted = False
         for _m in milestones:
-            if isinstance(_m, dict) and _m.get("status") == "pending" and _m.get("claude_ack"):
+            if isinstance(_m, dict) and (_m.get("status") in ("pending", None) or not _m.get("status")) and _m.get("claude_ack") and not _m.get("done"):
                 _m["status"] = "queued"
                 _promoted = True
         if _promoted:

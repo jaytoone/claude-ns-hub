@@ -591,10 +591,12 @@ header {
   #ns-terminal-float {
     top: 44px !important; left: 0 !important; right: 0 !important;
     transform: none !important; -webkit-transform: none !important;
-    width: 100% !important; height: 52svh !important;
+    width: 100% !important; height: 72svh !important;
     border-radius: 0 0 0 0 !important; border: none !important;
     max-width: 100vw !important; bottom: auto !important;
   }
+  /* iPad: ensure xterm fills container width for proper pty cols */
+  #dm-xterm { width: 100% !important; height: calc(72svh - 40px) !important; }
   /* KEY FIX: pass vertical swipe to viewport scroll */
   #dm-xterm .xterm-screen { touch-action: pan-y; }
   #dm-xterm canvas { touch-action: pan-y; }
@@ -2165,12 +2167,26 @@ function sessCell(projId) {
 
 // ── SWIMLANE RENDER ──────────────────────────────────────────────────────────
 
+function deadlineBadge(deadline) {
+  if (!deadline) return { text: '—', color: 'var(--text-dim)' };
+  const dl = new Date(deadline);
+  if (isNaN(dl)) return { text: deadline, color: 'var(--text-dim)' };
+  const now = new Date();
+  const days = Math.ceil((dl - now) / 86400000);
+  if (days < 0) return { text: `D+${-days}`, color: 'var(--red)' };
+  if (days === 0) return { text: 'D-0', color: 'var(--red)' };
+  if (days <= 7) return { text: `D-${days}`, color: 'var(--red)' };
+  if (days <= 30) return { text: `D-${days}`, color: 'var(--yellow,#d4a574)' };
+  return { text: `D-${days}`, color: 'var(--text-dim)' };
+}
+
 function nodeCard(p, idx) {
   const pct = Math.round(projectPct(p) * 100);
   const color = statusColor(p.status);
   const dotColor = statusColor(p.status || 'paused');
   const lastLog = p.log?.length ? p.log[p.log.length-1] : null;
   const logDate = lastLog ? (lastLog.date||'').slice(5) : '—';
+  const dl = deadlineBadge(p.deadline);
   let gapText = pct+'%', gapColor = 'var(--text-dim)';
   if (p.current && p.current !== '—' && p.target && p.target !== '—') {
     const c = parseNum(p.current), t = parseNum(p.target);
@@ -2202,7 +2218,7 @@ function nodeCard(p, idx) {
     <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
     <div class="ns-node-bottom">
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
-      <span class="ns-node-date">${esc(logDate)}</span>
+      <span class="ns-node-date" style="color:${dl.color}" title="deadline: ${esc(p.deadline||'none')}">${esc(dl.text)}</span>
       <span class="ns-node-term" title="Open Claude session"
         onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_ claude</span>
       <span class="ns-node-menu" title="More actions"
