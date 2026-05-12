@@ -1621,8 +1621,8 @@ function renderMilestoneCreator(projId, milestones) {
     .nt-sub-row { display:flex; align-items:flex-start; gap:5px; padding:5px 4px; border-radius:3px; transition:background .08s; margin-bottom:1px; }
     .nt-sub-row:hover { background:var(--panel-soft); }
     .nt-sub-row:hover .nt-del { opacity:1; }
-    .nt-ack-g { font-family:var(--mono); font-size:9px; color:var(--green); }
-    .nt-ack-o { font-family:var(--mono); font-size:9px; color:var(--yellow); }
+    .nt-ack-g { font-family:var(--mono); font-size:8px; color:var(--green); padding:1px 4px; border-radius:3px; border:1px solid var(--green); letter-spacing:.02em; flex-shrink:0; }
+    .nt-ack-o { font-family:var(--mono); font-size:8px; color:var(--yellow,#d4a574); padding:1px 4px; border-radius:3px; border:1px solid var(--yellow,#d4a574); letter-spacing:.02em; flex-shrink:0; }
     .nt-add { font-family:var(--mono); font-size:11px; color:var(--accent); background:none;
       border:1px solid var(--accent); cursor:pointer; padding:6px 0;
       border-radius:5px; transition:background .08s, color .08s;
@@ -1687,9 +1687,9 @@ function renderMilestoneCreator(projId, milestones) {
               <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px;flex-shrink:0">⏳</span>
               ${m.claude_comment ? (() => { const cnt = (_msConversations[m.id]||[]).length; return `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);flex-shrink:0" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">${cnt > 0 ? cnt+' ' : ''}msg</span>`; })() : ''}
               <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
-                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono);flex-shrink:0">✓</button>
+                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono);flex-shrink:0">Confirm</button>
               <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
-                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono);flex-shrink:0">↩</button>
+                style="font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono);flex-shrink:0">Reopen</button>
               <div style="flex:1;font-size:12px;color:var(--text);min-width:0;overflow-wrap:anywhere">${esc(m.text)}</div>
               <button class="nt-del" style="opacity:1" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
@@ -1733,7 +1733,7 @@ function renderMilestoneCreator(projId, milestones) {
               onkeydown="handleMsTab(event,'${esc(projId)}','${esc(c.id)}')"
               onclick="event.stopPropagation()"
             >${esc(c.text)}</div>
-            ${cs!=='done' ? `<span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${cAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em">${c.claude_ack?'acked':'review'}</span>` : ''}
+            ${cs!=='done' ? `<span class="${c.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${cAckTitle}" >${c.claude_ack?'acked':'review'}</span>` : ''}
             <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${escJs(c.text.slice(0,60))}')">✕</button>
           </div>`;
       }).join('');
@@ -1772,7 +1772,7 @@ function renderMilestoneCreator(projId, milestones) {
               ${mBtnAttrs}
               style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:0 5px;font-size:8px;letter-spacing:.03em;min-width:30px"
             >${stateLabel}</button>
-            ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" style="font-size:8px;padding:1px 4px;border-radius:3px;border:1px solid currentColor;letter-spacing:.02em;flex-shrink:0">${m.claude_ack?'acked':'review'}</span>` : ''}
+            ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}" >${m.claude_ack?'acked':'review'}</span>` : ''}
             ${m.claude_comment ? `<span style="font-size:10px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);flex-shrink:0" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}
             <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
               contenteditable="true"
