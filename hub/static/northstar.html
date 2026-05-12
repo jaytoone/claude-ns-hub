@@ -117,6 +117,10 @@ header {
 .ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
 .ns-node.drop-before { border-left: 2px solid var(--accent); }
 .ns-node.drop-after  { border-right: 2px solid var(--accent); }
+/* M76: ghost column slots for snap-to-column drag */
+.ns-col-ghost { min-width:148px; width:148px; min-height:80px; border:1px dashed var(--panel-border);
+  border-radius:8px; opacity:.28; flex-shrink:0; transition:opacity .1s, border-color .1s, background .1s; }
+.ns-col-ghost.drag-hover { opacity:.7; border-color:var(--accent); background:var(--accent-soft); }
 /* ── Project node card ── */
 .ns-node {
   width: 154px; background: var(--panel); border: 1px solid var(--panel-border);
@@ -1494,10 +1498,6 @@ function renderMultiNS(projId, nsList) {
         <button style="${btnBase}${cur===nsList.length-1?'opacity:.3;cursor:default':''}"
           onclick="window.__nsGo_${projId.replace(/\W/g,'_')}(${cur+1})">›</button>
       </div>
-      <div style="font-size:10px;font-family:var(--mono);color:var(--text-dim);margin-bottom:6px;line-height:1.6">
-        ${esc(ns.metric||'')} → <span style="color:${color}">${esc(ns.target||'')}</span>
-        ${ns.current ? `<br>now: <span style="color:${color}">${esc(ns.current)}</span>` : ''}
-      </div>
       <div style="height:2px;background:var(--panel-border);border-radius:1px;margin-bottom:10px">
         <div style="width:${pct}%;height:100%;background:${color};border-radius:1px;transition:width .4s"></div>
       </div>
@@ -1619,6 +1619,12 @@ function renderMilestoneCreator(projId, milestones) {
     .nt-del { opacity:0; transition:opacity .1s; background:none; border:none; cursor:pointer;
       color:var(--text-dim); font-size:11px; padding:0 2px; }
     .nt-del:hover { color:var(--red); }
+    /* M65: star-stone relation display */
+    .nt-star-rel { font-size:9px; color:var(--accent); font-family:var(--mono); margin-top:3px; opacity:.75; line-height:1.4; }
+    .nt-why { opacity:0; transition:opacity .1s; background:none; border:none; cursor:pointer;
+      font-size:9px; color:var(--accent); padding:0 2px; font-family:var(--mono); }
+    .nt-row:hover .nt-why { opacity:1; }
+    .nt-why:hover { opacity:1 !important; }
     .nt-sub-wrap { margin-left:24px; border-left:2px solid var(--panel-border); padding-left:10px; padding-bottom:4px; margin-top:2px; }
     .nt-sub-row { display:flex; align-items:flex-start; gap:5px; padding:5px 4px; border-radius:3px; transition:background .08s; margin-bottom:1px; }
     .nt-sub-row:hover { background:var(--panel-soft); }
@@ -1788,9 +1794,10 @@ function renderMilestoneCreator(projId, milestones) {
               onclick="event.stopPropagation()"
               onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
               onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-            >${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:1px 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}${esc(m.text)}${mNewBadge}</div>
+            >${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:1px 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}${esc(m.text)}${mNewBadge}${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star">★ ${esc(m.star_relation)}</div>` : ''}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
+              ${mStatus !== 'done' ? `<button class="nt-why" title="Why does this stone matter? (star-stone relation)" onclick="event.stopPropagation();generateStarRelation('${esc(projId)}','${esc(m.id)}',this)">★?</button>` : ''}
               <button class="nt-del" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
           </div>
@@ -2245,6 +2252,25 @@ async function deleteMs(projId, mid) {
   await loadMilestones(projId);
 }
 
+// M65/M70: generate star-stone relation + OKR rationale for a milestone
+async function generateStarRelation(projId, msId, btn) {
+  const orig = btn.textContent;
+  btn.textContent = '…'; btn.disabled = true;
+  const r = await fetch(
+    `/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(msId)}/rationale`,
+    { method: 'POST' }
+  ).then(x => x.json()).catch(() => ({ ok: false }));
+  btn.disabled = false; btn.textContent = orig;
+  if (r.ok && r.rationale) {
+    const p = projects.find(x => (x.id||x.name) === projId);
+    if (p) {
+      const ms = (p.milestones || []).find(m => m.id === msId);
+      if (ms) { ms.star_relation = r.rationale; }
+    }
+    await loadMilestones(projId);
+  }
+}
+
 // Reload from API for toggleMs (need current state)
 (async function() {
   const orig = window.toggleMs;
@@ -2273,10 +2299,8 @@ async function refreshSessionStatus() {
       fetch('/api/exec-sessions')
     ]);
     _sessionStatus = await sessR.json();
-    const execData = await execR.json();
-    for (const s of (execData.sessions || [])) {
-      _sessionStatus[s.proj_id] = 'exec-running';
-    }
+    // M77: badge reflects only PTY live-session state; exec state shown via execute button
+    await execR.json();
   } catch(_) {}
 }
 
@@ -2407,6 +2431,17 @@ function render() {
     el.innerHTML = lanes[l].map(({p, i}) =>
       `<div class="ns-group-orphan">${nodeCard(p, i)}</div>`
     ).join('');
+    // M76: ghost column slots (max 5 visible cols per lane)
+    const ghosts = Math.max(0, 5 - lanes[l].length);
+    for (let g = 0; g < ghosts; g++) {
+      const slot = document.createElement('div');
+      slot.className = 'ns-col-ghost';
+      slot.dataset.lane = l; slot.dataset.col = lanes[l].length + g;
+      slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-hover'); });
+      slot.addEventListener('dragleave', () => slot.classList.remove('drag-hover'));
+      slot.addEventListener('drop', e => _dropOnGhost(e, slot));
+      el.appendChild(slot);
+    }
   });
 
   // Click → open detail (or finish connect if in connect mode)
@@ -2556,6 +2591,25 @@ function render() {
     });
   });
 
+  // M76: drop on ghost column slot — move card to target lane+col
+  function _dropOnGhost(e, slot) {
+    e.preventDefault(); e.stopPropagation();
+    slot.classList.remove('drag-hover');
+    if (_dragIdx == null) return;
+    const p = projects[_dragIdx];
+    if (!p) return;
+    const targetLane = parseInt(slot.dataset.lane);
+    const targetCol  = parseInt(slot.dataset.col);
+    p.layer = targetLane; p.position_x = targetCol;
+    _dragSrc = null; _dragIdx = null;
+    render();
+    requestAnimationFrame(() => drawParentLines());
+    fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({layer: targetLane, position_x: targetCol}),
+    });
+  }
+  window._dropOnGhost = _dropOnGhost;
   // Apply card alignment + draw connection lines
   // Double-rAF: first frame triggers layout, second reads final positions
   applyAlign();
@@ -2578,9 +2632,29 @@ async function saveDeadline(projId, dateStr) {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({deadline: dateStr})
   }).catch(()=>{});
-  // Update in-memory project and re-render
   const p = projects.find(x => (x.id||x.name) === projId);
-  if (p) { p.deadline = dateStr; render(); }
+  if (!p) return;
+  p.deadline = dateStr;
+  render();
+  // Patch the open detail modal deadline button in-place (render() only updates swimlane cards)
+  const dlRow = document.getElementById('dm-deadline-row');
+  if (dlRow) {
+    const dl = deadlineBadge(dateStr);
+    const btn = dlRow.querySelector('button');
+    if (btn) {
+      btn.style.color = dl.color;
+      Array.from(btn.childNodes).forEach(n => {
+        if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) n.textContent = dl.text;
+      });
+    }
+    const progBar = dlRow.nextElementSibling;
+    if (progBar && progBar.firstElementChild) {
+      const rem = Math.max(0, (new Date(dateStr) - new Date()) / 86400000);
+      const pct = Math.max(0, Math.min(100, 100 - Math.round(rem / 365 * 100)));
+      progBar.firstElementChild.style.width = pct + '%';
+      progBar.firstElementChild.style.background = dl.color;
+    }
+  }
 }
 
 async function saveNodeName(el, projId) {
@@ -3588,7 +3662,6 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
           <span class="dm-layer-title">${esc(ns.name||p.name)}</span>
           <span class="dm-layer-count" style="color:${color}">${Math.round(pct*100)}%</span>
         </div>
-        <div class="dm-metric-name">${esc(ns.metric||p.metric||'—')}</div>
         <div class="dm-gauge-wrap">
           <svg width="200" height="110" viewBox="0 0 200 110">
             <path class="gauge-track" d="${bgPath}" stroke-width="11"/>
@@ -3596,11 +3669,6 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
             <text x="${cx}" y="${cy-18}" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="20" fill="${color}">${Math.round(pct*100)}%</text>
             <text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--text-dim)">of target</text>
           </svg>
-        </div>
-        <div class="dm-ns-meta">
-          <span class="dm-current" style="color:${color}">${esc(ns.current||p.current||'—')}</span>
-          <span class="dm-sep">→</span>
-          <span class="dm-target">${esc(ns.target||p.target||'—')}</span>
         </div>
         ${p.deadline?`<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>`:''}
       </div>
@@ -3908,7 +3976,7 @@ function renderRight(p, topics, docData) {
         if (info) {
           if (running.length > 0) {
             info.innerHTML = running.map(s =>
-              `<span style="color:var(--green);margin-right:8px">▶ ${esc(s.proj_id)} <span style="opacity:.6">${(s.created||'').slice(11,16)}</span></span>`
+              `<span style="color:var(--green);margin-right:8px">▶ ${esc(s.session||s.proj_id)} <span style="opacity:.6">${(s.created||'').slice(11,16)}</span></span>`
             ).join('');
           } else {
             info.textContent = '';
