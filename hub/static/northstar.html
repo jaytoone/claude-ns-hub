@@ -1570,8 +1570,9 @@ function renderMilestoneCreator(projId, milestones) {
   try { expanded = JSON.parse(localStorage.getItem(expandKey) || '{}'); } catch(_) {}
 
   // M32: hide confirmed (done) stones — show only active milestones
-  // M78: any stone with "review" badge (!claude_ack) floats to top; pending_confirmation always sinks
-  // M86: preserve server array order as tiebreaker so newest-inserted milestones stay at top
+  // M78: review badge (!claude_ack) floats to top; pending_confirmation always sinks
+  // M86: preserve server array order as tiebreaker
+  // M94: queued stones (black stones) → very top; they're being actively worked on
   const l0 = milestones
     .filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done)
     .sort((a, b) => {
@@ -1579,11 +1580,15 @@ function renderMilestoneCreator(projId, milestones) {
       const aConf = a.status === 'pending_confirmation' ? 1 : 0;
       const bConf = b.status === 'pending_confirmation' ? 1 : 0;
       if (aConf !== bConf) return aConf - bConf;
-      // 2. Review badge (!claude_ack) → top among non-pending_confirmation
+      // 2. queued (black stone) → very top among non-pending_confirmation
+      const aQ = a.status === 'queued' ? 1 : 0;
+      const bQ = b.status === 'queued' ? 1 : 0;
+      if (aQ !== bQ) return bQ - aQ;
+      // 3. Review badge (!claude_ack) → second
       const aNew = !a.claude_ack ? 1 : 0;
       const bNew = !b.claude_ack ? 1 : 0;
       if (aNew !== bNew) return bNew - aNew;
-      // 3. Stable: preserve server array order (Array.sort is stable in V8)
+      // 4. Stable: preserve server array order (Array.sort is stable in V8)
       return 0;
     });
   const doneStones = milestones.filter(m => (m.layer || 0) === 0 && ((m.status||'') === 'done' || m.done));
@@ -2035,6 +2040,8 @@ function _nodeTouchDrag() {
 
     node.addEventListener('touchstart', e => {
       if (e.touches.length !== 1) return;
+      // Skip drag setup on buttons/links — let them handle their own click natively
+      if (e.target.closest('button, a, [contenteditable="true"]')) return;
       const t = e.touches[0];
       const rect = node.getBoundingClientRect();
       _touchStartX = t.clientX;
@@ -2076,9 +2083,8 @@ function _nodeTouchDrag() {
       _dragActive = false;
       const t = e.changedTouches[0];
       if (!wasDrag) {
-        // Short tap — fire click to open detail modal
+        // Short tap — clear state, let browser's native click fire on the tapped element
         _nodeTouchSrc = null; _nodeTouchIdx = null;
-        node.click();
         return;
       }
       const pSrc = projects[_nodeTouchIdx];
@@ -2515,8 +2521,8 @@ function nodeCard(p, idx) {
     <div class="ns-node-bottom">
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
       <span class="ns-node-date" style="color:${dl.color}" title="deadline: ${esc(p.deadline||'none')}">${esc(dl.text)}</span>
-      <span class="ns-node-term" title="Open Claude session"
-        onclick="event.stopPropagation();_openWithTerminal(${idx},'${pid}')">›_ claude</span>
+      <span class="ns-node-term" title="Open Claude session (claude --continue)"
+        onclick="event.stopPropagation();openTerminal('${pid}')">›_ claude</span>
       <span class="ns-node-menu" title="More actions"
         onclick="event.stopPropagation();showNodeCtxMenu('${pid}',event.clientX,event.clientY)">⋮</span>
     </div>
