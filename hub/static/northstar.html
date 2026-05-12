@@ -1858,9 +1858,6 @@ function renderMilestoneCreator(projId, milestones) {
           onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
           <div class="nt-row ${mStatus==='done'?'nt-done':''}">
             <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
-            ${mStatus === 'queued' ? `<span class="nt-priority-tag" title="Queued — Claude will execute this next">▶</span>` : ''}
-            <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
-            <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-self:flex-start;align-items:flex-start">
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'acked':'review'}</span>` : ''}
               <button class="nt-check"
@@ -1868,6 +1865,9 @@ function renderMilestoneCreator(projId, milestones) {
                 style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:1px 5px;font-size:8px;letter-spacing:.03em;line-height:1.3"
               >${stateLabel}</button>
             </div>
+            ${mStatus === 'queued' ? `<span class="nt-priority-tag" title="Queued — Claude will execute this next">▶</span>` : ''}
+            <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
+            <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
               <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
                 contenteditable="true"
@@ -4086,11 +4086,17 @@ function renderRight(p, topics, docData) {
             const newKey = running.map(s=>s.session||s.proj_id).join(',');
             if (info.dataset.sessionKey === newKey) return; // no change — skip DOM update
             info.dataset.sessionKey = newKey;
-            // M95: clicking session row opens live tmux overlay (replaces removed "View live session" button)
+            // M95: click → open; M98/M99: click when open → close (toggle); dblclick → close
+            const _toggleTmux = (pid) => {
+              const overlay = document.getElementById('tmux-live-overlay');
+              if (overlay && overlay.style.display !== 'none') stopTmuxWatch();
+              else startTmuxWatch(pid);
+            };
             info.innerHTML = `<div style="margin-top:6px;border-radius:7px;overflow:hidden;border:1px solid rgba(61,139,94,.22)">` + running.map((s,i) => `
               <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(61,139,94,.06);${i<running.length-1?'border-bottom:1px solid rgba(61,139,94,.12)':''};cursor:pointer"
-                title="Click to view live session output"
-                onclick="startTmuxWatch('${esc(p.id)}')">
+                title="Click to open/close live session · Double-click to close"
+                onclick="_toggleTmux('${esc(p.id)}')"
+                ondblclick="event.stopPropagation();stopTmuxWatch()">
                 <span style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(61,139,94,.5);animation:sess-pulse 1.5s ease-in-out infinite"></span>
                 <div style="flex:1;min-width:0">
                   <div style="font-family:var(--mono);font-size:10px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.session||s.proj_id)}</div>
