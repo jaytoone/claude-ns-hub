@@ -1858,6 +1858,9 @@ function renderMilestoneCreator(projId, milestones) {
           onclick="toggleMsExpand('${esc(projId)}','${esc(m.id)}')">
           <div class="nt-row ${mStatus==='done'?'nt-done':''}">
             <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
+            ${mStatus === 'queued' ? `<span class="nt-priority-tag" title="Queued — Claude will execute this next">▶</span>` : ''}
+            <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
+            <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-self:flex-start;align-items:flex-start">
               ${mStatus!=='done' ? `<span class="${m.claude_ack?'nt-ack-g':'nt-ack-o'}" title="${mAckTitle}">${m.claude_ack?'acked':'review'}</span>` : ''}
               <button class="nt-check"
@@ -1865,9 +1868,6 @@ function renderMilestoneCreator(projId, milestones) {
                 style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:1px 5px;font-size:8px;letter-spacing:.03em;line-height:1.3"
               >${stateLabel}</button>
             </div>
-            ${mStatus === 'queued' ? `<span class="nt-priority-tag" title="Queued — Claude will execute this next">▶</span>` : ''}
-            <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
-            <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
             <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
               <div class="nt-text" style="font-weight:${mStatus==='queued'?'500':'400'};${m.done?'color:var(--text-dim);text-decoration:line-through;':''}"
                 contenteditable="true"
