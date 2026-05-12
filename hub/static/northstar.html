@@ -2024,18 +2024,17 @@ async function _msDrop(e, projId) {
   e.currentTarget.classList.remove('drag-over');
   const targetMid = e.currentTarget.dataset.mid;
   if (!_msDragId || _msDragId === targetMid) { _msDragCleanup(); return; }
-  // Collect all L0 draggable rows in current DOM order (displayed newest-first = reversed)
+  // M112: server prepends new milestones (insert 0 = newest first), display matches server order
+  // domOrder IS the server order — no reversal needed
   const rows = Array.from(document.querySelectorAll('.nt-draggable-row'));
   const domOrder = rows.map(r => r.dataset.mid).filter(Boolean);
-  // Move dragged before target (in DOM order)
   const fromIdx = domOrder.indexOf(_msDragId);
   const toIdx = domOrder.indexOf(targetMid);
   if (fromIdx < 0 || toIdx < 0) { _msDragId = null; return; }
   domOrder.splice(fromIdx, 1);
   domOrder.splice(toIdx, 0, _msDragId);
   _msDragId = null;
-  // Reverse back to server order (UI displays reversed, server stores forward)
-  const serverOrder = [...domOrder].reverse();
+  const serverOrder = domOrder; // already in server order (newest-first)
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/reorder`, {
     method: 'POST', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({order: serverOrder})
