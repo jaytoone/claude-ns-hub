@@ -109,22 +109,11 @@ header {
   box-shadow: 0 0 0 1px var(--accent);
 }
 .ns-lane-nodes {
-  flex: 1; display: flex; flex-wrap: nowrap; gap: 12px; align-items: stretch;
-  min-height: 84px; padding: 8px 12px;
+  flex: 1; position: relative;
+  min-height: 100px; height: 100px; padding: 0;
   border-left: 2px solid var(--panel-border);
   border-radius: 0 8px 8px 0; transition: border-color .1s, background .1s;
-  /* M76: column grid lines — one line every (card-width + gap) = 160px */
-  background-image: repeating-linear-gradient(
-    to right,
-    transparent 0,
-    transparent 159px,
-    var(--panel-border) 159px,
-    var(--panel-border) 160px,
-    transparent 160px,
-    transparent 172px
-  );
-  background-size: 172px 100%;
-  background-position: 0 0;
+  overflow-x: auto; overflow-y: visible;
 }
 .ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
 .ns-node.drop-before { border-left: 2px solid var(--accent); }
@@ -1582,11 +1571,21 @@ function renderMilestoneCreator(projId, milestones) {
 
   // M32: hide confirmed (done) stones — show only active milestones
   // M82: pending_confirmation sorted below queued/pending so they don't crowd the top
+  // M78: new/unreviewed stones (user_added_at && !claude_ack) always float to top; within status, newest first
   const _STATUS_ORDER = { queued: 0, pending: 1, needs_clarification: 2, pending_confirmation: 3 };
   const l0 = milestones
     .filter(m => (m.layer || 0) === 0 && (m.status||'') !== 'done' && !m.done)
-    .reverse()
-    .sort((a, b) => (_STATUS_ORDER[a.status||'pending'] ?? 1) - (_STATUS_ORDER[b.status||'pending'] ?? 1));
+    .sort((a, b) => {
+      const aNew = (a.user_added_at && !a.claude_ack) ? 1 : 0;
+      const bNew = (b.user_added_at && !b.claude_ack) ? 1 : 0;
+      if (aNew !== bNew) return bNew - aNew;
+      const aStat = _STATUS_ORDER[a.status||'pending'] ?? 1;
+      const bStat = _STATUS_ORDER[b.status||'pending'] ?? 1;
+      if (aStat !== bStat) return aStat - bStat;
+      const aTime = a.user_added_at ? new Date(a.user_added_at).getTime() : 0;
+      const bTime = b.user_added_at ? new Date(b.user_added_at).getTime() : 0;
+      return bTime - aTime;
+    });
   const doneStones = milestones.filter(m => (m.layer || 0) === 0 && ((m.status||'') === 'done' || m.done));
   const l1 = milestones.filter(m => (m.layer || 0) === 1 && (m.status||'') !== 'done' && !m.done);
   const doneTotal = milestones.filter(m => (m.status||'') === 'done' || m.done).length;
@@ -1605,10 +1604,38 @@ function renderMilestoneCreator(projId, milestones) {
     return;
   }
 
-  // Compact progress bar — no redundant label (section header already shows count)
-  const pct = milestones.length ? Math.round(doneTotal / milestones.length * 100) : 0;
-  const progressBar = `<div style="height:3px;background:var(--panel-border);border-radius:2px;overflow:hidden;margin-bottom:10px">
-    <div style="height:100%;width:${pct}%;background:var(--green);border-radius:2px;transition:width .3s"></div>
+  // M88: 3-bar progress row — star-arc, deadline, milestone on same row
+  const msPct = milestones.length ? Math.round(doneTotal / milestones.length * 100) : 0;
+  const _p88 = projects.find(x => (x.id||x.name) === projId) || {};
+  const starPct88 = Math.round(projectPct(_p88) * 100);
+  const dl88 = _p88.deadline ? deadlineBadge(_p88.deadline) : null;
+  const daysLeft88 = _p88.deadline ? Math.ceil((new Date(_p88.deadline) - new Date()) / 86400000) : null;
+  // deadline bar: 0% = lots of time left, 100% = overdue; use 180d window
+  const dlWindow = 180;
+  const dlBarPct = daysLeft88 !== null ? Math.max(0, Math.min(100, Math.round((1 - Math.max(0, daysLeft88) / dlWindow) * 100))) : 0;
+  const starColor = starPct88 >= 80 ? 'var(--green)' : starPct88 >= 40 ? 'var(--accent)' : 'var(--text-dim)';
+  const progressBar = `<div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-end">
+    <div style="flex:1;min-width:0">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:2px;letter-spacing:.04em">star-arc</div>
+      <div style="height:4px;background:var(--panel-border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${starPct88}%;background:${starColor};border-radius:2px;transition:width .3s"></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:2px;text-align:right">${starPct88}%</div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:2px;letter-spacing:.04em">deadline</div>
+      <div style="height:4px;background:var(--panel-border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${dlBarPct}%;background:${dl88 ? dl88.color : 'var(--panel-border)'};border-radius:2px;transition:width .3s"></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:8px;color:${dl88 ? dl88.color : 'var(--text-dim)'};margin-top:2px;text-align:right">${dl88 ? dl88.text : '—'}</div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:2px;letter-spacing:.04em">milestone</div>
+      <div style="height:4px;background:var(--panel-border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${msPct}%;background:var(--green);border-radius:2px;transition:width .3s"></div>
+      </div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:2px;text-align:right">${doneTotal}/${milestones.length}</div>
+    </div>
   </div>`;
 
   // Numbered toggle list (Notion-style: ▶/▼ + number + text + meta)
@@ -1733,6 +1760,8 @@ function renderMilestoneCreator(projId, milestones) {
               <div style="flex:1;font-size:12px;color:var(--text);min-width:0;overflow-wrap:anywhere;padding-top:1px">
                 ${m.claude_comment ? (() => { const cnt = (_msConversations[m.id]||[]).length; return `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:0 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">${cnt > 0 ? cnt+' ' : ''}msg</span>`; })() : ''}
                 ${esc(m.text)}
+                ${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star" style="margin-top:3px">★ ${esc(m.star_relation)}</div>` : ''}
+                ${(!m.star_relation && m.claude_comment) ? `<div class="nt-star-rel" title="Claude's comment" style="margin-top:3px;opacity:.7">${esc(m.claude_comment.slice(0,100))}${m.claude_comment.length>100?'…':''}</div>` : ''}
               </div>
               <button class="nt-del" style="opacity:1;padding-top:2px" title="Delete this stone" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
             </div>
@@ -1824,7 +1853,7 @@ function renderMilestoneCreator(projId, milestones) {
               onclick="event.stopPropagation()"
               onkeydown="handleMsTab(event,'${esc(projId)}','${esc(m.id)}')"
               onblur="saveMs('${esc(projId)}','${esc(m.id)}',this.textContent)"
-            >${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:1px 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}${esc(m.text)}${mNewBadge}${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star">★ ${esc(m.star_relation)}</div>` : ''}</div>
+            >${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:1px 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}')">💬</span>` : ''}${esc(m.text)}${mNewBadge}${m.star_relation ? `<div class="nt-star-rel" title="How this stone closes the gap toward the North Star">★ ${esc(m.star_relation)}</div>` : (m.claude_comment ? `<div class="nt-star-rel" style="opacity:.65" title="Claude comment">${esc(m.claude_comment.slice(0,100))}${m.claude_comment.length>100?'…':''}</div>` : '')}</div>
             <div class="nt-meta">
               ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
               ${m.user_added_at ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.6;border:1px solid var(--panel-border);border-radius:3px;padding:0 4px" title="Stone added ${esc(m.user_added_at)}">+${esc((m.user_added_at||'').slice(5,16).replace('T',' '))}</span>` : ''}
@@ -2450,31 +2479,17 @@ function render() {
       return sd !== 0 ? sd : (a.p.position_x||0) - (b.p.position_x||0);
     });
 
-    // Build HTML with spacers for position_x gaps so dropped cards stay in their column
-    let laneHtml = '';
-    let prevPos = -1;
-    let visualCols = 0;
+    // Free absolute positioning: each card placed at left=position_x px
+    const CARD_W = 160;
+    let autoX = 8; // fallback x for cards with no position_x set
+    el.innerHTML = '';
     for (const {p, i} of lanes[l]) {
-      const pos = p.position_x || 0;
-      for (let g = prevPos + 1; g < pos; g++) {
-        laneHtml += `<div style="width:154px;min-width:154px;flex-shrink:0;pointer-events:none"></div>`;
-        visualCols++;
-      }
-      laneHtml += `<div class="ns-group-orphan">${nodeCard(p, i)}</div>`;
-      prevPos = pos;
-      visualCols++;
-    }
-    el.innerHTML = laneHtml;
-    // M76: ghost column slots (max 5 visible cols per lane)
-    const ghosts = Math.max(0, 5 - visualCols);
-    for (let g = 0; g < ghosts; g++) {
-      const slot = document.createElement('div');
-      slot.className = 'ns-col-ghost';
-      slot.dataset.lane = l; slot.dataset.col = visualCols + g;
-      slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-hover'); });
-      slot.addEventListener('dragleave', () => slot.classList.remove('drag-hover'));
-      slot.addEventListener('drop', e => _dropOnGhost(e, slot));
-      el.appendChild(slot);
+      let x = (p.position_x != null && p.position_x > 0) ? p.position_x : autoX;
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `position:absolute;top:8px;left:${x}px`;
+      wrapper.innerHTML = nodeCard(p, i);
+      el.appendChild(wrapper);
+      autoX = Math.max(autoX, x) + CARD_W + 8;
     }
   });
 
@@ -2531,11 +2546,13 @@ function render() {
     node.addEventListener('touchmove',  () => clearTimeout(_longPressTimer));
   });
 
-  // Drag: reorder within lane + move between lanes
-  let _dragSrc = null, _dragIdx = null;
+  // Drag: free positioning within lane + move between lanes
+  let _dragSrc = null, _dragIdx = null, _dragOffsetX = 0;
   document.querySelectorAll('.ns-node').forEach(node => {
     node.addEventListener('dragstart', e => {
       _dragSrc = node; _dragIdx = +node.dataset.idx;
+      const rect = node.getBoundingClientRect();
+      _dragOffsetX = e.clientX - rect.left;
       node.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
     });
@@ -2545,49 +2562,28 @@ function render() {
       document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
     });
 
-    // Reorder within same lane: highlight insert position
-    node.addEventListener('dragover', e => {
-      if (_dragIdx == null || +node.dataset.idx === _dragIdx) return;
-      const pSrc = projects[_dragIdx];
-      const pTgt = projects[+node.dataset.idx];
-      if (!pSrc || !pTgt) return;
-      if ((parseInt(pSrc.layer)||0) !== (parseInt(pTgt.layer)||0)) return;
-      e.preventDefault(); e.stopPropagation();
-      document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
-      const rect = node.getBoundingClientRect();
-      const insertBefore = e.clientX < rect.left + rect.width / 2;
-      node.classList.add(insertBefore ? 'drop-before' : 'drop-after');
-    });
+    // Free drag within same lane — no-op on node (lane handles it)
+    node.addEventListener('dragover', e => { e.preventDefault(); });
 
     node.addEventListener('drop', async e => {
-      if (_dragIdx == null || +node.dataset.idx === _dragIdx) return;
-      const pSrc = projects[_dragIdx];
-      const pTgt = projects[+node.dataset.idx];
-      if (!pSrc || !pTgt) return;
-      if ((parseInt(pSrc.layer)||0) !== (parseInt(pTgt.layer)||0)) return;
+      // Free positioning: let the lane drop handler do the work
       e.preventDefault(); e.stopPropagation();
-      document.querySelectorAll('.ns-node').forEach(n => n.classList.remove('drop-before', 'drop-after'));
-
-      // Use current DOM order (what user sees) — not sorted position_x which may all be 0
+      if (_dragIdx == null) return;
+      const pSrc = projects[_dragIdx];
+      if (!pSrc) return;
       const layer = parseInt(pSrc.layer)||0;
-      const laneContainer = document.getElementById(`lane-nodes-${layer}`);
-      const domOrder = [...(laneContainer?.querySelectorAll('.ns-node') || [])]
-        .map(el => projects.find(p => (p.id||p.name) === el.dataset.pid))
-        .filter(Boolean);
-      const rect = node.getBoundingClientRect();
-      const insertBefore = e.clientX < rect.left + rect.width / 2;
-      // Remove src from current order, insert at target position
-      const without = domOrder.filter(p => (p.id||p.name) !== (pSrc.id||pSrc.name));
-      const tgtIdx = without.findIndex(p => (p.id||p.name) === (pTgt.id||pTgt.name));
-      if (tgtIdx < 0) return;
-      without.splice(insertBefore ? tgtIdx : tgtIdx + 1, 0, pSrc);
-      // Save all updated position_x values
-      const saves = without.map((p, newPos) => {
-        p.position_x = newPos;
-        return fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
-          method:'PATCH', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({position_x: newPos}),
-        });
+      const laneEl = document.getElementById(`lane-nodes-${layer}`);
+      if (!laneEl) return;
+      const laneRect = laneEl.getBoundingClientRect();
+      const newX = Math.max(8, Math.round(e.clientX - laneRect.left - _dragOffsetX));
+      pSrc.position_x = newX;
+      _dragSrc = null; _dragIdx = null;
+      render();
+      requestAnimationFrame(() => drawParentLines());
+      const saves = [fetch(`/api/northstar/${encodeURIComponent(pSrc.id||pSrc.name)}/layout`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({position_x: newX}),
+      })];
       });
       // Optimistic: render immediately, save in background
       _dragSrc = null; _dragIdx = null;
@@ -2611,23 +2607,18 @@ function render() {
       laneEl.classList.remove('drag-over');
       if (_dragIdx == null) return;
       const p = projects[_dragIdx];
-      if (!p || (parseInt(p.layer)||0) === l) return;  // same lane handled by node drop
-      // Snap to grid: calculate target column from drop X position
+      if (!p) return;
       const laneRect = laneEl.getBoundingClientRect();
-      const relX = Math.max(0, e.clientX - laneRect.left + (laneEl.scrollLeft || 0));
-      const CARD_CELL = 166; // 154px card + 12px gap
-      const targetCol = Math.floor(relX / CARD_CELL);
+      const newX = Math.max(8, Math.round(e.clientX - laneRect.left - _dragOffsetX + (laneEl.scrollLeft||0)));
       p.layer = l;
-      p.position_x = targetCol;
+      p.position_x = newX;
       _dragSrc = null; _dragIdx = null;
-      // Only save the moved card — preserve other cards' position_x as-is
-      const saves = [fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
-        method:'PATCH', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({layer: l, position_x: targetCol}),
-      })];
       render();
       requestAnimationFrame(() => drawParentLines());
-      Promise.all(saves);
+      fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({layer: l, position_x: newX}),
+      });
     });
   });
 
