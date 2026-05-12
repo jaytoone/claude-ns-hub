@@ -2140,12 +2140,12 @@ async function saveMs(projId, mid, text) {
   // Auto-delete if left empty (user dismissed without typing)
   if (!trimmed) { await deleteMs(projId, mid); return; }
   const status = document.getElementById('dm-ms-save-status');
-  if (status) status.textContent = 'saving…';
+  if (status) { status.style.color = 'var(--text-dim)'; status.textContent = 'saving…'; }
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
     method: 'PATCH', headers: {'Content-Type':'application/json'},
     body: JSON.stringify({text: trimmed}),
   });
-  if (status) { status.textContent = 'saved'; setTimeout(() => { if(status) status.textContent=''; }, 1500); }
+  if (status) { status.style.color = 'var(--green,#4caf50)'; status.textContent = 'saved'; setTimeout(() => { if(status) status.textContent=''; }, 1500); }
 }
 
 async function confirmMsDone(projId, mid) {
@@ -2600,16 +2600,28 @@ function render() {
       if (_dragIdx == null) return;
       const p = projects[_dragIdx];
       if (!p || (parseInt(p.layer)||0) === l) return;  // same lane handled by node drop
-      const newPos = projects.filter(x => (parseInt(x.layer)||0) === l).length;
-      // Optimistic update: mutate in-memory first, render immediately
-      p.layer = l; p.position_x = newPos;
+      // Snap to grid: calculate target column from drop X position
+      const laneRect = laneEl.getBoundingClientRect();
+      const relX = Math.max(0, e.clientX - laneRect.left + (laneEl.scrollLeft || 0));
+      const CARD_CELL = 166; // 154px card + 12px gap
+      const targetCol = Math.floor(relX / CARD_CELL);
+      // Reorder lane cards with dropped card at grid column
+      const laneCards = projects
+        .filter(x => x !== p && (parseInt(x.layer)||0) === l)
+        .sort((a, b) => (a.position_x||0) - (b.position_x||0));
+      laneCards.splice(Math.min(targetCol, laneCards.length), 0, p);
+      p.layer = l;
       _dragSrc = null; _dragIdx = null;
+      const saves = laneCards.map((card, pos) => {
+        card.position_x = pos;
+        return fetch(`/api/northstar/${encodeURIComponent(card.id||card.name)}/layout`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({layer: parseInt(card.layer)||0, position_x: pos}),
+        });
+      });
       render();
       requestAnimationFrame(() => drawParentLines());
-      fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
-        method: 'PATCH', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({layer: l, position_x: newPos}),
-      }); // fire-and-forget
+      Promise.all(saves);
     });
   });
 
@@ -3643,8 +3655,8 @@ function renderHierarchy(p) {
         <span>◎ stones</span>
         <span style="opacity:.5">→</span>
         <span style="color:var(--accent)">☆ ${esc(p.metric || 'North Star')}</span>
+        <span id="dm-ms-save-status" style="margin-left:auto;font-size:9px;font-family:var(--mono);color:var(--green,#4caf50)"></span>
       </div>
-      <div id="dm-ms-save-status" style="font-size:10px;color:var(--text-dim);font-family:var(--mono)"></div>
       <div id="dm-ms-creator" style="font-size:12px;font-family:var(--mono);color:var(--text-dim)">Loading…</div>
     </div>
 
@@ -3958,7 +3970,7 @@ async function loadTaskBoard(projId) {
         <span style="background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>
         <button onclick="loadTaskBoard('${esc(projId)}')" title="Refresh" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:0;line-height:1;transition:color .1s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">↻</button>
       </div>
-      <div style="display:flex;flex-direction:column;gap:2px;border-radius:6px;overflow:hidden;border:1px solid var(--panel-border)">
+      <div style="display:flex;flex-direction:column;gap:2px;border-radius:6px;overflow-y:auto;max-height:200px;border:1px solid var(--panel-border)">
         ${jobs.map(j => {
           const isRunning = j.status === 'running';
           const col = statusColor[j.status] || 'var(--text-dim)';
