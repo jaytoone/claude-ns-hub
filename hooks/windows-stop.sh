@@ -6,6 +6,12 @@ if [ "${OFFCLAW_BRIDGE:-}" = "1" ]; then
     exit 0
 fi
 
+# M110: skip WinForms popup for hub exec sessions (claude-exec-*) — only fire for user zellij terminals
+_tmux_sess=$(tmux display-message -p '#{session_name}' 2>/dev/null || echo "")
+if [[ "$_tmux_sess" == claude-exec-* ]]; then
+    exit 0
+fi
+
 input=$(cat 2>/dev/null)
 transcript_path=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
 current_path=$(echo "$input" | jq -r '.cwd // empty' 2>/dev/null)

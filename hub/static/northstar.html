@@ -3396,8 +3396,11 @@ function openTerminal(projId) {
     _termFit = new FitAddon.FitAddon();
     _term.loadAddon(_termFit);
     _term.open(document.getElementById('dm-xterm'));
+    // M107: custom scrollbar overlay — works on iOS (webkit-scrollbar not supported there)
+    _setupTermScrollbar();
   } else {
     _term.clear();
+    _setupTermScrollbar();
   }
 
   // Small delay so the container has its final size before fit
@@ -3523,6 +3526,39 @@ function openTerminal(projId) {
 function _sendResize(ws) {
   if (!_term || ws.readyState !== 1) return;
   ws.send(`\x00resize:${_term.cols},${_term.rows}`);
+}
+
+// M107: custom scrollbar overlay for terminal (works on iOS where ::-webkit-scrollbar fails)
+function _setupTermScrollbar() {
+  const container = document.getElementById('dm-xterm');
+  if (!container || !_term) return;
+  document.getElementById('ns-term-sb')?.remove();
+  const track = document.createElement('div');
+  track.id = 'ns-term-sb';
+  track.style.cssText = 'position:absolute;right:2px;top:4px;bottom:4px;width:5px;border-radius:3px;z-index:10;pointer-events:none;background:rgba(255,255,255,.07)';
+  const thumb = document.createElement('div');
+  thumb.style.cssText = 'position:absolute;width:100%;border-radius:3px;background:rgba(200,180,160,.55);min-height:20px;transition:top .08s,height .08s';
+  track.appendChild(thumb);
+  if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+  container.appendChild(track);
+
+  function _updateSB() {
+    if (!_term) return;
+    const buf = _term.buffer.active;
+    const total = buf.length;
+    const rows = _term.rows;
+    if (total <= rows) { thumb.style.height = '100%'; thumb.style.top = '0'; return; }
+    const thumbPct = Math.max(8, (rows / total) * 100);
+    const maxScroll = total - rows;
+    const scrolledPct = maxScroll > 0 ? (buf.viewportY / maxScroll) * (100 - thumbPct) : 0;
+    thumb.style.height = thumbPct + '%';
+    thumb.style.top = scrolledPct + '%';
+  }
+  _term.onScroll(_updateSB);
+  // Also update when data written (new lines added)
+  if (_term.onWriteParsed) _term.onWriteParsed(_updateSB);
+  else _term.onData && setTimeout(_updateSB, 200);
+  _updateSB();
 }
 
 let _termMinimized = false;
@@ -4120,37 +4156,40 @@ function stopTmuxWatch() {
 async function loadTaskBoard(projId) {
   const board = document.getElementById('dm-task-board');
   if (!board) return;
-  board.innerHTML = ''; // clear previous project's tasks immediately
+  board.innerHTML = '';
   try {
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/task-board`);
     const d = await r.json();
     const allJobs = d.jobs || [];
-    // Only show active tasks (queued/running) — completed tasks are removed
     const jobs = allJobs.filter(j => j.status === 'queued' || j.status === 'running')
       .sort((a, b) => b.task_id > a.task_id ? 1 : -1);
     if (!jobs.length) { board.innerHTML = ''; return; }
-    const statusIcon = {queued:'○',running:'⟳',done:'✓',failed:'✕',timeout:'⏱'}
-    const statusColor = {queued:'var(--text-dim)',running:'var(--accent)',done:'var(--green)',failed:'var(--red)',timeout:'var(--red)'}
+    // M129/user: when session is idle, "running" tasks are actually paused (session stopped mid-task)
+    const sessIdle = !_sessionStatus[projId] || _sessionStatus[projId] === 'exec-idle' || _sessionStatus[projId] === 'none' || _sessionStatus[projId] === 'dead';
+    const statusColor = {queued:'var(--text-dim)',running:'var(--accent)',paused:'var(--text-dim)',done:'var(--green)',failed:'var(--red)'}
     board.innerHTML = `
       <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.06em;margin:10px 0 5px;text-transform:uppercase">
         <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style="opacity:.6"><rect x="1" y="4" width="14" height="2" rx="1"/><rect x="1" y="8" width="14" height="2" rx="1"/><rect x="1" y="12" width="9" height="2" rx="1"/></svg>
         <span>Task Queue</span>
-        <span style="background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>
-        <button onclick="loadTaskBoard('${esc(projId)}')" title="Refresh" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:0;line-height:1;transition:color .1s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">↻</button>
+        <span style="background:${sessIdle?'var(--panel-border)':'var(--accent-soft)'};color:${sessIdle?'var(--text-dim)':'var(--accent)'};border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>
+        ${sessIdle ? `<span style="font-size:8px;color:var(--text-dim);letter-spacing:.04em;margin-left:2px">· paused</span>` : ''}
+        <button onclick="loadTaskBoard('${esc(projId)}')" title="Refresh" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:0;line-height:1" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">↻</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:0;border-radius:6px;overflow-y:auto;max-height:120px;border:1px solid var(--panel-border)">
         ${jobs.map(j => {
           const isRunning = j.status === 'running';
-          const col = statusColor[j.status] || 'var(--text-dim)';
+          const paused = isRunning && sessIdle;
+          const displayStatus = paused ? 'paused' : j.status;
+          const col = paused ? 'var(--text-dim)' : (statusColor[j.status] || 'var(--text-dim)');
           const label = j.task_id.replace(`task-${projId}-`,'').slice(0,32);
           const out = j.output ? j.output.split('\n')[0].slice(0,50) : '';
-          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 9px;background:var(--panel-soft);font-family:var(--mono);border-bottom:1px solid var(--panel-border);transition:background .1s" onmouseover="this.style.background='var(--bg-deep)'" onmouseout="this.style.background='var(--panel-soft)'">
-            <span style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0;${isRunning?'box-shadow:0 0 5px '+col+';animation:sess-pulse 1.2s ease-in-out infinite':'opacity:.5'}"></span>
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 9px;background:var(--panel-soft);font-family:var(--mono);border-bottom:1px solid var(--panel-border)">
+            <span style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0;opacity:${paused?'.35':'1'};${isRunning&&!paused?'box-shadow:0 0 5px '+col+';animation:sess-pulse 1.2s ease-in-out infinite':''}"></span>
             <div style="flex:1;min-width:0">
-              <div style="font-size:10px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(label)}</div>
+              <div style="font-size:10px;color:${paused?'var(--text-dim)':'var(--text-soft)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(label)}</div>
               ${out ? `<div style="font-size:9px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">${esc(out)}</div>` : ''}
             </div>
-            <span style="font-size:8px;color:${col};letter-spacing:.04em;flex-shrink:0;text-transform:uppercase">${j.status}</span>
+            <span style="font-size:8px;color:${col};letter-spacing:.04em;flex-shrink:0;text-transform:uppercase;opacity:${paused?.5:1}">${displayStatus}</span>
           </div>`;
         }).join('')}
       </div>`;
@@ -4204,6 +4243,8 @@ function renderRight(p, topics, docData) {
               _sessionStatus[s.proj_id] = s.idle ? 'exec-idle' : 'exec-running';
             }
             render();
+            // Also refresh task board so running→paused transition shows correctly
+            if (typeof loadTaskBoard === 'function' && p?.id) loadTaskBoard(p.id);
             // M95/M98: toggle live overlay — open if closed, close if open
             window._toggleTmux = (pid) => {
               const overlay = document.getElementById('tmux-live-overlay');
