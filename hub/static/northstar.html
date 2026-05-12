@@ -1613,7 +1613,9 @@ function renderMilestoneCreator(projId, milestones) {
             ondragstart="_msDragStart(event,'${esc(m.id)}')" ondragend="_msDragEnd(event)" ondragover="_msDragOver(event)"
             ondragleave="_msDragLeave(event)" ondrop="_msDrop(event,'${esc(projId)}')">
           <div class="nt-row" style="opacity:.85">
+            <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
             <span class="nt-num">${idx+1}.</span>
+            <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow"> </span>
             <button class="nt-check" style="border:1px solid #7b9fd4;background:rgba(90,120,200,.1);color:#7b9fd4;cursor:pointer;border-radius:4px;width:auto;padding:0 5px;font-size:8px;letter-spacing:.03em;min-width:30px"
               title="Click to see why Claude flagged this"
@@ -1635,7 +1637,9 @@ function renderMilestoneCreator(projId, milestones) {
             ondragleave="_msDragLeave(event)" ondrop="_msDrop(event,'${esc(projId)}')">
           <div style="background:rgba(204,120,92,.08);border:1px solid var(--accent-soft);border-radius:5px;padding:6px 8px;margin-bottom:2px">
             <div class="nt-row" style="margin-bottom:0">
+              <span class="nt-drag-handle" title="Drag to reorder">⋮⋮</span>
               <span class="nt-num">${idx+1}.</span>
+              <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
               <span style="font-size:10px;color:var(--accent-deep);font-family:var(--mono);padding-top:2px">⏳</span>
               <div style="flex:1;font-size:12px;color:var(--text)">${esc(m.text)}</div>
               <div style="display:flex;gap:4px;flex-shrink:0;align-items:center">
@@ -2420,6 +2424,17 @@ function renameNode(el, projId) {
   window.getSelection().removeAllRanges();
   window.getSelection().addRange(r);
 }
+async function saveDeadline(projId, dateStr) {
+  if (!dateStr) return;
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({deadline: dateStr})
+  }).catch(()=>{});
+  // Update in-memory project and re-render
+  const p = projects.find(x => (x.id||x.name) === projId);
+  if (p) { p.deadline = dateStr; render(); }
+}
+
 async function saveNodeName(el, projId) {
   el.removeAttribute('contenteditable');
   const newName = el.textContent.trim();
@@ -3330,7 +3345,15 @@ function renderHierarchy(p) {
         <span class="dm-sep">→</span>
         <span class="dm-target">${esc(p.target||'—')}</span>
       </div>
-      ${p.deadline ? `<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>` : ''}
+      <div class="dm-deadline" id="dm-deadline-row" style="display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:center">
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.04em">deadline</span>
+        <input type="date" id="dm-deadline-input" value="${esc(p.deadline||'')}"
+          style="font-family:var(--mono);font-size:11px;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;color:var(--text);padding:2px 6px;outline:none;cursor:pointer"
+          onchange="saveDeadline('${esc(p.id||p.name)}',this.value)"
+          title="Click to set deadline">
+        ${p.deadline ? `<span style="font-family:var(--mono);font-size:10px;color:${deadlineBadge(p.deadline).color}">${esc(deadlineBadge(p.deadline).text)}</span>` : ''}
+      </div>
+      ${p.deadline ? (() => { const dl=deadlineBadge(p.deadline); const pct=Math.max(0,Math.min(100,100-Math.round(Math.max(0,(new Date(p.deadline)-new Date())/86400000)/365*100))); return `<div style="height:3px;background:var(--panel-border);border-radius:2px;overflow:hidden;margin:3px 0"><div style="height:100%;width:${pct}%;background:${dl.color};border-radius:2px;transition:width .3s"></div></div>`; })() : ''}
       <!-- Spec doc slot — injected by renderRight, shown near NS section top -->
       <div id="dm-spec-slot" style="margin-top:6px"></div>
       <!-- Task execution results (shown after Execute is clicked) -->
@@ -3657,6 +3680,12 @@ function renderRight(p, topics, docData) {
       style="background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:500"
       onclick="executeProject('${esc(p.id)}',this)" title="Execute: init milestones or process queued work">▶ Execute</button>`;
     specSlot.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap">${execBtn}${specBtn}</div>`;
+    // M60: restore exec button state if session is already running
+    fetch(`/api/northstar/${encodeURIComponent(p.id)}/tmux-output?lines=1`)
+      .then(r=>r.json()).then(d=>{
+        const b = document.getElementById('dm-exec-btn');
+        if (b && d.running) { b.textContent = '◉'; b.title = 'Live session active — click to re-check'; }
+      }).catch(()=>{});
   }
 
   // Right panel: note + init if needed
