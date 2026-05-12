@@ -1,21 +1,11 @@
 {
-  "captured_at": "2026-05-12T05:09:40.918273+00:00",
+  "captured_at": "2026-05-12T09:09:20.469543+00:00",
   "cwd": "/home/desk-1/.claude",
-  "turn_count": 5016,
+  "turn_count": 5291,
   "decisions": [
     {
-      "text": "Fixed",
-      "context": "consistent table row with: - Fixed-width left column (status/badges) - Flexible text column - Fixed-width right column (delete) - Horizontal dividers ",
-      "tag": "impl_complete"
-    },
-    {
-      "text": "Fixed",
-      "context": "es) - Flexible text column - Fixed-width right column (delete) - Horizontal dividers between rows",
-      "tag": "impl_complete"
-    },
-    {
       "text": "fixed",
-      "context": "**Layout fixed.** Before → After: - **Before**: `[text squeezed] [✓ Confirm][↩ Reopen][✕]` - **After**: `[⏳][✓][↩] [text fills remaining width] [✕]` R",
+      "context": "Two bugs fixed: 1. **Missing `>`** on the div tag — `onclick` was never wired up 2. **`_toggleTmux` scoped to closure** — `onclick` string couldn't re",
       "tag": "impl_complete"
     }
   ]
