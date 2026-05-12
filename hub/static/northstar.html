@@ -1176,6 +1176,28 @@ function calcPct(current, target) {
   return Math.min(1, c / t);
 }
 
+// M52 — derive % from real milestone completion when available
+// done: 1.0, pending_confirmation: 0.7, queued: 0.3, pending/needs_clarification: 0
+function calcMilestonePct(milestones) {
+  if (!Array.isArray(milestones) || milestones.length === 0) return null;
+  const active = milestones.filter(m => m && typeof m === 'object');
+  if (!active.length) return null;
+  const weights = { done: 1.0, pending_confirmation: 0.7, queued: 0.3, pending: 0, needs_clarification: 0 };
+  let total = 0;
+  for (const m of active) {
+    const s = m.done ? 'done' : (m.status || 'pending');
+    total += (weights[s] ?? 0);
+  }
+  return Math.min(1, total / active.length);
+}
+
+// Project-aware progress: prefer real milestone state, fall back to current/target
+function projectPct(p) {
+  const mPct = calcMilestonePct(p && p.milestones);
+  if (mPct !== null) return mPct;
+  return calcPct(p && p.current, p && p.target);
+}
+
 function gaugePath(pct, cx, cy, r) {
   if (pct <= 0) return `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx - r + 0.01} ${cy}`;
   const p = Math.min(pct, 0.9995);
@@ -1192,7 +1214,7 @@ function statusColor(status) {
 // ── Card gauge SVG ────────────────────────────────────────────────────────────
 
 function cardGaugeSvg(p) {
-  const pct = calcPct(p.current, p.target);
+  const pct = projectPct(p);
   const cx = 52, cy = 52, r = 42;
   const bgPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
   const fgPath = gaugePath(pct, cx, cy, r);
@@ -1250,7 +1272,7 @@ function cardCurrentStep(p) {
   const lastLog = p.log && p.log.length ? p.log[p.log.length - 1] : null;
 
   // Gap line: shows current state relative to goal
-  const pct = calcPct(p.current, p.target);
+  const pct = projectPct(p);
   const gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
 
   // Gap description — what's between now and goal
@@ -1296,7 +1318,7 @@ function formatGapNum(n) {
 
 function rowHtml(p, i) {
   const statusKey = p.status || 'paused';
-  const pct       = calcPct(p.current, p.target);
+  const pct       = projectPct(p);
   const pctNum    = Math.round(pct * 100);
   const color     = statusColor(p.status);
   const active    = i === activeIdx ? 'active' : '';
@@ -2144,7 +2166,7 @@ function sessCell(projId) {
 // ── SWIMLANE RENDER ──────────────────────────────────────────────────────────
 
 function nodeCard(p, idx) {
-  const pct = Math.round(calcPct(p.current, p.target) * 100);
+  const pct = Math.round(projectPct(p) * 100);
   const color = statusColor(p.status);
   const dotColor = statusColor(p.status || 'paused');
   const lastLog = p.log?.length ? p.log[p.log.length-1] : null;
@@ -2774,7 +2796,7 @@ function drawLayerBands(ctx) {
 function drawConnections() {} // no-op — vis-network handles connections
 
 function nodeHtml(p, idx) {
-  const pct = Math.round(calcPct(p.current, p.target) * 100);
+  const pct = Math.round(projectPct(p) * 100);
   const color = statusColor(p.status);
   const dotColor = statusColor(p.status || 'paused');
   const lastLog = p.log?.length ? p.log[p.log.length - 1] : null;
@@ -3243,7 +3265,7 @@ async function openDetail(idx) {
 }
 
 function renderHierarchy(p) {
-  const pct = calcPct(p.current, p.target);
+  const pct = projectPct(p);
   const color = statusColor(p.status);
   const cx = 100, cy = 95, r = 80;
   const bgPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
@@ -3732,7 +3754,7 @@ async function renderDrawer_DEPRECATED() {
   // Fetch spec doc
   const docData = await fetch(`/api/northstar/${esc(p.id)}/doc`).then(r => r.json()).catch(() => ({ ok: false }));
 
-  const pct = calcPct(p.current, p.target);
+  const pct = projectPct(p);
   const color = statusColor(p.status);
   const statusKey = p.status || 'paused';
 
