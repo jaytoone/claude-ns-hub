@@ -345,6 +345,7 @@ header {
 .ms-stone.pending  { background: var(--panel); border-color: var(--panel-border); color: var(--text-dim); }
 .ms-stone:hover    { transform: scale(1.15); box-shadow: 0 2px 6px rgba(0,0,0,.15); }
 @keyframes stone-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(204,120,92,0)} 50%{box-shadow:0 0 0 4px rgba(204,120,92,.2)} }
+@keyframes stop-pulse { from { opacity:.6; } to { opacity:1; } }
 /* Stone content */
 .ms-stone-body { padding-left: 4px; }
 .ms-stone-title {
@@ -1650,9 +1651,6 @@ function renderMilestoneCreator(projId, milestones) {
   //   Add a 4th bar "weekly" = Option A velocity bar. Position: after milestone bar.
   //   Data source: milestone done_at timestamps (add to PATCH /milestones/<id> response).
   //   Fallback when no done_at data: hide the bar or show dashed empty state.
-  // deadline bar: 0% = lots of time left, 100% = overdue; use 180d window
-  const dlWindow = 180;
-  const dlBarPct = daysLeft88 !== null ? Math.max(0, Math.min(100, Math.round((1 - Math.max(0, daysLeft88) / dlWindow) * 100))) : 0;
   const starColor = starPct88 >= 80 ? 'var(--green)' : starPct88 >= 40 ? 'var(--accent)' : 'var(--text-dim)';
   // M105: block-style bar rows — 10 segments, filled=consumed, empty=remaining
   const _barRow = (label, pct, barColor, valueText, valueColor) => {
@@ -1667,8 +1665,26 @@ function renderMilestoneCreator(projId, milestones) {
       `<span style="font-family:var(--mono);font-size:8px;color:${valueColor};flex-shrink:0;min-width:36px;text-align:right">${valueText}</span>` +
       `</div>`;
   };
+  // M113: deadline bar = day blocks (1 block = 1 day). Cap at 30 days for display.
+  const _deadlineBar = (label, daysLeft, badge) => {
+    const MAX = 30;
+    const dlColor = badge ? badge.color : 'var(--text-dim)';
+    const valueText = badge ? badge.text : '—';
+    if (daysLeft === null) return _barRow(label, 0, 'var(--panel-border)', valueText, dlColor);
+    const totalBlocks = Math.min(MAX, Math.max(1, Math.abs(daysLeft) > MAX ? MAX : MAX));
+    // filled = days consumed from the 30-day window
+    const filled = daysLeft <= 0 ? totalBlocks : Math.min(totalBlocks, Math.max(0, totalBlocks - daysLeft));
+    const segs = Array.from({length: totalBlocks}, (_, i) =>
+      `<div style="flex:1;height:6px;border-radius:1px;min-width:2px;background:${i < filled ? dlColor : 'var(--panel-border)'}"></div>`
+    ).join('');
+    return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">` +
+      `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.04em;width:54px;flex-shrink:0">${label}</span>` +
+      `<div style="flex:1;display:flex;gap:1px">${segs}</div>` +
+      `<span style="font-family:var(--mono);font-size:8px;color:${dlColor};flex-shrink:0;min-width:36px;text-align:right">${valueText}</span>` +
+      `</div>`;
+  };
   const progressBar = `<div style="margin-bottom:10px">` +
-    _barRow('deadline', dlBarPct, dl88 ? dl88.color : 'var(--panel-border)', dl88 ? dl88.text : '—', dl88 ? dl88.color : 'var(--text-dim)') +
+    _deadlineBar('deadline', daysLeft88, dl88) +
     _barRow('star-arc', starPct88, starColor, starPct88+'%', starColor) +
     _barRow('milestone', msPct, 'var(--green)', doneTotal+'/'+milestones.length, 'var(--text-dim)') +
     `</div>`;
@@ -2915,19 +2931,20 @@ function drawParentLines() {
 
 // ── Card alignment ───────────────────────────────────────────────────────────
 const ALIGN_OPTIONS = [
-  { key: 'left',    justify: 'flex-start',    icon: '⇤',   label: 'Left' },
-  { key: 'center',  justify: 'center',         icon: '⇔',   label: 'Center' },
-  { key: 'right',   justify: 'flex-end',       icon: '⇥',   label: 'Right' },
-  { key: 'spread',  justify: 'space-between',  icon: '⇹',   label: 'Spread' },
+  { key: 'left',    icon: '⇤',   label: 'Left' },
+  { key: 'right',   icon: '⇥',   label: 'Right' },
+  { key: 'center',  icon: '⇔',   label: 'Center' },
+  { key: 'spread',  icon: '⇹',   label: 'Spread' },
+  { key: 'free',    icon: '⤢',   label: 'Free' },
 ];
 
-function getAlign() { return localStorage.getItem('ns-card-align') || 'left'; }
+function getAlign() { return localStorage.getItem('ns-card-align') || 'free'; }
 
 function applyAlign() {
   const key = getAlign();
-  const opt = ALIGN_OPTIONS.find(o => o.key === key) || ALIGN_OPTIONS[0];
-  // 'left' = free positioning — cards keep their saved position_x, no override
-  if (key === 'left') {
+  const opt = ALIGN_OPTIONS.find(o => o.key === key) || ALIGN_OPTIONS[4];
+  // 'free' = keep saved position_x, no override
+  if (key === 'free') {
     const btn = document.getElementById('align-btn');
     if (btn) btn.textContent = opt.icon + ' align';
     return;
@@ -2946,6 +2963,7 @@ function applyAlign() {
       const usedW = widths.reduce((s, w) => s + w, 0);
       gap = Math.max(8, Math.round((containerW - usedW - 16) / (cards.length - 1)));
     }
+    // 'left': startX=8, gap=8 (default above)
     let x = startX;
     cards.forEach((card, i) => { card.style.left = x + 'px'; x += widths[i] + gap; });
   });
@@ -3556,7 +3574,7 @@ async function killSession() {
     render(); // redraw cards with updated pill
     // M89: show stopping indicator immediately — do NOT flip button (poll drives that)
     const execList = document.getElementById('dm-exec-sessions');
-    if (execList) execList.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);padding:4px 2px;opacity:.7">stopping…</div>`;
+    if (execList) execList.innerHTML = `<div style="font-family:var(--mono);font-size:12px;font-weight:600;color:#e05252;padding:6px 4px;letter-spacing:.08em;animation:stop-pulse 0.8s ease-in-out infinite alternate">⬛ STOPPING…</div>`;
     clearInterval(window._execPollTimer); // stop poll; restart after kill completes
     // Persist to server
     fetch(`/api/northstar/${encodeURIComponent(projId)}/session-status`, {
@@ -3978,9 +3996,9 @@ async function killExecSession() {
   if (!projId) return;
   // M89: show stopping indicator in session list immediately (before 2s grace)
   const execInfo = document.getElementById('dm-exec-sessions');
-  if (execInfo) execInfo.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);padding:4px 2px;opacity:.7">stopping…</div>`;
+  if (execInfo) execInfo.innerHTML = `<div style="font-family:var(--mono);font-size:12px;font-weight:600;color:#e05252;padding:6px 4px;letter-spacing:.08em;animation:stop-pulse 0.8s ease-in-out infinite alternate">⬛ STOPPING…</div>`;
   const output = document.getElementById('dm-tmux-output');
-  if (output) output.textContent = '(stopping — saving task position…)';
+  if (output) { output.style.color = '#e05252'; output.style.fontWeight = '600'; output.textContent = '⬛ STOPPING — saving task position…'; }
   // 2-second grace: signal Claude to save current task state before kill
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/exec-inject`, {
     method: 'POST', headers: {'Content-Type':'application/json'},
@@ -3988,7 +4006,7 @@ async function killExecSession() {
   }).catch(()=>{});
   await new Promise(r => setTimeout(r, 2000));
   await fetch(`/api/northstar/${encodeURIComponent(projId)}/exec-session`, {method:'DELETE'}).catch(()=>{});
-  if (output) output.textContent = '(session killed)';
+  if (output) { output.style.color = ''; output.style.fontWeight = ''; output.textContent = '(session killed)'; }
   // M89: do NOT flip button directly — let _refreshExecState drive that after poll confirms gone
   window._execLaunchBtn = null;
   clearInterval(window._execPollTimer);
