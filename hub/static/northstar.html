@@ -1688,7 +1688,7 @@ function renderMilestoneCreator(projId, milestones) {
             <div class="nt-row" style="margin-bottom:0;align-items:flex-start">
               <span class="nt-drag-handle" style="padding-top:2px" title="Drag to reorder">⋮⋮</span>
               <span class="nt-mid" style="margin-top:2px" title="Milestone ID">${esc(m.id)}</span>
-              <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;margin-top:1px">
+              <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-self:flex-start">
                 <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
                   style="font-size:9px;padding:1px 5px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono);line-height:1.4">Confirm</button>
                 <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
@@ -1775,7 +1775,7 @@ function renderMilestoneCreator(projId, milestones) {
             
             <span class="nt-mid" title="Milestone ID">${esc(m.id)}</span>
             <span class="nt-arrow">${children.length ? (isOpen?'▾':'▸') : ' '}</span>
-            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-items:stretch;min-width:34px">
+            <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;align-self:flex-start;min-width:34px">
               <button class="nt-check"
                 ${mBtnAttrs}
                 style="border:1px solid ${sc};background:${sbg};color:${sfg};cursor:default;opacity:${mStatus==='pending'?'.4':'1'};border-radius:4px;width:auto;padding:1px 5px;font-size:8px;letter-spacing:.03em;line-height:1.3"
