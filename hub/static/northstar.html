@@ -1904,7 +1904,10 @@ function renderMilestoneCreator(projId, milestones) {
       </div>
     </div>` : '';
 
-  el.innerHTML = progressBar + toggleHtml + doneSection;
+  // Progress bars go into NS section, not milestone pane
+  const nsBarSlot = document.getElementById('dm-ns-bars');
+  if (nsBarSlot) nsBarSlot.innerHTML = progressBar;
+  el.innerHTML = toggleHtml + doneSection;
 }
 
 // Tab = indent (L0→L1 under previous), Shift+Tab = unindent (L1→L0)
@@ -3683,6 +3686,8 @@ function renderHierarchy(p) {
         <span id="dm-ns-ms-count" style="color:var(--text-dim)">${doneCount}/${p.milestones.length}</span>
         <span id="dm-ms-save-status" style="margin-left:auto;font-size:9px;color:var(--green,#4caf50)"></span>
       </div>
+      <!-- Progress bars — star-arc / deadline / milestone, injected by renderMilestoneCreator -->
+      <div id="dm-ns-bars" style="margin-top:6px"></div>
       <!-- OKR tree — injected after fetch, sits inside NS layer -->
       <div id="dm-okr-section" style="margin-top:6px"></div>
       <!-- Spec doc slot — injected by renderRight, shown near NS section top -->
