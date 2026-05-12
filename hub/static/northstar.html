@@ -3566,6 +3566,11 @@ async function killSession() {
     }).catch(() => {});
   }
 
+  // M111: always kill the exec tmux session regardless of WS state
+  if (projId && projId !== '—') {
+    fetch(`/api/northstar/${encodeURIComponent(projId)}/exec-session`, { method: 'DELETE' }).catch(() => {});
+  }
+
   if (_termWs && _termWs.readyState === 1) {
     _termWs.send('\x00kill-session');
     setTimeout(() => {
@@ -3846,18 +3851,23 @@ function showCommentPopup(event, comment, projId, mid) {
   document.getElementById('comment-popup')?.remove();
   const popup = document.createElement('div');
   popup.id = 'comment-popup';
+  const isMob = window.innerWidth < 600;
   popup.style.cssText = `position:fixed;z-index:9999;background:var(--panel);border:1px solid var(--accent-soft);
-    border-radius:8px;padding:10px 13px;max-width:310px;min-width:240px;box-shadow:0 6px 24px rgba(0,0,0,.25);
-    font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--text)`;
-  const x = Math.min(event.clientX, window.innerWidth - 330);
-  const y = Math.min(event.clientY + 8, window.innerHeight - 220);
-  popup.style.left = x + 'px';
-  popup.style.top = y + 'px';
+    border-radius:8px;padding:10px 13px;box-shadow:0 6px 24px rgba(0,0,0,.25);
+    font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--text);
+    max-height:${isMob?'70vh':'65vh'};overflow-y:auto;
+    ${isMob ? 'left:8px;right:8px;bottom:60px;max-width:calc(100vw - 16px)' : 'max-width:340px;min-width:240px'}`;
+  if (!isMob) {
+    const x = Math.min(event.clientX, window.innerWidth - 360);
+    const y = Math.min(event.clientY + 8, window.innerHeight - 280);
+    popup.style.left = x + 'px';
+    popup.style.top = y + 'px';
+  }
 
   function buildThreadHtml() {
     const thread = _msConversations[mid] || [];
     if (!thread.length) return '';
-    return `<div id="comment-thread" style="margin:7px 0 0;border-top:1px solid var(--panel-border);padding-top:7px;max-height:180px;overflow-y:auto">` +
+    return `<div id="comment-thread" style="margin:7px 0 0;border-top:1px solid var(--panel-border);padding-top:7px">` +
       thread.map(msg => `<div style="margin-bottom:6px">
         <div style="font-size:9px;color:${msg.role==='user'?'var(--text-dim)':'var(--accent)'}">
           ${msg.role==='user'?'you':'claude'} · ${(msg.ts||'').slice(11,16)}</div>
@@ -3905,7 +3915,7 @@ async function _doCommentReply(projId, mid, inputEl) {
     if (!threadEl) {
       threadEl = document.createElement('div');
       threadEl.id = 'comment-thread';
-      threadEl.style.cssText = 'margin:7px 0 0;border-top:1px solid var(--panel-border);padding-top:7px;max-height:180px;overflow-y:auto';
+      threadEl.style.cssText = 'margin:7px 0 0;border-top:1px solid var(--panel-border);padding-top:7px';
       threadArea.appendChild(threadEl);
     }
     const msgDiv = document.createElement('div');
