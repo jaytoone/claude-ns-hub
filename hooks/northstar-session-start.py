@@ -150,10 +150,14 @@ def main():
         lines.append(f"  CONVERSATION REPLIES AWAITING CLAUDE ({len(pending_replies)} stones):")
         for m in pending_replies[:5]:
             conv = m.get("conversation") or []
-            last_user = next((msg for msg in reversed(conv) if msg.get("role") == "user"), None)
+            # M87: show last 3 messages for context (not just last user msg)
+            recent = conv[-3:] if len(conv) >= 3 else conv
             lines.append(f"    • [{m['id']}] {m.get('text','')[:50]}")
-            if last_user:
-                lines.append(f"      user said: \"{last_user.get('text','')[:80]}\"")
+            for msg in recent:
+                role = msg.get("role", "?")
+                text = msg.get("text", "")[:100]
+                prefix = "      user" if role == "user" else "      claude"
+                lines.append(f"{prefix}: \"{text}\"")
         lines.append("")
         lines.append("  REPLY PROTOCOL: For each pending reply above:")
         lines.append("    1. Read the user's message. If it's a command → do the work first.")

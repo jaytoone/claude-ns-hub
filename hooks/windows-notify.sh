@@ -23,6 +23,12 @@ if [ -n "$ZELLIJ_SESSION_NAME" ]; then
 elif [ -n "$TMUX" ]; then
     proj_num=$(tmux display-message -p '#I' 2>/dev/null | awk '{printf "%02d", $1}')
 fi
+# M110: dir_name fallback — if session lookup gave a number from a different project,
+# try to find a pos-map entry that contains dir_name (case-insensitive)
+if [ -z "$proj_num" ] || ! echo "$ZELLIJ_SESSION_NAME" | grep -qi "$dir_name"; then
+    dir_pos=$(grep -i "${dir_name}" "$POS_MAP" 2>/dev/null | grep -v '^#' | head -1 | cut -d= -f2)
+    [ -n "$dir_pos" ] && proj_num=$(printf '%02d' "$((10#${dir_pos}))")
+fi
 [ -n "$proj_num" ] && title_prefix="[$proj_num] " || title_prefix=""
 
 case "$matcher" in

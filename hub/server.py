@@ -1296,6 +1296,11 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
                     conv = m.get("conversation") or []
                     conv.append(msg)
                     m["conversation"] = conv
+                    # M119: user reply → auto-reopen stone for Claude's attention
+                    if msg.get("role") == "user" and not m.get("done"):
+                        if m.get("status") in ("pending_confirmation", "done", "pending", None):
+                            m["status"] = "queued"
+                            m.setdefault("queued_at", _dt.datetime.now().isoformat())
             # Status: user can set pending/queued; done is Claude-only (set via done=True or status=done)
             new_status = data.get("status")
             if new_status in ("pending", "queued"):
