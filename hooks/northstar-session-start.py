@@ -86,6 +86,13 @@ def main():
     answered = [m for m in needs_clarification if (m.get("clarification_answer") or "").strip()]
     unanswered = [m for m in needs_clarification if not (m.get("clarification_answer") or "").strip()]
 
+    # Detect pending user replies in conversation threads (last message is from user, not claude)
+    pending_replies = []
+    for m in milestones:
+        conv = m.get("conversation") or []
+        if conv and conv[-1].get("role") == "user":
+            pending_replies.append(m)
+
     # Auto-promote answered clarifications → pending (Claude will pick them up as new pending)
     for m in answered:
         try:
@@ -110,7 +117,7 @@ def main():
         except Exception:
             pass
 
-    if not queued and not pending and not unanswered:
+    if not queued and not pending and not unanswered and not pending_replies:
         sys.exit(0)
 
     lines = [f"[NS:{proj_id}] Milestone status —"]
@@ -138,6 +145,23 @@ def main():
             lines.append(f"    • {m.get('text','')[:70]}")
         if len(pending) > 3:
             lines.append(f"    ... +{len(pending)-3} more")
+
+    if pending_replies:
+        lines.append(f"  CONVERSATION REPLIES AWAITING CLAUDE ({len(pending_replies)} stones):")
+        for m in pending_replies[:5]:
+            conv = m.get("conversation") or []
+            last_user = next((msg for msg in reversed(conv) if msg.get("role") == "user"), None)
+            lines.append(f"    • [{m['id']}] {m.get('text','')[:50]}")
+            if last_user:
+                lines.append(f"      user said: \"{last_user.get('text','')[:80]}\"")
+        lines.append("")
+        lines.append("  REPLY PROTOCOL: For each pending reply above:")
+        lines.append("    1. Read the user's message. If it's a command → do the work first.")
+        lines.append(f"    2. Append your reply with append_message (no need to send full array):")
+        lines.append(f"       curl -s -X PATCH http://127.0.0.1:9000/api/northstar/{proj_id}/milestones/<MID> \\")
+        lines.append(f'         -H "Content-Type: application/json" \\')
+        lines.append(f"         -d '{{\"append_message\":{{\"role\":\"claude\",\"text\":\"<reply>\"}}}}' ")
+        lines.append("    3. If user asked you to do something — do it, then confirm in the reply.")
 
     session_id = data.get("session_id", "")
     log_path = f"~/.claude/hub/projects/{proj_id}/completion-log.jsonl"

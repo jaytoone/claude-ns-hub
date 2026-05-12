@@ -174,6 +174,7 @@ def _load_projects() -> list:
                                 "clarification_answered_at": m.get("clarification_answered_at") or None,
                                 "claude_comment": m.get("claude_comment") or None,
                                 "conversation": m.get("conversation") or None,
+                                "star_relation": m.get("star_relation") or None,
                             }
                             norm_ms.append(entry)
                         elif isinstance(m, str):
@@ -625,6 +626,41 @@ async def market_signals_save():
     except Exception as exc:
         return JSONResponse({"ok": False, "error": str(exc)})
 
+
+_PYPI_DAILY_CACHE: dict = {"data": None, "ts": 0.0}
+_PYPI_DAILY_TTL = 3600  # 1 hr
+
+
+def _fetch_pypi_daily_sync(days: int = 30) -> dict:
+    import urllib.request as _ur
+    try:
+        req = _ur.Request(
+            "https://pypistats.org/api/packages/ctx-retriever/overall?total=daily",
+            headers={"User-Agent": "ctx-hub/1.0", "Accept": "application/json"},
+        )
+        with _ur.urlopen(req, timeout=10) as r:
+            raw = json.loads(r.read())
+        rows = [
+            {"date": row["date"], "downloads": row["downloads"]}
+            for row in raw.get("data", [])
+            if row.get("category") == "without_mirrors"
+        ]
+        rows.sort(key=lambda x: x["date"])
+        return {"days": rows[-days:], "package": "ctx-retriever"}
+    except Exception as exc:
+        return {"error": str(exc)[:120]}
+
+
+@app.get("/api/pypi-daily")
+async def pypi_daily_api(refresh: bool = False, days: int = 30):
+    import time
+    now = time.time()
+    if refresh or _PYPI_DAILY_CACHE["data"] is None or (now - _PYPI_DAILY_CACHE["ts"]) > _PYPI_DAILY_TTL:
+        loop = asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda: _fetch_pypi_daily_sync(days))
+        _PYPI_DAILY_CACHE["data"] = data
+        _PYPI_DAILY_CACHE["ts"] = now
+    return JSONResponse({**_PYPI_DAILY_CACHE["data"], "cached_at": _PYPI_DAILY_CACHE["ts"]})
 
 
 # ── Channel Manager — live reaction scraper ──────────────────────────────────
@@ -1226,7 +1262,7 @@ async def create_milestone(proj_id: str, request: Request):
         "done": False, "claude_ack": None,
         "user_added_at": _dt.now().strftime("%Y-%m-%dT%H:%M"),  # badge for unacknowledged
     }
-    milestones.append(new_ms)
+    milestones.insert(0, new_ms)  # M86: prepend so newest always appears first in UI
     proj["milestones"] = milestones
     _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "milestone": new_ms})
@@ -1251,6 +1287,15 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
             # conversation: accumulated chat thread — allow empty list (don't coerce to None)
             if "conversation" in data:
                 m["conversation"] = data["conversation"]
+            # append_message: single {role,text} dict — appended to conversation (easier for Claude)
+            if "append_message" in data:
+                msg = data["append_message"]
+                if isinstance(msg, dict) and msg.get("role") and msg.get("text"):
+                    import datetime as _dt
+                    msg.setdefault("ts", _dt.datetime.now().isoformat())
+                    conv = m.get("conversation") or []
+                    conv.append(msg)
+                    m["conversation"] = conv
             # Status: user can set pending/queued; done is Claude-only (set via done=True or status=done)
             new_status = data.get("status")
             if new_status in ("pending", "queued"):
@@ -1314,6 +1359,27 @@ async def delete_milestone(proj_id: str, mid: str):
 
 
 
+
+
+@app.post("/api/northstar/{proj_id}/milestones/{mid}/rationale")
+async def milestone_rationale(proj_id: str, mid: str):
+    """M65/M70: Generate star-stone relation and OKR rationale for a milestone."""
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    ms = next((m for m in proj.get("milestones", []) if isinstance(m, dict) and m.get("id") == mid), None)
+    if not ms:
+        return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
+    ns_metric = proj.get("metric", "the north star goal")
+    ns_current = str(proj.get("current", "") or "")
+    ns_target  = str(proj.get("target", "") or "")
+    ms_text    = str(ms.get("text", ""))
+    gap_str = f" ({ns_current} → {ns_target})" if ns_current and ns_target else ""
+    rationale = f"Closes the {ns_metric}{gap_str} gap by: {ms_text}"
+    ms["star_relation"] = rationale
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True, "rationale": rationale})
 
 
 @app.get("/api/northstar/{proj_id}/tmux-output")
@@ -1682,6 +1748,22 @@ async def rename_project(proj_id: str, request: Request):
     return JSONResponse({"ok": True, "name": new_name})
 
 
+@app.patch("/api/northstar/{proj_id}")
+async def patch_project(proj_id: str, request: Request):
+    """Update simple top-level project fields (deadline, status, note, links, etc.)."""
+    data = await request.json()
+    md = PROJECTS_DIR / proj_id / "north-star.md"
+    if not md.exists():
+        return JSONResponse({"ok": False}, status_code=404)
+    proj = _parse_md_frontmatter(md)
+    allowed = {"deadline", "status", "note", "links", "stage"}
+    for k in allowed:
+        if k in data:
+            proj[k] = data[k]
+    _save_project(proj_id, proj)
+    return JSONResponse({"ok": True})
+
+
 @app.patch("/api/northstar/{proj_id}/layout")
 async def update_layout(proj_id: str, request: Request):
     """Update swimlane layout fields: layer, parent, position_x."""
@@ -1761,9 +1843,11 @@ async def kill_exec_session(proj_id: str):
     return {"ok": True, "killed": killed, "session": exec_session}
 
 
+_SHELLS = {"bash", "zsh", "sh", "fish", "dash"}
+
 @app.get("/api/exec-sessions")
 async def get_exec_sessions():
-    """Return all running claude-exec-* tmux sessions with metadata."""
+    """Return claude-exec-* tmux sessions where Claude is actually running (not just a shell prompt)."""
     result = subprocess.run(
         ["tmux", "list-sessions", "-F", "#{session_name}:#{session_created}:#{session_windows}"],
         capture_output=True, text=True
@@ -1772,11 +1856,23 @@ async def get_exec_sessions():
     for line in result.stdout.splitlines():
         parts = line.split(":", 2)
         if len(parts) >= 1 and parts[0].startswith("claude-exec-"):
-            proj_id = parts[0][len("claude-exec-"):]
+            session_name = parts[0]
+            proj_id = session_name[len("claude-exec-"):]
             created_ts = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 0
+
+            # Check if Claude is actually running — not just a shell prompt after Claude exited
+            pane_cmds = subprocess.run(
+                ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
+                capture_output=True, text=True
+            ).stdout.splitlines()
+            cmds = [c.strip() for c in pane_cmds if c.strip()]
+            claude_running = any(c not in _SHELLS for c in cmds) if cmds else False
+            if not claude_running:
+                continue
+
             from datetime import datetime as _dt
             sessions.append({
-                "session": parts[0],
+                "session": session_name,
                 "proj_id": proj_id,
                 "created": _dt.fromtimestamp(created_ts).isoformat() if created_ts else "",
                 "alive": True,
