@@ -3679,9 +3679,7 @@ async function openDetail(idx) {
   // Render right column then load milestones
   renderRight(p, ctxData.topics || [], docData);
   loadTaskBoard(p.id);
-  // Auto-start live view if tmux session is already running
-  fetch(`/api/northstar/${esc(p.id)}/tmux-output?lines=5`)
-    .then(r=>r.json()).then(d=>{ if(d.running) startTmuxWatch(p.id); }).catch(()=>{});
+  // M120: do NOT auto-open live session on card click — user must explicitly click the session row
 
   // Multi-NS: full left-panel pagination (arc + milestones per NS page)
   const nsResp = await fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]}));
