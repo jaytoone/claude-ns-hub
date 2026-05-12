@@ -1590,8 +1590,10 @@ function renderMilestoneCreator(projId, milestones) {
   // Notion-style numbered toggles
   const toggleHtml = `
   <style>
-    .nt-row { display:flex; align-items:flex-start; gap:6px; padding:6px 6px; border-radius:5px;
-      cursor:pointer; transition:background .08s; user-select:none; margin-bottom:1px; }
+    .nt-row { display:flex; align-items:flex-start; gap:6px; padding:5px 4px 5px 6px;
+      cursor:pointer; transition:background .08s; user-select:none;
+      border-bottom:1px solid var(--panel-border); }
+    .nt-draggable-row:last-child .nt-row { border-bottom:none; }
     .nt-row:hover { background:var(--panel-soft); }
     .nt-row:hover .nt-del { opacity:1; }
     .nt-mid { font-family:var(--mono); font-size:9px; color:var(--accent); padding:1px 5px;
@@ -1633,11 +1635,14 @@ function renderMilestoneCreator(projId, milestones) {
       text-transform:uppercase; padding:8px 0 3px; margin-left:2px; opacity:.7; display:block; }
     .nt-layer-label:first-child { padding-top:2px; }
     .nt-new-badge { font-size:9px; color:var(--accent); margin-left:3px; cursor:default; }
+    .nt-table { border:1px solid var(--panel-border); border-radius:6px; overflow:hidden; margin-bottom:8px; }
+    .nt-table .nt-draggable-row { display:block; }
   </style>
   <div>
     <button class="nt-add" style="margin-bottom:8px;display:block;width:100%;text-align:center"
       onclick="addMilestone('${esc(projId)}',0,null)">+ milestone</button>
     ${l0.length > 0 ? `<span class="nt-layer-label">L0 · Strategic</span>` : ''}
+    <div class="nt-table">
     ${l0.map((m, idx) => {
       const escJs = s => esc(s).replace(/'/g, '&#39;');  // escape for single-quoted JS attrs
       const children = l1.filter(c => c.parent_id === m.id);
@@ -1793,6 +1798,7 @@ function renderMilestoneCreator(projId, milestones) {
           ${subHtml}
         </div>`;
     }).join('')}
+    </div>
   </div>`;
 
   // Collapsed "Completed" section for done stones
