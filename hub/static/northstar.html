@@ -114,6 +114,8 @@ header {
   border-left: 2px solid var(--panel-border);
   border-radius: 0 8px 8px 0; transition: border-color .1s, background .1s;
   overflow-x: auto; overflow-y: visible;
+  /* allow absolute children to overflow downward */
+  contain: none;
 }
 .ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
 .ns-node.drop-before { border-left: 2px solid var(--accent); }
@@ -2480,11 +2482,13 @@ function render() {
     });
 
     // Free absolute positioning: each card placed at left=position_x px
+    // position_x >= 100 = pixel value (new); < 100 = old column index → auto-space
     const CARD_W = 160;
-    let autoX = 8; // fallback x for cards with no position_x set
+    let autoX = 8;
     el.innerHTML = '';
     for (const {p, i} of lanes[l]) {
-      let x = (p.position_x != null && p.position_x > 0) ? p.position_x : autoX;
+      const rawX = p.position_x ?? 0;
+      let x = rawX >= 100 ? rawX : autoX;
       const wrapper = document.createElement('div');
       wrapper.style.cssText = `position:absolute;top:8px;left:${x}px`;
       wrapper.innerHTML = nodeCard(p, i);
