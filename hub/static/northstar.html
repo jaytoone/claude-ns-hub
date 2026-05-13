@@ -3754,6 +3754,8 @@ async function openDetail(idx) {
   pill.className = `dm-status-pill ${p.status || 'paused'}`;
 
   // Render left (hierarchy) immediately, then async fill right
+  // M142: clear fingerprint on open — M129 guard must not skip the very first render after dm-ms-creator is reset
+  delete _msRenderFingerprint[p.id];
   renderHierarchy(p);
   document.getElementById('dm-right').innerHTML =
     '<div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>';
@@ -3788,18 +3790,6 @@ async function openDetail(idx) {
     renderMultiNSLeftPanel(p, nsList, okrData);
   } else {
     // OKR tree inside NS layer
-    if (okrSection) {
-      const okrs = okrData.okrs || [];
-      okrSection.innerHTML = okrs.length ? okrs.map((kr, i) => {
-        const m = kr.match(/^(K\d+):\s*(.+)/);
-        const isLast = i === okrs.length - 1;
-        return `<div style="display:flex;align-items:flex-start;gap:5px;padding:2px 0">
-          <span style="font-family:var(--mono);font-size:9px;color:var(--panel-border);flex-shrink:0;line-height:1.6">${isLast?'└─':'├─'}</span>
-          <span style="font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:600;flex-shrink:0">${m?esc(m[1]):'·'}</span>
-          <span style="font-size:11px;color:var(--text-soft);line-height:1.5">${m?esc(m[2]):esc(kr)}</span>
-        </div>`;
-      }).join('') : '';
-    }
   }
 }
 
@@ -3855,8 +3845,6 @@ function renderHierarchy(p) {
       </div>
       <!-- Progress bars — star-arc / deadline / milestone, injected by renderMilestoneCreator -->
       <div id="dm-ns-bars" style="margin-top:6px"></div>
-      <!-- OKR tree — injected after fetch, sits inside NS layer -->
-      <div id="dm-okr-section" style="margin-top:6px"></div>
       <!-- Spec doc slot — injected by renderRight, shown near NS section top -->
       <div id="dm-spec-slot" style="margin-top:6px"></div>
       <!-- Task execution results (shown after Execute is clicked) -->
@@ -3896,21 +3884,6 @@ function renderMultiNSLeftPanel(p, nsList, okrData) {
   const fgPath = gaugePath(pct, cx, cy, r);
   const allMs = nsList.flatMap(ns => ns.milestones || []);
   const doneMs = allMs.filter(m=>m.done||m.status==='done').length;
-
-  // OKR tree
-  const dmOkrSection = document.getElementById('dm-okr-section');
-  if (dmOkrSection && okrData) {
-    const okrs = okrData.okrs || [];
-    dmOkrSection.innerHTML = okrs.length ? okrs.map((kr, i) => {
-      const m = kr.match(/^(K\d+):\s*(.+)/);
-      const isLast = i === okrs.length - 1;
-      return `<div style="display:flex;align-items:flex-start;gap:5px;padding:2px 0">
-        <span style="font-family:var(--mono);font-size:9px;color:var(--panel-border);flex-shrink:0;line-height:1.6">${isLast?'└─':'├─'}</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:600;flex-shrink:0">${m?esc(m[1]):'·'}</span>
-        <span style="font-size:11px;color:var(--text-soft);line-height:1.5">${m?esc(m[2]):esc(kr)}</span>
-      </div>`;
-    }).join('') : '';
-  }
 
   // Update gauge arc to reflect aggregate progress
   const gaugeWrap = document.querySelector('.dm-gauge-wrap svg');
