@@ -536,9 +536,7 @@ header {
   header { padding: 10px 14px; min-height: 44px; }
   .page-title { font-size: 16px; }
   .page-sub { display: none; }
-  .updated-at { display: none; }
-  /* M140: show watch pill on mobile in place of updated-at */
-  #ns-watch-pill { display: flex !important; }
+  .updated-at { display: block; }
 }
 
 /* Drawer backdrop — tap outside to close on mobile */
@@ -650,7 +648,7 @@ header {
 
 /* ── Detail Overlay (centered modal — replaces side drawer) ──────────────────── */
 .detail-overlay {
-  display: none; position: fixed; inset: 0; z-index: 100;
+  display: none; position: fixed; inset: 0; z-index: 9001;
   background: rgba(31,28,26,.3); align-items: center; justify-content: center;
   padding: 16px;
 }
@@ -954,13 +952,7 @@ header {
       <div class="header-right">
         <button class="refresh-btn" onclick="showAddProject()" style="background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)">+ node</button>
         <button class="refresh-btn" id="align-btn" onclick="cycleAlign()" title="Card alignment">⇤ align</button>
-        <!-- M135: refresh button removed — hub drives auto-refresh via postMessage -->
-        <!-- M140: watching count badge — visible on mobile where page-sub/updated-at are hidden -->
-        <span id="ns-watch-pill" style="display:none;font-family:var(--mono);font-size:11px;
-          color:var(--accent-deep);background:var(--accent-soft);border:1px solid var(--accent);
-          border-radius:10px;padding:2px 8px;white-space:nowrap">
-          ⟳ <span id="ns-watch-num">0</span>
-        </span>
+        <button class="refresh-btn" onclick="loadData()" title="Refresh">↻</button>
         <span class="updated-at" id="updated-at">—</span>
       </div>
     </header>
@@ -1102,7 +1094,7 @@ header {
 <!-- Live tmux session overlay — floats above detail modal -->
 <!-- M126: backdrop — click outside live overlay to dismiss it -->
 <div id="tmux-live-backdrop" style="display:none;position:fixed;inset:0;z-index:8999;background:transparent" onclick="stopTmuxWatch()"></div>
-<div id="tmux-live-overlay" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9000;
+<div id="tmux-live-overlay" style="display:none;position:fixed;bottom:20px;right:20px;z-index:9010;
   width:min(520px,92vw);background:#1a1916;border:1px solid #444;border-radius:10px;
   box-shadow:0 12px 40px rgba(0,0,0,.6);overflow:hidden">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;
@@ -1741,10 +1733,10 @@ function renderMilestoneCreator(projId, milestones) {
         `<span style="font-family:var(--mono);font-size:8px;color:${dlColor};flex-shrink:0;min-width:36px;text-align:right">${valueText}</span>` +
         `</div>`;
     }
-    // Each empty block = 1 remaining day; capped at MAX
+    // Each filled block = 1 remaining day; capped at MAX
     const totalBlocks = Math.min(MAX, daysLeft);
     const segs = Array.from({length: totalBlocks}, () =>
-      `<div style="flex:1;height:6px;border-radius:1px;min-width:2px;background:var(--panel-border)"></div>`
+      `<div style="flex:1;height:6px;border-radius:1px;min-width:2px;background:${dlColor}"></div>`
     ).join('');
     return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">` +
       `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.04em;width:54px;flex-shrink:0">${label}</span>` +
@@ -1884,7 +1876,7 @@ function renderMilestoneCreator(projId, milestones) {
                 <button onclick="event.stopPropagation();confirmMsDone('${esc(projId)}','${esc(m.id)}')"
                   style="font-size:8px;padding:3px 6px;border-radius:3px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono);line-height:1.4;white-space:nowrap;min-height:22px">Confirm</button>
                 <button onclick="event.stopPropagation();reopenMs('${esc(projId)}','${esc(m.id)}')"
-                  style="font-size:8px;padding:3px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono);line-height:1.4;min-height:22px">Reopen</button>
+                  style="font-size:8px;padding:3px 6px;border-radius:3px;border:1px solid var(--red,#c0392b);background:rgba(192,57,43,.08);color:var(--red,#c0392b);cursor:pointer;font-family:var(--mono);line-height:1.4;min-height:22px">Reopen</button>
               </div>
             </td>
             <td class="ms-td-text" style="background:rgba(204,120,92,.06);font-size:12px;color:var(--text);overflow-wrap:anywhere">
@@ -1994,7 +1986,7 @@ function renderMilestoneCreator(projId, milestones) {
             ${children.length ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${childDone}/${children.length}</span>` : ''}
             ${(!m.claude_ack && m.user_added_at) ? `<span style="font-size:9px;color:var(--accent)" title="New — Claude hasn't seen this">★</span>` : ''}
             ${m.user_added_at ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.6;border:1px solid var(--panel-border);border-radius:3px;padding:0 3px" title="Added ${esc(m.user_added_at)}">+${esc((m.user_added_at||'').slice(5,10))}</span>` : ''}
-            ${mStatus !== 'done' ? `<button class="nt-why" title="${m.star_relation ? 'Why this matters' : 'Generate: why this matters'}" style="opacity:${m.star_relation?'1':'.3'};font-size:16px;padding:4px 8px;min-width:32px;min-height:28px" onclick="event.stopPropagation();${m.star_relation ? `showStarRelModal('${escJs(m.star_relation)}','${escJs(m.text.slice(0,60))}')` : `generateStarRelation('${esc(projId)}','${esc(m.id)}',this)`}">★</button>` : ''}
+            ${(mStatus !== 'done' || m.star_relation) ? `<button class="nt-why" title="${m.star_relation ? 'Why this matters' : 'Generate: why this matters'}" style="opacity:${m.star_relation?'1':'.3'};font-size:18px;padding:6px 10px;min-width:40px;min-height:36px;line-height:1" onclick="event.stopPropagation();${m.star_relation ? `showStarRelModal('${escJs(m.star_relation)}','${escJs(m.text.slice(0,60))}')` : `generateStarRelation('${esc(projId)}','${esc(m.id)}',this)`}">★</button>` : ''}
             <button class="nt-why" title="Chat" style="font-size:9px;opacity:${(_msConversations[m.id]||[]).length>0?'1':'.45'}" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment||'')}','${esc(projId)}','${esc(m.id)}','${esc(mStatus)}')">${(_msConversations[m.id]||[]).length>0 ? (_msConversations[m.id].length+' msg') : 'msg'}</button>
             <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
           </td>
@@ -2011,7 +2003,7 @@ function renderMilestoneCreator(projId, milestones) {
            onclick="const n=this.nextElementSibling;const arr=this.querySelector('.ret-arrow');n.style.display=n.style.display==='none'?'block':'none';if(arr)arr.textContent=n.style.display==='none'?'▸':'▾'">
         <span class="ret-arrow">▸</span> RETIRED (${doneStones.length})</div>
       <div style="display:none;margin-top:4px">
-        ${doneStones.map(m => `<div style="font-size:11px;color:var(--text-dim);text-decoration:line-through;padding:2px 4px;font-family:var(--mono);opacity:.6">${esc(m.text.slice(0,60))}</div>`).join('')}
+        ${doneStones.map(m => `<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);text-decoration:line-through;padding:2px 4px;font-family:var(--mono);opacity:.6">${esc(m.text.slice(0,60))}${m.star_relation ? `<button style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:16px;padding:2px 6px;min-width:28px;min-height:28px;opacity:.7;text-decoration:none;color:inherit" title="Why this mattered" onclick="event.stopPropagation();showStarRelModal('${esc(m.star_relation).replace(/'/g,"&#39;")}','${esc(m.text.slice(0,60)).replace(/'/g,"&#39;")}')">★</button>` : ''}</div>`).join('')}
       </div>
     </div>` : '';
 
@@ -2619,6 +2611,10 @@ function nodeCard(p, idx) {
   const stageBadge = (stage === 'focused' || stage === 'commercialized')
     ? `<span class="ns-stage-badge ${stage}">${stage === 'focused' ? 'FOCUS' : 'LIVE'}</span>` : '';
   const pid = esc(p.id||p.name);
+  const remaining = (p.milestones || []).filter(m => !m.done && (m.status||'') !== 'done').length;
+  const stoneTag = remaining > 0
+    ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);white-space:nowrap;flex-shrink:0" title="${remaining} remaining stones">D+${remaining}</span>`
+    : '';
   return `<div class="ns-node ${active} ${stageClass}" data-idx="${idx}" data-pid="${pid}" draggable="true">
     ${stageBadge}
     <div class="ns-node-top">
@@ -2634,6 +2630,7 @@ function nodeCard(p, idx) {
     <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
     <div class="ns-node-bottom">
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
+      ${stoneTag}
       <span class="ns-node-date" style="color:${dl.color}" title="deadline: ${esc(p.deadline||'none')}">${esc(dl.text)}</span>
       <span class="ns-node-term" title="Open Claude session"
         onclick="event.stopPropagation();openTerminal('${pid}')">›_ claude</span>
@@ -3916,7 +3913,12 @@ function showCommentPopup(event, comment, projId, mid, currentStatus) {
     ${isMob ? 'left:8px;right:8px;bottom:60px;max-width:calc(100vw - 16px)' : 'max-width:340px;min-width:240px'}`;
   if (!isMob) {
     const x = Math.min(event.clientX, window.innerWidth - 360);
-    const y = Math.min(event.clientY + 8, window.innerHeight - 280);
+    // M142: flip above click when there's not enough room below (scroll-at-bottom scenario)
+    const estH = Math.min(window.innerHeight * 0.65, 380);
+    const spaceBelow = window.innerHeight - (event.clientY + 8);
+    const y = spaceBelow >= estH
+      ? event.clientY + 8
+      : Math.max(8, event.clientY - estH - 8);
     popup.style.left = x + 'px';
     popup.style.top = y + 'px';
   }
@@ -4054,9 +4056,9 @@ async function killExecSession() {
   const projId = _tmuxWatchProjId;
   stopTmuxWatch();
   if (!projId) return;
-  // M89: show stopping indicator in session list immediately (before 2s grace)
-  const execInfo = document.getElementById('dm-exec-sessions');
-  if (execInfo) execInfo.innerHTML = `<div style="font-family:var(--mono);font-size:13px;font-weight:700;color:#e05252;padding:10px 4px;letter-spacing:.12em;text-align:center;animation:stop-pulse 0.8s ease-in-out infinite alternate">STOPPING</div>`;
+  // M148: show stopping state on Execute button only (not in session list below spec-docs)
+  const execBtnStop = document.getElementById('dm-exec-btn');
+  if (execBtnStop) { execBtnStop.textContent = '◼ stopping'; execBtnStop.style.color = '#e05252'; execBtnStop.style.borderColor = '#e05252'; execBtnStop.style.background = 'rgba(224,82,82,.08)'; execBtnStop.style.opacity = '1'; execBtnStop.disabled = true; }
   const output = document.getElementById('dm-tmux-output');
   if (output) { output.style.color = '#e05252'; output.style.fontWeight = '700'; output.style.textAlign = 'center'; output.style.fontSize = '13px'; output.style.letterSpacing = '.12em'; output.textContent = 'STOPPING'; }
   // 2-second grace: signal Claude to save current task state before kill
@@ -4137,16 +4139,26 @@ async function loadTaskBoard(projId) {
     const d = await r.json();
     const allJobs = d.jobs || [];
     const jobs = allJobs.filter(j => j.status === 'queued' || j.status === 'running')
-      .sort((a, b) => b.task_id > a.task_id ? 1 : -1);
+      .sort((a, b) => {
+        // running before queued, then by task_id descending
+        if (a.status !== b.status) return a.status === 'running' ? -1 : 1;
+        return b.task_id > a.task_id ? 1 : -1;
+      });
     if (!jobs.length) { board.innerHTML = ''; return; }
     // M129/user: when session is idle, "running" tasks are actually paused (session stopped mid-task)
     const sessIdle = !_sessionStatus[projId] || _sessionStatus[projId] === 'exec-idle' || _sessionStatus[projId] === 'none' || _sessionStatus[projId] === 'dead';
     const statusColor = {queued:'var(--text-dim)',running:'var(--accent)',paused:'var(--text-dim)',done:'var(--green)',failed:'var(--red)'}
+    // M143: show "N live · M queued" instead of a single count that mirrors queued-stone count
+    const runningCount = jobs.filter(j => j.status === 'running').length;
+    const queuedCount  = jobs.filter(j => j.status === 'queued').length;
+    const countBadge = sessIdle
+      ? `<span style="background:var(--panel-border);color:var(--text-dim);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>`
+      : `${runningCount > 0 ? `<span style="background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${runningCount} live</span>` : ''}${queuedCount > 0 ? `<span style="background:var(--panel-border);color:var(--text-dim);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${queuedCount} queued</span>` : ''}`;
     board.innerHTML = `
       <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.06em;margin:10px 0 5px;text-transform:uppercase">
         <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style="opacity:.6"><rect x="1" y="4" width="14" height="2" rx="1"/><rect x="1" y="8" width="14" height="2" rx="1"/><rect x="1" y="12" width="9" height="2" rx="1"/></svg>
         <span>Task Queue</span>
-        <span style="background:${sessIdle?'var(--panel-border)':'var(--accent-soft)'};color:${sessIdle?'var(--text-dim)':'var(--accent)'};border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>
+        ${countBadge}
         ${sessIdle ? `<span style="font-size:8px;color:var(--text-dim);letter-spacing:.04em;margin-left:2px">· paused</span>` : ''}
         <button onclick="loadTaskBoard('${esc(projId)}')" title="Refresh" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:0;line-height:1" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">↻</button>
       </div>
@@ -4206,6 +4218,10 @@ function renderRight(p, topics, docData) {
         } else if (b) {
           b.textContent = '▶ Execute';
           b.style.color = '';
+          b.style.borderColor = '';
+          b.style.background = '';
+          b.style.opacity = '';
+          b.disabled = false;
         }
         if (info) {
           if (running.length > 0) {

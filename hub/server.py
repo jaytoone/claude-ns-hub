@@ -1428,22 +1428,25 @@ async def get_task_board(proj_id: str):
                 })
             except Exception:
                 pass
-    # Also show currently queued milestones as "running" if exec session active
+    # Show queued milestones in task board when exec session is active.
+    # First queued milestone → "running" (Claude processes sequentially, this one is up next/active).
+    # Remaining queued milestones → "queued" (waiting their turn).
+    # This keeps the task board "running" count distinct from the total queued-stone count.
     session_name = f"claude-exec-{proj_id}"
     check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
     if check.returncode == 0:
-        # Session alive — find queued milestones and show as running
         md = PROJECTS_DIR / proj_id / "north-star.md"
         if md.exists():
             proj = _parse_md_frontmatter(md)
-            for m in (proj.get("milestones") or []):
-                if m.get("status") == "queued":
-                    jobs.insert(0, {
-                        "task_id": f"{m['id']}-running",
-                        "status": "running",
-                        "output": m.get("text", "")[:80],
-                        "completed_at": "",
-                    })
+            queued_ms = [m for m in (proj.get("milestones") or []) if m.get("status") == "queued"]
+            for i, m in enumerate(queued_ms):
+                job_status = "running" if i == 0 else "queued"
+                jobs.insert(i, {
+                    "task_id": f"{m['id']}-{job_status}",
+                    "status": job_status,
+                    "output": m.get("text", "")[:80],
+                    "completed_at": "",
+                })
     return JSONResponse({"ok": True, "jobs": jobs[:10]})
 
 
@@ -1989,6 +1992,10 @@ async def verify_plan():
     return JSONResponse({"checks": checks, "count": len(checks), "services": list(SERVICES.keys())})
 
 
-if __name__ == "__main__":
+def main():
     import uvicorn
     uvicorn.run(app, host=HOST, port=PORT, log_level="warning")
+
+
+if __name__ == "__main__":
+    main()

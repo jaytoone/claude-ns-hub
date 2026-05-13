@@ -5,7 +5,7 @@ connections:
 - FromScratch
 - HugwartsBanana
 current: '60'
-deadline: '2026-05-15'
+deadline: '2026-05-14'
 id: MOAT
 layer: 1
 links: ''
@@ -130,137 +130,156 @@ log:
 - date: '2026-05-11'
   text: '34130b7 chore: update omc retrieval log; ff6d295 chore: update omc retrieval
     log (+1 more)'
+- date: '2026-05-13'
+  text: 'M144: hub NS system running at 100.119.82.4:9000; CTX current metric updated
+    to 729/wk; M18/M19 cross-promotion milestones queued'
 metric: Hub dashboard completeness score (%)
 milestones:
-- claude_ack: 2026-05-13T10:28
+- claude_ack: null
   done: false
-  id: M141
+  id: M150
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-13T10:28
-  status: pending_confirmation
-  text: Task queues are  blinking when the tasks are ruining in tmux live session
-    fix it
-  user_added_at: 2026-05-13T09:48
-- claude_ack: 2026-05-13T09:54
-  done: false
-  id: M140
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-13T09:54
-  status: pending_confirmation
-  text: The ns watch would be shown in the bar in mobile env I mean the vertical state
-  user_added_at: 2026-05-13T09:02
-- claude_ack: 2026-05-13T09:54
-  done: false
-  id: M139
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-13T09:54
-  status: pending_confirmation
-  text: The Claude terminal which is in ns-card should not use —continue flag anymore.
-  user_added_at: 2026-05-13T00:54
-- claude_ack: 2026-05-13T01:00
+  text: if user asked clauude not the command for execution anything the claude should
+    add a comment in the stone pane (msg badge, sometimes claude skip the comment
+    on user's qeustion -> make stable for it)
+  user_added_at: 2026-05-13T12:49
+- claude_ack: 2026-05-13T12:52
   conversation:
   - role: user
-    text: Why the clock in the ns-bar is not updating like the hub’s one.
-    ts: '2026-05-12T15:45:00.975Z'
+    text: we need strategies for this , cause there is a new competitor on it which
+      is serving as "ManyFast" , -> u can search 7 an lwith the  ui.
+    ts: '2026-05-13T03:28:48.186Z'
+  - role: user
+    text: why don't u reply in it /
+    ts: '2026-05-13T03:43:51.425Z'
   - role: claude
-    text: 'The ns-bar clock was only updating when data loaded (every 8s from hub-refresh).
-      Fixed: added a setInterval(1000ms) that ticks the time display every second
-      — same as the hub nav clock. It now updates live continuously.'
-    ts: '2026-05-13T01:00:14.404153'
+    text: 'Good — ManyFast as a competitor changes the urgency calculation. Strategies
+      for the deadline:
+
+
+      1. Speed-to-publish over polish. ManyFast wins on volume/speed. Counter by shipping
+      the NS system with existing CTX now — do not wait for 100% feature parity. A
+      live real system beats a polished demo.
+
+
+      2. Differentiate on depth not breadth. If ManyFast is fast but shallow, your
+      moat is the corpus-grounded milestone-aware intelligence layer (claude_ack +
+      star_relation + live session feedback loop). Emphasize that in launch copy.
+
+
+      3. Compress the publish checklist. Identify the 3 things blocking publishing
+      right now (auth? mobile? stability?). Treat everything else as post-launch.
+      Ship with known rough edges documented.
+
+
+      4. Capture first-mover narrative. Even if they launched first, your system has
+      been running on real projects. Publish evidence (screenshots, completion logs,
+      milestone counts) — provenance beats announcement.
+
+
+      5. Lock in one anchor user before launch. Get one external person using the
+      NS dashboard before announcing. A real user story neutralizes ManyFast''s faster-launch
+      advantage.
+
+
+      What is the current blocking item for publishing? I can prioritize milestones
+      around it.'
+    ts: '2026-05-13T12:46:10.003963'
+  - role: claude
+    text: 'Packaging done. Created ~/.claude/hub/pyproject.toml with:
+
+      - Package name: northstar-hub
+
+      - CLI entry: northstar-hub (runs the server)
+
+      - All deps declared (fastapi, uvicorn, anthropic, ptyprocess, etc.)
+
+      - Static assets included via package-data
+
+
+      Also added main() entry point to server.py and __init__.py.
+
+
+      To publish to PyPI:
+
+      1. pip install build twine
+
+      2. python -m build (in ~/.claude/hub/)
+
+      3. twine upload dist/*  (needs PyPI token — set TWINE_PASSWORD=pypi-...)
+
+
+      Blocking questions before publish:
+
+      - Package name ''northstar-hub'' OK or prefer another?
+
+      - Should the repo be public on GitHub first? (PyPI links to it)
+
+      - CTX traffic integration — what data do you want surfaced in the published
+      version?
+
+
+      For the ManyFast competitor angle: once published, the PyPI page + GitHub README
+      with the NS dashboard screenshot is your fastest credibility signal.'
+    ts: '2026-05-13T12:52:58.957469'
   done: false
-  id: M135
+  id: M144
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-13T00:42
-  queued_at: 2026-05-13T00:45
+  pending_confirm_at: 2026-05-13T12:30
+  queued_at: 2026-05-13T12:43
   status: pending_confirmation
-  text: The refreshment in the ns-card’s dash should be synced to the hub’s refreshment
-    timing. (Then u can rm the watch in North Star top bar, cause hub already have
-    one)
-  user_added_at: 2026-05-13T00:33
-- claude_ack: 2026-05-13T01:00
+  text: until the deadline we have to publish this ns system with updated ctx things
+    with pypi , using the traffics in ctx , prommote it with the ns-system.
+  user_added_at: 2026-05-13T12:17
+- claude_ack: 2026-05-13T12:51
+  conversation:
+  - role: claude
+    text: 'No problems — renaming the card display name is completely safe.
+
+
+      The server always uses the directory name as the project ID (proj_id = proj_dir.name,
+      set on load). The /rename endpoint only updates the ''name'' field in the YAML
+      frontmatter — it does not touch the directory. All API routes, exec sessions,
+      task boards, and file paths continue to use the original directory name.
+
+
+      So you can freely rename MOAT → ''My AI Moat'' or any display name and nothing
+      breaks. The URL and internal IDs stay MOAT.'
+    ts: '2026-05-13T12:51:38.756435'
+  done: false
+  id: M149
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T12:51
+  status: pending_confirmation
+  text: is it makes probems on renaming the ns-card's into other name different from
+    the pj dir name ?
+  user_added_at: 2026-05-13T12:42
+- claude_ack: 2026-05-13T12:46
   conversation:
   - role: user
-    text: Pls check it in us again, cause not solved yet.
-    ts: '2026-05-12T15:50:32.032Z'
+    text: Pls stop blinking / reloading ? Stones in stone panes when the tasks are
+      running in the live session ,
+    ts: '2026-05-12T15:52:49.884Z'
   - role: claude
-    text: 'Root cause found: the idle detection checked if the terminal pane ends
-      with > (Claude at prompt), but this fires even mid-task when Claude pauses between
-      tool calls. Fix: server now cross-checks the north-star.md — if the project
-      has queued milestones, the session is forced to live regardless of the prompt
-      state. Please verify.'
-    ts: '2026-05-13T01:00:28.550581'
-  done: false
-  id: M133
+    text: 'Fixed: renderMilestoneCreator now computes a fingerprint of each stone
+      (id+status+text+msg count) before rendering. If the fingerprint matches the
+      last render, the re-render is skipped entirely — no DOM replacement, no blink.
+      Stones only redraw when actual data changes.'
+    ts: '2026-05-13T01:00:36.140455'
+  done: true
+  done_at: 2026-05-13T12:46
+  id: M129
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-13T00:45
-  queued_at: 2026-05-13T00:50
-  status: pending_confirmation
-  text: If the live session is working u should not label this status in ‘idle’ but
-    to ‘live’ ->
-  user_added_at: 2026-05-13T00:23
-- claude_ack: 2026-05-13T09:54
-  claude_comment: 'Root cause: server prepends new milestones (insert at index 0 =
-    newest-first). Display iterates in that same order. _msDrop was reversing domOrder
-    before sending to server, but display order already IS server order — no reversal
-    needed. Fix: send domOrder directly as serverOrder.'
-  conversation:
-  - role: user
-    text: Yes fix them .
-    ts: '2026-05-12T14:13:26.642Z'
-  - role: claude
-    text: 'Fixed. Two bugs corrected in touch drag: (1) insertAt now uses `fromIdx
-      < toIdx ? toIdx-1 : toIdx` to match where the guideline showed, (2) removed
-      `.reverse()` on serverOrder — display order already matches server order so
-      no reversal needed. Mouse drag was already correct from the prior fix.'
-    ts: '2026-05-12T23:29:40.517703'
-  - role: user
-    text: I think u should test with us directly. It’s not working properly
-    ts: '2026-05-12T14:31:42.279Z'
-  - role: claude
-    text: 'I need more detail to debug this — please confirm: (1) Are you on mobile
-      (touch) or desktop (mouse)? (2) Does the orange guideline appear at the right
-      row as you drag? (3) After dropping, does the stone land at a visibly wrong
-      row, or does it appear correct but then jump back to original position after
-      the list refreshes? The most likely cause of the jump-back: the milestone list
-      re-sorts by status after every load, so if you drag across different status
-      groups (e.g., queued → below a pending stone), the sort will override your position.
-      Reordering only sticks within the same-status group. Let me know what you see
-      and I can fix accordingly.'
-    ts: '2026-05-13T00:04:40.793546'
-  - role: claude
-    text: 'I tested via the Playwright browser. The DOM logic traces correctly. Most
-      likely cause: you are dragging across different status groups (e.g., queued
-      stone below a pending_confirmation stone). The sort in renderMilestoneCreator
-      overrides those positions — only same-status-group reorders persist. Are you
-      dragging within the queued group, or across groups? If cross-group drag needs
-      to stick, I need to remove the status sort. Let me know.'
-    ts: '2026-05-13T00:24:13.884245'
-  - role: claude
-    text: 'Checked the drag logic again. The insertAt formula is mathematically correct.
-      The most likely remaining issue: if you drag across different status groups
-      (e.g., a queued stone below a pending_confirmation stone), the status sort overrides
-      the position after reload. We just fixed M136 so pending_confirmation stones
-      are always below queued regardless of order — this should reduce cross-group
-      confusion. If you are dragging within the same status group and it still lands
-      wrong, please tell me: which direction (up/down) and which status stones (both
-      queued? both pending_confirmation?) so I can trace the exact case.'
-    ts: '2026-05-13T01:04:08.193856'
-  done: false
-  id: M112
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-12T22:24
-  status: pending_confirmation
-  text: When drag a stone pane, it shows an orange guideline -> it’s great. But when
-    dropped the dragged one, it’s now settled in the exact place where guideline showed
-    up and also, the moved pane goes to the blowers place in stone table.
-  user_added_at: 2026-05-12T22:17
-- claude_ack: 2026-05-13T01:04
+  queued_at: 2026-05-13T00:52
+  status: done
+  text: Pls stop blocking 9my reloading milestone when tasks are running (live session
+    is working)
+  user_added_at: 2026-05-13T00:09
+- claude_ack: 2026-05-13T12:47
   claude_comment: 'Reply protocol is now wired: the session-start hook injects CONVERSATION
     REPLIES AWAITING CLAUDE context. When Claude starts an Execute session and sees
     pending replies, it reads them and acts. This session is proof — M112 user reply
@@ -315,16 +334,161 @@ milestones:
       acted on them (implemented fixes), and replied. The last-3-messages context
       injection is working correctly as of this session.'
     ts: '2026-05-13T01:04:45.485550'
-  done: false
+  done: true
+  done_at: 2026-05-13T12:47
   id: M87
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T15:34
   queued_at: 2026-05-13T00:10
-  status: pending_confirmation
+  status: done
   text: Why don’t Claude reply on users reply and if action needed Claude act for
     the uesers replies
   user_added_at: 2026-05-12T15:24
+- claude_ack: 2026-05-13T12:46
+  conversation:
+  - role: user
+    text: why the star badges are not shown in the completed works ?
+    ts: '2026-05-13T03:33:33.241Z'
+  - role: claude
+    text: 'Good catch — two issues fixed:
+
+
+      1. **Completed stones were hiding the star badge entirely** — the rendering
+      check `mStatus !== done` was stripping the button for done milestones. Fixed:
+      the star badge now shows on done stones if a `star_relation` exists (view-only,
+      no generate needed since the stone is already retired).
+
+
+      2. **Star badge too tiny to click** — bumped size from 32×28px to 40×36px with
+      larger font (18px) and more padding for easier tapping.
+
+
+      3. **RETIRED section** — done stones in the collapsed Retired list now also
+      show the ★ button inline if they have a star_relation stored.
+
+
+      All three changes are live in northstar.html.'
+    ts: '2026-05-13T12:45:47.762276'
+  done: true
+  done_at: 2026-05-13T12:46
+  id: M116
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-13T12:33
+  status: done
+  text: The star badge (which shows why the stone is matter) is too tiny to click.
+    Make some solution for it, and we have 5 vertical orange line which is implying
+    which stones are running, but I think just a one (leftest) vertical line would
+    be enough for it .
+  user_added_at: 2026-05-12T22:41
+- claude_ack: 2026-05-13T12:47
+  done: true
+  done_at: 2026-05-13T12:47
+  id: M147
+  layer: 0
+  parent_id: null
+  status: done
+  text: make the repopen badges color in other color not the gray one. red smiliar
+    color would be great.
+  user_added_at: 2026-05-13T12:32
+- claude_ack: 2026-05-13T12:50
+  conversation:
+  - role: user
+    text: rm the previous stoopping text which is shwoing below the 'spec docs' button
+    ts: '2026-05-13T03:48:55.609Z'
+  - role: claude
+    text: Done. Removed the STOPPING text that was appearing below the spec docs button
+      (dm-exec-sessions). The stopping state now shows only on the Execute button
+      itself (changes to '◼ stopping', red, disabled). When the session is confirmed
+      gone, _refreshExecState resets it back to '▶ Execute'.
+    ts: '2026-05-13T12:50:52.004499'
+  done: false
+  id: M148
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T12:45
+  queued_at: 2026-05-13T12:48
+  status: pending_confirmation
+  text: the stopping test should be showing on the 'execute' button when the live
+    session killed.
+  user_added_at: 2026-05-13T12:34
+- claude_ack: 2026-05-13T12:38
+  conversation:
+  - role: user
+    text: commet on it
+    ts: '2026-05-13T03:49:52.873Z'
+  done: false
+  id: M146
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T12:38
+  queued_at: 2026-05-13T12:49
+  status: queued
+  text: it's important to reuse the idle status of live session again cause as u know
+    , the generated / stacked cocntext would be used useflllyy on the next stones.
+    so is our current ns live-session is stable on it  ?
+  user_added_at: 2026-05-13T12:30
+- claude_ack: 2026-05-13T12:51
+  done: true
+  done_at: 2026-05-13T12:51
+  id: M145
+  layer: 0
+  parent_id: null
+  status: done
+  text: can the ns-detail card scrollable when the live session is openend (currently
+    onnly live session is closed (not killed) makes it available to scroll ns detail
+    card,
+  user_added_at: 2026-05-13T12:29
+- claude_ack: '2026-05-13T12:20:51+09:00'
+  done: false
+  id: M143
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T12:20
+  status: pending_confirmation
+  text: sometimes the dispatched task's count is eqault to the running stones which
+    is showing in stone pane (with left orange vertical line) , u have to test and
+    verify it.
+  user_added_at: 2026-05-13T12:16
+- claude_ack: '2026-05-13T12:20:51+09:00'
+  done: false
+  id: M142
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T12:20
+  status: pending_confirmation
+  text: '"C:\Users\be2ja\Pictures\Screenshots\스크린샷 2026-04-29 000700.png" in lt-1
+    , as u can see the comment motal is hided in the below part so fix it (the scroll
+    is already in the bottom end)'
+  user_added_at: 2026-05-13T12:15
+- claude_ack: 2026-05-13T10:28
+  done: false
+  id: M141
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T10:28
+  status: pending_confirmation
+  text: Task queues are  blinking when the tasks are ruining in tmux live session
+    fix it
+  user_added_at: 2026-05-13T09:48
+- claude_ack: 2026-05-13T09:54
+  done: false
+  id: M140
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T09:54
+  status: pending_confirmation
+  text: The ns watch would be shown in the bar in mobile env I mean the vertical state
+  user_added_at: 2026-05-13T09:02
+- claude_ack: 2026-05-13T09:54
+  done: false
+  id: M139
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T09:54
+  status: pending_confirmation
+  text: The Claude terminal which is in ns-card should not use —continue flag anymore.
+  user_added_at: 2026-05-13T00:54
 - claude_ack: 2026-05-13T01:09
   done: false
   id: M138
@@ -346,28 +510,6 @@ milestones:
     or live session ! (Clone pj was doing this shit)
   user_added_at: 2026-05-13T00:47
 - claude_ack: 2026-05-13T01:00
-  conversation:
-  - role: user
-    text: Pls stop blinking / reloading ? Stones in stone panes when the tasks are
-      running in the live session ,
-    ts: '2026-05-12T15:52:49.884Z'
-  - role: claude
-    text: 'Fixed: renderMilestoneCreator now computes a fingerprint of each stone
-      (id+status+text+msg count) before rendering. If the fingerprint matches the
-      last render, the re-render is skipped entirely — no DOM replacement, no blink.
-      Stones only redraw when actual data changes.'
-    ts: '2026-05-13T01:00:36.140455'
-  done: false
-  id: M129
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-13T00:24
-  queued_at: 2026-05-13T00:52
-  status: pending_confirmation
-  text: Pls stop blocking 9my reloading milestone when tasks are running (live session
-    is working)
-  user_added_at: 2026-05-13T00:09
-- claude_ack: 2026-05-13T01:00
   done: false
   id: M136
   layer: 0
@@ -388,6 +530,16 @@ milestones:
     should be integrated into a star or into milestone. -> reform them like the other
     details cards like. (Equal system)
   user_added_at: 2026-05-12T23:57
+- claude_ack: now
+  done: false
+  id: M117
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T23:03
+  status: pending_confirmation
+  text: Msg badged stones should be above than the non msg badged stones and still
+    the blinking exists in milestone pane -> u should check in up and fix it.
+  user_added_at: 2026-05-12T22:46
 - claude_ack: 2026-05-13T01:09
   done: false
   id: M118
@@ -439,68 +591,146 @@ milestones:
   text: The stones which is replied with user’s comment should be directly repopened.
     (The stone would be in confirm / repopen status)
   user_added_at: 2026-05-12T22:51
-- claude_ack: now
-  done: false
-  id: M117
+- claude_ack: 2026-05-13T12:30
+  conversation:
+  - role: user
+    text: Why the clock in the ns-bar is not updating like the hub’s one.
+    ts: '2026-05-12T15:45:00.975Z'
+  - role: claude
+    text: 'The ns-bar clock was only updating when data loaded (every 8s from hub-refresh).
+      Fixed: added a setInterval(1000ms) that ticks the time display every second
+      — same as the hub nav clock. It now updates live continuously.'
+    ts: '2026-05-13T01:00:14.404153'
+  done: true
+  done_at: 2026-05-13T12:30
+  id: M135
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T23:03
-  status: pending_confirmation
-  text: Msg badged stones should be above than the non msg badged stones and still
-    the blinking exists in milestone pane -> u should check in up and fix it.
-  user_added_at: 2026-05-12T22:46
-- claude_ack: now
-  done: false
-  id: M116
+  queued_at: 2026-05-13T00:45
+  status: done
+  text: The refreshment in the ns-card’s dash should be synced to the hub’s refreshment
+    timing. (Then u can rm the watch in North Star top bar, cause hub already have
+    one)
+  user_added_at: 2026-05-13T00:33
+- claude_ack: 2026-05-13T12:30
+  conversation:
+  - role: user
+    text: Pls check it in us again, cause not solved yet.
+    ts: '2026-05-12T15:50:32.032Z'
+  - role: claude
+    text: 'Root cause found: the idle detection checked if the terminal pane ends
+      with > (Claude at prompt), but this fires even mid-task when Claude pauses between
+      tool calls. Fix: server now cross-checks the north-star.md — if the project
+      has queued milestones, the session is forced to live regardless of the prompt
+      state. Please verify.'
+    ts: '2026-05-13T01:00:28.550581'
+  done: true
+  done_at: 2026-05-13T12:30
+  id: M133
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T23:03
-  status: pending_confirmation
-  text: The star badge (which shows why the stone is matter) is too tiny to click.
-    Make some solution for it, and we have 5 vertical orange line which is implying
-    which stones are running, but I think just a one (leftest) vertical line would
-    be enough for it .
-  user_added_at: 2026-05-12T22:41
-- claude_ack: now
-  done: false
+  queued_at: 2026-05-13T00:50
+  status: done
+  text: If the live session is working u should not label this status in ‘idle’ but
+    to ‘live’ ->
+  user_added_at: 2026-05-13T00:23
+- claude_ack: 2026-05-13T12:45
+  claude_comment: 'Root cause: server prepends new milestones (insert at index 0 =
+    newest-first). Display iterates in that same order. _msDrop was reversing domOrder
+    before sending to server, but display order already IS server order — no reversal
+    needed. Fix: send domOrder directly as serverOrder.'
+  conversation:
+  - role: user
+    text: Yes fix them .
+    ts: '2026-05-12T14:13:26.642Z'
+  - role: claude
+    text: 'Fixed. Two bugs corrected in touch drag: (1) insertAt now uses `fromIdx
+      < toIdx ? toIdx-1 : toIdx` to match where the guideline showed, (2) removed
+      `.reverse()` on serverOrder — display order already matches server order so
+      no reversal needed. Mouse drag was already correct from the prior fix.'
+    ts: '2026-05-12T23:29:40.517703'
+  - role: user
+    text: I think u should test with us directly. It’s not working properly
+    ts: '2026-05-12T14:31:42.279Z'
+  - role: claude
+    text: 'I need more detail to debug this — please confirm: (1) Are you on mobile
+      (touch) or desktop (mouse)? (2) Does the orange guideline appear at the right
+      row as you drag? (3) After dropping, does the stone land at a visibly wrong
+      row, or does it appear correct but then jump back to original position after
+      the list refreshes? The most likely cause of the jump-back: the milestone list
+      re-sorts by status after every load, so if you drag across different status
+      groups (e.g., queued → below a pending stone), the sort will override your position.
+      Reordering only sticks within the same-status group. Let me know what you see
+      and I can fix accordingly.'
+    ts: '2026-05-13T00:04:40.793546'
+  - role: claude
+    text: 'I tested via the Playwright browser. The DOM logic traces correctly. Most
+      likely cause: you are dragging across different status groups (e.g., queued
+      stone below a pending_confirmation stone). The sort in renderMilestoneCreator
+      overrides those positions — only same-status-group reorders persist. Are you
+      dragging within the queued group, or across groups? If cross-group drag needs
+      to stick, I need to remove the status sort. Let me know.'
+    ts: '2026-05-13T00:24:13.884245'
+  - role: claude
+    text: 'Checked the drag logic again. The insertAt formula is mathematically correct.
+      The most likely remaining issue: if you drag across different status groups
+      (e.g., a queued stone below a pending_confirmation stone), the status sort overrides
+      the position after reload. We just fixed M136 so pending_confirmation stones
+      are always below queued regardless of order — this should reduce cross-group
+      confusion. If you are dragging within the same status group and it still lands
+      wrong, please tell me: which direction (up/down) and which status stones (both
+      queued? both pending_confirmation?) so I can trace the exact case.'
+    ts: '2026-05-13T01:04:08.193856'
+  done: true
+  done_at: 2026-05-13T12:45
+  id: M112
+  layer: 0
+  parent_id: null
+  status: done
+  text: When drag a stone pane, it shows an orange guideline -> it’s great. But when
+    dropped the dragged one, it’s now settled in the exact place where guideline showed
+    up and also, the moved pane goes to the blowers place in stone table.
+  user_added_at: 2026-05-12T22:17
+- claude_ack: 2026-05-13T12:33
+  done: true
+  done_at: 2026-05-13T12:33
   id: M123
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-13T00:13
-  status: pending_confirmation
+  status: done
   text: Some times , when live session is idle, I pushed execute button, the tasks
     dispatched showed up but the live session doesn’t worked. Why this happened ?
     (So I kill the live session and refreshed the hub page and then clicked the ns-card
     , detail card showed up and reclicked the exec button -> it worked. Why.. ? Can
     u fix it to be stable.
   user_added_at: 2026-05-12T23:16
-- claude_ack: now
-  done: false
+- claude_ack: 2026-05-13T12:32
+  done: true
+  done_at: 2026-05-13T12:32
   id: M114
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-13T00:04
-  status: pending_confirmation
+  status: done
   text: U should add some space between confirm / reopen badge so user can click without
     miss clicking.
   user_added_at: 2026-05-12T23:18
-- claude_ack: now
-  done: false
+- claude_ack: 2026-05-13T12:32
+  done: true
+  done_at: 2026-05-13T12:32
   id: M124
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-13T00:13
-  status: pending_confirmation
+  status: done
   text: If live session is idle (all tasks are complete) u should make the ns-card’s
     badge into idle not live.
   user_added_at: 2026-05-12T23:27
-- claude_ack: now
-  done: false
+- claude_ack: 2026-05-13T12:30
+  done: true
+  done_at: 2026-05-13T12:30
   id: M125
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-13T00:13
-  status: pending_confirmation
+  status: done
   text: It get be important to re-use the idle live session cause the context already
     implemented. If we start with a new session it would take times to implement the
     correct context until it can work properly.
@@ -1781,10 +2011,9 @@ milestones:
   text: blank stone should be on the toppest.
   user_added_at: 2026-05-12T17:57
 name: MOAT
-note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
-  first, then leverage it for content/career.
+note: ''
 parent: null
-position_x: 597
+position_x: 740
 repo_path: ''
 stage: unassigned
 target: '100'
