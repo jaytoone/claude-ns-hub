@@ -1284,6 +1284,9 @@ async def update_milestone(proj_id: str, mid: str, request: Request):
             for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id", "claude_comment"):
                 if k in data:
                     m[k] = data[k] if data[k] else None
+                    # M118: clear stale star_relation when milestone text changes
+                    if k == "text" and data[k]:
+                        m.pop("star_relation", None)
             # conversation: accumulated chat thread — allow empty list (don't coerce to None)
             if "conversation" in data:
                 m["conversation"] = data["conversation"]
@@ -1895,6 +1898,18 @@ async def get_exec_sessions():
             idle = bool(_re.search(r'[>?]\s*$', last_line)) or \
                    bool(_re.search(r'bypass permissions', clean, _re.IGNORECASE)) or \
                    bool(_re.search(r'shift\+tab to cycle', clean, _re.IGNORECASE))
+
+            # M133: if project still has queued milestones, session is live not idle
+            if idle:
+                md = PROJECTS_DIR / proj_id / "north-star.md"
+                if md.exists():
+                    try:
+                        _proj_data = _parse_md_frontmatter(md)
+                        _queued = [m for m in (_proj_data.get("milestones") or []) if m.get("status") == "queued"]
+                        if _queued:
+                            idle = False
+                    except Exception:
+                        pass
 
             from datetime import datetime as _dt
             sessions.append({

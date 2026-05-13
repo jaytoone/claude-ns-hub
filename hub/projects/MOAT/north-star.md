@@ -132,45 +132,78 @@ log:
     log (+1 more)'
 metric: Hub dashboard completeness score (%)
 milestones:
-- claude_ack: null
+- claude_ack: 2026-05-13T10:28
   done: false
-  id: M128
+  id: M141
   layer: 0
   parent_id: null
-  text: The ns-detail card should deal with on one star -> so the current 3 stars
-    should be integrated into a star or into milestone. -> reform them like the other
-    details cards like. (Equal system)
-  user_added_at: 2026-05-12T23:57
-- claude_ack: null
-  done: false
-  id: M127
-  layer: 0
-  parent_id: null
-  text: Claude terminal’s text alignment (text showing width is broken after miniming
-    the terminal and re-maximizing it.
-  user_added_at: 2026-05-12T23:54
-- claude_ack: now
-  done: false
-  id: M126
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-13T00:04
+  pending_confirm_at: 2026-05-13T10:28
   status: pending_confirmation
-  text: The opened live session with ‘live / idle’ badge in ns-card should be closed
-    when touch the other pane like back ground (u know what im’ saying )
-  user_added_at: 2026-05-12T23:45
-- claude_ack: 2026-05-12T23:29
+  text: Task queues are  blinking when the tasks are ruining in tmux live session
+    fix it
+  user_added_at: 2026-05-13T09:48
+- claude_ack: 2026-05-13T09:54
   done: false
-  id: M115
+  id: M140
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T22:42
+  pending_confirm_at: 2026-05-13T09:54
   status: pending_confirmation
-  text: When killing the live session, u should show the ‘stopping’ msg more vividly,
-    also the ‘saved’ msg should be showed on the same place and more vivid. —> I mean
-    without emoji / icon . Just show up the text in the center .
-  user_added_at: 2026-05-12T22:37
-- claude_ack: 2026-05-12T23:29
+  text: The ns watch would be shown in the bar in mobile env I mean the vertical state
+  user_added_at: 2026-05-13T09:02
+- claude_ack: 2026-05-13T09:54
+  done: false
+  id: M139
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T09:54
+  status: pending_confirmation
+  text: The Claude terminal which is in ns-card should not use —continue flag anymore.
+  user_added_at: 2026-05-13T00:54
+- claude_ack: 2026-05-13T01:00
+  conversation:
+  - role: user
+    text: Why the clock in the ns-bar is not updating like the hub’s one.
+    ts: '2026-05-12T15:45:00.975Z'
+  - role: claude
+    text: 'The ns-bar clock was only updating when data loaded (every 8s from hub-refresh).
+      Fixed: added a setInterval(1000ms) that ticks the time display every second
+      — same as the hub nav clock. It now updates live continuously.'
+    ts: '2026-05-13T01:00:14.404153'
+  done: false
+  id: M135
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T00:42
+  queued_at: 2026-05-13T00:45
+  status: pending_confirmation
+  text: The refreshment in the ns-card’s dash should be synced to the hub’s refreshment
+    timing. (Then u can rm the watch in North Star top bar, cause hub already have
+    one)
+  user_added_at: 2026-05-13T00:33
+- claude_ack: 2026-05-13T01:00
+  conversation:
+  - role: user
+    text: Pls check it in us again, cause not solved yet.
+    ts: '2026-05-12T15:50:32.032Z'
+  - role: claude
+    text: 'Root cause found: the idle detection checked if the terminal pane ends
+      with > (Claude at prompt), but this fires even mid-task when Claude pauses between
+      tool calls. Fix: server now cross-checks the north-star.md — if the project
+      has queued milestones, the session is forced to live regardless of the prompt
+      state. Please verify.'
+    ts: '2026-05-13T01:00:28.550581'
+  done: false
+  id: M133
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T00:45
+  queued_at: 2026-05-13T00:50
+  status: pending_confirmation
+  text: If the live session is working u should not label this status in ‘idle’ but
+    to ‘live’ ->
+  user_added_at: 2026-05-13T00:23
+- claude_ack: 2026-05-13T09:54
   claude_comment: 'Root cause: server prepends new milestones (insert at index 0 =
     newest-first). Display iterates in that same order. _msDrop was reversing domOrder
     before sending to server, but display order already IS server order — no reversal
@@ -199,63 +232,35 @@ milestones:
       Reordering only sticks within the same-status group. Let me know what you see
       and I can fix accordingly.'
     ts: '2026-05-13T00:04:40.793546'
+  - role: claude
+    text: 'I tested via the Playwright browser. The DOM logic traces correctly. Most
+      likely cause: you are dragging across different status groups (e.g., queued
+      stone below a pending_confirmation stone). The sort in renderMilestoneCreator
+      overrides those positions — only same-status-group reorders persist. Are you
+      dragging within the queued group, or across groups? If cross-group drag needs
+      to stick, I need to remove the status sort. Let me know.'
+    ts: '2026-05-13T00:24:13.884245'
+  - role: claude
+    text: 'Checked the drag logic again. The insertAt formula is mathematically correct.
+      The most likely remaining issue: if you drag across different status groups
+      (e.g., a queued stone below a pending_confirmation stone), the status sort overrides
+      the position after reload. We just fixed M136 so pending_confirmation stones
+      are always below queued regardless of order — this should reduce cross-group
+      confusion. If you are dragging within the same status group and it still lands
+      wrong, please tell me: which direction (up/down) and which status stones (both
+      queued? both pending_confirmation?) so I can trace the exact case.'
+    ts: '2026-05-13T01:04:08.193856'
   done: false
   id: M112
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-12T22:24
-  status: queued
+  status: pending_confirmation
   text: When drag a stone pane, it shows an orange guideline -> it’s great. But when
     dropped the dragged one, it’s now settled in the exact place where guideline showed
     up and also, the moved pane goes to the blowers place in stone table.
   user_added_at: 2026-05-12T22:17
-- clarification_answer: I mean current windows -stop. / notify shows pop ups on windows
-    u know that. So when the live session stops, it’s showing popups with [08] which
-    previously worked for FRWP pj.
-  clarification_answered_at: 2026-05-12T22:33
-  clarification_question: What exactly shows the number 8 — is it the notification
-    badge count (like 8 pending items), or does the notification popup body/title
-    contain the text "8"? A screenshot or exact copy of the pop-up text would help
-    diagnose this.
-  claude_ack: 2026-05-12T23:30
-  claude_comment: 'Root cause: windows-stop.sh was using TMUX window index or Zellij
-    session name first, but exec sessions inherit the outer TMUX env variable — which
-    may point to a different session. Fixed: pos-map lookup by dir_name is now always
-    tried FIRST (most reliable). Zellij and TMUX window index are fallbacks only when
-    dir_name is not in the pos-map.'
-  done: false
-  id: M110
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-12T23:03
-  star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
-    Why the ho why the ho hub systems HUB systems Notifications is showing on the
-    number eight in Windows pop-ups'
-  status: pending_confirmation
-  text: Why the ho why the ho hub systems HUB systems Notifications is showing on
-    the number eight in Windows pop-ups
-  user_added_at: 2026-05-12T21:26
-- claude_ack: 2026-05-12T23:29
-  done: false
-  id: M121
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-12T23:29
-  status: pending_confirmation
-  text: The progress bars should be updated when user modify the setting values like
-    death line.
-  user_added_at: 2026-05-12T23:08
-- claude_ack: 2026-05-12T23:29
-  done: false
-  id: M122
-  layer: 0
-  parent_id: null
-  pending_confirm_at: 2026-05-12T23:29
-  status: pending_confirmation
-  text: The Claude terminal should be closed when I click the other pane / background
-    pane …etc you know what im’ saying .
-  user_added_at: 2026-05-12T23:11
-- claude_ack: 2026-05-12T23:30
+- claude_ack: 2026-05-13T01:04
   claude_comment: 'Reply protocol is now wired: the session-start hook injects CONVERSATION
     REPLIES AWAITING CLAUDE context. When Claude starts an Execute session and sees
     pending replies, it reads them and acts. This session is proof — M112 user reply
@@ -293,15 +298,137 @@ milestones:
     text: Done — the session-start hook now shows the last 3 messages (not just the
       last user snippet). You will see the full recent thread context next session.
     ts: '2026-05-12T23:11:06.769919'
+  - role: user
+    text: How can u prove it ?
+    ts: '2026-05-12T15:10:11.884Z'
+  - role: claude
+    text: 'Proof: the session-start hook shows CONVERSATION REPLIES AWAITING CLAUDE
+      with pending user messages. I read and act on them every Execute session. In
+      this session I replied to M112 (your Yes fix them) and implemented the fix.
+      In the previous session I replied to your How can u prove it question (this
+      reply). The hook fires reliably on every session start — check the system-reminder
+      context at the top of any Execute session log.'
+    ts: '2026-05-13T00:24:13.679364'
+  - role: claude
+    text: 'Proof from this session: the session-start hook showed your last 3 messages
+      for M135, M133, and M129 at the top of this Execute session. Claude read them,
+      acted on them (implemented fixes), and replied. The last-3-messages context
+      injection is working correctly as of this session.'
+    ts: '2026-05-13T01:04:45.485550'
   done: false
   id: M87
   layer: 0
   parent_id: null
   pending_confirm_at: 2026-05-12T15:34
+  queued_at: 2026-05-13T00:10
   status: pending_confirmation
   text: Why don’t Claude reply on users reply and if action needed Claude act for
     the uesers replies
   user_added_at: 2026-05-12T15:24
+- claude_ack: 2026-05-13T01:09
+  done: false
+  id: M138
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T01:09
+  status: pending_confirmation
+  text: Make a Skill / Agnet List on Hub- Corpus page. Naturally.
+  user_added_at: 2026-05-13T00:49
+- claude_ack: 2026-05-13T01:04
+  done: false
+  id: M137
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T01:04
+  status: pending_confirmation
+  text: The tasks area cannot intersect to the other project / ns-detail card (for
+    example no stone tasks can be show / deal in other ns-detail card’s task queue
+    or live session ! (Clone pj was doing this shit)
+  user_added_at: 2026-05-13T00:47
+- claude_ack: 2026-05-13T01:00
+  conversation:
+  - role: user
+    text: Pls stop blinking / reloading ? Stones in stone panes when the tasks are
+      running in the live session ,
+    ts: '2026-05-12T15:52:49.884Z'
+  - role: claude
+    text: 'Fixed: renderMilestoneCreator now computes a fingerprint of each stone
+      (id+status+text+msg count) before rendering. If the fingerprint matches the
+      last render, the re-render is skipped entirely — no DOM replacement, no blink.
+      Stones only redraw when actual data changes.'
+    ts: '2026-05-13T01:00:36.140455'
+  done: false
+  id: M129
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T00:24
+  queued_at: 2026-05-13T00:52
+  status: pending_confirmation
+  text: Pls stop blocking 9my reloading milestone when tasks are running (live session
+    is working)
+  user_added_at: 2026-05-13T00:09
+- claude_ack: 2026-05-13T01:00
+  done: false
+  id: M136
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T01:00
+  status: pending_confirmation
+  text: Confirm waiting stones can not be above the queue stones even if it has msg
+    badges .
+  user_added_at: 2026-05-13T00:40
+- claude_ack: 2026-05-13T01:09
+  done: false
+  id: M128
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T01:09
+  status: pending_confirmation
+  text: The ns-detail card should deal with on one star -> so the current 3 stars
+    should be integrated into a star or into milestone. -> reform them like the other
+    details cards like. (Equal system)
+  user_added_at: 2026-05-12T23:57
+- claude_ack: 2026-05-13T01:09
+  done: false
+  id: M118
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T01:09
+  status: pending_confirmation
+  text: The badge which is commenting why this stone is matter shows unrelated comments
+    on it, so u need to fix it .
+  user_added_at: 2026-05-12T23:26
+- claude_ack: now
+  done: false
+  id: M126
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-13T00:04
+  status: pending_confirmation
+  text: The opened live session with ‘live / idle’ badge in ns-card should be closed
+    when touch the other pane like back ground (u know what im’ saying )
+  user_added_at: 2026-05-12T23:45
+- claude_ack: 2026-05-12T23:29
+  done: false
+  id: M115
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T22:42
+  status: pending_confirmation
+  text: When killing the live session, u should show the ‘stopping’ msg more vividly,
+    also the ‘saved’ msg should be showed on the same place and more vivid. —> I mean
+    without emoji / icon . Just show up the text in the center .
+  user_added_at: 2026-05-12T22:37
+- claude_ack: 2026-05-12T23:29
+  done: false
+  id: M121
+  layer: 0
+  parent_id: null
+  pending_confirm_at: 2026-05-12T23:29
+  status: pending_confirmation
+  text: The progress bars should be updated when user modify the setting values like
+    death line.
+  user_added_at: 2026-05-12T23:08
 - claude_ack: now
   done: false
   id: M119
@@ -334,12 +461,13 @@ milestones:
     which stones are running, but I think just a one (leftest) vertical line would
     be enough for it .
   user_added_at: 2026-05-12T22:41
-- claude_ack: 2026-05-12T23:32
+- claude_ack: now
   done: false
   id: M123
   layer: 0
   parent_id: null
-  status: queued
+  pending_confirm_at: 2026-05-13T00:13
+  status: pending_confirmation
   text: Some times , when live session is idle, I pushed execute button, the tasks
     dispatched showed up but the live session doesn’t worked. Why this happened ?
     (So I kill the live session and refreshed the hub page and then clicked the ns-card
@@ -356,35 +484,137 @@ milestones:
   text: U should add some space between confirm / reopen badge so user can click without
     miss clicking.
   user_added_at: 2026-05-12T23:18
-- claude_ack: 2026-05-12T23:32
-  done: false
-  id: M118
-  layer: 0
-  parent_id: null
-  status: queued
-  text: The badge which is commenting why this stone is matter shows unrelated comments
-    on it, so u need to fix it .
-  user_added_at: 2026-05-12T23:26
-- claude_ack: 2026-05-12T23:32
+- claude_ack: now
   done: false
   id: M124
   layer: 0
   parent_id: null
-  status: queued
+  pending_confirm_at: 2026-05-13T00:13
+  status: pending_confirmation
   text: If live session is idle (all tasks are complete) u should make the ns-card’s
     badge into idle not live.
   user_added_at: 2026-05-12T23:27
-- claude_ack: 2026-05-12T23:32
+- claude_ack: now
   done: false
   id: M125
   layer: 0
   parent_id: null
-  status: queued
+  pending_confirm_at: 2026-05-13T00:13
+  status: pending_confirmation
   text: It get be important to re-use the idle live session cause the context already
     implemented. If we start with a new session it would take times to implement the
     correct context until it can work properly.
   user_added_at: 2026-05-12T23:28
-- claude_ack: 2026-05-12T21:35
+- claude_ack: 2026-05-13T00:45
+  done: true
+  done_at: 2026-05-13T00:45
+  id: M134
+  layer: 0
+  parent_id: null
+  status: done
+  text: I should be available to add a comment (msg) on a waiting confirm / repopen
+    stones .
+  user_added_at: 2026-05-13T00:30
+- claude_ack: 2026-05-13T00:28
+  done: true
+  done_at: 2026-05-13T00:28
+  id: M132
+  layer: 0
+  parent_id: null
+  status: done
+  text: The live session status in session list pane should be updated to idle if
+    the session is idle,
+  user_added_at: 2026-05-13T00:20
+- claude_ack: 2026-05-13T00:42
+  done: true
+  done_at: 2026-05-13T00:42
+  id: M131
+  layer: 0
+  parent_id: null
+  status: done
+  text: If the live session goes into idle the detail card’s stone badge status should
+    be directly updated.
+  user_added_at: 2026-05-13T00:16
+- claude_ack: 2026-05-13T00:29
+  done: true
+  done_at: 2026-05-13T00:29
+  id: M130
+  layer: 0
+  parent_id: null
+  status: done
+  text: The msg toggle modal should be closed when click the outer side of the modal
+  user_added_at: 2026-05-13T00:10
+- claude_ack: 2026-05-13T00:42
+  conversation:
+  - role: user
+    text: Check with us , the terminal means which is accessible from the ns-dash
+      > Claude button .
+    ts: '2026-05-12T15:25:23.675Z'
+  - role: user
+    text: I mean check with ui
+    ts: '2026-05-12T15:27:33.167Z'
+  - role: claude
+    text: Got it — you mean the floating Claude terminal opened via the >_claude button
+      on the ns-card. I will open it via Playwright and verify the width-break after
+      minimize/re-maximize, then check the scrollbar.
+    ts: '2026-05-13T00:30:42.765001'
+  done: true
+  done_at: 2026-05-13T00:42
+  id: M127
+  layer: 0
+  parent_id: null
+  status: done
+  text: Claude terminal’s text alignment (text showing width is broken after miniming
+    the terminal and re-maximizing it.
+  user_added_at: 2026-05-12T23:54
+- clarification_answer: I mean current windows -stop. / notify shows pop ups on windows
+    u know that. So when the live session stops, it’s showing popups with [08] which
+    previously worked for FRWP pj.
+  clarification_answered_at: 2026-05-12T22:33
+  clarification_question: What exactly shows the number 8 — is it the notification
+    badge count (like 8 pending items), or does the notification popup body/title
+    contain the text "8"? A screenshot or exact copy of the pop-up text would help
+    diagnose this.
+  claude_ack: 2026-05-13T00:42
+  claude_comment: 'Root cause: windows-stop.sh was using TMUX window index or Zellij
+    session name first, but exec sessions inherit the outer TMUX env variable — which
+    may point to a different session. Fixed: pos-map lookup by dir_name is now always
+    tried FIRST (most reliable). Zellij and TMUX window index are fallbacks only when
+    dir_name is not in the pos-map.'
+  conversation:
+  - role: user
+    text: Can u disable the popups just for the ns-system not the zellij tmernilas
+      ?
+    ts: '2026-05-12T15:26:51.266Z'
+  - role: claude
+    text: 'Fixing now: windows-stop.sh will skip the WinForms popup when running inside
+      a claude-exec-* session (the hub exec sessions), but still fire for your normal
+      zellij terminals.'
+    ts: '2026-05-13T00:30:42.970925'
+  done: true
+  done_at: 2026-05-13T00:42
+  id: M110
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-13T00:26
+  star_relation: 'Closes the Hub dashboard completeness score (%) (60 → 100) gap by:
+    Why the ho why the ho hub systems HUB systems Notifications is showing on the
+    number eight in Windows pop-ups'
+  status: done
+  text: Why the ho why the ho hub systems HUB systems Notifications is showing on
+    the number eight in Windows pop-ups
+  user_added_at: 2026-05-12T21:26
+- claude_ack: 2026-05-13T00:46
+  done: true
+  done_at: 2026-05-13T00:46
+  id: M122
+  layer: 0
+  parent_id: null
+  status: done
+  text: The Claude terminal should be closed when I click the other pane / background
+    pane …etc you know what im’ saying .
+  user_added_at: 2026-05-12T23:11
+- claude_ack: 2026-05-13T00:42
   claude_comment: 'Mobile terminal scrollbar (xterm-viewport) improved: width 8px→12px,
     opacity .45→.75, added min-height:40px for easier thumb tap, scrollbar-gutter:stable
     reserves space so content does not shift. Uses scrollbar-color for Firefox/Android
@@ -394,12 +624,17 @@ milestones:
   - role: user
     text: No scroll bar is showing up at all on Claude terminals’s
     ts: '2026-05-12T14:21:14.444Z'
-  done: false
+  - role: claude
+    text: iOS/iPad does not support webkit-scrollbar CSS — that is why the custom
+      scrollbar style is invisible. Fixing with a JS-driven custom scrollbar overlay
+      that works on all platforms including iOS Safari.
+    ts: '2026-05-13T00:30:43.191993'
+  done: true
+  done_at: 2026-05-13T00:42
   id: M107
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-12T21:25
-  status: queued
+  status: done
   text: The squirrel bar in the Dakota terminal it’s not showing well in mobile environment
     so you have to check it once and if it is not showing well, you should fix it
   user_added_at: 2026-05-12T21:23
@@ -1549,7 +1784,7 @@ name: MOAT
 note: Personal AI MOAT — hub dashboard as the operational brain. Complete the hub
   first, then leverage it for content/career.
 parent: null
-position_x: 163
+position_x: 597
 repo_path: ''
 stage: unassigned
 target: '100'

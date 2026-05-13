@@ -154,6 +154,10 @@ nav {
     <div class="tab active" data-tab="northstar">
       <div class="status-dot check" id="dot-northstar"></div>
       <span class="tab-name">North Star</span>
+      <!-- M140: watching count badge from northstar iframe postMessage -->
+      <span id="ns-watch-badge" style="display:none;font-family:var(--mono);font-size:10px;
+        background:var(--accent);color:#fff;border-radius:8px;
+        padding:1px 5px;margin-left:2px;line-height:1.4"></span>
     </div>
     <div class="tab" data-tab="ctx">
       <div class="status-dot check" id="dot-ctx"></div>
@@ -290,13 +294,31 @@ async function retryLoad(name) {
 }
 
 Object.keys(TABS).forEach(checkHealth);
-setInterval(() => Object.keys(TABS).forEach(checkHealth), 8000);
+setInterval(() => {
+  Object.keys(TABS).forEach(checkHealth);
+  // M135: drive northstar iframe refresh in sync with hub health cycle
+  const nsFrame = document.getElementById('frame-northstar');
+  if (nsFrame && nsFrame.contentWindow) {
+    try { nsFrame.contentWindow.postMessage({type:'hub-refresh'}, '*'); } catch(_) {}
+  }
+}, 8000);
 
 // ── Clock ─────────────────────────────────────────────────────────────────────
 const clockEl = document.getElementById('clock');
 const tick = () => clockEl.textContent =
   new Date().toLocaleTimeString('en-GB', { hour12: false });
 tick(); setInterval(tick, 1000);
+
+// ── M140: receive watching count from northstar iframe ────────────────────────
+window.addEventListener('message', e => {
+  if (e.data?.type === 'ns-watch-count') {
+    const badge = document.getElementById('ns-watch-badge');
+    if (!badge) return;
+    const n = e.data.count || 0;
+    badge.textContent = n;
+    badge.style.display = n > 0 ? '' : 'none';
+  }
+});
 
 // ── Theme toggle — propagates to all iframes ──────────────────────────────────
 function hubToggleTheme() {

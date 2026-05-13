@@ -537,6 +537,8 @@ header {
   .page-title { font-size: 16px; }
   .page-sub { display: none; }
   .updated-at { display: none; }
+  /* M140: show watch pill on mobile in place of updated-at */
+  #ns-watch-pill { display: flex !important; }
 }
 
 /* Drawer backdrop — tap outside to close on mobile */
@@ -952,7 +954,13 @@ header {
       <div class="header-right">
         <button class="refresh-btn" onclick="showAddProject()" style="background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)">+ node</button>
         <button class="refresh-btn" id="align-btn" onclick="cycleAlign()" title="Card alignment">⇤ align</button>
-        <button class="refresh-btn" id="refresh-btn" onclick="loadData()">↻ refresh</button>
+        <!-- M135: refresh button removed — hub drives auto-refresh via postMessage -->
+        <!-- M140: watching count badge — visible on mobile where page-sub/updated-at are hidden -->
+        <span id="ns-watch-pill" style="display:none;font-family:var(--mono);font-size:11px;
+          color:var(--accent-deep);background:var(--accent-soft);border:1px solid var(--accent);
+          border-radius:10px;padding:2px 8px;white-space:nowrap">
+          ⟳ <span id="ns-watch-num">0</span>
+        </span>
         <span class="updated-at" id="updated-at">—</span>
       </div>
     </header>
@@ -1165,6 +1173,18 @@ let projects = [];
 let activeIdx = null;
 let ctxTopics = [];
 
+// M140: update the watching pill in the header bar (visible on mobile)
+function _updateWatchPill() {
+  const total = projects.reduce(
+    (sum, p) => sum + (p.milestones || []).filter(m => m.status === 'queued').length, 0
+  );
+  const pill = document.getElementById('ns-watch-pill');
+  const num  = document.getElementById('ns-watch-num');
+  if (num) num.textContent = total;
+  if (pill) pill.style.display = total > 0 ? '' : 'none';
+  try { window.parent.postMessage({type:'ns-watch-count', count: total}, '*'); } catch(_) {}
+}
+
 // ── Dark mode — reads hub-theme from localStorage + listens for postMessage ───
 (function() {
   const s = localStorage.getItem('hub-theme');
@@ -1174,6 +1194,22 @@ let ctxTopics = [];
 window.addEventListener('message', e => {
   if (e.data?.type === 'hub-theme')
     document.documentElement.setAttribute('data-theme', e.data.value);
+  // M135: hub-driven refresh — sync to hub's 8s health cycle
+  if (e.data?.type === 'hub-refresh') {
+    if (_isUserTyping()) return;
+    if (_tmuxWatchInterval) return;
+    const overlay = document.getElementById('detail-overlay');
+    if (overlay && overlay.classList.contains('show')) {
+      if (activeIdx !== null && projects[activeIdx]) _refreshDetailCard(projects[activeIdx].id);
+    } else {
+      fetch('/api/northstar').then(r=>r.json()).then(data => {
+        projects = data;
+        projects.forEach(p => { p.milestones = p.milestones || []; });
+        render();
+        _updateWatchPill();
+      }).catch(()=>{});
+    }
+  }
 });
 
 // ── Claude terminal state ─────────────────────────────────────────────────────
@@ -1201,6 +1237,7 @@ async function loadData() {
     });
 
     render();
+    _updateWatchPill();
     document.getElementById('updated-at').textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
 
     if (activeIdx !== null && projects[activeIdx]) {
@@ -1439,6 +1476,8 @@ let _sessionStatus = {}; // proj_id → "active"|"idle:N"|"none"
 
 // ── Milestone Creator ─────────────────────────────────────────────────────────
 let _msProjectId = null;
+let _msRenderFingerprint = {}; // proj_id → last-render fingerprint (M129 blink guard)
+let _activeDetailProjId = null; // M137: tracks which project's detail is open to prevent cross-project render contamination
 
 async function loadMilestones(projId) {
   _msProjectId = projId;
@@ -1449,11 +1488,14 @@ async function loadMilestones(projId) {
   try {
     // Try multi-NS endpoint first
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars`);
+    // M137: abort if another project became active while fetching
+    if (_activeDetailProjId && _activeDetailProjId !== projId) return;
     const data = await r.json();
     const nsList = data.north_stars || [];
     if (nsList.length > 1) {
-      // Multi-NS handled by renderMultiNSLeftPanel — don't clobber
-      return;
+      // M128: merge all NS milestones into flat list — equal system, one star view
+      const allMs = nsList.flatMap(ns => ns.milestones || []);
+      renderMilestoneCreator(projId, allMs);
     } else if (nsList.length === 1) {
       renderMilestoneCreator(projId, nsList[0].milestones || []);
     } else {
@@ -1562,6 +1604,11 @@ function renderMilestoneCreator(projId, milestones) {
   const el = document.getElementById('dm-ms-creator');
   if (!el) return;
 
+  // M129: skip re-render if milestone data unchanged — prevents stone blinking during live session
+  const fp = milestones.map(m => `${m.id}:${m.status}:${m.done?1:0}:${(m.conversation||[]).length}:${m.claude_ack?1:0}:${(m.text||'').slice(0,30)}`).join('|');
+  if (_msRenderFingerprint[projId] === fp) return;
+  _msRenderFingerprint[projId] = fp;
+
   // M121: cache milestones for immediate re-render on setting changes (e.g. deadline)
   _msCacheByProject[projId] = milestones;
 
@@ -1591,18 +1638,18 @@ function renderMilestoneCreator(projId, milestones) {
       const aBlank = !(a.text||'').trim() ? 1 : 0;
       const bBlank = !(b.text||'').trim() ? 1 : 0;
       if (aBlank !== bBlank) return bBlank - aBlank;
-      // 1. M117: msg-badged → above ALL non-msg-badged regardless of status
-      const aMsgBadge = ((_msConversations[a.id]||[]).length > 0) ? 1 : 0;
-      const bMsgBadge = ((_msConversations[b.id]||[]).length > 0) ? 1 : 0;
-      if (aMsgBadge !== bMsgBadge) return bMsgBadge - aMsgBadge;
-      // 2. pending_confirmation → bottom within its msg group
+      // 1. M136: pending_confirmation → absolute bottom (below queued even if msg-badged)
       const aConf = a.status === 'pending_confirmation' ? 1 : 0;
       const bConf = b.status === 'pending_confirmation' ? 1 : 0;
       if (aConf !== bConf) return aConf - bConf;
-      // 3. queued (black stone) → top within non-pending_confirmation
+      // 2. queued → top within non-pending_confirmation
       const aQ = a.status === 'queued' ? 1 : 0;
       const bQ = b.status === 'queued' ? 1 : 0;
       if (aQ !== bQ) return bQ - aQ;
+      // 3. M117: within same status group, msg-badged above non-msg-badged
+      const aMsgBadge = ((_msConversations[a.id]||[]).length > 0) ? 1 : 0;
+      const bMsgBadge = ((_msConversations[b.id]||[]).length > 0) ? 1 : 0;
+      if (aMsgBadge !== bMsgBadge) return bMsgBadge - aMsgBadge;
       // 4. Review badge (!claude_ack) → above acked
       const aNew = !a.claude_ack ? 1 : 0;
       const bNew = !b.claude_ack ? 1 : 0;
@@ -1841,10 +1888,12 @@ function renderMilestoneCreator(projId, milestones) {
               </div>
             </td>
             <td class="ms-td-text" style="background:rgba(204,120,92,.06);font-size:12px;color:var(--text);overflow-wrap:anywhere">
-              ${m.claude_comment ? `<span style="font-size:9px;color:var(--accent);cursor:pointer;padding:1px 4px;border-radius:3px;border:1px solid var(--accent-soft);background:var(--accent-soft);float:right;margin:0 0 2px 4px" title="Claude comment" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment)}','${esc(projId)}','${esc(m.id)}','${esc(mStatus)}')">${msgCnt > 0 ? msgCnt+' ' : ''}msg</span>` : ''}
               ${esc(m.text)}
             </td>
-            <td class="ms-td-meta"><button class="nt-del" style="opacity:1" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button></td>
+            <td class="ms-td-meta" style="white-space:nowrap">
+              <button class="nt-why" title="Add/view comment" style="font-size:9px;opacity:${msgCnt>0?'1':'.45'}" onclick="event.stopPropagation();showCommentPopup(event,'${escJs(m.claude_comment||'')}','${esc(projId)}','${esc(m.id)}','${esc(mStatus)}')">${msgCnt>0 ? msgCnt+' msg' : 'msg'}</button>
+              <button class="nt-del" style="opacity:1" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(m.id)}','${escJs(m.text.slice(0,60))}')">✕</button>
+            </td>
           </tr>`;
         return confirmHtml;
       }
@@ -2521,7 +2570,7 @@ function sessCell(projId) {
   const s = _sessionStatus[projId];
   if (!s || s === 'dead') return `<span class="sess-dot sess-none"><span class="sess-indicator"></span>—</span>`;
   if (s === 'active') return `<span class="sess-dot sess-active"><span class="sess-indicator"></span>live</span>`;
-  if (s === 'exec-running') return `<span class="sess-dot sess-active"><span class="sess-indicator"></span>exec</span>`;
+  if (s === 'exec-running') return `<span class="sess-dot sess-active"><span class="sess-indicator"></span>live</span>`;
   if (s.startsWith('idle:')) {
     const secs = parseInt(s.split(':')[1]);
     const label = secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs/60)}m` : `${Math.round(secs/3600)}h`;
@@ -2586,7 +2635,7 @@ function nodeCard(p, idx) {
     <div class="ns-node-bottom">
       <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
       <span class="ns-node-date" style="color:${dl.color}" title="deadline: ${esc(p.deadline||'none')}">${esc(dl.text)}</span>
-      <span class="ns-node-term" title="Open Claude session (claude --continue)"
+      <span class="ns-node-term" title="Open Claude session"
         onclick="event.stopPropagation();openTerminal('${pid}')">›_ claude</span>
       <span class="ns-node-menu" title="More actions"
         onclick="event.stopPropagation();showNodeCtxMenu('${pid}',event.clientX,event.clientY)">⋮</span>
@@ -2724,23 +2773,29 @@ function render() {
     node.addEventListener('dragover', e => { e.preventDefault(); });
 
     node.addEventListener('drop', async e => {
-      // Free positioning: let the lane drop handler do the work
       e.preventDefault(); e.stopPropagation();
       if (_dragIdx == null) return;
       const pSrc = projects[_dragIdx];
       if (!pSrc) return;
-      const layer = parseInt(pSrc.layer)||0;
-      const laneEl = document.getElementById(`lane-nodes-${layer}`);
-      if (!laneEl) return;
-      const laneRect = laneEl.getBoundingClientRect();
-      const newX = Math.max(8, Math.round(e.clientX - laneRect.left - _dragOffsetX));
+      // M112: use target node's lane, not source lane — fixes cross-lane drop on a node
+      const targetLaneEl = e.currentTarget.closest('.ns-lane');
+      const layer = targetLaneEl
+        ? parseInt(targetLaneEl.id.replace('lane-', ''))
+        : parseInt(pSrc.layer)||0;
+      const laneNodesEl = document.getElementById(`lane-nodes-${layer}`);
+      if (!laneNodesEl) return;
+      const laneRect = laneNodesEl.getBoundingClientRect();
+      const newX = Math.max(8, Math.round(e.clientX - laneRect.left - _dragOffsetX + (laneNodesEl.scrollLeft||0)));
+      pSrc.layer = layer;
       pSrc.position_x = newX;
       _dragSrc = null; _dragIdx = null;
+      // M112: clear guideline before render() — dragend may not fire if source node is detached
+      document.querySelectorAll('.ns-lane-nodes').forEach(l => l.classList.remove('drag-over'));
       render();
       requestAnimationFrame(() => drawParentLines());
       fetch(`/api/northstar/${encodeURIComponent(pSrc.id||pSrc.name)}/layout`, {
         method:'PATCH', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({position_x: newX}),
+        body: JSON.stringify({layer, position_x: newX}),
       });
     });
   });
@@ -2785,6 +2840,8 @@ function render() {
     const targetCol  = parseInt(slot.dataset.col);
     p.layer = targetLane; p.position_x = targetCol;
     _dragSrc = null; _dragIdx = null;
+    // M112: clear guideline before render()
+    document.querySelectorAll('.ns-lane-nodes').forEach(l => l.classList.remove('drag-over'));
     render();
     requestAnimationFrame(() => drawParentLines());
     fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
@@ -3570,9 +3627,12 @@ function closeTerminal() {
   document.getElementById('ns-terminal-float').style.display = 'none';
   const bd = document.getElementById('ns-term-backdrop');
   if (bd) bd.style.display = 'none';
-  // Mark as detached — PTY still alive, pill shows "detached" until next refresh
+  // Mark as detached — only if no exec session is active (don't clobber live/idle badge)
   if (projId && projId !== '—') {
-    _sessionStatus[projId] = 'detached';
+    const cur = _sessionStatus[projId];
+    if (cur !== 'exec-running' && cur !== 'exec-idle') {
+      _sessionStatus[projId] = 'detached';
+    }
     render();
   }
 }
@@ -3637,26 +3697,6 @@ function minimizeTerminal() {
 async function killSession() {
   const projId = document.getElementById('ns-term-proj')?.textContent?.trim();
 
-  // Update status pill immediately — don't wait for Stop hook
-  if (projId && projId !== '—') {
-    _sessionStatus[projId] = 'none';
-    render(); // redraw cards with updated pill
-    // M89: show stopping indicator immediately — do NOT flip button (poll drives that)
-    const execList = document.getElementById('dm-exec-sessions');
-    if (execList) execList.innerHTML = `<div style="font-family:var(--mono);font-size:13px;font-weight:700;color:#e05252;padding:10px 4px;letter-spacing:.12em;text-align:center;animation:stop-pulse 0.8s ease-in-out infinite alternate">STOPPING</div>`;
-    clearInterval(window._execPollTimer); // stop poll; restart after kill completes
-    // Persist to server
-    fetch(`/api/northstar/${encodeURIComponent(projId)}/session-status`, {
-      method: 'PATCH', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({status: 'IDLE'})
-    }).catch(() => {});
-  }
-
-  // M111: always kill the exec tmux session regardless of WS state
-  if (projId && projId !== '—') {
-    fetch(`/api/northstar/${encodeURIComponent(projId)}/exec-session`, { method: 'DELETE' }).catch(() => {});
-  }
-
   if (_termWs && _termWs.readyState === 1) {
     _termWs.send('\x00kill-session');
     setTimeout(() => {
@@ -3701,6 +3741,9 @@ function killAndNewSession() {
 async function openDetail(idx) {
   activeIdx = idx;
   const p = projects[idx];
+  // M137: track active project to prevent async contamination from other projects
+  _activeDetailProjId = p.id;
+  const myProjId = p.id;
   const overlay = document.getElementById('detail-overlay');
   overlay.classList.add('show');
   document.getElementById('dm-title').textContent = p.name;
@@ -3714,6 +3757,9 @@ async function openDetail(idx) {
   renderHierarchy(p);
   document.getElementById('dm-right').innerHTML =
     '<div style="padding:20px;color:var(--text-dim);font-family:var(--mono);font-size:12px">Loading…</div>';
+  // M137: clear task board immediately so no stale project data persists
+  const boardEl = document.getElementById('dm-task-board');
+  if (boardEl) boardEl.innerHTML = '';
 
   // Load milestones immediately — don't wait for OKR/CTX/doc
   loadMilestones(p.id);
@@ -3724,6 +3770,9 @@ async function openDetail(idx) {
     fetch('/api/ctx-pulse').then(r=>r.json()).catch(()=>({ok:false,topics:[]})),
     fetch(`/api/northstar/${esc(p.id)}/doc`).then(r=>r.json()).catch(()=>({ok:false})),
   ]);
+
+  // M137: abort if another project was opened while we were waiting
+  if (_activeDetailProjId !== myProjId) return;
 
   if (ctxData.ok) ctxTopics = ctxData.topics || [];
 
@@ -3836,99 +3885,48 @@ function renderHierarchy(p) {
 }
 
 function renderMultiNSLeftPanel(p, nsList, okrData) {
-  window.__multiNSActive = p.id;  // prevent loadMilestones from clobbering
-  const dmLeft = document.getElementById('dm-left');
+  // M128: equal system — one star view, all NS milestones merged into a flat list
+  // No more paginated carousel; multi-NS treated same as single-NS card
+  window.__multiNSActive = null;  // allow loadMilestones to run freely
   const sc = s => s==='behind'?'var(--red)':s==='exploring'?'var(--yellow,#d4a017)':'var(--green)';
-  // Preserve current page across auto-refreshes; clamp to valid range
-  let cur = Math.min(window.__nsLPCur || 0, Math.max(0, nsList.length - 1));
-  let touchStartX = 0;
+  const pct = projectPct(p);
+  const color = sc(p.status);
+  const cx = 100, cy = 95, r = 80;
+  const bgPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
+  const fgPath = gaugePath(pct, cx, cy, r);
+  const allMs = nsList.flatMap(ns => ns.milestones || []);
+  const doneMs = allMs.filter(m=>m.done||m.status==='done').length;
 
-  function showPage() {
-    const ns = nsList[cur];
-    const pct = calcPct(ns.current || p.current, ns.target || p.target);
-    const color = sc(ns.status || p.status);
-    const cx = 100, cy = 95, r = 80;
-    const bgPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
-    const fgPath = gaugePath(pct, cx, cy, r);
-    const doneMs = (ns.milestones||[]).filter(m=>m.done||m.status==='done').length;
-    const totalMs = (ns.milestones||[]).length;
-    const btnBase = 'font-family:var(--mono);font-size:14px;background:none;border:1px solid var(--panel-border);border-radius:5px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);';
-    const dots = nsList.map((_,i)=>`<span onclick="window.__nsLPGo(${i})" style="display:inline-block;width:${i===cur?'18':'7'}px;height:7px;border-radius:4px;background:${i===cur?'var(--accent)':'var(--panel-border)'};cursor:pointer;transition:all .2s;margin:0 3px"></span>`).join('');
-
-    dmLeft.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <button style="${btnBase}${cur===0?'opacity:.3;cursor:default':''}" onclick="window.__nsLPGo(${cur-1})">‹</button>
-        <div style="text-align:center">
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text-dim);margin-bottom:4px">${cur+1} / ${nsList.length}</div>
-          <div style="display:flex;align-items:center;justify-content:center">${dots}</div>
-        </div>
-        <button style="${btnBase}${cur===nsList.length-1?'opacity:.3;cursor:default':''}" onclick="window.__nsLPGo(${cur+1})">›</button>
-      </div>
-
-      <div class="dm-layer">
-        <div class="dm-layer-head">
-          <div class="dm-layer-icon ns" title="North Star">☆</div>
-          <span class="dm-layer-title">${esc(ns.metric||ns.name||p.metric||p.name)}</span>
-          <span class="dm-layer-count" style="color:${color}">${Math.round(pct*100)}%</span>
-        </div>
-        <div class="dm-gauge-wrap">
-          <svg width="200" height="110" viewBox="0 0 200 110">
-            <path class="gauge-track" d="${bgPath}" stroke-width="11"/>
-            <path class="gauge-fill" d="${fgPath}" stroke="${color}" stroke-width="11" fill="none" stroke-linecap="round"/>
-            <text x="${cx}" y="${cy-18}" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-size="20" fill="${color}">${Math.round(pct*100)}%</text>
-            <text x="${cx}" y="${cy-4}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="var(--text-dim)">of target</text>
-          </svg>
-        </div>
-        ${p.deadline?`<div class="dm-deadline">deadline: ${esc(p.deadline)}</div>`:''}
-        <div id="dm-okr-section" style="margin-top:6px"></div>
-      </div>
-
-      <div id="dm-spec-slot" style="margin:8px 0 4px"></div>
-
-      <div class="dm-layer">
-        <div class="dm-layer-head">
-          <div class="dm-layer-icon ms" title="Milestones">◎</div>
-          <span class="dm-layer-title">Milestones</span>
-          <span class="dm-layer-count" id="dm-ms-ack-badge">${doneMs}/${totalMs}</span>
-        </div>
-        <div id="dm-ms-creator" style="font-size:12px">Loading…</div>
+  // OKR tree
+  const dmOkrSection = document.getElementById('dm-okr-section');
+  if (dmOkrSection && okrData) {
+    const okrs = okrData.okrs || [];
+    dmOkrSection.innerHTML = okrs.length ? okrs.map((kr, i) => {
+      const m = kr.match(/^(K\d+):\s*(.+)/);
+      const isLast = i === okrs.length - 1;
+      return `<div style="display:flex;align-items:flex-start;gap:5px;padding:2px 0">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--panel-border);flex-shrink:0;line-height:1.6">${isLast?'└─':'├─'}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:600;flex-shrink:0">${m?esc(m[1]):'·'}</span>
+        <span style="font-size:11px;color:var(--text-soft);line-height:1.5">${m?esc(m[2]):esc(kr)}</span>
       </div>`;
-
-    // OKR tree inside NS layer
-    const okrSection = document.getElementById('dm-okr-section');
-    if (okrSection && okrData) {
-      const okrs = okrData.okrs || [];
-      okrSection.innerHTML = okrs.length ? okrs.map((kr, i) => {
-        const m = kr.match(/^(K\d+):\s*(.+)/);
-        const isLast = i === okrs.length - 1;
-        return `<div style="display:flex;align-items:flex-start;gap:5px;padding:2px 0">
-          <span style="font-family:var(--mono);font-size:9px;color:var(--panel-border);flex-shrink:0;line-height:1.6">${isLast?'└─':'├─'}</span>
-          <span style="font-family:var(--mono);font-size:9px;color:var(--accent);font-weight:600;flex-shrink:0">${m?esc(m[1]):'·'}</span>
-          <span style="font-size:11px;color:var(--text-soft);line-height:1.5">${m?esc(m[2]):esc(kr)}</span>
-        </div>`;
-      }).join('') : '';
-    }
-
-    // Load milestones for current NS page
-    renderMilestoneCreator(p.id, ns.milestones || []);
-
-    // Touch swipe
-    dmLeft.ontouchstart = e => { touchStartX = e.touches[0].clientX; };
-    dmLeft.ontouchend = e => {
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      if (dx < -50 && cur < nsList.length-1) window.__nsLPGo(cur+1);
-      if (dx > 50 && cur > 0) window.__nsLPGo(cur-1);
-    };
+    }).join('') : '';
   }
 
-  window.__nsLPGo = idx => {
-    if (idx < 0 || idx >= nsList.length) return;
-    cur = idx;
-    window.__nsLPCur = cur; // persist so auto-refresh can restore position
-    showPage();
-  };
+  // Update gauge arc to reflect aggregate progress
+  const gaugeWrap = document.querySelector('.dm-gauge-wrap svg');
+  if (gaugeWrap) {
+    const fgEl = gaugeWrap.querySelector('.gauge-fill');
+    const txtPct = gaugeWrap.querySelector('text');
+    if (fgEl) { fgEl.setAttribute('d', fgPath); fgEl.setAttribute('stroke', color); }
+    if (txtPct) txtPct.textContent = Math.round(pct*100) + '%';
+  }
 
-  showPage();
+  // Badge count
+  const badge = document.getElementById('dm-ms-ack-badge');
+  if (badge) badge.textContent = `${doneMs}/${allMs.length}`;
+
+  // Render merged milestone list
+  renderMilestoneCreator(p.id, allMs);
 }
 
 let _tmuxWatchInterval = null;
@@ -4153,12 +4151,16 @@ function stopTmuxWatch() {
   if (liveBackdrop) liveBackdrop.style.display = 'none';
 }
 
+let _taskBoardProjId = null;
 async function loadTaskBoard(projId) {
   const board = document.getElementById('dm-task-board');
   if (!board) return;
-  board.innerHTML = '';
+  // M141: only pre-clear on project switch — avoids blink on periodic refresh
+  if (_taskBoardProjId !== projId) { board.innerHTML = ''; _taskBoardProjId = projId; }
   try {
     const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/task-board`);
+    // M137: abort if another project became active while fetching
+    if (_activeDetailProjId && _activeDetailProjId !== projId) return;
     const d = await r.json();
     const allJobs = d.jobs || [];
     const jobs = allJobs.filter(j => j.status === 'queued' || j.status === 'running')
@@ -4222,12 +4224,12 @@ function renderRight(p, topics, docData) {
         const info = document.getElementById('dm-exec-sessions');
         const running = (d.sessions||[]).filter(s => s.proj_id === p.id);
         if (b && running.length > 0) {
-          // M97: show 'idle' if session is running but Claude is at prompt
+          // M97/M133: show 'idle' at prompt, 'live' when actively working
           const isIdle = running.some(s => s.idle);
-          b.textContent = isIdle ? 'idle' : '▶▶';
+          b.textContent = isIdle ? 'idle' : 'live';
           b.style.opacity = '1';
           b.style.color = isIdle ? 'var(--text-dim)' : '';
-          b.title = `Session ${isIdle ? 'idle' : 'running'} since ${(running[0].created||'').slice(11,16)||'?'}`;
+          b.title = `Session ${isIdle ? 'idle' : 'live'} since ${(running[0].created||'').slice(11,16)||'?'}`;
         } else if (b) {
           b.textContent = '▶ Execute';
           b.style.color = '';
@@ -4662,27 +4664,13 @@ async function _refreshDetailCard(projId) {
   } catch(_) {}
 }
 
-setInterval(async () => {
-  if (_isUserTyping()) return;
-  // Skip auto-refresh while live tmux overlay is actively streaming (terminal open)
-  if (_tmuxWatchInterval) return;
-  // M129: removed exec-session block — user needs milestone reload during live sessions
-  const overlay = document.getElementById('detail-overlay');
-  if (overlay && overlay.classList.contains('show')) {
-    // Detail card open — refresh milestones (works for both multi-NS and single-NS)
-    if (activeIdx !== null && projects[activeIdx]) {
-      _refreshDetailCard(projects[activeIdx].id);
-    }
-  } else {
-    // Swimlane — reload project data + re-render
-    try {
-      const data = await fetch('/api/northstar').then(r => r.json());
-      projects = data;
-      projects.forEach(p => { p.milestones = p.milestones || []; });
-      render();
-    } catch(_) {}
-  }
-}, 15000); // 15s auto-refresh for detail card responsiveness
+// M135: standalone 15s auto-refresh removed — hub drives refresh via hub-refresh postMessage (8s cycle)
+
+// M135: real-time clock — tick every second like hub's nav clock
+setInterval(() => {
+  const el = document.getElementById('updated-at');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+}, 1000);
 </script>
 </body>
 </html>
