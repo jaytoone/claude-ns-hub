@@ -304,6 +304,9 @@ function renderChannels(channels) {
     } else if (ch.id === "linkedin") {
       metric = "manual";
       label = "check required";
+    } else if (ch.id === "pinterest") {
+      metric = "manual";
+      label = "check required";
     }
 
     const isHighlight = ch.id === "github" && (ch.stars || 0) > 0;

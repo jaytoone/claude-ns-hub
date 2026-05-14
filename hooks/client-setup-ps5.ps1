@@ -443,14 +443,16 @@ Host home-wsl
     IdentityFile ~/.ssh/$KeyName
     ServerAliveInterval 30
     ServerAliveCountMax 3
-    RemoteForward 6789 127.0.0.1:6789
 "@
 
-$existingConfig = if (Test-Path $SshConfig) { Get-Content $SshConfig -Raw -Encoding UTF8 } else { "" }
-# Remove existing home-wsl block (regex + next Host block or EOF) — prevents stale key corruption
-$existingConfig = ($existingConfig -replace "(?s)\r?\nHost home-wsl\b.*?(?=\r?\nHost |\z)", "").TrimEnd()
-# Always append fresh correct entry
-($existingConfig + $wslEntry) | Set-Content $SshConfig -NoNewline -Encoding UTF8
+$existingConfig = if (Test-Path $SshConfig) {
+    # .NET ReadAllText auto-strips the UTF-8 BOM that PS 5.1 Get-Content/Set-Content leaves behind.
+    [System.IO.File]::ReadAllText($SshConfig)
+} else { "" }
+# Remove existing home-wsl block (handles start-of-file and mid-file; stops at next "Host " or EOF)
+$existingConfig = ($existingConfig -replace "(?ms)^Host home-wsl\b.*?(?=^Host \S|\z)", "").TrimEnd()
+# Always append fresh correct entry; write as plain ASCII so OpenSSH (BOM-intolerant) parses line 1.
+[System.IO.File]::WriteAllText($SshConfig, ($existingConfig + $wslEntry), [System.Text.Encoding]::ASCII)
 Write-Host "  [6/7] SSH config: home-wsl written (key: $KeyName)" -ForegroundColor Green
 
 # ------------------------------------------------------------

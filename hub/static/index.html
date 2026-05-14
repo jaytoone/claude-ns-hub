@@ -94,7 +94,7 @@ nav {
   .tab { padding: 0 10px; gap: 5px; }
   .tab-name { font-size: 13px; }
   .open-label { display: none; }
-  .clock { display: none; }
+  .clock { font-size: 10px; }
   .open-btn { padding: 4px 7px; }
   .nav-right { gap: 6px; }
 }
@@ -137,6 +137,65 @@ nav {
   padding: 5px 16px; cursor: pointer; color: var(--text-soft); transition: all 0.12s;
 }
 .retry-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* ── Corpus skill/agent list (natural fallback) ── */
+.corpus-list {
+  position: absolute; inset: 0; overflow: auto; background: var(--bg);
+  padding: 28px 32px 40px; display: none;
+}
+.corpus-list.show { display: block; }
+.corpus-list .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+.corpus-list h2 { font-family: var(--serif); font-weight: 500; font-size: 22px; color: var(--text); }
+.corpus-list .head-hint {
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+}
+.corpus-list .filter-row {
+  display: flex; gap: 8px; margin-bottom: 18px; align-items: center;
+}
+.corpus-list .search {
+  flex: 1; max-width: 360px;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px;
+  padding: 7px 12px; font: 13px var(--sans); color: var(--text);
+  outline: none; transition: border-color 0.12s;
+}
+.corpus-list .search:focus { border-color: var(--accent); }
+.corpus-list .filter-btn {
+  font: 12px var(--mono); padding: 6px 12px; border-radius: 4px; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--panel-border); color: var(--text-soft);
+  transition: all 0.12s;
+}
+.corpus-list .filter-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-deep); }
+.corpus-list .section { margin-bottom: 22px; }
+.corpus-list .section-title {
+  font-family: var(--serif); font-size: 13px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+}
+.corpus-list .grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;
+}
+.corpus-list .card {
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 5px;
+  padding: 11px 13px; transition: border-color 0.12s, background 0.12s;
+}
+.corpus-list .card:hover { border-color: var(--accent); background: var(--panel-soft); }
+.corpus-list .card .name {
+  font-family: var(--mono); font-size: 12.5px; color: var(--text);
+  font-weight: 500; margin-bottom: 3px; word-break: break-word;
+}
+.corpus-list .card .kind { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+.corpus-list .card .desc {
+  font-size: 12px; color: var(--text-soft); line-height: 1.5; margin-top: 6px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.corpus-list .empty {
+  text-align: center; padding: 40px 0; color: var(--text-dim);
+  font-family: var(--mono); font-size: 12px;
+}
+.corpus-list .live-link {
+  font: 11px var(--mono); color: var(--text-dim); margin-left: auto;
+}
+.corpus-list .live-link a { color: var(--accent); text-decoration: none; }
+.corpus-list .live-link a:hover { text-decoration: underline; }
 </style>
 <script>
 (function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();
@@ -154,10 +213,6 @@ nav {
     <div class="tab active" data-tab="northstar">
       <div class="status-dot check" id="dot-northstar"></div>
       <span class="tab-name">North Star</span>
-      <!-- M140: watching count badge from northstar iframe postMessage -->
-      <span id="ns-watch-badge" style="display:none;font-family:var(--mono);font-size:10px;
-        background:var(--accent);color:#fff;border-radius:8px;
-        padding:1px 5px;margin-left:2px;line-height:1.4"></span>
     </div>
     <div class="tab" data-tab="ctx">
       <div class="status-dot check" id="dot-ctx"></div>
@@ -197,13 +252,29 @@ nav {
   </div>
 
   <div class="wrap" id="wrap-corpus">
-    <div class="offline-overlay" id="offline-corpus">
-      <div class="offline-icon">◌</div>
-      <div class="offline-title">Corpus is offline</div>
-      <div class="offline-hint">entity-corpus</div>
-      <button class="retry-btn" onclick="retryLoad('corpus')">Retry</button>
+    <div class="corpus-list" id="corpus-list">
+      <div class="head">
+        <h2>Corpus</h2>
+        <span class="head-hint" id="corpus-list-status">loading…</span>
+        <span class="live-link" id="corpus-live-link"></span>
+      </div>
+      <div class="filter-row">
+        <input class="search" id="corpus-search" type="search" placeholder="Filter by name or description…" />
+        <button class="filter-btn active" data-kind="all">All</button>
+        <button class="filter-btn" data-kind="skill">Skills</button>
+        <button class="filter-btn" data-kind="agent">Agents</button>
+      </div>
+      <div id="corpus-skill-section" class="section">
+        <div class="section-title" id="corpus-skill-title">Skills</div>
+        <div class="grid" id="corpus-skill-grid"></div>
+      </div>
+      <div id="corpus-agent-section" class="section">
+        <div class="section-title" id="corpus-agent-title">Agents</div>
+        <div class="grid" id="corpus-agent-grid"></div>
+      </div>
+      <div class="empty" id="corpus-empty" style="display:none">No matches.</div>
     </div>
-    <iframe id="frame-corpus" src="about:blank"></iframe>
+    <iframe id="frame-corpus" src="about:blank" style="display:none"></iframe>
   </div>
 
   <div class="wrap" id="wrap-market-signals">
@@ -280,9 +351,11 @@ async function checkHealth(name) {
     const d = await fetch(TABS[name].healthUrl).then(r => r.json());
     dot.className = 'status-dot ' + (d.ok ? 'ok' : 'fail');
     if (overlay) overlay.classList.toggle('show', !d.ok);
+    if (name === 'corpus') updateCorpusView(d.ok);
   } catch {
     dot.className = 'status-dot fail';
     if (overlay) overlay.classList.add('show');
+    if (name === 'corpus') updateCorpusView(false);
   }
 }
 
@@ -292,6 +365,88 @@ async function retryLoad(name) {
   frame.src = frame.src;
   await checkHealth(name);
 }
+
+// ── Corpus skill/agent list (natural fallback when entity-corpus is offline) ──
+let _corpusData = null;
+let _corpusFilter = { kind: 'all', q: '' };
+
+function updateCorpusView(corpusOk) {
+  const frame = document.getElementById('frame-corpus');
+  const list  = document.getElementById('corpus-list');
+  if (!frame || !list) return;
+  if (corpusOk) {
+    frame.style.display = '';
+    list.classList.remove('show');
+  } else {
+    frame.style.display = 'none';
+    list.classList.add('show');
+    if (!_corpusData) loadCorpusList();
+  }
+}
+
+async function loadCorpusList() {
+  const statusEl = document.getElementById('corpus-list-status');
+  try {
+    const r = await fetch('/api/corpus/skills-agents');
+    _corpusData = await r.json();
+    statusEl.textContent =
+      `${_corpusData.counts.skills} skills · ${_corpusData.counts.agents} agents · local`;
+    const live = document.getElementById('corpus-live-link');
+    live.innerHTML = `entity-corpus offline — <a href="#" onclick="retryLoad('corpus');return false">retry</a>`;
+    renderCorpusList();
+  } catch (e) {
+    statusEl.textContent = 'failed to load';
+  }
+}
+
+function renderCorpusList() {
+  if (!_corpusData) return;
+  const q = (_corpusFilter.q || '').toLowerCase().trim();
+  const match = it => !q ||
+    (it.name || '').toLowerCase().includes(q) ||
+    (it.description || '').toLowerCase().includes(q);
+
+  const skillGrid = document.getElementById('corpus-skill-grid');
+  const agentGrid = document.getElementById('corpus-agent-grid');
+  const skillSec  = document.getElementById('corpus-skill-section');
+  const agentSec  = document.getElementById('corpus-agent-section');
+  const skillTitle = document.getElementById('corpus-skill-title');
+  const agentTitle = document.getElementById('corpus-agent-title');
+  const empty = document.getElementById('corpus-empty');
+
+  const showSkills = _corpusFilter.kind === 'all' || _corpusFilter.kind === 'skill';
+  const showAgents = _corpusFilter.kind === 'all' || _corpusFilter.kind === 'agent';
+
+  const skills = showSkills ? (_corpusData.skills || []).filter(match) : [];
+  const agents = showAgents ? (_corpusData.agents || []).filter(match) : [];
+
+  const card = it => {
+    const desc = (it.description || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+    const name = (it.name || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+    return `<div class="card"><div class="name">${name}</div><div class="desc">${desc || '—'}</div></div>`;
+  };
+
+  skillGrid.innerHTML = skills.map(card).join('');
+  agentGrid.innerHTML = agents.map(card).join('');
+  skillTitle.textContent = `Skills · ${skills.length}`;
+  agentTitle.textContent = `Agents · ${agents.length}`;
+  skillSec.style.display = showSkills ? '' : 'none';
+  agentSec.style.display = showAgents ? '' : 'none';
+  empty.style.display = (skills.length + agents.length === 0) ? '' : 'none';
+}
+
+document.getElementById('corpus-search').addEventListener('input', e => {
+  _corpusFilter.q = e.target.value;
+  renderCorpusList();
+});
+document.querySelectorAll('.corpus-list .filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.corpus-list .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _corpusFilter.kind = btn.dataset.kind;
+    renderCorpusList();
+  });
+});
 
 Object.keys(TABS).forEach(checkHealth);
 setInterval(() => {

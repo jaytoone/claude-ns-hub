@@ -5538,9 +5538,11 @@ function renderRight(p, topics, docData) {
       // OSK route: LiteLLM proxy on 127.0.0.1:4100 maps Anthropic API → OpenAI.
       // Server detects this value and splices ANTHROPIC_BASE_URL/KEY env vars at spawn.
       ['gpt-5.4-2026-03-05',          'gpt-5.4 (osk)'],
-      // MiniMax via LiteLLM proxy
-      ['MiniMax-M2.5',                'MiniMax M2.5'],
-      ['MiniMax-M2.7',                'MiniMax M2.7'],
+      // OpenRouter models via LiteLLM proxy (or- prefix = proxy alias)
+      ['or-gemini-flash',             'gemini-2.0-flash'],
+      ['or-gemini3-flash',            'gemini-3-flash-preview'],
+      ['or-deepseek-v4-flash',        'deepseek-v4-flash'],
+      ['or-kimi-k2',                  'kimi-k2.6'],
     ].map(([v,lbl]) => `<option value="${esc(v)}"${v===curModel?' selected':''}
         style="background:var(--bg-deep);color:var(--text)">${esc(lbl)}</option>`).join('');
     const modelSel = `<label class="dm-model-pick"
@@ -5678,6 +5680,10 @@ function renderRight(p, topics, docData) {
                 ['claude-sonnet-4-6',           'sonnet 4.6'],
                 ['claude-opus-4-7',             'opus 4.7'],
                 ['gpt-5.4-2026-03-05',          'gpt-5.4 (osk)'],
+                ['or-gemini-flash',             'gemini-2.0-flash'],
+                ['or-gemini3-flash',            'gemini-3-flash-preview'],
+                ['or-deepseek-v4-flash',        'deepseek-v4-flash'],
+                ['or-kimi-k2',                  'kimi-k2.6'],
               ].map(([v,lbl]) => `<option value="${esc(v)}"${v===(p.model||'').trim()?' selected':''}>${esc(lbl)}</option>`).join('');
               const _rowModelSel = `<select class="dm-model-select" title="Model for next spawn of this project (shared across sessions)"
                 onchange="event.stopPropagation();setProjectModel('${esc(p.id)}',this.value,this)"

@@ -1207,15 +1207,23 @@ _ALLOWED_MODELS = {
     # (config: ~/.osk-litellm.yaml). Selecting this routes the spawned Claude
     # session to GPT — env splice happens in _get_project_spawn_env.
     "gpt-5.4-2026-03-05",
-    # MiniMax via direct API (not LiteLLM) — uses shared.env MINIMAX_API_KEY
-    "MiniMax-M2.5",
-    "MiniMax-M2.7",
+    # OpenRouter models via LiteLLM proxy (or- aliases map to proxy model_name)
+    "or-gemini-flash",
+    "or-gemini3-flash",
+    "or-deepseek-v4-flash",
+    "or-kimi-k2",
 }
 
 _OSK_MODELS = {"gpt-5.4-2026-03-05"}
-_MINIMAX_MODELS = {"MiniMax-M2.5", "MiniMax-M2.7"}
+_OPENROUTER_MODELS = {
+    "or-gemini-flash",
+    "or-gemini3-flash",
+    "or-deepseek-v4-flash",
+    "or-kimi-k2",
+}
 _OSK_PROXY_URL = "http://127.0.0.1:4100"
 _OSK_PROXY_KEY = "sk-osk-local"
+_OPENROUTER_PROXY_URL = "http://127.0.0.1:4100"  # LiteLLM proxy handles openrouter/ prefix
 
 
 def _get_project_model_value(proj_id: str) -> str:
@@ -1240,7 +1248,7 @@ def _get_project_model(proj_id: str) -> list:
 
 def _get_project_spawn_env(proj_id: str) -> dict:
     """Return extra env vars to splice into the Claude spawn for this project.
-    For OSK/GPT: routes to LiteLLM proxy. For MiniMax: routes to direct API.
+    For OSK/GPT: routes to LiteLLM proxy. For OpenRouter: routes via LiteLLM proxy.
     Otherwise {}."""
     model = _get_project_model_value(proj_id)
     if model in _OSK_MODELS:
@@ -1253,13 +1261,14 @@ def _get_project_spawn_env(proj_id: str) -> dict:
             "ANTHROPIC_MODEL": model,
             "ANTHROPIC_SMALL_FAST_MODEL": model,
         }
-    if model in _MINIMAX_MODELS:
-        # Route directly to MiniMax API (not LiteLLM)
+    if model in _OPENROUTER_MODELS:
+        # Route to LiteLLM proxy — model ID carries openrouter/ prefix for routing
+        or_key = os.environ.get("OPENROUTER_API_KEY", _OSK_PROXY_KEY)
         return {
             "CLAUDE_CODE_OAUTH_TOKEN": "",
             "CLAUDE_CODE_OAUTH_REFRESH_TOKEN": "",
-            "ANTHROPIC_API_KEY": os.environ.get("MINIMAX_API_KEY", ""),
-            "ANTHROPIC_BASE_URL": "https://api.minimax.io/v1",
+            "ANTHROPIC_API_KEY": or_key,
+            "ANTHROPIC_BASE_URL": _OPENROUTER_PROXY_URL,
             "ANTHROPIC_MODEL": model,
             "ANTHROPIC_SMALL_FAST_MODEL": model,
         }
