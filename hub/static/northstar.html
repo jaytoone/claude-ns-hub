@@ -211,6 +211,16 @@ header {
 .ns-node-term.live  { color: #fff; background: #2d7a4f; border-color: #2d7a4f; animation: sess-pulse 1.6s ease-in-out infinite; }
 .ns-node-term.live:hover { background: #245f3d; border-color: #245f3d; color: #fff; }
 .ns-node-term.idle  { color: var(--accent-deep); background: var(--accent-soft); border-color: var(--accent); }
+.ns-node-term.loading { opacity: 0.7; cursor: wait; pointer-events: none; }
+.pty-load-dot {
+  display: inline-block; width: 4px; height: 4px; margin-left: 4px;
+  background: currentColor; border-radius: 50%;
+  animation: pty-pulse 1.2s ease-in-out infinite;
+}
+@keyframes pty-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
 .ns-node-menu { font-size: 13px; color: var(--text-dim); cursor: pointer; padding: 0 4px;
   border-radius: 4px; line-height: 1; transition: background .1s; flex-shrink: 0; }
 .ns-node-menu:hover { background: var(--panel-soft); color: var(--text); }
@@ -3418,10 +3428,12 @@ function nodeCard(p, idx) {
         <span class="ns-node-date" style="color:${dl.color}" title="deadline: ${esc(p.deadline||'none')}">${esc(dl.text)}</span>
         ${(()=>{ /* M178: PTY-only — reads _ptyStatus, never exec. M180: 'idle' matches tmux vocabulary.
                     M260: shortened labels to free horizontal room for the enlarged %/d-days. */
-                  const _termClass = _ptyKey==='active' ? ' live' : (typeof _ptyKey==='string' && _ptyKey.startsWith('idle:')) ? ' idle' : '';
-                  const _termLabel = _termClass===' live' ? 'live' : _termClass===' idle' ? 'idle' : '›_';
-                  const _termTitle = _termClass===' live' ? 'Attach to running Claude PTY' : _termClass===' idle' ? 'Resume idle Claude PTY (context preserved)' : 'Open Claude PTY';
-                  return `<span class="ns-node-term${_termClass}" title="${_termTitle}" onclick="event.stopPropagation();openTerminal('${pid}')">${_termLabel}</span>`;
+                  const _loading = window._ptyLoading?.[pid];
+                  const _termClass = _loading ? ' loading' : (_ptyKey==='active' ? ' live' : (typeof _ptyKey==='string' && _ptyKey.startsWith('idle:')) ? ' idle' : '');
+                  const _termLabel = _loading ? '›_' : (_termClass===' live' ? 'live' : _termClass===' idle' ? 'idle' : '›_');
+                  const _termTitle = _loading ? 'Opening terminal...' : (_termClass===' live' ? 'Attach to running Claude PTY' : _termClass===' idle' ? 'Resume idle Claude PTY (context preserved)' : 'Open Claude PTY');
+                  const _indicator = _loading ? '<span class="pty-load-dot"></span>' : '';
+                  return `<span class="ns-node-term${_termClass}" title="${_termTitle}" onclick="event.stopPropagation();${_loading ? '' : 'openTerminal(\''+pid+'\')'}">${_termLabel}${_indicator}</span>`;
                 })()}
         <span class="ns-node-menu" title="More actions"
           onclick="event.stopPropagation();showNodeCtxMenu('${pid}',event.clientX,event.clientY)">⋮</span>
@@ -4492,6 +4504,11 @@ function closeDetail() {
 }
 
 function openTerminal(projId) {
+  // Set loading state
+  window._ptyLoading = window._ptyLoading || {};
+  window._ptyLoading[projId] = true;
+  if (typeof render === 'function') render();
+
   // Show floating terminal (no longer embedded in modal)
   const float = document.getElementById('ns-terminal-float');
   float.style.display = 'flex';
@@ -4687,17 +4704,26 @@ function openTerminal(projId) {
   ws.onopen    = () => {
     _termFit.fit(); _sendResize(ws);
     _ptyStatus[projId] = 'active';  // M178: PTY-only update
+    // Clear loading state
+    if (window._ptyLoading) delete window._ptyLoading[projId];
     if (typeof render === 'function') render();
   };
   ws.onclose   = () => {
     _term.write('\r\n\x1b[33m[session closed]\x1b[0m\r\n');
+    // Clear loading state
+    if (window._ptyLoading) delete window._ptyLoading[projId];
     // Refresh from server: server returns idle:N if PTY still alive, removes
     // entry if it died. Either way the rendered label will be correct.
     if (typeof refreshSessionStatus === 'function') {
       refreshSessionStatus().then(() => { if (typeof render === 'function') render(); });
     }
   };
-  ws.onerror   = () => _term.write('\r\n\x1b[31m[connection error — is hub server running?]\x1b[0m\r\n');
+  ws.onerror   = () => {
+    _term.write('\r\n\x1b[31m[connection error — is hub server running?]\x1b[0m\r\n');
+    // Clear loading state
+    if (window._ptyLoading) delete window._ptyLoading[projId];
+    if (typeof render === 'function') render();
+  };
 
   // Resize observer
   if (_termRo) _termRo.disconnect();
