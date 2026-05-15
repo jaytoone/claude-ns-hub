@@ -8,6 +8,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -1141,11 +1142,10 @@ def _get_resume_args(proj_id: str, proj_dir: str) -> list:
     """Return Claude resume flags for tmux/PTY spawn continuity.
 
     Spec: docs/research/20260513-tmux-claude-session-resume-design.md MVF #2.
-    Looks up the last session id for the project's CURRENT model first
-    (.session-history.json keyed by model — switching back to a previous
-    model resumes its own thread). Falls back to .last-session-id for
-    backward compat. Verifies the transcript exists+non-empty at the
-    canonical encoded-cwd path before returning --resume.
+    Supports three continuity modes (from north-star.md frontmatter):
+      - "isolated": per-model session history (default, backward-compat)
+      - "portable": shared session across models (cross-model continuity)
+      - "fresh": always --continue (ignores history)
     """
     pdir = PROJECTS_DIR / proj_id
     encoded = _encode_cwd_for_claude(str(proj_dir))
@@ -1162,14 +1162,39 @@ def _get_resume_args(proj_id: str, proj_dir: str) -> list:
             pass
         return []
 
-    # 1) Per-model lookup — picks up the right thread when user switches models.
+    # Check continuity mode from frontmatter
+    continuity_mode = "isolated"  # default
+    try:
+        ns = _read_ns(proj_id)
+        continuity_mode = ns.get("continuity_mode", "isolated")
+    except Exception:
+        pass
+
+    # fresh mode: always start new conversation
+    if continuity_mode == "fresh":
+        return ["--continue"]
+
+    hist_file = pdir / ".session-history.json"
+
+    # portable mode: use shared _current session across all models
+    if continuity_mode == "portable":
+        try:
+            if hist_file.exists():
+                hist = json.loads(hist_file.read_text())
+                sid = (hist.get("_current") or "").strip()
+                args = _try_id(sid)
+                if args:
+                    return args
+        except Exception:
+            pass
+
+    # isolated mode (default): per-model lookup
     try:
         cur_model = ""
         try:
             cur_model = _get_project_model_value(proj_id)
         except NameError:
             pass
-        hist_file = pdir / ".session-history.json"
         if hist_file.exists():
             hist = json.loads(hist_file.read_text())
             sid = (hist.get(cur_model or "_default") or "").strip()
@@ -1179,7 +1204,7 @@ def _get_resume_args(proj_id: str, proj_dir: str) -> list:
     except Exception:
         pass
 
-    # 2) Legacy single-file fallback.
+    # Legacy single-file fallback
     last_id_file = pdir / ".last-session-id"
     if last_id_file.exists():
         try:
@@ -1187,7 +1212,6 @@ def _get_resume_args(proj_id: str, proj_dir: str) -> list:
             args = _try_id(sid)
             if args:
                 return args
-            # Stale id → clean up so spawns don't keep failing with "No conversation found"
             try: last_id_file.unlink()
             except Exception: pass
         except Exception:
@@ -1212,6 +1236,7 @@ _ALLOWED_MODELS = {
     "or-gemini3-flash",
     "or-deepseek-v4-flash",
     "or-kimi-k2",
+    "or-hy3-preview",
 }
 
 _OSK_MODELS = {"gpt-5.4-2026-03-05"}
@@ -1220,6 +1245,7 @@ _OPENROUTER_MODELS = {
     "or-gemini3-flash",
     "or-deepseek-v4-flash",
     "or-kimi-k2",
+    "or-hy3-preview",
 }
 _OSK_PROXY_URL = "http://127.0.0.1:4100"
 _OSK_PROXY_KEY = "sk-osk-local"
@@ -1241,8 +1267,12 @@ def _get_project_model_value(proj_id: str) -> str:
 
 def _get_project_model(proj_id: str) -> list:
     """Return ['--model', value] if frontmatter has a valid model, else [].
-    Spliced into PTY + tmux spawn argv."""
+    Spliced into PTY + tmux spawn argv.
+    Rewrites or-* aliases to openrouter-* to match the LiteLLM proxy's
+    exposed model IDs (seen via GET /v1/models)."""
     model = _get_project_model_value(proj_id)
+    if model.startswith("or-"):
+        model = "openrouter-" + model[3:]
     return ["--model", model] if model else []
 
 
@@ -1262,15 +1292,16 @@ def _get_project_spawn_env(proj_id: str) -> dict:
             "ANTHROPIC_SMALL_FAST_MODEL": model,
         }
     if model in _OPENROUTER_MODELS:
-        # Route to LiteLLM proxy — model ID carries openrouter/ prefix for routing
+        # Route to LiteLLM proxy — rewrite or-* to openrouter-* to match proxy's exposed IDs
         or_key = os.environ.get("OPENROUTER_API_KEY", _OSK_PROXY_KEY)
+        or_model = ("openrouter-" + model[3:]) if model.startswith("or-") else model
         return {
             "CLAUDE_CODE_OAUTH_TOKEN": "",
             "CLAUDE_CODE_OAUTH_REFRESH_TOKEN": "",
             "ANTHROPIC_API_KEY": or_key,
             "ANTHROPIC_BASE_URL": _OPENROUTER_PROXY_URL,
-            "ANTHROPIC_MODEL": model,
-            "ANTHROPIC_SMALL_FAST_MODEL": model,
+            "ANTHROPIC_MODEL": or_model,
+            "ANTHROPIC_SMALL_FAST_MODEL": or_model,
         }
     return {}
 
@@ -2431,8 +2462,9 @@ async def patch_project(proj_id: str, request: Request):
     proj = _parse_md_frontmatter(md)
     # M165: allow manual edit of star fields (metric/current/target/unit) from ns-dash UI
     # M214: `model` controls --model flag passed to PTY/tmux Claude spawns for this project.
+    # continuity_mode: session continuity strategy (isolated/portable/fresh)
     allowed = {"deadline", "status", "note", "links", "stage",
-               "metric", "current", "target", "unit", "model"}
+               "metric", "current", "target", "unit", "model", "continuity_mode"}
     for k in allowed:
         if k in data:
             if k == "model":
@@ -2441,6 +2473,12 @@ async def patch_project(proj_id: str, request: Request):
                     return JSONResponse({"ok": False, "error": f"unknown model '{v}'",
                                          "allowed": sorted(_ALLOWED_MODELS)}, status_code=400)
                 proj[k] = v  # empty string = unset (CLI default)
+            elif k == "continuity_mode":
+                v = (data[k] or "isolated").strip()
+                if v not in {"isolated", "portable", "fresh"}:
+                    return JSONResponse({"ok": False, "error": f"invalid continuity_mode '{v}'"},
+                                        status_code=400)
+                proj[k] = v
             else:
                 proj[k] = data[k]
     _save_project(proj_id, proj)
@@ -2866,6 +2904,111 @@ async def ns_resume_info():
             "has_transcript": has_transcript,
         }
     return JSONResponse(result)
+
+
+@app.get("/api/northstar/{proj_id}/sessions")
+async def list_project_sessions(proj_id: str):
+    """List available Claude sessions for a project, with their associated models.
+
+    Scans:
+    1. .session-history.json — per-model session mapping (cur model's session highlighted)
+    2. Transcript directory — all .jsonl files, with model detection from content
+    3. .last-session-id — legacy fallback
+
+    Returns sessions sorted by mtime descending, plus a "fresh" option.
+    The UI replaces the model picker with this session picker.
+    """
+    from datetime import datetime as _dt
+    result = {"sessions": [], "fresh": True, "current_model": _get_project_model_value(proj_id)}
+
+    proj_dir = PROJECTS_DIR / proj_id
+    if not proj_dir.exists():
+        return JSONResponse(result)
+
+    cwd = _get_project_dir(proj_id) or ""
+    if not cwd:
+        return JSONResponse(result)
+
+    encoded = _encode_cwd_for_claude(cwd)
+    transcripts_dir = Path.home() / ".claude" / "projects" / encoded
+    if not transcripts_dir.exists():
+        return JSONResponse(result)
+
+    # Collect sessions from transcript files
+    sessions = {}
+    for jf in transcripts_dir.glob("*.jsonl"):
+        sid = jf.stem
+        mtime = jf.stat().st_mtime
+        # Try to detect model from the first few lines of the transcript
+        model = _detect_session_model(jf)
+        sessions[sid] = {
+            "session_id": sid,
+            "session_id_preview": sid[:8],
+            "mtime": mtime,
+            "mtime_iso": _dt.fromtimestamp(mtime).isoformat(timespec="seconds"),
+            "model": model,
+            "source": "transcript",
+        }
+
+    # Overlay model info from .session-history.json
+    hist_file = proj_dir / ".session-history.json"
+    if hist_file.exists():
+        try:
+            hist = json.loads(hist_file.read_text())
+            for model_key, sid in hist.items():
+                if sid in sessions:
+                    sessions[sid]["model"] = model_key if model_key != "_default" else ""
+                    sessions[sid]["source"] = "history"
+        except Exception:
+            pass
+
+    # Mark the last-known session
+    last_id_file = proj_dir / ".last-session-id"
+    last_sid = ""
+    if last_id_file.exists():
+        try:
+            last_sid = last_id_file.read_text().strip()
+        except Exception:
+            pass
+    if last_sid in sessions:
+        sessions[last_sid]["is_last"] = True
+
+    # Sort by mtime descending
+    sorted_sessions = sorted(sessions.values(), key=lambda x: x["mtime"], reverse=True)
+    result["sessions"] = sorted_sessions
+    return JSONResponse(result)
+
+
+def _detect_session_model(transcript_path: Path, max_lines: int = 50) -> str:
+    """Detect which model was used in a Claude session transcript.
+
+    Scans the first max_lines for model-related fields in the JSONL entries.
+    Returns the model string, or empty string if undetectable.
+    """
+    try:
+        with transcript_path.open("r", encoding="utf-8", errors="replace") as f:
+            for i, line in enumerate(f):
+                if i >= max_lines:
+                    break
+                if not line.strip():
+                    continue
+                try:
+                    entry = json.loads(line)
+                    # Check for model field in assistant messages or system entries
+                    if isinstance(entry, dict):
+                        # Sometimes model appears in the top-level or nested structures
+                        model = entry.get("model") or ""
+                        if not model and isinstance(entry.get("message"), dict):
+                            model = entry["message"].get("model") or ""
+                        if not model and isinstance(entry.get("response"), dict):
+                            model = entry["response"].get("model") or ""
+                        if model:
+                            return str(model)
+                except Exception:
+                    continue
+    except Exception:
+        pass
+    return ""
 
 
 @app.get("/health/{service}")

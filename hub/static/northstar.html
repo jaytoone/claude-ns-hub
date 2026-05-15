@@ -2921,6 +2921,33 @@ async function setProjectModel(projId, model, sel) {
   }
 }
 
+async function setContinuityMode(projId, mode, sel) {
+  const status = document.getElementById('dm-continuity-status');
+  if (status) { status.textContent = '…'; status.style.color = 'var(--text-dim)'; }
+  try {
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({continuity_mode: mode})
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) {
+      if (status) { status.textContent = '✗ ' + (d.error||'err'); status.style.color = 'var(--red,#c54)'; }
+      return;
+    }
+    if (status) {
+      status.textContent = `✓ ${mode}`;
+      status.style.color = 'var(--green,#4caf50)';
+      setTimeout(()=>{ if (status.textContent.startsWith('✓')) { status.textContent=''; } }, 4000);
+    }
+    // Keep in-memory project state in sync
+    const cur = window.activeIdx != null ? window.projects?.[window.activeIdx] : null;
+    if (cur && cur.id === projId) cur.continuity_mode = mode;
+  } catch (e) {
+    if (status) { status.textContent = '✗ network'; status.style.color = 'var(--red,#c54)'; }
+  }
+}
+
 async function executeProject(projId, btn) {
   if (btn.classList.contains('running')) return;
   btn.classList.add('running', 'exec-loading');
@@ -3325,14 +3352,28 @@ function nodeCard(p, idx) {
   // M219 v2: 4 independent count badges, ordered by stone status cycle
   //   P (pending, not-yet-acked by claude) → Q (queued) → ! (claude replied, awaiting you) → R (review = pending_confirmation)
   // M220 follow-up: held stones are excluded from ALL count badges (claude won't act on them).
-  const pendingN = _ms.filter(m => (m.status||'') === 'pending' && !m.done && !m.claude_ack && !m.held).length;
-  const queuedN  = _ms.filter(m => (m.status||'') === 'queued' && !m.done && !m.held).length;
-  const reviewN  = _ms.filter(m => (m.status||'') === 'pending_confirmation' && !m.done && !m.held).length;
-  const replyN   = _ms.filter(m => {
-    if (m.done || m.held) return false;
-    const c = m.conversation;
-    return c && c.length && c[c.length-1]?.role === 'claude';
-  }).length;
+  const allActiveMilestones = _ms.filter(m => !m.done && !m.held);
+
+  // Precedence: Reply -> Review -> Queued -> Pending
+  // A milestone is only counted in one category based on this priority.
+
+  const replyMs = allActiveMilestones.filter(m => m.conversation?.length && m.conversation[m.conversation.length-1]?.role === 'claude');
+  const replyN = replyMs.length;
+
+  const milestonesAfterReply = allActiveMilestones.filter(m => !replyMs.includes(m));
+
+  const reviewMs = milestonesAfterReply.filter(m => m.status === 'pending_confirmation');
+  const reviewN = reviewMs.length;
+
+  const milestonesAfterReview = milestonesAfterReply.filter(m => !reviewMs.includes(m));
+
+  const queuedMs = milestonesAfterReview.filter(m => (m.status||'') === 'queued');
+  const queuedN  = queuedMs.length;
+
+  const milestonesAfterQueued = milestonesAfterReview.filter(m => !queuedMs.includes(m));
+
+  const pendingMs = milestonesAfterQueued.filter(m => (m.status||'') === 'pending' && !m.claude_ack);
+  const pendingN = pendingMs.length;
   const _railTabStyle = 'font-family:var(--mono);font-size:9px;font-weight:600;line-height:1.2;'
     + 'padding:2px 6px 3px;border-radius:6px 6px 0 0;border:1px solid;border-bottom:none;'
     + 'box-shadow:0 -1px 2px rgba(0,0,0,.04);';
@@ -5543,6 +5584,8 @@ function renderRight(p, topics, docData) {
       ['or-gemini3-flash',            'gemini-3-flash-preview'],
       ['or-deepseek-v4-flash',        'deepseek-v4-flash'],
       ['or-kimi-k2',                  'kimi-k2.6'],
+                ['or-hy3-preview',              'hy3-preview'],
+      ['or-hy3-preview',              'hy3-preview'],
     ].map(([v,lbl]) => `<option value="${esc(v)}"${v===curModel?' selected':''}
         style="background:var(--bg-deep);color:var(--text)">${esc(lbl)}</option>`).join('');
     const modelSel = `<label class="dm-model-pick"
@@ -5553,6 +5596,20 @@ function renderRight(p, topics, docData) {
           style="background:var(--bg-deep);border:none;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;cursor:pointer;color-scheme:dark">${modelOpts}</select>
         <span id="dm-model-status" style="font-size:9px;color:var(--text-dim)" aria-live="polite"></span>
       </label>`;
+    const contMode = p.continuity_mode || 'isolated';
+    const contOpts = [
+      ['isolated', 'isolated (per-model history)'],
+      ['portable', 'portable (cross-model continuity)'],
+      ['fresh', 'fresh (always new)'],
+    ].map(([v,lbl]) => `<option value="${esc(v)}"${v===contMode?' selected':''}>${esc(lbl)}</option>`).join('');
+    const continuitySel = `<label class="dm-continuity-pick"
+        title="Session continuity mode: isolated = separate history per model, portable = shared conversation across models, fresh = always start new"
+        style="display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;color:var(--text-dim);border:1px solid var(--panel-border);border-radius:4px;padding:2px 6px;background:var(--bg-deep)">
+        <span style="opacity:.7">continuity</span>
+        <select id="dm-continuity-select" onchange="setContinuityMode('${esc(p.id)}',this.value,this)"
+          style="background:var(--bg-deep);border:none;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;cursor:pointer;color-scheme:dark">${contOpts}</select>
+        <span id="dm-continuity-status" style="font-size:9px;color:var(--text-dim)" aria-live="polite"></span>
+      </label>`;
     // M233: spec doc button moves to detail-modal header; model selector moves into the session pane.
     // M235: model selector slot starts hidden — _refreshExecState decides where to render it
     //       (inline per-row when sessions exist, body slot when no sessions). Removes the flash.
@@ -5560,7 +5617,7 @@ function renderRight(p, topics, docData) {
     if (specHeaderSlot) specHeaderSlot.innerHTML = specBtn;
     specSlot.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${execBtn}</div>
       <div id="dm-exec-sessions" style="margin-top:5px"></div>
-      <div id="dm-model-slot" style="margin-top:6px;display:none">${modelSel}</div>`;
+      <div id="dm-model-slot" style="margin-top:6px;display:none">${modelSel}${continuitySel}</div>`;
     // M214 follow-up: probe OSK proxy and disable gpt-* options when down,
     // so users don't silently pick a broken model. Also surface upstream
     // errors (quota/rate-limit/auth/5xx) as a banner so users learn WHY a
@@ -5684,6 +5741,7 @@ function renderRight(p, topics, docData) {
                 ['or-gemini3-flash',            'gemini-3-flash-preview'],
                 ['or-deepseek-v4-flash',        'deepseek-v4-flash'],
                 ['or-kimi-k2',                  'kimi-k2.6'],
+                ['or-hy3-preview',              'hy3-preview'],
               ].map(([v,lbl]) => `<option value="${esc(v)}"${v===(p.model||'').trim()?' selected':''}>${esc(lbl)}</option>`).join('');
               const _rowModelSel = `<select class="dm-model-select" title="Model for next spawn of this project (shared across sessions)"
                 onchange="event.stopPropagation();setProjectModel('${esc(p.id)}',this.value,this)"
