@@ -1165,8 +1165,10 @@ def _get_resume_args(proj_id: str, proj_dir: str) -> list:
     # Check continuity mode from frontmatter
     continuity_mode = "isolated"  # default
     try:
-        ns = _read_ns(proj_id)
-        continuity_mode = ns.get("continuity_mode", "isolated")
+        md = pdir / "north-star.md"
+        if md.exists():
+            ns = _parse_md_frontmatter(md)
+            continuity_mode = ns.get("continuity_mode", "isolated")
     except Exception:
         pass
 
