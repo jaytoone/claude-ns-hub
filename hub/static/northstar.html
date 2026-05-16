@@ -742,6 +742,32 @@ header {
   #dm-xterm { width: 100% !important; height: calc(72svh - 40px) !important; }
 }
 
+/* ── Detail Toggle Panes (model / session) ───────────────────────────────────── */
+.dm-toggle-pane {
+  border: 1px solid var(--panel-border); border-radius: 6px; overflow: hidden;
+  font-family: var(--mono); font-size: 10px;
+}
+.dm-pane-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 10px; background: var(--bg-deep); cursor: pointer;
+  user-select: none;
+}
+.dm-pane-header:hover { background: rgba(0,0,0,.07); }
+.dm-pane-label { color: var(--text-dim); letter-spacing: .04em; font-size: 10px; }
+.dm-pane-caret { color: var(--text-dim); font-size: 9px; transition: transform .15s; }
+.dm-pane-caret.open { transform: rotate(180deg); }
+.dm-pane-body { padding: 6px 10px; }
+.dm-sess-fresh { color: var(--yellow,#d4a574) !important; }
+.dm-sess-resume { color: var(--text) !important; }
+.dm-sess-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px;
+  border-radius: 4px; cursor: pointer; font-size: 9px; border: 1px solid transparent; }
+.dm-sess-row:hover { background: rgba(0,0,0,.06); }
+.dm-sess-row.picked {
+  background: rgba(61,139,94,.12);
+  border-color: rgba(61,139,94,.35);
+  box-shadow: inset 2px 0 0 var(--green,#4caf50);
+}
+
 /* ── Detail Overlay (centered modal — replaces side drawer) ──────────────────── */
 .detail-overlay {
   display: none; position: fixed; inset: 0; z-index: 9001;
@@ -1059,7 +1085,7 @@ header {
         <!-- M227 v2: per-card pointer replaces the top-bar pointer button; element kept for legacy script but hidden. -->
         <button class="refresh-btn" id="priority-toggle-btn" onclick="togglePriorityPointer()" style="display:none">+ pointer</button>
         <button class="refresh-btn" id="notify-btn" onclick="requestNotifyPermission()" title="Enable browser notifications for live→idle session transitions">notify</button>
-        <button class="refresh-btn" onclick="loadData()" title="Refresh">↻</button>
+        <!-- Refresh removed — auto-polling handles reload -->
         <span class="updated-at" id="updated-at">—</span>
       </div>
     </header>
@@ -1264,6 +1290,20 @@ header {
   </div>
 </div>
 
+<!-- Generic in-page confirm dialog -->
+<div id="ns-generic-confirm" style="display:none;position:fixed;inset:0;z-index:9100;
+  background:rgba(0,0,0,.55);align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+    padding:20px 24px;max-width:300px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div id="ns-gc-title" style="font-size:13px;color:var(--text);margin-bottom:6px;font-weight:500"></div>
+    <div id="ns-gc-body" style="font-size:11px;color:var(--text-dim);font-family:var(--mono);margin-bottom:16px;line-height:1.5"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="ns-gc-cancel" style="font-size:11px;padding:5px 14px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono)">Cancel</button>
+      <button id="ns-gc-ok" style="font-size:11px;padding:5px 14px;border-radius:4px;border:1px solid var(--green);background:var(--green-soft);color:var(--green);cursor:pointer;font-family:var(--mono);font-weight:500">Restart</button>
+    </div>
+  </div>
+</div>
+
 <!-- Delete confirm dialog (inside hub modal, not browser confirm) -->
 <div id="ns-del-confirm" style="display:none;position:fixed;inset:0;z-index:9002;
   background:rgba(0,0,0,.55);align-items:center;justify-content:center">
@@ -1437,6 +1477,32 @@ function statusColor(status) {
 // derives from pct so bars never go gray on an active card and "pivoting" no longer rendered
 // as flat-gray. Previous M245 logic kept paused bars gray, which the user found confusing.
 const _PROGRESS_LOCKED_STATUSES = new Set(['behind', 'on-track', 'achieved']);
+
+// ── Model catalog: all available models grouped by agent ──
+const MODEL_CATALOG = {
+  claude: [
+    ['',                              '(default)'],
+    ['claude-haiku-4-5-20251001',     'Haiku 4.5'],
+    ['claude-sonnet-4-5-20250929',    'Sonnet 4.5'],
+    ['claude-sonnet-4-6',             'Sonnet 4.6'],
+    ['claude-opus-4-7',               'Opus 4.7'],
+  ],
+  codex: [
+    ['',                              '(default)'],
+    ['codex-haiku',                   'haiku'],
+    ['codex-sonnet',                  'sonnet'],
+  ],
+  openrouter: [
+    ['',                              '(default)'],
+    ['or-hy3-preview',                'hy3-preview'],
+    ['or-kimi-k2',                    'kimi-k2.6'],
+    ['or-gemini3-flash',              'gemini-3-flash'],
+    ['or-gemini-flash',               'gemini-2.0-flash'],
+    ['or-deepseek-v4-flash',          'deepseek-v4-flash'],
+    ['gpt-5.4-2026-03-05',            'gpt-5.4 (osk)'],
+  ],
+};
+
 function progressBarColor(p, pct) {
   if (p && p.status && _PROGRESS_LOCKED_STATUSES.has(p.status)) return statusColor(p.status);
   if (pct >= 0.66) return 'var(--green)';
@@ -1547,6 +1613,36 @@ function formatGapNum(n) {
   return n % 1 === 0 ? String(n) : n.toFixed(1);
 }
 
+// M161: block-style bar helpers for detail table
+function _barRowInline(label, pct, barColor, valueText, valueColor) {
+  const N = 10;
+  const filled = Math.min(N, Math.round(pct / 10));
+  const segs = Array.from({length: N}, (_, i) =>
+    `<div style="flex:1;height:4px;border-radius:1px;background:${i < filled ? barColor : 'var(--panel-border)'}"></div>`
+  ).join('');
+  return `<div style="display:flex;align-items:center;gap:4px">` +
+    `<span style="font-size:8px;color:var(--text-dim);width:42px;flex-shrink:0">${label}</span>` +
+    `<div style="flex:1;display:flex;gap:1px">${segs}</div>` +
+    `<span style="font-size:8px;color:${valueColor};flex-shrink:0;min-width:28px;text-align:right">${valueText}</span>` +
+    `</div>`;
+}
+function _deadlineBarInline(label, daysLeft, dlPctNum, dlColor) {
+  const SLOTS = 7;
+  let filled = 0;
+  if (typeof daysLeft === 'number' && daysLeft > 0) {
+    filled = Math.min(SLOTS, daysLeft);
+  }
+  const segs = Array.from({length: SLOTS}, (_, i) =>
+    `<div style="flex:1;height:4px;border-radius:1px;min-width:2px;background:${i < filled ? dlColor : 'var(--panel-border)'}"></div>`
+  ).join('');
+  const valueText = (typeof daysLeft === 'number' && daysLeft > 0) ? daysLeft+'d' : '—';
+  return `<div style="display:flex;align-items:center;gap:4px">` +
+    `<span style="font-size:8px;color:var(--text-dim);width:42px;flex-shrink:0">${label}</span>` +
+    `<div style="flex:1;display:flex;gap:1px">${segs}</div>` +
+    `<span style="font-size:8px;color:${dlColor};flex-shrink:0;min-width:28px;text-align:right">${valueText}</span>` +
+    `</div>`;
+}
+
 // ── Table row HTML ────────────────────────────────────────────────────────────
 
 function rowHtml(p, i) {
@@ -1554,6 +1650,11 @@ function rowHtml(p, i) {
   const pct       = projectPct(p);
   const pctNum    = Math.round(pct * 100);
   const color     = statusColor(p.status);
+  // M88: three progress bars — milestone + deadline
+  const msPctNum  = (p.milestones && p.milestones.length) ? Math.round((p.milestones.filter(m=>m.done||m.status==='done').length / p.milestones.length) * 100) : 0;
+  const daysLeft  = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : null;
+  const dlPctNum  = (daysLeft !== null && daysLeft > 0) ? Math.max(0, Math.min(100, Math.round((daysLeft / 7) * 100))) : (daysLeft !== null ? 0 : 0);
+  const dlColor   = daysLeft !== null ? (daysLeft <= 3 ? 'var(--red)' : daysLeft <= 7 ? 'var(--accent)' : 'var(--green)') : 'var(--text-dim)';
   const active    = i === activeIdx ? 'active' : '';
 
   // Gap text
@@ -1595,11 +1696,11 @@ function rowHtml(p, i) {
       ${esc((p.metric || '—').substring(0, 26))}
     </td>
     <td class="col-progress">
-      <div class="progress-wrap">
-        <div class="progress-bar">
-          <div class="progress-fill" style="width:${pctNum}%;background:${color}"></div>
-        </div>
-        <span class="progress-num">${pctNum}%</span>
+      <div class="progress-wrap" style="flex-direction:column;gap:3px;align-items:stretch;padding:4px 0">
+        <!-- M161: block-style bars in detail table (10 segments each). Order matches ns-card: deadline → star-arc → milestone -->
+        ${_deadlineBarInline('deadline', daysLeft, dlPctNum, dlColor)}
+        ${_barRowInline('star-arc', pctNum, color, pctNum+'%', color)}
+        ${_barRowInline('milestone', msPctNum, 'var(--green)', msPctNum+'%', 'var(--green)')}
       </div>
     </td>
     <td class="col-gap hide-mobile" style="color:${gapColor}">${esc(gapText)}</td>
@@ -2880,6 +2981,56 @@ async function reopenMs(projId, mid) {
   render(); // M106: refresh swimlane cards
 }
 
+// Persist per-project agent choice (claude / codex / openrouter). Server validates against allowed list.
+async function setProjectAgent(projId, agent, sel) {
+  const status = document.getElementById('dm-agent-status');
+  // ── Immediate UI update (before async PATCH) ──────────────────────────────
+  window.curAgent = agent;
+  if (window._selectedSession) window._selectedSession.agent = agent;
+  // Immediately update model dropdown
+  const modelSel = document.getElementById('dm-model-select');
+  if (modelSel) {
+    if (agent === 'codex') {
+      modelSel.innerHTML = `<option value="" disabled selected style="background:var(--bg-deep);color:var(--text-dim)">catalog coming soon</option>`;
+      modelSel.disabled = true;
+    } else {
+      modelSel.disabled = false;
+      const catalog = (MODEL_CATALOG[agent] || MODEL_CATALOG.claude || []);
+      modelSel.innerHTML = catalog.map(([v,lbl]) =>
+        `<option value="${esc(v)}"${v===(window.curModel||'')?' selected':''}
+          style="background:var(--bg-deep);color:var(--text)">${esc(lbl)}</option>`
+      ).join('');
+    }
+  }
+  // Show loading in session pane then immediately fetch sessions (don't wait for PATCH)
+  const sessBody = document.getElementById('dm-session-pane-body');
+  if (sessBody) sessBody.innerHTML = `<div style="color:var(--text-dim);font-size:9px;opacity:.6;padding:2px 0;display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;border:1px solid var(--text-dim);border-top-color:transparent;animation:dm-spin .7s linear infinite"></span>loading sessions…</div>`;
+  if (typeof window._renderResumableSessions === 'function') window._renderResumableSessions();
+  if (status) { status.textContent = '…'; status.style.color = 'var(--text-dim)'; }
+  // ── Persist to server in background ──────────────────────────────────────
+  try {
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({agent})
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) {
+      if (status) { status.textContent = '✗ ' + (d.error||'err'); status.style.color = 'var(--red,#c54)'; }
+      return;
+    }
+    if (status) {
+      status.textContent = `✓ ${agent}`;
+      status.style.color = 'var(--green,#4caf50)';
+      setTimeout(()=>{ if (status.textContent.startsWith('✓')) { status.textContent=''; } }, 4000);
+    }
+    const cur = window.activeIdx != null ? window.projects?.[window.activeIdx] : null;
+    if (cur && cur.id === projId) cur.agent = agent;
+  } catch (e) {
+    if (status) { status.textContent = '✗ network'; status.style.color = 'var(--red,#c54)'; }
+  }
+}
+
 // M214: persist per-project model choice. Server validates against allowed list.
 // Empty value = unset = CLI default. Takes effect on the NEXT spawn (PTY/tmux).
 async function setProjectModel(projId, model, sel) {
@@ -2904,6 +3055,7 @@ async function setProjectModel(projId, model, sel) {
     // Keep in-memory project state in sync so re-renders preserve the new choice
     const cur = window.activeIdx != null ? window.projects?.[window.activeIdx] : null;
     if (cur && cur.id === projId) cur.model = model;
+    if (window._selectedSession) window._selectedSession.model = model;
     // M233 v2: sync all per-session row selectors so they show the same value.
     document.querySelectorAll('.dm-model-select').forEach(s => { if (s !== sel) s.value = model; });
     // If a session is alive, offer to restart so the new model env applies now.
@@ -2914,16 +3066,20 @@ async function setProjectModel(projId, model, sel) {
       const live = (sessD.sessions || []).some(s => s.proj_id === projId);
       if (live) {
         const lbl = model || '(default)';
-        if (confirm(`Restart this project's live session so it runs on "${lbl}"?\n(Resume args are kept — current stone work continues.)`)) {
-          if (status) { status.textContent = 'restarting…'; status.style.color = 'var(--text-dim)'; }
-          await fetch(`/api/northstar/${encodeURIComponent(projId)}/restart-session`, {method:'POST'});
-          if (status) {
-            status.textContent = `✓ ${lbl} (restarted)`;
-            status.style.color = 'var(--green,#4caf50)';
-            setTimeout(()=>{ if (status.textContent.startsWith('✓')) status.textContent=''; }, 5000);
+        _nsConfirm(
+          `Apply model "${lbl}" now?`,
+          'Restart live session with new model. Resume args kept — current work continues.',
+          async () => {
+            if (status) { status.textContent = 'restarting…'; status.style.color = 'var(--text-dim)'; }
+            await fetch(`/api/northstar/${encodeURIComponent(projId)}/restart-session`, {method:'POST'});
+            if (status) {
+              status.textContent = `✓ ${lbl} (restarted)`;
+              status.style.color = 'var(--green,#4caf50)';
+              setTimeout(()=>{ if (status.textContent.startsWith('✓')) status.textContent=''; }, 5000);
+            }
+            if (typeof loadProjects === 'function') loadProjects();
           }
-          if (typeof loadProjects === 'function') loadProjects();
-        }
+        );
       }
     } catch(_) {}
   } catch (e) {
@@ -2958,13 +3114,78 @@ async function setContinuityMode(projId, mode, sel) {
   }
 }
 
+// Select a resumable session (agent + model + session_id) for the next Execute
+function toggleDmPane(paneId) {
+  const body = document.getElementById(paneId + '-body');
+  const caretId = paneId === 'dm-model-pane' ? 'dm-model-caret' : 'dm-session-caret';
+  const caret = document.getElementById(caretId);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if (caret) caret.classList.toggle('open', !open);
+}
+
+function _selectSession(agent, model, sessionId) {
+  window._selectedSession = { agent, model, session_id: sessionId };
+  window.curAgent = agent;
+  window.curModel = model;
+  // Immediate visual feedback — update picked state before async re-render
+  document.querySelectorAll('.dm-sess-row').forEach(r => {
+    const isPicked = r.dataset.agent === agent && r.dataset.model === model && r.dataset.session === sessionId;
+    r.classList.toggle('picked', isPicked);
+    const dot = r.querySelector('span');
+    if (dot) dot.style.color = isPicked ? 'var(--green)' : 'var(--text-dim)';
+  });
+  // Sync agent selector
+  const agentSel = document.getElementById('dm-agent-select');
+  if (agentSel) agentSel.value = agent;
+  // Sync model selector
+  const modelSel = document.getElementById('dm-model-select');
+  if (modelSel && typeof MODEL_CATALOG !== 'undefined') {
+    const opts = (MODEL_CATALOG[agent] || MODEL_CATALOG.claude || []).map(([v,lbl]) =>
+      `<option value="${esc(v)}"${v===model?' selected':''}
+        style="background:var(--bg-deep);color:var(--text)">${esc(lbl)}</option>`
+    ).join('');
+    modelSel.innerHTML = opts;
+  }
+  // Async re-render to sync server state
+  if (typeof window._renderResumableSessions === 'function') window._renderResumableSessions();
+}
+
 async function executeProject(projId, btn) {
   if (btn.classList.contains('running')) return;
   btn.classList.add('running', 'exec-loading');
   const orig = btn.textContent;
   btn.textContent = '◌ Launching…';
   try {
-    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/execute`, {method:'POST'});
+    // Apply agent + model + continuity settings before dispatch
+    const agentSel = document.getElementById('dm-agent-select');
+    const modelSel = document.getElementById('dm-model-select');
+    const contSel = document.getElementById('dm-continuity-select');
+    const agent = agentSel ? agentSel.value : 'claude';
+    const model = modelSel ? modelSel.value : '';
+    const continuity = contSel ? contSel.value : 'isolated';
+    // Persist choices so the server reads them on spawn
+    if (agent !== (window.curAgent || 'claude')) {
+      await setProjectAgent(projId, agent, agentSel);
+    }
+    if (model !== (window.curModel || '')) {
+      await setProjectModel(projId, model, modelSel);
+    }
+    if (continuity !== (window.curContinuity || 'isolated')) {
+      await setContinuityMode(projId, continuity, contSel);
+    }
+    // Build request body with agent + session selection
+    const selSess = window._selectedSession || {};
+    const body = { agent, model };
+    if (selSess.session_id && selSess.session_id !== '') {
+      body.session_id = selSess.session_id;
+    }
+    const r = await fetch(`/api/northstar/${encodeURIComponent(projId)}/execute`, {
+      method:'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
     const d = await r.json();
     // M237: if there are no actionable stones, show "no tasks" on the button for 2.5s.
     const noWork = d.ok && (
@@ -3073,6 +3294,19 @@ async function addMilestone(projId, layer, parentId) {
 function nsDelCancel() {
   const d = document.getElementById('ns-del-confirm');
   if (d) d.style.display = 'none';
+}
+
+function _nsConfirm(title, body, onOk) {
+  const el = document.getElementById('ns-generic-confirm');
+  document.getElementById('ns-gc-title').textContent = title;
+  document.getElementById('ns-gc-body').textContent = body;
+  el.style.display = 'flex';
+  const ok = document.getElementById('ns-gc-ok');
+  const cancel = document.getElementById('ns-gc-cancel');
+  const close = () => { el.style.display = 'none'; ok.onclick = null; cancel.onclick = null; };
+  ok.onclick = () => { close(); onOk(); };
+  cancel.onclick = close;
+  el.onclick = (e) => { if (e.target === el) close(); };
 }
 
 async function confirmDeleteMs(projId, mid, text) {
@@ -3196,6 +3430,36 @@ async function _openWithTerminal(origIdx, projId) {
 let _prevExecStatus = null;
 let _prevPtyStatus = null;
 function _notifyTransition(projId, kind) {
+  // M162: render sticky in-page toast for live→idle transitions
+  // M163: use dedicated container (separate from SSE ns-push-toasts) so idle toasts
+  // don't mix with stone_created/user_commented SSE toasts.
+  let _toastBox = document.getElementById('ns-idle-toasts');
+  if (!_toastBox) {
+    _toastBox = document.createElement('div');
+    _toastBox.id = 'ns-idle-toasts';
+    _toastBox.style.cssText = 'position:fixed;top:64px;right:14px;z-index:10001;display:flex;flex-direction:column;gap:8px;max-width:340px;pointer-events:none';
+    document.body.appendChild(_toastBox);
+  }
+  const card = document.createElement('div');
+  card.style.cssText = 'pointer-events:auto;background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.25);font-family:var(--mono);font-size:11px;color:var(--text);max-width:320px';
+  const title = kind === 'exec' ? '✦ Session idle' : '✦ PTY idle';
+  const ts = new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  card.innerHTML =
+    `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
+       <span style="color:var(--accent);font-weight:600;letter-spacing:.04em">${title}</span>
+       <button title="Dismiss" style="background:none;border:1px solid var(--panel-border);border-radius:4px;color:var(--text-dim);cursor:pointer;font-family:var(--mono);font-size:11px;line-height:1;padding:1px 7px">×</button>
+     </div>
+     <div style="font-size:10px;color:var(--text-dim);margin-bottom:3px">${projId} · ${ts}</div>
+     <div style="color:var(--text);line-height:1.45">${kind === 'exec' ? 'Execute session went idle' : 'PTY session went idle'}</div>`;
+  card.querySelector('button').onclick = () => card.remove();
+  _toastBox.appendChild(card);
+  // M163: Skip OS notification on iPad/mobile — sticky toast is sufficient.
+  // iPad Safari shows both native banner AND in-page toast, causing double-popup.
+  // iPadOS 13+ reports as "Macintosh" in UA, so also check touch + pointer:coarse.
+  const _isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (_isIOS) return;
+  // OS notification (existing behavior, desktop only)
   if (typeof Notification === 'undefined') return;
   if (Notification.permission !== 'granted') return;
   try {
@@ -3280,7 +3544,9 @@ async function refreshSessionStatus() {
     }
     if (_prevPtyStatus) {
       for (const [pid, st] of Object.entries(newPty)) {
-        const wasActive = _prevPtyStatus[pid] === 'active';
+        // M163: handle new format "active:agent"
+        const prevSt = _prevPtyStatus[pid];
+        const wasActive = prevSt === 'active' || (typeof prevSt === 'string' && prevSt.startsWith('active:'));
         const nowIdle = typeof st === 'string' && st.startsWith('idle:');
         if (wasActive && nowIdle) _notifyTransition(pid, 'pty');
       }
@@ -3309,9 +3575,13 @@ function sessCell(projId) {
   if (_execStatus[projId] === 'idle')    return `<span class="sess-dot sess-idle"><span class="sess-indicator"></span>idle</span>`;
   const p = _ptyStatus[projId];
   if (!p || p === 'dead') return `<span class="sess-dot sess-none"><span class="sess-indicator"></span>—</span>`;
-  if (p === 'active')     return `<span class="sess-dot sess-active"><span class="sess-indicator"></span>live</span>`;
+  // M163: handle new format "active:agent" or "idle:N:agent"
+  if (p === 'active' || (typeof p === 'string' && p.startsWith('active:'))) {
+    return `<span class="sess-dot sess-active"><span class="sess-indicator"></span>live</span>`;
+  }
   if (typeof p === 'string' && p.startsWith('idle:')) {
-    const secs = parseInt(p.split(':')[1]);
+    const parts = p.split(':');
+    const secs = parseInt(parts[1]);
     const label = secs < 60 ? `${secs}s` : secs < 3600 ? `${Math.round(secs/60)}m` : `${Math.round(secs/3600)}h`;
     return `<span class="sess-dot sess-idle"><span class="sess-indicator"></span>${label}</span>`;
   }
@@ -3344,6 +3614,11 @@ function nodeCard(p, idx) {
   // M217: always show star-arc percentage on the card's bottom-left, regardless of current/target.
   let gapText = pct+'%';
   let gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
+  // M161: calculate three progress bar percentages (star-arc, milestone, deadline)
+  const msPctNum = (p.milestones && p.milestones.length) ? Math.round((p.milestones.filter(m=>m.done||m.status==='done').length / p.milestones.length) * 100) : 0;
+  const daysLeft = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : null;
+  const dlPctNum = (daysLeft !== null && daysLeft > 0) ? Math.max(0, Math.min(100, Math.round((daysLeft / 7) * 100))) : (daysLeft !== null ? 0 : 0);
+  const dlColor = daysLeft !== null ? (daysLeft <= 3 ? 'var(--red)' : daysLeft <= 7 ? 'var(--accent)' : 'var(--green)') : 'var(--text-dim)';
   // M178: badge = exec state, button = PTY state (independent)
   const _execKey = _execStatus[p.id||p.name];
   const _ptyKey  = _ptyStatus[p.id||p.name];
@@ -3422,16 +3697,38 @@ function nodeCard(p, idx) {
           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
           >${esc(p.name)}</span>
       </div>
-      <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}"></div></div>
+      <div style="display:flex;flex-direction:column;gap:1px;margin-bottom:2px">
+        <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${pct}%;background:${color}" title="Star-arc: ${pct}%"></div></div>
+        <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${msPctNum}%;background:var(--green)" title="Milestones: ${msPctNum}%"></div></div>
+        <div class="ns-node-bar-wrap"><div class="ns-node-bar" style="width:${dlPctNum}%;background:${dlColor}" title="Deadline: ${dlPctNum}%"></div></div>
+      </div>
       <div class="ns-node-bottom">
         <span class="ns-node-gap" style="color:${gapColor}">${esc(gapText)}</span>
         <span class="ns-node-date" style="color:${dl.color}" title="deadline: ${esc(p.deadline||'none')}">${esc(dl.text)}</span>
         ${(()=>{ /* M178: PTY-only — reads _ptyStatus, never exec. M180: 'idle' matches tmux vocabulary.
-                    M260: shortened labels to free horizontal room for the enlarged %/d-days. */
+                    M260: shortened labels to free horizontal room for the enlarged %/d-days.
+                    M163: parse agent type (claude/codex) from status string. */
                   const _loading = window._ptyLoading?.[pid];
-                  const _termClass = _loading ? ' loading' : (_ptyKey==='active' ? ' live' : (typeof _ptyKey==='string' && _ptyKey.startsWith('idle:')) ? ' idle' : '');
+                  // Parse status format: "active:agent" or "idle:N:agent"
+                  let _agent = 'claude';  // default
+                  let _isActive = false;
+                  let _isIdle = false;
+                  if (typeof _ptyKey === 'string') {
+                    const parts = _ptyKey.split(':');
+                    if (parts[0] === 'active') {
+                      _isActive = true;
+                      _agent = parts[1] || 'claude';
+                    } else if (parts[0] === 'idle') {
+                      _isIdle = true;
+                      _agent = parts[2] || 'claude';
+                    }
+                  } else if (_ptyKey === 'active') {
+                    _isActive = true;  // legacy format (no agent)
+                  }
+                  const _termClass = _loading ? ' loading' : (_isActive ? ' live' : _isIdle ? ' idle' : '');
                   const _termLabel = _loading ? '›_' : (_termClass===' live' ? 'live' : _termClass===' idle' ? 'idle' : '›_');
-                  const _termTitle = _loading ? 'Opening terminal...' : (_termClass===' live' ? 'Attach to running Claude PTY' : _termClass===' idle' ? 'Resume idle Claude PTY (context preserved)' : 'Open Claude PTY');
+                  const _agentName = _agent === 'codex' ? 'Codex' : 'Claude';
+                  const _termTitle = _loading ? 'Opening terminal...' : (_termClass===' live' ? `Attach to running ${_agentName} PTY` : _termClass===' idle' ? `Resume idle ${_agentName} PTY (context preserved)` : `Open ${_agentName} PTY`);
                   const _indicator = _loading ? '<span class="pty-load-dot"></span>' : '';
                   return `<span class="ns-node-term${_termClass}" title="${_termTitle}" onclick="event.stopPropagation();${_loading ? '' : 'openTerminal(\''+pid+'\')'}">${_termLabel}${_indicator}</span>`;
                 })()}
@@ -4500,6 +4797,8 @@ function closeDetail() {
   if (typeof stopTaskBoardPoll === 'function') stopTaskBoardPoll();
   // Stop the OSK upstream-error poll so it doesn't keep firing after the card closes.
   clearInterval(window._oskHealthPoll);
+  clearInterval(window._execPollTimer);
+  clearInterval(window._resumablePoll);
   render();
 }
 
@@ -4703,7 +5002,15 @@ function openTerminal(projId) {
   // "›_ resume" rather than briefly flash "›_ claude" until the next 3 s poll.
   ws.onopen    = () => {
     _termFit.fit(); _sendResize(ws);
-    _ptyStatus[projId] = 'active';  // M178: PTY-only update
+    // M178/M163: PTY-only update with agent preservation
+    const prevStatus = _ptyStatus[projId];
+    let agent = 'claude';  // default
+    if (typeof prevStatus === 'string' && prevStatus.includes(':')) {
+      // Extract agent from previous status (either "active:agent" or "idle:N:agent")
+      const parts = prevStatus.split(':');
+      agent = parts[parts.length - 1];
+    }
+    _ptyStatus[projId] = `active:${agent}`;
     // Clear loading state
     if (window._ptyLoading) delete window._ptyLoading[projId];
     if (typeof render === 'function') render();
@@ -4815,8 +5122,14 @@ function closeTerminal() {
     const ptyKilled = window._termPtyKilled === projId;
     if (!ptyKilled) {
       // WS detached but PTY likely survives → flip to idle:0 so button shows resume.
-      if (_ptyStatus[projId] === 'active' || !_ptyStatus[projId]) {
-        _ptyStatus[projId] = 'idle:0';
+      // M163: preserve agent type when transitioning to idle
+      const currentStatus = _ptyStatus[projId];
+      const isActive = currentStatus === 'active' || (typeof currentStatus === 'string' && currentStatus.startsWith('active:'));
+      if (isActive || !currentStatus) {
+        const agent = (typeof currentStatus === 'string' && currentStatus.includes(':'))
+          ? currentStatus.split(':')[1]
+          : 'claude';
+        _ptyStatus[projId] = `idle:0:${agent}`;
       }
     } else {
       // PTY actually killed → clear so button falls back to '›_ claude'.
@@ -5539,12 +5852,10 @@ async function loadTaskBoard(projId) {
     // M178: read _execStatus only — PTY state is irrelevant to whether autonomous tasks run.
     const sessIdle = _execStatus[projId] !== 'running';
     const statusColor = {queued:'var(--text-dim)',running:'var(--accent)',paused:'var(--text-dim)',done:'var(--green)',failed:'var(--red)'}
-    // M143: show "N live · M queued" instead of a single count that mirrors queued-stone count
+    // M143: always show "N live · M queued" breakdown — never a single total that mirrors stone count
     const runningCount = jobs.filter(j => j.status === 'running').length;
     const queuedCount  = jobs.filter(j => j.status === 'queued').length;
-    const countBadge = sessIdle
-      ? `<span style="background:var(--panel-border);color:var(--text-dim);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${jobs.length}</span>`
-      : `${runningCount > 0 ? `<span style="background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${runningCount} live</span>` : ''}${queuedCount > 0 ? `<span style="background:var(--panel-border);color:var(--text-dim);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${queuedCount} queued</span>` : ''}`;
+    const countBadge = `${runningCount > 0 ? `<span style="background:var(${sessIdle?'--panel-border':'--accent-soft'});color:var(--${sessIdle?'text-dim':'accent'});border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${runningCount} live</span>` : ''}${queuedCount > 0 ? `<span style="background:var(--panel-border);color:var(--text-dim);border-radius:10px;padding:0 6px;font-size:8px;letter-spacing:0;text-transform:none">${queuedCount} queued</span>` : ''}`;
     board.innerHTML = `
       <div style="display:flex;align-items:center;gap:5px;font-size:9px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.06em;margin:10px 0 5px;text-transform:uppercase">
         <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style="opacity:.6"><rect x="1" y="4" width="14" height="2" rx="1"/><rect x="1" y="8" width="14" height="2" rx="1"/><rect x="1" y="12" width="9" height="2" rx="1"/></svg>
@@ -5591,35 +5902,44 @@ function renderRight(p, topics, docData) {
     const execBtn = `<button class="dm-btn" id="dm-exec-btn"
       style="background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:500"
       onclick="executeProject('${esc(p.id)}',this)" title="Dispatch all queued stones at once (or init milestones for empty projects)">→ dispatch-all</button>`;
-    // M214: per-project model selector. Stored in north-star.md frontmatter `model` field;
-    // server splices `--model <value>` into PTY/tmux Claude spawns. Empty = CLI default.
+    const curAgent = (p.agent || 'claude').trim();
     const curModel = (p.model || '').trim();
-    const modelOpts = [
-      ['',                            '(default)'],
-      ['haiku',                       'haiku'],
-      ['sonnet',                      'sonnet'],
-      ['opus',                        'opus'],
-      ['claude-haiku-4-5-20251001',   'haiku 4.5'],
-      ['claude-sonnet-4-6',           'sonnet 4.6'],
-      ['claude-opus-4-7',             'opus 4.7'],
-      // OSK route: LiteLLM proxy on 127.0.0.1:4100 maps Anthropic API → OpenAI.
-      // Server detects this value and splices ANTHROPIC_BASE_URL/KEY env vars at spawn.
-      ['gpt-5.4-2026-03-05',          'gpt-5.4 (osk)'],
-      // OpenRouter models via LiteLLM proxy (or- prefix = proxy alias)
-      ['or-gemini-flash',             'gemini-2.0-flash'],
-      ['or-gemini3-flash',            'gemini-3-flash-preview'],
-      ['or-deepseek-v4-flash',        'deepseek-v4-flash'],
-      ['or-kimi-k2',                  'kimi-k2.6'],
-                ['or-hy3-preview',              'hy3-preview'],
-      ['or-hy3-preview',              'hy3-preview'],
-    ].map(([v,lbl]) => `<option value="${esc(v)}"${v===curModel?' selected':''}
-        style="background:var(--bg-deep);color:var(--text)">${esc(lbl)}</option>`).join('');
+    window.curAgent = curAgent;
+    window.curModel = curModel;
+    window.curContinuity = (p.continuity_mode || 'isolated');
+    window._selectedSession = { agent: curAgent, model: curModel, session_id: '' };
+
+    function _buildModelOpts(agent, selected) {
+      if (agent === 'codex') return `<option value="" disabled selected style="background:var(--bg-deep);color:var(--text-dim)">catalog coming soon</option>`;
+      return (MODEL_CATALOG[agent] || MODEL_CATALOG.claude).map(([v,lbl]) =>
+        `<option value="${esc(v)}"${v===selected?' selected':''}
+          style="background:var(--bg-deep);color:var(--text)">${esc(lbl)}</option>`
+      ).join('');
+    }
+
+    // Agent selector
+    const agentOpts = [
+      ['claude',      'Claude Code'],
+      ['codex',       'Codex'],
+      ['openrouter',  'CC + OpenRouter'],
+    ].map(([v,lbl]) => `<option value="${esc(v)}"${v===curAgent?' selected':''}
+      style="background:var(--bg-deep);color:var(--text)">${esc(lbl)}</option>`).join('');
+    const agentSel = `<label class="dm-agent-pick"
+        title="Agent runtime: Claude Code, Codex, or CC+OpenRouter (LiteLLM proxy)"
+        style="display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;color:var(--text-dim);border:1px solid var(--panel-border);border-radius:4px;padding:2px 6px;background:var(--bg-deep)">
+        <span style="opacity:.7">agent</span>
+        <select id="dm-agent-select" onchange="setProjectAgent('${esc(p.id)}',this.value,this)"
+          style="background:var(--bg-deep);border:none;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;cursor:pointer;color-scheme:dark">${agentOpts}</select>
+        <span id="dm-agent-status" style="font-size:9px;color:var(--text-dim)" aria-live="polite"></span>
+      </label>`;
+
+    // Model selector (filtered by agent)
     const modelSel = `<label class="dm-model-pick"
-        title="Model used when this project's PTY/tmux Claude session is spawned. Takes effect on next spawn — restart any live session."
+        title="Model used when this project's PTY/tmux session is spawned. Takes effect on next spawn — restart any live session."
         style="display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10px;color:var(--text-dim);border:1px solid var(--panel-border);border-radius:4px;padding:2px 6px;background:var(--bg-deep)">
         <span style="opacity:.7">model</span>
         <select id="dm-model-select" onchange="setProjectModel('${esc(p.id)}',this.value,this)"
-          style="background:var(--bg-deep);border:none;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;cursor:pointer;color-scheme:dark">${modelOpts}</select>
+          ${curAgent==='codex'?'disabled':''} style="background:var(--bg-deep);border:none;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;cursor:pointer;color-scheme:dark">${_buildModelOpts(curAgent, curModel)}</select>
         <span id="dm-model-status" style="font-size:9px;color:var(--text-dim)" aria-live="polite"></span>
       </label>`;
     const contMode = p.continuity_mode || 'isolated';
@@ -5636,14 +5956,30 @@ function renderRight(p, topics, docData) {
           style="background:var(--bg-deep);border:none;color:var(--text);font-family:var(--mono);font-size:10px;outline:none;cursor:pointer;color-scheme:dark">${contOpts}</select>
         <span id="dm-continuity-status" style="font-size:9px;color:var(--text-dim)" aria-live="polite"></span>
       </label>`;
-    // M233: spec doc button moves to detail-modal header; model selector moves into the session pane.
-    // M235: model selector slot starts hidden — _refreshExecState decides where to render it
-    //       (inline per-row when sessions exist, body slot when no sessions). Removes the flash.
     const specHeaderSlot = document.getElementById('dm-spec-header-slot');
     if (specHeaderSlot) specHeaderSlot.innerHTML = specBtn;
     specSlot.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${execBtn}</div>
       <div id="dm-exec-sessions" style="margin-top:5px"></div>
-      <div id="dm-model-slot" style="margin-top:6px;display:none">${modelSel}${continuitySel}</div>`;
+      <div id="dm-model-slot" style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+        <div class="dm-toggle-pane" id="dm-model-pane">
+          <div class="dm-pane-header" onclick="toggleDmPane('dm-model-pane')">
+            <span class="dm-pane-label">model</span>
+            <span class="dm-pane-caret open" id="dm-model-caret">▾</span>
+          </div>
+          <div class="dm-pane-body" id="dm-model-pane-body">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${agentSel}${modelSel}</div>
+          </div>
+        </div>
+        <div class="dm-toggle-pane" id="dm-session-pane">
+          <div class="dm-pane-header" onclick="toggleDmPane('dm-session-pane')">
+            <span class="dm-pane-label">session</span>
+            <span class="dm-pane-caret open" id="dm-session-caret">▾</span>
+          </div>
+          <div class="dm-pane-body" id="dm-session-pane-body">
+            <div style="color:var(--text-dim);font-size:9px;opacity:.6">loading…</div>
+          </div>
+        </div>
+      </div>`;
     // M214 follow-up: probe OSK proxy and disable gpt-* options when down,
     // so users don't silently pick a broken model. Also surface upstream
     // errors (quota/rate-limit/auth/5xx) as a banner so users learn WHY a
@@ -5694,13 +6030,13 @@ function renderRight(p, topics, docData) {
       fetch('/api/osk/health').then(r=>r.json()).then(_applyOskHealth).catch(()=>{});
     }, 30000);
     // M60+: restore exec button state + show running exec sessions list
+    // New: also fetches resumable sessions grouped by model from server
     const _refreshExecState = () => {
       fetch('/api/exec-sessions').then(r=>r.json()).then(d=>{
         const b = document.getElementById('dm-exec-btn');
         const info = document.getElementById('dm-exec-sessions');
         const running = (d.sessions||[]).filter(s => s.proj_id === p.id);
         if (b && running.length > 0) {
-          // M97/M133: show 'idle' at prompt, 'live' when actively working
           const isIdle = running.some(s => s.idle);
           b.textContent = isIdle ? 'idle' : 'live';
           b.style.opacity = '1';
@@ -5716,26 +6052,19 @@ function renderRight(p, topics, docData) {
         }
         if (info) {
           if (running.length > 0) {
-            // M132: include idle state in key so re-render fires when idle changes
             const newKey = running.map(s=>`${s.session||s.proj_id}:${s.idle?'i':'r'}`).join(',');
             if (info.dataset.sessionKey === newKey) return;
             info.dataset.sessionKey = newKey;
-            // M131/M178: update swimlane card badge — exec state only
             for (const s of running) {
               _execStatus[s.proj_id] = s.idle ? 'idle' : 'running';
             }
             render();
-            // Also refresh task board so running→paused transition shows correctly
             if (typeof loadTaskBoard === 'function' && p?.id) loadTaskBoard(p.id);
-            // M95/M98: toggle live overlay — open if closed, close if open
             window._toggleTmux = (pid) => {
               const overlay = document.getElementById('tmux-live-overlay');
               if (overlay && overlay.style.display !== 'none') stopTmuxWatch();
               else startTmuxWatch(pid);
             };
-            // M233: move the model selector inside the session pane (mapped to the live session id).
-            const _modelSlot = document.getElementById('dm-model-slot');
-            const _modelSelEl = _modelSlot?.querySelector('.dm-model-pick');
             info.innerHTML = `<div style="margin-top:6px;border-radius:7px;overflow:hidden;border:1px solid rgba(61,139,94,.22)">` + running.map((s,i) => {
               const sIdle = s.idle;
               const dotColor = sIdle ? 'var(--text-dim)' : 'var(--green)';
@@ -5747,32 +6076,12 @@ function renderRight(p, topics, docData) {
               const sm = s.spawn_mode || '';
               const sfrom = s.spawn_from || '';
               const spawnBadge = sm === 'resume'
-                ? `<span style="font-family:var(--mono);font-size:8px;color:var(--green);background:rgba(61,139,94,.10);border:1px solid rgba(61,139,94,.30);border-radius:3px;padding:1px 4px;letter-spacing:.03em" title="Spawned with --resume ${esc(sfrom)} — this live session is continuing the prior stone work.">↻ resumed${sfrom?` ${esc(sfrom.slice(0,8))}`:''}</span>`
+                ? `<span style="font-family:var(--mono);font-size:8px;color:var(--green);background:rgba(61,139,94,.10);border:1px solid rgba(61,139,94,.30);border-radius:3px;padding:1px 4px;letter-spacing:.03em" title="Spawned with --resume ${esc(sfrom)}">↻ resume${sfrom?` ${esc(sfrom.slice(0,8))}`:''}</span>`
                 : sm === 'continue'
-                ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);background:rgba(0,0,0,.04);border:1px solid var(--panel-border);border-radius:3px;padding:1px 4px;letter-spacing:.03em" title="Spawned with --continue (no specific session id) — Claude picked the most recent jsonl in this cwd.">↻ continue</span>`
+                ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);background:rgba(0,0,0,.04);border:1px solid var(--panel-border);border-radius:3px;padding:1px 4px;letter-spacing:.03em" title="Claude picked most recent session">↻ resume</span>`
                 : sm === 'fresh'
-                ? `<span style="font-family:var(--mono);font-size:8px;color:var(--yellow,#d4a574);background:rgba(212,165,116,.10);border:1px solid rgba(212,165,116,.30);border-radius:3px;padding:1px 4px;letter-spacing:.03em" title="Spawned with no resume flag — fresh session, prior stone work NOT continued.">✦ fresh</span>`
-                : `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.45" title="Spawn info unavailable (session predates the tracking, or hub was restarted after spawn).">— unknown</span>`;
-              // M233 v2: model selector lives INSIDE each session row (per-session mapping).
-              const _rowModelOpts = [
-                ['',                            '(default)'],
-                ['haiku',                       'haiku'],
-                ['sonnet',                      'sonnet'],
-                ['opus',                        'opus'],
-                ['claude-haiku-4-5-20251001',   'haiku 4.5'],
-                ['claude-sonnet-4-6',           'sonnet 4.6'],
-                ['claude-opus-4-7',             'opus 4.7'],
-                ['gpt-5.4-2026-03-05',          'gpt-5.4 (osk)'],
-                ['or-gemini-flash',             'gemini-2.0-flash'],
-                ['or-gemini3-flash',            'gemini-3-flash-preview'],
-                ['or-deepseek-v4-flash',        'deepseek-v4-flash'],
-                ['or-kimi-k2',                  'kimi-k2.6'],
-                ['or-hy3-preview',              'hy3-preview'],
-              ].map(([v,lbl]) => `<option value="${esc(v)}"${v===(p.model||'').trim()?' selected':''}>${esc(lbl)}</option>`).join('');
-              const _rowModelSel = `<select class="dm-model-select" title="Model for next spawn of this project (shared across sessions)"
-                onchange="event.stopPropagation();setProjectModel('${esc(p.id)}',this.value,this)"
-                onclick="event.stopPropagation()"
-                style="background:var(--bg-deep);border:1px solid var(--panel-border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:9px;outline:none;cursor:pointer;padding:1px 4px">${_rowModelOpts}</select>`;
+                ? `<span style="font-family:var(--mono);font-size:8px;color:var(--yellow,#d4a574);background:rgba(212,165,116,.10);border:1px solid rgba(212,165,116,.30);border-radius:3px;padding:1px 4px;letter-spacing:.03em" title="New session, no prior context">✦ new</span>`
+                : `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.45">— unknown</span>`;
               return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${rowBg};${i<running.length-1?`border-bottom:1px solid ${borderColor}`:''};cursor:pointer"
                 title="Click to open/close terminal"
                 onclick="_toggleTmux('${esc(p.id)}')">
@@ -5781,16 +6090,11 @@ function renderRight(p, topics, docData) {
                   <div style="font-family:var(--mono);font-size:10px;color:${labelColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.session||s.proj_id)}</div>
                   <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:1px;letter-spacing:.03em;display:flex;align-items:center;gap:6px">started ${(s.created||'').slice(11,16)} ${spawnBadge}</div>
                 </div>
-                ${_rowModelSel}
                 <span style="font-family:var(--mono);font-size:8px;color:${labelColor};background:${labelBg};border-radius:4px;padding:1px 5px;letter-spacing:.04em;text-transform:uppercase">${labelText}</span>
               </div>`;
             }).join('') + `</div>`;
-            // M233 v2: per-row selectors carry the model now; hide the placeholder slot when sessions exist.
-            if (_modelSlot) _modelSlot.style.display = 'none';
           } else {
             info.innerHTML = '';
-            // No active session — surface the model selector in its placeholder slot
-            if (_modelSlot) _modelSlot.style.display = '';
           }
         }
       }).catch(()=>{});
@@ -5799,6 +6103,68 @@ function renderRight(p, topics, docData) {
     clearInterval(window._execPollTimer);
     window._execPollTimer = setInterval(_refreshExecState, 5000);
     window._refreshExecState = _refreshExecState; // M89: expose globally so killSession can restart poll
+
+    // Fetch and render resumable sessions grouped by model
+    const _projId = p.id; // capture at openDetail time
+    const _renderResumableSessions = () => {
+      const curAgent = window.curAgent || 'claude';
+      const curModel = window.curModel || '';
+      fetch(`/api/northstar/${encodeURIComponent(_projId)}/resumable-sessions?agent=${encodeURIComponent(curAgent)}`)
+        .then(r=>r.json()).then(d=>{
+          const sessBody = document.getElementById('dm-session-pane-body');
+          if (!sessBody) return;
+          const groups = d.groups || [];
+          // Always build session list — fresh is always at top
+          const selSess = window._selectedSession || {};
+          let rows = [];
+          // Collect all sessions from all model groups, flatten
+          for (const g of groups) {
+            for (const m of (g.models || [])) {
+              for (const s of (m.sessions || [])) {
+                rows.push({ agent: g.agent, model_key: m.model_key, model_label: m.model_label || m.model_key || '(default)', has_live: m.has_live, session: s });
+              }
+            }
+          }
+          // Fresh: always ONE entry at top (for current model), dedup across groups
+          const resumeRows = rows.filter(r => r.session.type !== 'fresh');
+          // Pick fresh row matching curModel, or first fresh available
+          const freshMatch = rows.find(r => r.session.type === 'fresh' && r.model_key === curModel)
+            || rows.find(r => r.session.type === 'fresh');
+          const allRows = freshMatch ? [freshMatch, ...resumeRows] : resumeRows;
+          if (allRows.length === 0) {
+            sessBody.innerHTML = `<div style="color:var(--text-dim);font-size:9px;opacity:.6">no sessions</div>`;
+            return;
+          }
+          let html = '';
+          for (const row of allRows) {
+            const { agent, model_key, model_label, has_live, session: s } = row;
+            const isFresh = s.type === 'fresh';
+            const isPicked = (selSess.model === model_key && selSess.session_id === s.id);
+            const isCurrentModel = (model_key === curModel);
+            const pickColor = isPicked ? 'var(--green)' : 'var(--text-dim)';
+            const label = isFresh
+              ? `✦ new session`
+              : `↻ resume  ${esc(s.label || s.id.slice(0,12))}`;
+            const subLabel = isFresh ? '' : `<span style="font-size:8px;color:var(--text-dim);opacity:.6;margin-left:4px">${esc(model_label)}${has_live?' ● live':''}</span>`;
+            html += `<div class="dm-sess-row${isPicked?' picked':''}" data-agent="${esc(agent)}" data-model="${esc(model_key)}" data-session="${esc(s.id)}"
+              onclick="_selectSession('${esc(agent)}','${esc(model_key)}','${esc(s.id)}')"
+              style="color:${isFresh?'var(--yellow,#d4a574)':'var(--text)'}">
+              <span style="color:${pickColor};font-size:9px">${isPicked?'●':'○'}</span>
+              <span>${label}</span>${subLabel}
+              ${isCurrentModel && !isFresh ? `<span style="margin-left:auto;font-size:8px;color:var(--green);opacity:.7">cur</span>` : ''}
+            </div>`;
+          }
+          const newHash = html.length + '';
+          if (sessBody.dataset.resumableHash !== newHash) {
+            sessBody.innerHTML = html;
+            sessBody.dataset.resumableHash = newHash;
+          }
+        }).catch(()=>{});
+    };
+    _renderResumableSessions();
+    clearInterval(window._resumablePoll);
+    window._resumablePoll = setInterval(_renderResumableSessions, 30000);
+    window._renderResumableSessions = _renderResumableSessions;
   }
 
   // Right panel: note + init if needed
@@ -6190,8 +6556,10 @@ document.getElementById('doc-overlay').addEventListener('click', e => {
     const es = new EventSource('/api/notifications/stream');
     es.onopen = () => { _backoff = 1000; };
     es.addEventListener('hello', () => {});
-    es.addEventListener('stone_created', e => { try { _renderToast(JSON.parse(e.data)); } catch(_){} });
-    es.addEventListener('user_commented', e => { try { _renderToast(JSON.parse(e.data)); } catch(_){} });
+    // M162: stone_created/user_commented no longer render sticky toasts.
+    // Only idle→live transitions (via _notifyTransition) show sticky popups.
+    es.addEventListener('stone_created', e => { try { JSON.parse(e.data); } catch(_){} });
+    es.addEventListener('user_commented', e => { try { JSON.parse(e.data); } catch(_){} });
     es.onerror = () => {
       es.close();
       setTimeout(_connect, _backoff);
