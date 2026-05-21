@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "northstar-hub"
-version = "0.2.4"
+version = "0.2.5"
 description = "Personal AI project management hub — North Star milestone tracking, live Claude sessions, CTX context alignment."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,10 +25,8 @@ dependencies = [
   "pyyaml>=6.0",
   "ptyprocess>=0.7",
   "anthropic>=0.28",
+  "ctx-retriever>=0.3.30",  # CTX context bootstrapper — hooks auto-wire on install
 ]
-
-[project.optional-dependencies]
-ctx = ["ctx-server>=0.1"]
 
 [project.scripts]
 northstar-hub = "hub.server:main"

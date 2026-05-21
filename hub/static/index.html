@@ -248,12 +248,55 @@ nav {
   <div class="wrap" id="wrap-ctx">
     <div class="offline-overlay" id="offline-ctx">
       <div class="offline-icon">◌</div>
-      <div class="offline-title">CTX is offline</div>
-      <div class="offline-hint">ctx</div>
-      <button class="retry-btn" onclick="retryLoad('ctx')">Retry</button>
+      <div class="offline-title">CTX Dashboard offline</div>
+      <div class="offline-hint" style="margin-bottom:14px">Local dashboard not running — CTX hooks still work</div>
+
+      <!-- CTX Install Panel (M36: CTX ↔ NS-Hub integration) -->
+      <div id="ctx-install-panel" style="
+        background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;
+        padding:16px 20px;max-width:380px;text-align:left;margin-bottom:14px">
+        <div style="font-family:var(--serif);font-size:13px;font-weight:500;color:var(--text);margin-bottom:10px">
+          Install CTX
+        </div>
+        <code style="
+          display:block;background:var(--bg-deep);border:1px solid var(--panel-border);
+          border-radius:5px;padding:10px 14px;font-size:12px;color:var(--accent);
+          font-family:var(--mono);margin-bottom:10px;cursor:pointer;user-select:all"
+          onclick="navigator.clipboard&&navigator.clipboard.writeText('pip install ctx-retriever');this.textContent='✓ copied';setTimeout(()=>this.textContent='pip install ctx-retriever',1500)"
+          title="Click to copy">pip install ctx-retriever</code>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">
+          Hooks auto-wire on first Python startup. Restart Claude Code.
+        </div>
+        <div id="ctx-telemetry-mini" style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">
+          loading stats…
+        </div>
+      </div>
+
+      <button class="retry-btn" onclick="retryLoad('ctx')">Retry dashboard</button>
     </div>
     <iframe id="frame-ctx" src="about:blank"></iframe>
   </div>
+
+  <script>
+  // CTX install panel: load live telemetry stats
+  (function loadCtxTelemetry() {
+    fetch('/api/ctx-telemetry').then(r => r.json()).then(d => {
+      const el = document.getElementById('ctx-telemetry-mini');
+      if (!el) return;
+      if (d.error) { el.textContent = 'stats unavailable'; return; }
+      const ns2 = d.ns2_passed ? '✓' : '○';
+      el.innerHTML = `
+        <span style="color:var(--green)">${ns2} NS2</span> ·
+        ${d.external_users} external users ·
+        ${d.total_rows} rows ·
+        v0.3.28: ${d.versions?.['0.3.28']||0} / v0.3.29: ${d.versions?.['0.3.29']||0} / v0.3.30: ${d.versions?.['0.3.30']||0}
+      `;
+    }).catch(() => {
+      const el = document.getElementById('ctx-telemetry-mini');
+      if (el) el.textContent = '';
+    });
+  })();
+  </script>
 
   <div class="wrap" id="wrap-corpus">
     <div class="corpus-list" id="corpus-list">
