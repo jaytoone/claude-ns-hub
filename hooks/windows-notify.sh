@@ -45,6 +45,7 @@ esac
 # Remote notify (SSH reverse-tunnel / LAN / public URL).
 # Activate by exporting CLAUDE_REMOTE_NOTIFY_URL (e.g. http://localhost:6789/notify).
 # Set CLAUDE_REMOTE_NOTIFY_ONLY=1 to skip the local WinForms popup on a headless host.
+echo "$(date -Iseconds) HOOK-TRACE notify start matcher=$matcher" >> /tmp/hook-trace.log
 if [ -n "${CLAUDE_REMOTE_NOTIFY_URL:-}" ]; then
     (
         payload=$(jq -cn --arg t "$title" --arg m "$message" --arg k "notify" \
@@ -67,6 +68,7 @@ if [ -n "${CLAUDE_REMOTE_NOTIFY_URL:-}" ]; then
             [ -z "$_bark_key" ] && continue
             bark_payload=$(jq -cn --arg k "$_bark_key" --arg t "$title" --arg b "$message" \
                 '{device_key:$k,title:$t,body:$b,sound:"default"}')
+            echo "$(date -Iseconds) HOOK-TRACE $('basename $0') bark-fired key=${_bark_key:0:6}" >> /tmp/hook-trace.log
             curl -sf -m 8 -X POST "https://api.day.app/push" \
                 -H 'Content-Type: application/json' \
                 --data "$bark_payload" >/dev/null 2>&1 || true

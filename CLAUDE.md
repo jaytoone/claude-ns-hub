@@ -1,11 +1,50 @@
 
-<!-- CLAUDE.md | last updated: 2026-04-29 -->
+<!-- CLAUDE.md | last updated: 2026-05-19 -->
+
+## E2E Completion Screenshot Rule
+**Completion screenshots MUST be real UI screenshots** (browser showing the working feature), NOT code snippet captures or terminal output. For backend-only changes (edge functions, API fixes), show the UI where the feature is triggered successfully.
+
+## "Prove with img" Rule (M295)
+When user says "prove with img", "share the shot", "completion shot", or similar: take a Playwright screenshot of the relevant working UI, upload to `gdrive:claude-shared/Moat/outbox/`, and share the GDrive link.
+
+## Screenshot Path Rule (M357)
+**NEVER use relative filenames for Playwright screenshots** — always use project-absolute paths:
+`filename="/home/desk-1/Project/Moat/.playwright-mcp/screenshot-name.png"`
+Relative paths like `"screenshot-name.png"` save to session CWD (`/home/desk-1/`) and clutter home dir.
 
 
 ## Language: Always respond in English regardless of user input language. Overrides all skills. Only exception: direct quotes of user-facing copy (DMs, Korean product strings) may remain in the original language; analysis around them stays English.
 
 
 ## Service Binding Rule: dev servers may bind to `0.0.0.0` for local LAN/Tailscale access. Use `127.0.0.1` for strictly local-only services.
+
+## Google Drive Share Protocol
+
+**Rule**: Always upload to `gdrive:claude-shared/<project>/outbox/`. Never use the top-level `claude-shared/outbox/`.
+
+**Upload command** (preferred for all file types):
+```bash
+rclone copy <local-file> "gdrive:claude-shared/<project>/outbox/"
+rclone link "gdrive:claude-shared/<project>/outbox/<filename>"  # get shareable link
+```
+
+**If project folder missing**: `rclone mkdir "gdrive:claude-shared/<project>/inbox" && rclone mkdir "gdrive:claude-shared/<project>/outbox"`
+
+**Folder IDs** (claude-shared = `1q-FG7xA4GokMhSC0rRuQJNRPmhlTnM77`):
+| Project | folder | inbox | outbox |
+|---------|--------|-------|--------|
+| HugwartsBanana | `1Bz_7bvQ...` | `1RFD5UHH...` | `1ocfbntx...` |
+| Clone | `1opLl1ZO...` | — | — |
+| FromScratch | `1y6aWAIClH4u7dpJd2z1U7cuocT0hV3Tr` | `1hD3r6JqIIgnNdmv64G23SkgS89sb2dxm` | `1FGuwnMUtVvu9IECl5ayuSq70GNi3-nGy` |
+| Moat | — | `gdrive:claude-shared/Moat/inbox/` | `gdrive:claude-shared/Moat/outbox/` |
+
+**docx**: generate with python-docx → `rclone copy` to outbox (preserves formatting).
+**text/html**: use `mcp__claude_ai_Google_Drive__create_file` with `contentMimeType=text/html` + `parentId=<outbox-id>` if rclone unavailable.
+
+**Inbox usage** (read from user): `gdrive:claude-shared/<project>/inbox/` — user places files here for Claude to read.
+Read with: `rclone ls "gdrive:claude-shared/<project>/inbox/"` then `rclone copy <remote-file> /tmp/` to download.
+On "make into docx" / "표/테이블 docx로" / any tabular-output request: emit **HTML with styled tables** (borders, header bg, alternating row shading, priority highlights) — never markdown pipe-tables, since Google Docs renders them as raw text. Upload as `text/html` so Drive preview shows real tables and open-with-Docs converts to editable cells.
+Gmail equivalent on "send via gmail": only `create_draft` exists (no auto-send), so draft to be2jay67@gmail.com with Drive links in the body; user opens Drafts → Send.
 
 ---
 ## Private Keys / Token

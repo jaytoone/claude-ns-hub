@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "northstar-hub"
-version = "0.1.0"
+version = "0.2.4"
 description = "Personal AI project management hub — North Star milestone tracking, live Claude sessions, CTX context alignment."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -38,8 +38,8 @@ Homepage = "https://github.com/jaytoone/claude-client-bootstrap"
 Issues   = "https://github.com/jaytoone/claude-client-bootstrap/issues"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["hub*"]
+where = [".."]
+include = ["hub", "hub.*"]
 
 [tool.setuptools.package-data]
-hub = ["static/*"]
+hub = ["static/*", "static/**/*"]

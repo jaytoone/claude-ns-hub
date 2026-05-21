@@ -5,3 +5,10 @@ services:
       - "6901:6901"   # noVNC browser viewer — open http://localhost:6901 on Windows
       - "8831:8831"   # Playwright MCP SSE  — connect Claude Code to http://localhost:8831/sse
     restart: unless-stopped
+    # M357: mount project dirs so screenshots save within project, not to /home/desk-1/
+    volumes:
+      - /home/desk-1/Project:/home/desk-1/Project
+      - /home/desk-1/.claude:/home/desk-1/.claude
+    working_dir: /home/desk-1/Project/Moat
+    environment:
+      - OUTPUT_DIR=/home/desk-1/Project/Moat/.playwright-mcp/novnc

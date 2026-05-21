@@ -51,6 +51,7 @@ fi
 # Remote notify via Tailscale direct POST to each online Windows client on port 6789.
 # Activate by exporting CLAUDE_REMOTE_NOTIFY_URL (any non-empty value enables it).
 # Set CLAUDE_REMOTE_NOTIFY_ONLY=1 to skip the local WinForms popup on a headless host.
+echo "$(date -Iseconds) HOOK-TRACE stop start matcher=$matcher" >> /tmp/hook-trace.log
 if [ -n "${CLAUDE_REMOTE_NOTIFY_URL:-}" ]; then
     (
         payload=$(jq -cn --arg t "$dir_name" --arg m "$last_activity  $current_time" --arg k "stop" \
@@ -73,6 +74,7 @@ if [ -n "${CLAUDE_REMOTE_NOTIFY_URL:-}" ]; then
             [ -z "$_bark_key" ] && continue
             bark_payload=$(jq -cn --arg k "$_bark_key" --arg t "$dir_name" --arg b "$last_activity  $current_time" \
                 '{device_key:$k,title:$t,body:$b,sound:"default"}')
+            echo "$(date -Iseconds) HOOK-TRACE $('basename $0') bark-fired key=${_bark_key:0:6}" >> /tmp/hook-trace.log
             curl -sf -m 8 -X POST "https://api.day.app/push" \
                 -H 'Content-Type: application/json' \
                 --data "$bark_payload" >/dev/null 2>&1 || true

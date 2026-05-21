@@ -40,6 +40,11 @@ WOW_EVENT_FILE = HOME / ".claude" / ".ctx-wow-event.json"   # latest qualifying 
 WOW_UTILITY_MIN = 0.70      # utility_rate ≥ 70%
 WOW_AGE_MIN_DAYS = 14       # at least one referenced item ≥ 14 days old
 
+# Hub discovery nudge — fires once after N high-utility sessions
+HUB_NUDGE_FILE = HOME / ".claude" / ".ctx-hub-nudge-sent"
+HUB_HIGH_UTILITY_COUNT_FILE = HOME / ".claude" / ".ctx-hub-utility-count"
+HUB_NUDGE_SESSION_THRESHOLD = 5
+
 
 # ── T1: Semantic similarity via vec-daemon ───────────────────────────
 VEC_SOCK = HOME / ".local" / "share" / "claude-vault" / "vec-daemon.sock"
@@ -894,6 +899,23 @@ def main():
                 }))
             except Exception:
                 pass
+
+    # ── Hub discovery nudge: fires once after N high-utility sessions ───────
+    if total > 0 and rate >= WOW_UTILITY_MIN and not HUB_NUDGE_FILE.exists():
+        try:
+            count = int(HUB_HIGH_UTILITY_COUNT_FILE.read_text().strip()) if HUB_HIGH_UTILITY_COUNT_FILE.exists() else 0
+            count += 1
+            HUB_HIGH_UTILITY_COUNT_FILE.write_text(str(count))
+            if count >= HUB_NUDGE_SESSION_THRESHOLD:
+                print(
+                    "\n[CTX] You've had 5 high-quality sessions."
+                    " Hub is available — run `ctx-hub start` to track milestones"
+                    " and get them auto-injected into every future session.",
+                    file=sys.stderr,
+                )
+                HUB_NUDGE_FILE.write_text(str(time.time()))
+        except Exception:
+            pass
 
     # ── session_aggregate: per-session rollup (Stage 1 flywheel, second half) ──
     _accumulate_session_aggregate(

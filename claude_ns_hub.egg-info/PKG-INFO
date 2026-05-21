@@ -1,0 +1,104 @@
+Metadata-Version: 2.4
+Name: claude-ns-hub
+Version: 0.2.1
+Summary: The personal AI project hub that runs while you work. North Star tracking, live exec sessions, mobile terminal, entity corpus.
+License: MIT
+Project-URL: Homepage, https://github.com/jaytoone/claude-client-bootstrap
+Project-URL: Issues, https://github.com/jaytoone/claude-client-bootstrap/issues
+Keywords: ai,project-management,claude,northstar,milestones,productivity
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Office/Business :: Scheduling
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.110
+Requires-Dist: uvicorn[standard]>=0.29
+Requires-Dist: httpx>=0.27
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: ptyprocess>=0.7
+Requires-Dist: anthropic>=0.28
+Provides-Extra: ctx
+Requires-Dist: ctx-server>=0.1; extra == "ctx"
+
+# claude-ns-hub
+
+**The personal AI project hub that runs while you work.** North Star milestone tracking · live Claude exec sessions · entity corpus browser · mobile-ready terminal.
+
+> One command. Your whole AI workflow, visible from any device.
+
+## Why you need this
+
+While Claude Code runs your tasks autonomously, **you're flying blind** — no idea what it just did, which session is live, or whether it's stuck. claude-ns-hub fixes that:
+
+- **See everything live**: exec sessions, session IDs, idle/busy state — on your phone while you're away
+- **Queue work without interrupting Claude**: tap a stone, queue it, it runs on next idle
+- **Resume any session**: ↻ button resumes exact conversation context, never lose work
+- **One install, zero config**: auto-discovers projects, spawns entity corpus, exposes to Tailscale
+
+The engineers shipping the most with Claude Code are the ones who can monitor, queue, and intervene — without context-switching.
+
+## Install
+
+```bash
+pip install claude-ns-hub
+```
+
+## Quick start
+
+```bash
+claude-ns-hub
+# Hub starts at http://<tailscale-ip>:9000
+# North Star · CTX · Corpus · Market — all tabs, live
+```
+
+## What you get
+
+| Feature | What it does |
+|---------|-------------|
+| **North Star swimlane** | Visualize all projects + milestones on one screen |
+| **Live exec sessions** | See `claude-exec-MOAT` running, its session ID, busy/idle state |
+| **Mobile terminal** | `⌨_` button attaches browser terminal to the running Claude session — type from your phone |
+| **Session resume** | ↻ rows resume exact prior conversation; ✦ starts fresh — your choice per stone |
+| **Entity corpus browser** | Browse all local skills/agents/corpora; inline search |
+| **Drag-and-drop comments** | Drop files into stone comments; upload auto-appended as links |
+| **PyPI installable** | `pip install claude-ns-hub && claude-ns-hub` — done |
+
+## Metrics endpoint
+
+```bash
+curl http://localhost:9000/api/metrics?proj_id=MOAT
+# → stones_completed, stones_queued, total_tokens per day
+```
+
+## Configuration
+
+```bash
+# Disable entity corpus auto-spawn
+ENTITY_CORPUS_DISABLED=1 claude-ns-hub
+
+# Custom entity corpus path
+ENTITY_CORPUS_SERVER=~/my-corpus/server.py claude-ns-hub
+```
+
+## Screenshots
+
+Hub North Star view — swimlane layout across all projects:
+
+```
+North Star  CTX  Corpus  Market
+├── MOAT   93% D+1  219/266 stones
+├── CTX    90% D-0  ...
+└── AIKB   88% D+1  ...
+```
+
+Detail card — exec session live, session pane, milestones table:
+- Green `LIVE ▾` badge on active exec session
+- `⌨_` button opens browser terminal attached to running Claude
+- `›` button slides table to reveal 7-column layout with ext data
+
+---
+
+**pip install claude-ns-hub** — because you should know what Claude is doing right now.

@@ -1,44 +1,75 @@
-# northstar-hub
+# claude-ns-hub
 
-**Personal AI project management hub** — North Star milestone tracking, live Claude sessions, CTX context alignment, and team productivity.
+**The personal AI project hub that runs while you work.** North Star milestone tracking · live Claude exec sessions · entity corpus browser · mobile-ready terminal.
+
+> One command. Your whole AI workflow, visible from any device.
+
+![Hub Dashboard — North Star swimlane with live exec sessions](https://i.imgur.com/798spzC.png)
+
+## Why you need this
+
+While Claude Code runs your tasks autonomously, **you're flying blind** — no idea what it just did, which session is live, or whether it's stuck. claude-ns-hub fixes that:
+
+- **See everything live**: exec sessions, session IDs, idle/busy state — on your phone while you're away
+- **Queue work without interrupting Claude**: tap a stone, queue it, it runs on next idle
+- **Resume any session**: ↻ button resumes exact conversation context, never lose work
+- **One install, zero config**: auto-discovers projects, spawns entity corpus, exposes to Tailscale
+
+The engineers shipping the most with Claude Code are the ones who can monitor, queue, and intervene — without context-switching.
 
 ## Install
 
 ```bash
-pip install northstar-hub
+pip install claude-ns-hub
 ```
 
 ## Quick start
 
 ```bash
-# Start the hub (binds to Tailscale IP or localhost)
-northstar-hub
-
-# Or start with CTX integration (auto-discovers CTX at :8787)
-northstar-hub --with-ctx
+claude-ns-hub
+# Hub starts at http://<tailscale-ip>:9000
+# North Star · CTX · Corpus · Market — all tabs, live
 ```
 
-Open `http://localhost:9000` in your browser.
+## What you get
 
-## Features
+| Feature | What it does |
+|---------|-------------|
+| **North Star swimlane** | Visualize all projects + milestones on one screen |
+| **Live exec sessions** | See `claude-exec-MOAT` running, its session ID, busy/idle state |
+| **Mobile terminal** | `⌨_` button attaches browser terminal to the running Claude session — type from your phone |
+| **Session resume** | ↻ rows resume exact prior conversation; ✦ starts fresh — your choice per stone |
+| **Entity corpus browser** | Browse all local skills/agents/corpora; inline search |
+| **Drag-and-drop comments** | Drop files into stone comments; upload auto-appended as links |
+| **PyPI installable** | `pip install claude-ns-hub && claude-ns-hub` — done |
 
-- **North Star** — milestone pipeline management with AI execution loop
-- **CTX** — real-time context alignment showing what Claude is working on
-- **Corpus** — skill/agent list with live entity-corpus dashboard
-- **PTY terminal** — interactive Claude session directly in the detail card
-- **Exec sessions** — autonomous Claude loops dispatched per project
-
-## CTX integration
-
-If you already run CTX (`ctx-server` on port 8787), northstar-hub auto-discovers it at startup and shows it in the **CTX** tab. No configuration needed.
-
-CTX users: install northstar-hub to get project milestone management alongside your context tracking.
+## Metrics endpoint
 
 ```bash
-pip install northstar-hub ctx-server  # install both
-northstar-hub --with-ctx              # starts both services
+curl http://localhost:9000/api/metrics?proj_id=MOAT
+# → stones_completed, stones_queued, total_tokens per day
 ```
 
 ## Configuration
 
-Hub data lives in `~/.claude/hub/projects/` — one YAML file per project.
+```bash
+# Disable entity corpus auto-spawn
+ENTITY_CORPUS_DISABLED=1 claude-ns-hub
+
+# Custom entity corpus path
+ENTITY_CORPUS_SERVER=~/my-corpus/server.py claude-ns-hub
+```
+
+## Screenshots
+
+**North Star swimlane** — all projects, badge counts, live exec indicator at a glance:
+
+![North Star swimlane](https://i.imgur.com/TG233OE.png)
+
+**Skill / Agent badge picker** — assign `/expert-research` or any agent to a stone directly from the milestone row:
+
+![Skill badge picker](https://i.imgur.com/v8VRaAz.png)
+
+---
+
+**pip install claude-ns-hub** — because you should know what Claude is doing right now.

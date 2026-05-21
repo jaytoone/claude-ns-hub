@@ -138,10 +138,10 @@ nav {
 }
 .retry-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
-/* ── Corpus skill/agent list (natural fallback) ── */
+/* ── Corpus skill/agent list (natural fallback — overlays iframe when offline) ── */
 .corpus-list {
   position: absolute; inset: 0; overflow: auto; background: var(--bg);
-  padding: 28px 32px 40px; display: none;
+  padding: 28px 32px 40px; display: none; z-index: 1;
 }
 .corpus-list.show { display: block; }
 .corpus-list .head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
@@ -229,6 +229,9 @@ nav {
   </div>
 
   <div class="nav-right">
+    <!-- M292: update badge with version text -->
+    <span id="hub-update-badge" title="" style="display:none;font-family:monospace;font-size:9px;font-weight:600;padding:2px 6px;border-radius:10px;background:#1a3a1a;color:#7fcf7f;border:1px solid #4a9a4a;cursor:pointer;white-space:nowrap;flex-shrink:0;letter-spacing:.02em"
+      onclick="alert(this.title)">⟳ update</span>
     <button class="open-btn" id="theme-toggle" onclick="hubToggleTheme()" title="Toggle dark mode" style="padding:0 8px;font-size:13px">◑</button>
     <button class="open-btn" id="open-standalone" title="Open in new tab">
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -239,6 +242,7 @@ nav {
     <span class="clock" id="clock">—</span>
   </div>
 </nav>
+
 
 <div class="content">
   <div class="wrap" id="wrap-ctx">
@@ -274,7 +278,7 @@ nav {
       </div>
       <div class="empty" id="corpus-empty" style="display:none">No matches.</div>
     </div>
-    <iframe id="frame-corpus" src="about:blank" style="display:none"></iframe>
+    <iframe id="frame-corpus" src="about:blank"></iframe>
   </div>
 
   <div class="wrap" id="wrap-market-signals">
@@ -284,8 +288,8 @@ nav {
   <div class="wrap active" id="wrap-northstar">
     <div class="offline-overlay" id="offline-northstar">
       <div class="offline-icon">◌</div>
-      <div class="offline-title">North Star not found</div>
-      <div class="offline-hint">FromScratch/docs/north-star-dashboard.html</div>
+      <div class="offline-title">Hub restarting…</div>
+      <div class="offline-hint">reconnects automatically</div>
     </div>
     <iframe id="frame-northstar" src="about:blank"></iframe>
   </div>
@@ -344,18 +348,26 @@ document.getElementById('open-standalone').addEventListener('click', () =>
   window.open(TABS[activeTab].standalone, '_blank'));
 
 // ── Health checks ─────────────────────────────────────────────────────────────
+// M229: grace period — only show offline overlay after 3 consecutive failures
+// (hub restarts take ~5s; at 8s poll that's 1 check. 3 failures = 24s grace)
+const _healthFailCount = {};
 async function checkHealth(name) {
   const dot     = document.getElementById(`dot-${name}`);
   const overlay = document.getElementById(`offline-${name}`);
   try {
     const d = await fetch(TABS[name].healthUrl).then(r => r.json());
+    _healthFailCount[name] = 0; // reset on success
     dot.className = 'status-dot ' + (d.ok ? 'ok' : 'fail');
     if (overlay) overlay.classList.toggle('show', !d.ok);
     if (name === 'corpus') updateCorpusView(d.ok);
   } catch {
+    _healthFailCount[name] = (_healthFailCount[name] || 0) + 1;
     dot.className = 'status-dot fail';
-    if (overlay) overlay.classList.add('show');
-    if (name === 'corpus') updateCorpusView(false);
+    // M229: only show overlay after 3 consecutive failures (hub restart grace period)
+    if (_healthFailCount[name] >= 3) {
+      if (overlay) overlay.classList.add('show');
+      if (name === 'corpus') updateCorpusView(false);
+    }
   }
 }
 
@@ -371,14 +383,12 @@ let _corpusData = null;
 let _corpusFilter = { kind: 'all', q: '' };
 
 function updateCorpusView(corpusOk) {
-  const frame = document.getElementById('frame-corpus');
-  const list  = document.getElementById('corpus-list');
-  if (!frame || !list) return;
+  // M138 restore: iframe is always visible; list overlays it (position:absolute) when offline.
+  const list = document.getElementById('corpus-list');
+  if (!list) return;
   if (corpusOk) {
-    frame.style.display = '';
     list.classList.remove('show');
   } else {
-    frame.style.display = 'none';
     list.classList.add('show');
     if (!_corpusData) loadCorpusList();
   }
@@ -447,6 +457,21 @@ document.querySelectorAll('.corpus-list .filter-btn').forEach(btn => {
     renderCorpusList();
   });
 });
+
+// M292 v2: compact update badge on brand dot (replaces banner)
+(async function _hubUpdateCheck() {
+  try {
+    const d = await fetch('/api/hub/update-check').then(r => r.json());
+    if (d.update_available) {
+      const badge = document.getElementById('hub-update-badge');
+      if (badge) {
+        badge.title = `claude-ns-hub ${d.current} → ${d.latest} — ${d.pip_cmd}`;
+        badge.textContent = '⟳ ' + d.latest;
+        badge.style.display = 'block';
+      }
+    }
+  } catch(_) {}
+})();
 
 Object.keys(TABS).forEach(checkHealth);
 setInterval(() => {

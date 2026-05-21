@@ -79,8 +79,18 @@ def main():
         sys.exit(0)
 
     milestones = ms_data.get("milestones", [])
-    queued = [m for m in milestones if m.get("status") == "queued"]
-    pending = [m for m in milestones if not m.get("done") and (m.get("status") or "pending") == "pending"]
+
+    # M160: a stone whose last conversation entry is from claude is awaiting user reply.
+    # Such stones must NOT be auto-run — they are paused until the user responds.
+    def _awaits_user(m):
+        conv = m.get("conversation") or []
+        return bool(conv) and isinstance(conv, list) and (conv[-1] or {}).get("role") == "claude"
+
+    queued = [m for m in milestones if m.get("status") == "queued" and not _awaits_user(m)]
+    paused_awaiting_user = [m for m in milestones
+                            if m.get("status") in ("queued", "pending") and _awaits_user(m)]
+    pending = [m for m in milestones
+               if not m.get("done") and (m.get("status") or "pending") == "pending" and not _awaits_user(m)]
     # Auto-queue removed: pending → queued only via Execute button click (user policy)
     needs_clarification = [m for m in milestones if m.get("status") == "needs_clarification"]
     answered = [m for m in needs_clarification if (m.get("clarification_answer") or "").strip()]
@@ -112,15 +122,46 @@ def main():
             with urllib.request.urlopen(req2, timeout=3) as resp:
                 ms_data2 = json.loads(resp.read())
             milestones = ms_data2.get("milestones", [])
-            queued = [m for m in milestones if m.get("status") == "queued"]
-            pending = [m for m in milestones if not m.get("done") and (m.get("status") or "pending") == "pending"]
+            queued = [m for m in milestones if m.get("status") == "queued" and not _awaits_user(m)]
+            paused_awaiting_user = [m for m in milestones
+                                    if m.get("status") in ("queued", "pending") and _awaits_user(m)]
+            pending = [m for m in milestones
+                       if not m.get("done") and (m.get("status") or "pending") == "pending" and not _awaits_user(m)]
         except Exception:
             pass
 
-    if not queued and not pending and not unanswered and not pending_replies:
+    if not queued and not pending and not unanswered and not pending_replies and not paused_awaiting_user:
         sys.exit(0)
 
     lines = [f"[NS:{proj_id}] Milestone status —"]
+
+    # M150: REPLY PROTOCOL surfaced FIRST + made MANDATORY so Claude never silently skips a user reply.
+    if pending_replies:
+        lines.append("")
+        lines.append(f"  ★ MANDATORY REPLY (do BEFORE anything else): {len(pending_replies)} stone(s) have a user message awaiting your comment.")
+        lines.append("    For each stone listed below you MUST append a claude reply via append_message.")
+        lines.append("    This is NON-OPTIONAL — even a one-line acknowledgement counts.")
+        lines.append("    If the message is a command → do the work, then reply confirming what you did.")
+        lines.append("    If the message is a question → reply with the answer in the same turn.")
+        lines.append("    Skipping = the user re-asks; do not skip.")
+        lines.append("")
+        lines.append(f"  CONVERSATION REPLIES AWAITING CLAUDE ({len(pending_replies)} stones):")
+        for m in pending_replies[:5]:
+            conv = m.get("conversation") or []
+            recent = conv[-3:] if len(conv) >= 3 else conv
+            lines.append(f"    • [{m['id']}] {m.get('text','')[:50]}")
+            for msg in recent:
+                role = msg.get("role", "?")
+                text = msg.get("text", "")[:100]
+                prefix = "      user" if role == "user" else "      claude"
+                lines.append(f"{prefix}: \"{text}\"")
+        lines.append("")
+        lines.append("  REPLY COMMAND (one curl per stone, REQUIRED — copy and adapt):")
+        lines.append(f"    curl -s -X PATCH http://127.0.0.1:9000/api/northstar/{proj_id}/milestones/<MID> \\")
+        lines.append(f'      -H "Content-Type: application/json" \\')
+        lines.append(f"      -d '{{\"append_message\":{{\"role\":\"claude\",\"text\":\"<your reply>\"}}}}' ")
+        lines.append("  ENFORCEMENT: server re-fires the trigger every 5 min until last_msg.role == 'claude'.")
+        lines.append("")
 
     if answered:
         lines.append(f"  AUTO-QUEUED from clarification ({len(answered)} promoted to pending):")
@@ -134,6 +175,14 @@ def main():
             if m.get("clarification_question"):
                 lines.append(f"      Q: {m['clarification_question'][:60]}")
 
+    if paused_awaiting_user:
+        lines.append("")
+        lines.append(f"  PAUSED — awaiting user reply ({len(paused_awaiting_user)} stones; DO NOT run, even if queued):")
+        for m in paused_awaiting_user[:5]:
+            lines.append(f"    • [{m.get('id')}] {m.get('text','')[:60]}")
+        lines.append("  (M160 gate: user must reply to Claude's comment before these stones may be executed.)")
+        lines.append("")
+
     if queued:
         lines.append(f"  QUEUED (work on these first):")
         for m in queued[:3]:
@@ -145,27 +194,6 @@ def main():
             lines.append(f"    • {m.get('text','')[:70]}")
         if len(pending) > 3:
             lines.append(f"    ... +{len(pending)-3} more")
-
-    if pending_replies:
-        lines.append(f"  CONVERSATION REPLIES AWAITING CLAUDE ({len(pending_replies)} stones):")
-        for m in pending_replies[:5]:
-            conv = m.get("conversation") or []
-            # M87: show last 3 messages for context (not just last user msg)
-            recent = conv[-3:] if len(conv) >= 3 else conv
-            lines.append(f"    • [{m['id']}] {m.get('text','')[:50]}")
-            for msg in recent:
-                role = msg.get("role", "?")
-                text = msg.get("text", "")[:100]
-                prefix = "      user" if role == "user" else "      claude"
-                lines.append(f"{prefix}: \"{text}\"")
-        lines.append("")
-        lines.append("  REPLY PROTOCOL: For each pending reply above:")
-        lines.append("    1. Read the user's message. If it's a command → do the work first.")
-        lines.append(f"    2. Append your reply with append_message (no need to send full array):")
-        lines.append(f"       curl -s -X PATCH http://127.0.0.1:9000/api/northstar/{proj_id}/milestones/<MID> \\")
-        lines.append(f'         -H "Content-Type: application/json" \\')
-        lines.append(f"         -d '{{\"append_message\":{{\"role\":\"claude\",\"text\":\"<reply>\"}}}}' ")
-        lines.append("    3. If user asked you to do something — do it, then confirm in the reply.")
 
     session_id = data.get("session_id", "")
     log_path = f"~/.claude/hub/projects/{proj_id}/completion-log.jsonl"

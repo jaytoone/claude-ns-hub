@@ -1,0 +1,20 @@
+name: employment_security_pledge
+primary_domain: legal_compliance
+related_domains: [risk_management, ip_law, ai_governance]
+layer: L2
+domain: "Korean AI company employment security pledge / NDA / IP assignment / non-compete in autonomous AI agent context"
+status: draft
+trigger:
+  - 보안각서, 비밀유지, 지식재산권, 경업금지, 겸직금지, NDA, IP귀속
+  - security pledge, employment NDA, non-compete, IP assignment, trade secret
+  - 생성형AI 금지, GenAI prohibition, 외부AI서비스
+  - 퇴직후 IP, post-resignation, 특허귀속, 직무발명
+  - 회사귀속, 비드래프트, 보안 서약서
+core_theory: |
+  Korean AI company employment security documents function as a 5-layer IP defense stack:
+  Layer 1 (제1조): Information asymmetry control — what employee knows vs. what they can disclose
+  Layer 2 (제1조③): GenAI Upload Wall — explicit prohibition on external AI services (Claude, ChatGPT, GitHub)
+  Layer 3 (제2조): IP Assignment — all work-product flows to company at creation moment
+  Layer 4 (제2조⑤): 1-year post-resignation IP window — captures "delayed" spin-off inventions
+  Layer 5 (제4조): Non-compete — prevents competitor benefit from embodied knowledge
+  Enforcement: 제5조 provides civil+criminal+injunction triple-threat with waived objection rights

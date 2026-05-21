@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+../hub/__init__.py
+../hub/server.py
+../hub/build/lib/hub/__init__.py
+../hub/build/lib/hub/server.py
+../hub/static/favicon.svg
+../hub/static/index.html
+../hub/static/market-signals.html
+../hub/static/northstar.html
+../northstar_hub.egg-info/PKG-INFO
+../northstar_hub.egg-info/SOURCES.txt
+../northstar_hub.egg-info/dependency_links.txt
+../northstar_hub.egg-info/entry_points.txt
+../northstar_hub.egg-info/requires.txt
+../northstar_hub.egg-info/top_level.txt

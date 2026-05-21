@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NS-System — AI Project Intelligence Hub</title>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --panel: #14171c;
+    --border: #1e2328;
+    --accent: #cc785c;
+    --green: #3d8b5e;
+    --text: #e8e4df;
+    --text-dim: #7a7570;
+    --text-soft: #a09890;
+    --mono: 'SF Mono', 'Fira Code', monospace;
+    --serif: 'Georgia', serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; line-height: 1.6; }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* Nav */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(13,15,18,.92); backdrop-filter: blur(12px); z-index: 100; }
+  .nav-logo { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: .04em; }
+  .nav-logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 28px; font-size: 13px; color: var(--text-dim); }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta { background: var(--accent); color: #fff; padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; }
+  .nav-cta:hover { opacity: .88; color: #fff; }
+
+  /* Hero */
+  .hero { text-align: center; padding: 100px 24px 80px; max-width: 840px; margin: 0 auto; }
+  .hero-badge { display: inline-block; font-family: var(--mono); font-size: 10px; color: var(--accent); border: 1px solid rgba(204,120,92,.3); border-radius: 20px; padding: 3px 12px; letter-spacing: .08em; margin-bottom: 24px; }
+  .hero h1 { font-family: var(--serif); font-size: clamp(32px, 5vw, 56px); font-weight: 500; line-height: 1.2; color: var(--text); margin-bottom: 20px; }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { font-size: 18px; color: var(--text-soft); max-width: 560px; margin: 0 auto 40px; line-height: 1.7; }
+  .hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary { background: var(--accent); color: #fff; padding: 12px 28px; border-radius: 7px; font-size: 14px; font-weight: 500; }
+  .btn-secondary { border: 1px solid var(--border); color: var(--text-dim); padding: 12px 28px; border-radius: 7px; font-size: 14px; }
+  .btn-primary:hover { opacity: .88; color: #fff; }
+  .btn-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+
+  /* Live Demo Panel */
+  .demo-wrap { max-width: 900px; margin: 0 auto 80px; padding: 0 24px; }
+  .demo-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .demo-topbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f56; } .dot-y { background: #ffbd2e; } .dot-g { background: #27c93f; }
+  .demo-url { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-left: 8px; }
+  .demo-body { display: grid; grid-template-columns: 220px 1fr; min-height: 320px; }
+  .demo-sidebar { border-right: 1px solid var(--border); padding: 12px; }
+  .demo-project { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 5px; font-size: 11px; font-family: var(--mono); cursor: pointer; }
+  .demo-project.active { background: rgba(204,120,92,.1); color: var(--accent); }
+  .demo-project:not(.active) { color: var(--text-dim); }
+  .proj-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .proj-dot.green { background: var(--green); }
+  .proj-dot.dim { background: var(--text-dim); }
+  .demo-badge { font-size: 8px; padding: 1px 5px; border-radius: 3px; background: rgba(204,120,92,.15); color: var(--accent); margin-left: auto; }
+  .demo-main { padding: 16px; }
+  .ms-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 11px; font-family: var(--mono); }
+  .ms-row:last-child { border-bottom: none; }
+  .ms-id { color: var(--text-dim); min-width: 36px; }
+  .ms-text { flex: 1; color: var(--text); }
+  .ms-badge { font-size: 8px; padding: 1px 6px; border-radius: 3px; }
+  .badge-queue { background: rgba(204,120,92,.15); color: var(--accent); border-left: 3px solid var(--accent); }
+  .badge-done { background: rgba(61,139,94,.1); color: var(--green); }
+  .badge-pending { color: var(--text-dim); }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.4s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Features grid */
+  section { max-width: 960px; margin: 0 auto; padding: 0 24px 80px; }
+  .section-label { font-family: var(--mono); font-size: 10px; color: var(--accent); letter-spacing: .1em; margin-bottom: 16px; }
+  .section-title { font-family: var(--serif); font-size: clamp(24px,3vw,36px); font-weight: 500; color: var(--text); margin-bottom: 12px; }
+  .section-sub { font-size: 15px; color: var(--text-soft); max-width: 480px; margin-bottom: 48px; }
+  .features { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 16px; }
+  .feat { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+  .feat-icon { font-size: 22px; margin-bottom: 10px; }
+  .feat h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .feat p { font-size: 12px; color: var(--text-dim); line-height: 1.55; }
+
+  /* How it works */
+  .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 24px; counter-reset: steps; }
+  .step { counter-increment: steps; }
+  .step-num { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 8px; }
+  .step-num::before { content: "0" counter(steps); }
+  .step h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .step p { font-size: 12px; color: var(--text-dim); line-height: 1.55; }
+
+  /* CTA footer */
+  .cta-footer { background: var(--panel); border-top: 1px solid var(--border); text-align: center; padding: 64px 24px; }
+  .cta-footer h2 { font-family: var(--serif); font-size: 32px; font-weight: 500; margin-bottom: 16px; }
+  .cta-footer p { color: var(--text-soft); font-size: 15px; margin-bottom: 32px; }
+  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* Bottom nav */
+  footer { border-top: 1px solid var(--border); padding: 24px 48px; display: flex; justify-content: space-between; align-items: center; }
+  footer span { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+
+  @media (max-width: 600px) {
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    .demo-body { grid-template-columns: 1fr; }
+    .demo-sidebar { display: none; }
+    footer { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">ns<span>·</span>system</span>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="http://100.119.82.4:9000" target="_blank">Hub →</a>
+  </div>
+  <a class="nav-cta" href="http://100.119.82.4:9000" target="_blank">Open Hub</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">AI AGENT ORCHESTRATION · v0.2</div>
+  <h1>Your <em>North Star</em><br>milestone machine</h1>
+  <p>NS-System turns vague project goals into dispatched AI agent sessions — tracked, resumable, and auditable across every model switch.</p>
+  <div class="hero-ctas">
+    <a class="btn-primary" href="http://100.119.82.4:9000" target="_blank">Open Dashboard</a>
+    <a class="btn-secondary" href="https://github.com/jaytoone/claude-client-bootstrap" target="_blank">View Source</a>
+  </div>
+</section>
+
+<div class="demo-wrap">
+  <div class="demo-panel">
+    <div class="demo-topbar">
+      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+      <span class="demo-url">ns-system · MOAT project · live session <span class="live-dot" style="display:inline-block;vertical-align:middle;margin-left:4px"></span></span>
+    </div>
+    <div class="demo-body">
+      <div class="demo-sidebar">
+        <div class="demo-project active"><div class="proj-dot"></div>MOAT <span class="demo-badge">!17</span></div>
+        <div class="demo-project"><div class="proj-dot green"></div>CTX</div>
+        <div class="demo-project"><div class="proj-dot green"></div>FRWP</div>
+        <div class="demo-project"><div class="proj-dot dim"></div>Clone</div>
+        <div class="demo-project"><div class="proj-dot dim"></div>AGI-SAJU</div>
+      </div>
+      <div class="demo-main">
+        <div class="ms-row"><span class="ms-id">M236</span><span class="ms-text">Disable folding in substars section</span><span class="ms-badge badge-done">done</span></div>
+        <div class="ms-row"><span class="ms-id">M237</span><span class="ms-text">Vertical lines — thicker (4px)</span><span class="ms-badge badge-done">done</span></div>
+        <div class="ms-row"><span class="ms-id">M239</span><span class="ms-text">Claude comment timing fix — suppress pre-work plan comments</span><span class="ms-badge badge-done">done</span></div>
+        <div class="ms-row" style="border-left:4px solid var(--accent);padding-left:6px"><span class="ms-id">M231</span><span class="ms-text">Build ns-system landing page</span><span class="ms-badge badge-queue">queued</span></div>
+        <div class="ms-row"><span class="ms-id">M234</span><span class="ms-text">Multi-model context protocol strategy</span><span class="ms-badge badge-pending">pending</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="section-label">CAPABILITIES</div>
+  <h2 class="section-title">One hub. Every AI agent.</h2>
+  <p class="section-sub">Track milestones, dispatch Claude sessions, switch models mid-task, and receive background push when sessions go idle.</p>
+  <div class="features">
+    <div class="feat"><div class="feat-icon">★</div><h3>North Star Pipeline</h3><p>Milestones sorted by priority rank — queued, needs-clarification, last-turn, pending. Visual left-border color codes status at a glance.</p></div>
+    <div class="feat"><div class="feat-icon">⟳</div><h3>Session Resume</h3><p>Every Claude exec session ID is captured at stop. Resume from the exact conversation — no context loss across restarts or model switches.</p></div>
+    <div class="feat"><div class="feat-icon">⚡</div><h3>Auto-Dispatch</h3><p>Queue a stone → Claude starts immediately. Or batch-queue and hit Execute once. Idle detection notifies you via ntfy.sh on iOS, Android, and Windows.</p></div>
+    <div class="feat"><div class="feat-icon">◈</div><h3>Multi-Project Swimlane</h3><p>HI-TECH / VERTICAL / SVTOOL hierarchy. 11 projects tracked in a single live dashboard. Deadline bars, progress arcs, alignment pulse.</p></div>
+    <div class="feat"><div class="feat-icon">◉</div><h3>PTY Terminal</h3><p>Open a live PTY session directly in the detail card. Attach, resume, or spawn fresh — all from the browser without SSH.</p></div>
+    <div class="feat"><div class="feat-icon">∿</div><h3>Context Protocol</h3><p>Complexity-scored model routing: Haiku for simple tasks, Sonnet for default, Opus for strategy. Handoff bundles transfer context across model switches.</p></div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="section-label">HOW IT WORKS</div>
+  <h2 class="section-title">From goal to shipped</h2>
+  <p class="section-sub">The NS-System loop runs autonomously — you set the north star, it figures out what to build next.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num"></div><h3>Define a North Star</h3><p>Add a project with a metric and target. Sub-stars break the goal into measurable components.</p></div>
+    <div class="step"><div class="step-num"></div><h3>Add milestones</h3><p>Type what needs to be done. Stones are auto-acked and appear in review. You queue them — Claude works them.</p></div>
+    <div class="step"><div class="step-num"></div><h3>Execute</h3><p>Press Execute (or click +msg to queue and fire). Claude spawns a session, reads the stone queue, and works through them sequentially.</p></div>
+    <div class="step"><div class="step-num"></div><h3>Confirm</h3><p>Each completed stone enters pending_confirmation. You review the gap-closure note and confirm or reopen. Done stones retire to the table.</p></div>
+  </div>
+</section>
+
+<div class="cta-footer">
+  <h2>Ready to dispatch?</h2>
+  <p>NS-System runs on your own Tailscale network. No data leaves your machine.</p>
+  <div class="cta-row">
+    <a class="btn-primary" href="http://100.119.82.4:9000" target="_blank">Open Hub Dashboard</a>
+    <a class="btn-secondary" href="https://pypi.org/project/northstar-hub/" target="_blank">pip install northstar-hub</a>
+  </div>
+</div>
+
+<footer>
+  <span>ns-system © 2026 · hub v0.2.0 · Tailscale-native</span>
+  <span>Claude-powered · ctx-retriever · ntfy.sh</span>
+</footer>
+
+</body>
+</html>

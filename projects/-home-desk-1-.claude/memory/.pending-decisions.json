@@ -1,11 +1,11 @@
 {
-  "captured_at": "2026-05-12T09:09:20.469543+00:00",
+  "captured_at": "2026-05-16T04:04:36.510841+00:00",
   "cwd": "/home/desk-1/.claude",
-  "turn_count": 5291,
+  "turn_count": 198,
   "decisions": [
     {
       "text": "fixed",
-      "context": "Two bugs fixed: 1. **Missing `>`** on the div tag — `onclick` was never wired up 2. **`_toggleTmux` scoped to closure** — `onclick` string couldn't re",
+      "context": "le refetching ✅ **Root cause fixed**: `window.MODEL_CATALOG` was `undefined` because `const` in global scope doesn't attach to `window` — changed to d",
       "tag": "impl_complete"
     }
   ]

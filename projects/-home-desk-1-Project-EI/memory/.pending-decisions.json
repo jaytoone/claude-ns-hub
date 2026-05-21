@@ -1,11 +1,21 @@
 {
-  "captured_at": "2026-05-05T08:06:16.369930+00:00",
+  "captured_at": "2026-05-20T14:12:35.985472+00:00",
   "cwd": "/home/desk-1/Project/EI",
-  "turn_count": 23,
+  "turn_count": 61,
   "decisions": [
     {
-      "text": "Done",
-      "context": "Done. Here's what was built: --- **T1** — `ei-cognitive-agency-surrender-theory.md` (134 lines) Digest of arxiv 2603.21735. Key content: the zero-fric",
+      "text": "done",
+      "context": "eued milestone. M3 is already done — the server just shows it as queued because the previous session's PATCH set it to `pending_confirmation` but the ",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "done",
+      "context": "M3 is already done — it was completed in the previous session. The server just hasn't synced. Let me create a task for the remaining queued item and m",
+      "tag": "impl_complete"
+    },
+    {
+      "text": "completed",
+      "context": "ued milestone — M3 is already completed from the previous run, but it's showing as queued again. Let me check the current task list and handle it.",
       "tag": "impl_complete"
     }
   ]

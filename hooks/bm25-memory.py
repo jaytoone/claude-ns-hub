@@ -547,7 +547,7 @@ def dense_rank_decisions(corpus, query, top_k=20):
             scored.append((cos, item))
     if not scored:
         return []
-    scored.sort(key=lambda x: -x[0])
+    scored.sort(key=lambda x: (-x[0], (x[1].get("text") or "")[:32]))
     return [item for _, item in scored[:top_k]]
 
 
@@ -1388,6 +1388,18 @@ def _log_event(event_type, payload):
         pass
 
 
+def _count_tokens(text: str) -> int:
+    """Approximate token count (whitespace + punctuation split, zero dependencies)."""
+    if not text:
+        return 0
+    tokens = text.split()
+    refined = []
+    for t in tokens:
+        parts = re.findall(r'[A-Za-z0-9_\-]+|[^\sA-Za-z0-9]', t)
+        refined.extend(parts)
+    return len(refined) if refined else len(tokens)
+
+
 def main():
     import time as _time
     _t_start = _time.perf_counter()
@@ -1413,6 +1425,8 @@ def main():
     lines = []
     _blocks_fired = []  # for final hook_invoked telemetry summary
     _retrieval_meta = {"ts": _time.time(), "blocks": {}}  # retrieval_event telemetry
+    _block_tokens = {}  # per-block injected token counts → token_usage telemetry
+    _prompt_tokens = _count_tokens(prompt)
 
     # 0a. Pending decisions from previous session (Stop hook → queue file)
     pending = consume_pending_decisions(project_dir)
@@ -1440,6 +1454,7 @@ def main():
             rest_count = len(relevant) - 1
             g1_header = f'> **G1** (time memory): "{first_subj}" and {rest_count} more'
 
+            _g1_start = len(lines)
             lines.append(
                 f"[RECENT DECISIONS] (BM25: top {len(relevant)} of {len(corpus)})"
             )
@@ -1448,9 +1463,11 @@ def main():
                 subj = c["subject"]
                 prefix = f"  > [{date}] " if date else "  > "
                 lines.append(f"{prefix}{subj}")
+            _block_tokens["g1_decisions"] = _count_tokens("\n".join(lines[_g1_start:]))
             _log_event("block_fired", {
                 "hook": "bm25-memory", "block": "g1_decisions",
                 "count": len(relevant),
+                "tokens": _block_tokens["g1_decisions"],
                 "duration_ms": int((_time.perf_counter() - _t_g1) * 1000),
             })
             _blocks_fired.append("g1")
@@ -1474,6 +1491,7 @@ def main():
         _t_g2d = _time.perf_counter()
         doc_chunks = hybrid_search_docs(project_dir, prompt, top_k=5)
         if doc_chunks:
+            _g2d_start = len(lines)
             lines.append("[G2-DOCS] (BM25+dense RRF relevant research docs)")
             for chunk in doc_chunks:
                 chunk_lines = chunk.strip().split("\n")
@@ -1492,9 +1510,11 @@ def main():
                 lines.append(f"  > {header}")
                 if snippet:
                     lines.append(f"    {snippet}")
+            _block_tokens["g2_docs"] = _count_tokens("\n".join(lines[_g2d_start:]))
             _log_event("block_fired", {
                 "hook": "bm25-memory", "block": "g2_docs",
                 "count": len(doc_chunks),
+                "tokens": _block_tokens["g2_docs"],
                 "duration_ms": int((_time.perf_counter() - _t_g2d) * 1000),
             })
             _blocks_fired.append("g2_docs")
@@ -1525,6 +1545,7 @@ def main():
                     lines.append(stale_warn)
                 graph_results = search_graph_for_prompt(db_path, keywords)
                 if graph_results:
+                    _g2p_start = len(lines)
                     lines.append(f"[G2-PREFETCH] Related code for '{' '.join(keywords[:3])}':")
                     seen_files = set()
                     for label, name, fpath in graph_results:
@@ -1532,9 +1553,11 @@ def main():
                         seen_files.add(fpath)
                     if seen_files:
                         lines.append(f"  Start with: {', '.join(sorted(seen_files)[:3])}")
+                    _block_tokens["g2_prefetch"] = _count_tokens("\n".join(lines[_g2p_start:]))
                     _log_event("block_fired", {
                         "hook": "bm25-memory", "block": "g2_prefetch",
                         "count": len(graph_results),
+                        "tokens": _block_tokens["g2_prefetch"],
                         "duration_ms": int((_time.perf_counter() - _t_g2p) * 1000),
                     })
                     _blocks_fired.append("g2_prefetch")
@@ -1542,13 +1565,16 @@ def main():
                 # Fallback: git grep
                 files = search_files_by_grep(project_dir, keywords)
                 if files:
+                    _g2g_start = len(lines)
                     lines.append(f"[G2-GREP] Files matching '{' '.join(keywords[:3])}' (grep):")
                     for f in files:
                         lines.append(f"  {f}")
                     lines.append(f"  Start with: {', '.join(files[:3])}")
+                    _block_tokens["g2_grep"] = _count_tokens("\n".join(lines[_g2g_start:]))
                     _log_event("block_fired", {
                         "hook": "bm25-memory", "block": "g2_grep",
                         "count": len(files),
+                        "tokens": _block_tokens["g2_grep"],
                         "duration_ms": int((_time.perf_counter() - _t_g2p) * 1000),
                     })
                     _blocks_fired.append("g2_grep")
@@ -1558,12 +1584,15 @@ def main():
         _t_g2h = _time.perf_counter()
         hook_results = search_hooks_files(prompt)
         if hook_results:
+            _g2h_start = len(lines)
             lines.append(f"[G2-HOOKS] Hook files matching '{prompt[:40]}':")
             for hp, score in hook_results:
                 lines.append(f"  {hp}  (score={score:.1f})")
+            _block_tokens["g2_hooks"] = _count_tokens("\n".join(lines[_g2h_start:]))
             _log_event("block_fired", {
                 "hook": "bm25-memory", "block": "g2_hooks",
                 "count": len(hook_results),
+                "tokens": _block_tokens["g2_hooks"],
                 "duration_ms": int((_time.perf_counter() - _t_g2h) * 1000),
             })
             _blocks_fired.append("g2_hooks")
@@ -1612,11 +1641,23 @@ def main():
             sys.stderr.flush()
 
     # Final summary event: one record per hook invocation (outside `if lines:`)
+    _total_injected_tokens = sum(_block_tokens.values())
     _log_event("hook_invoked", {
         "hook": "bm25-memory",
         "duration_ms": int((_time.perf_counter() - _t_start) * 1000),
         "prompt_len": len(prompt) if prompt else 0,
+        "prompt_tokens": _prompt_tokens,
+        "injected_tokens": _total_injected_tokens,
+        "block_tokens": _block_tokens,
     })
+    if _total_injected_tokens > 0:
+        _log_event("token_usage", {
+            "hook": "bm25-memory",
+            "prompt_tokens": _prompt_tokens,
+            "injected_tokens": _total_injected_tokens,
+            "block_tokens": _block_tokens,
+            "blocks_fired": _blocks_fired,
+        })
 
     # ── P1: record what we injected for utility-rate measurement ─────
     # Stop hook reads this + the latest assistant turn + substring-matches

@@ -31,6 +31,19 @@
 - Core bottleneck themes being mapped: AI infra, EV battery chain, grid/power, cybersecurity
 - vascular.html (Canvas-based) is the primary viz — port 7788
 
+## LT-1 SSH Access (2026-05-21)
+- LT-1 Tailscale IP: 100.125.152.31 (Windows)
+- SSH config `~/.ssh/config`: `Host lt-1` → `User be2ja`, `IdentityFile ~/.ssh/id_ed25519`
+- **Always use alias `ssh lt-1`** — raw IP `ssh jaytoone@100.125.152.31` fails (wrong user)
+- JnQ funcs path: `D:\Desk-Home\windows\SystemTrade\JnQ\funcs\public\` (indicator.py, broker.py, etc.)
+- Copied to FRWP: `src/jnq_funcs/public/` via `scp -r 'lt-1:/D:/Desk-Home/.../funcs/public'`
+
+## JnQ CCI Wave Logic (2026-05-21 — from indicator.py tc_cci / wave_publics_v3)
+- `cu_bool` = CCI crosses **DOWN** through -100 → **bull/long** wave OPENS
+- `co_bool` = CCI crosses **UP** through +100 → **bear/short** wave OPENS
+- `wave_publics_v3` fills: `wave_high_fill` (max high in cu→co window), `wave_low_fill` (min low in co→cu)
+- FRWP impl: `src/indicators/cci_waves.py` — polarity corrected to match JnQ exactly
+
 ## Paper Trading (WSL)
 - Portfolio: $9,789.34 (dd=2.7%) restored from Turso
 - 2-week paper: 18 trades, WR=88.9%, +$87.62

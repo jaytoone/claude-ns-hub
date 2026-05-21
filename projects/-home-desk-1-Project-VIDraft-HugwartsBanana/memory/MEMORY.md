@@ -16,3 +16,32 @@
 - [DONE] 계정 탈퇴 flow 검증 완료 (AccountModal stale closure 버그 포함 v1.23.445-448 수정 배포) — 2026-05-11
 - [CREDENTIAL] Paddle live account: vidraftofficial@gmail.com / Cutechicken99! — saved to ~/.claude/env/shared.env 2026-05-11
 - [STRATEGY] M0.3 경쟁사 포지셔닝 확인: Vrew/TypeCast/Supertone 모두 "YouTube AI 정책 컴플라이언스" 앵글 미점유. 추천 포지셔닝: "내 얼굴+AI 클론 목소리=YPP 컴플라이언트 Shorts". 다음: 네이버 카페/DC Inside에서 "유튜브 AI 정책" 언급 2-3개 확인 → HIGH 신뢰도 — 2026-05-12
+- [FIXED] M15 Paddle 감사 3개 픽스 적용 (2026-05-13): F1 server-side priceId→credits map 도입 (CREDIT_PACKAGES + NEXT_PUBLIC_PADDLE_PRICE_* env), custom_data.credits 무시 → 위변조 방지. F2 migration 20260513000001 UNIQUE(order_id) 추가 (DB clean 확인 후) + webhook 23505 catch → idempotent retry. F3 PADDLE_WEBHOOK_SECRET 누락 시 500 (fail-closed). 미적용: supabase db push 필요, Vercel env 추가 필요
+- [DONE] M16 카드 크기 자동 맞춤 (2026-05-13): CommunityFeed.tsx wrapper에서 cardtoon/shortform/shorttoon/storyboard/cardnews/videoedit 자체 뷰어 카드에 aspect-[9/16] 강제 제거. hasInternalAspect 플래그로 분기. 단일 비디오/기본 이미지 카드는 9:16 유지. 카드 높이 287-599px 가변 확인
+- [SPEC] 허그와트바나나 개선 통합 스펙 작성 완료 (2026-05-13): docs/HB-IMPROVEMENT-SPEC-20260513.docx + docs/HB-IMPROVEMENT-TASKS-20260513.md. 정유선 본부장 보고서(7섹션) + 사용자 추가 3건 통합. 21개 항목(P0:4, P1:13, P2:4) 총 ~24.1MD. 구독 모델 전환 선행 — P0 4건(2.3 OpenAI 401, 2.4 샷 길이, 5.3 카드툰 비율, 6.2 재생성 환불) 1주 내 처리 필수
+- [LIVE GOAL] /live 모드 진입 (2026-05-13): "HB-IMPROVEMENT-TASKS 21개 항목 TaskCreate + P0 4건 실행". 이전 .omc 상태(2026-04-27 홈피드 작업)는 종료, 새 goal로 reset
+- [P0 DONE] 2026-05-13 17:00: P0-2 (Step6Render duration priority swap), P0-3 (CardtoonVideoViewer object-contain 복원, HEAD 이미 정상), P0-4 (ShorttoonGenerator regeneratingScenes Set guard). tsc clean. P0-1 (OpenAI key)은 Vercel env 영역 → 후속 처리
+- [LIVE GOAL EVOLVE] 2026-05-13 17:10: 새 목표 = "auto pilot the remaining P1+P2 17건". 우선 실행 후보: P1-6 도구 카테고리 정리, P1-2 자동 스킵, P2-2 버튼 위치, P1-7 Lightbox (외부 종속성 없는 항목)
+- [APPLIED] M25 transactions.order_id UNIQUE constraint live (2026-05-13). 직접 pg connection via Node pg client, 0 dupes 사전 확인. supabase/migrations/20260513000001 source-of-truth 보존
+- [DONE] M23 (P2-2) 카드툰 영상 CTA mobile sticky bar 추가 (2026-05-13). md:hidden fixed bottom-0, generatedImages.length>=2 + result.status=completed 조건. desktop 기존 패널 유지. CardtoonGenerator.tsx pb-24 md:pb-5 추가하여 sticky bar와 겹침 방지
+- [BLOCKED] M26 (vercel --prod 배포) 자동 진행 보류: .env.local secrets, 15 src 파일 미커밋, 버전 bump (v1.23.450) 결정 필요, 별도 supabase functions deploy 필요. 사용자 승인 후 commit→push 절차로 진행 예정
+- [BLOCKED] M17 (P0-1 OPENAI_API_KEY 갱신): Vercel env 갱신은 사용자 직접 수행 영역. 새 키 받으면 /api/analyze-style smoke test 가능
+- [DONE] M12 ServerLogsPanel UX 강화 (2026-05-13): 텍스트 검색(user_context.email/userId + message substring) + Top-5 24h 에러 위젯(클릭 시 검색 필터 자동 입력). useMemo 캐시. 기존 realtime 구독 유지
+- [VERIFIED] M15 Paddle webhook 6-scenario synthetic test PASS (2026-05-13): T1 invalid sig 401 / T2 unknown event 200 (defensive fix JSON.stringify(event.data ?? {}) crash 회귀 잡음) / T3 missing items 400 / T4 tampered priceId 400 / T5 known price no user 200 ack-skip / T6 F1 exploit proof — credits=1000000 위변조 시도 무시됨, trusted 100 credits 사용 확인. F1+F3 코드 레벨 검증 완료, F2는 DB constraint 적용 확인 (last session)
+- [DONE] M32 P1-9 admin gallery curation 배선 + 마이그레이션 적용 (2026-05-14): 기존 코드(AdminGalleryCurationPanel/route/migration) orphan 상태였음. types/admin.ts 에 gallery-curation 추가, AdminToolsPanel Settings 카테고리에 탭 + 렌더 case 추가. 20260513000002 마이그레이션 prod 적용 (gallery_curation 테이블 9컬럼/2인덱스/RLS public-select). M32 ops manual 절반은 이미 4개 docs/ops/ 파일로 완료
+- [DECISION] M32 user reply "For now unify them" — unified gallery, generation_type별 분리 없음 (2026-05-14)
+- [DONE] M32 follow-up CommunityFeed curated-first 정렬 (2026-05-14): loadFeedPage page=0에서 gallery_curation 조회(공개 RLS) → curated 항목을 featured_order ASC + featured_at DESC 우선, 나머지는 기존 정렬 유지. type 분리 없음 (unify 결정 반영)
+- [DONE] Paddle 도메인 승인 신청 (2026-05-18): vendors.paddle.com/request-domain-approval에서 ginigen.ai 제출 → Pending 상태. www.ginigen.ai 별도 제출 필요 (subdomain 개별 승인 정책). 법적 페이지 이미 배포됨. 승인 후 checkout 정상화 예정.
+- [DONE] 이번 세션 구현 (2026-05-18): P1-1 Community SNS sidebar, P1-2 AutomationStudio 자동스킵 제거, P1-7 CardtoonGenerator Lightbox, P2-1 CompleteVideoGenerator 드래그앤드롭, M26 Railway worker auth 헤더 추가, M27 Drive 프로젝트 폴더 생성+CLAUDE.md 정비. tsc all clean.
+- [RULE] completion screenshot must be real UI (browser showing working feature), NOT code snippet captures — applies to all milestones (2026-05-19)
+- [FIXED] M28 AI 숏툰 API_003 근본 원인: Fireworks free tier에서 llama-v3p* 모델 전부 404 NOT_FOUND (deprecated). gpt-oss-120b + kimi-k2p6/p5 fallback chain으로 교체 배포. shorttoon-soma edge function v49 (2026-05-19)
+- [DONE] M21 사이드바 Discord 버튼 제거 (2026-05-20): 홈→영상자동화→AI Tools 위 중복 Discord 행 삭제. Community 그룹이 유일한 Discord 진입점으로 통합
+- [DONE] M23 갤러리 큐레이션 E2E (2026-05-20): Admin URL 붙여넣기 → type 자동 인식 → gallery_curation 업데이트 → Community 피드 curated-first 정렬 확인. 2-item 큐레이션 목록 (숏폼#1+카드툰#2) screenshots GDrive 업로드 완료
+- [DONE] M29 소셜 링크 admin 설정 (2026-05-20): app_settings.social_links + /api/app-settings/social-links + useSocialLinks() hook. BannerSettingsPanel 하단 소셜링크 섹션 추가. Discord/YouTube/TikTok URL DB 관리, 재배포 불필요
+- [FIXED] M28 shorttoon completeShorttoon() stale closure 버그: handleResumeGeneration에서 setGenerationStartTime(Date.now()) 이후 generationStartTime 변수는 null(React 비동기) → completeShorttoon 미호출 → status 영구 processing. 수정: resumeStartTime 로컬 변수 사용
+- [DONE] M28 내 숏툰/내 숏폼 완성 결과 recall 기능 (2026-05-20): 완성된 숏툰 섹션 + 결과 보기 버튼 → handleRecallResult()로 scenes 복원 + status=completed + generate 탭 전환. ShorttoonDB.getCompletedShorttoons() 신규 추가
+- [DONE] M33 '도구' 사이드바 탭 제거 (2026-05-20): COLLAPSIBLE_GROUPS에서 tools 그룹(diagram+scenario) 삭제. MobileSidebar.tsx. 페이지 자체는 URL 직접 접근으로 유지
+- [FIXED] M32 AI 스타일 분석 (2026-05-20): /api/image/augment-prompt → Fireworks llama-vision 404 (deprecated). 수정: FAL any-llm/vision + llama-4-scout로 교체. v1.23.453 배포. 모델명 UI 노출 제거 v1.23.454
+- [DONE] M36 개선 보고서 Q&A (2026-05-20): M숫자=마일스톤 ID 설명, M32 수정 확인, AI Tools 하단 이동(v1.23.455), 보고서 섹션별 수정 현황 docx 작성
+- [FIXED] M37 Gmail 에러 리포트 (2026-05-20): React insertBefore DOM 오류 발견. sidebar nav에 suppressHydrationWarning 추가. v1.23.456 배포
+- [DONE] M36 최종판 docx (2026-05-21): 원본 보고서(정유선 본부장) 18개 항목 기반 수정 현황 표 — 완료13/부분완료3/미착수2. GDrive: 1kgzCjEVkA_SE0xGQZH28hEfjjE2rgGIM

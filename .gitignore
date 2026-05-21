@@ -90,3 +90,7 @@ hub/task-locks/
 hub/worker.log
 hub/test-task-worker.py
 projects/
+ctx-session-state.json
+last-retrieval-meta.json
+mcp-needs-auth-cache.json
+plugins/known_marketplaces.json

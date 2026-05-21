@@ -42,6 +42,38 @@ if STOP_HOOK_ACTIVE:
 if Path(f"{CWD}/.playwright-skip").exists():
     sys.exit(0)
 
+# M161: when running inside an autonomous claude-exec-* tmux session, defer
+# to northstar-stop-inject (Hook order 2.0). The playwright detector's git-uncommitted
+# block message would otherwise dominate Claude's next-turn context, masking the
+# queued-task dispatch. Detect tmux session name via parent process env (Stop hooks
+# don't inherit $TMUX directly).
+def _in_autonomous_tmux() -> bool:
+    tmux_val = os.environ.get("TMUX")
+    if not tmux_val:
+        try:
+            with open(f"/proc/{os.getppid()}/environ", "rb") as f:
+                for chunk in f.read().split(b"\0"):
+                    if chunk.startswith(b"TMUX="):
+                        tmux_val = chunk[5:].decode("utf-8", "replace")
+                        break
+        except Exception:
+            return False
+    if not tmux_val:
+        return False
+    sock = tmux_val.split(",")[0]
+    try:
+        r = subprocess.run(
+            ["tmux", "-S", sock, "display-message", "-p", "#S"],
+            capture_output=True, text=True, timeout=2,
+            env={**os.environ, "TMUX": tmux_val},
+        )
+        return r.returncode == 0 and r.stdout.strip().startswith("claude-exec-")
+    except Exception:
+        return False
+
+if _in_autonomous_tmux():
+    sys.exit(0)
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def block(reason: str):

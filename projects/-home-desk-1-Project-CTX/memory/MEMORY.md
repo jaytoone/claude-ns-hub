@@ -5,11 +5,20 @@
 - PIP: screen recording main track + face cam small overlay (bottom-right)
 - /live autonomous loop started 2026-05-07
 
-## NS2 Goal (2026-05-09)
-- NS2: first external user data in Turso (distinct_external_users > 0)
-- v0.3.16 released to PyPI ✅ (GitHub Release created, workflow queued)
-- Critical path: new installs get opt-in prompt → users consent → upload → NS2 passes
-- Monitor: SELECT COUNT(DISTINCT user_id) FROM ctx_session_aggregates WHERE user_id NOT LIKE 'test_%'
+## NS2 Status (2026-05-18 — PASSED ✅)
+- NS2: first external user data in Turso — PASSED
+- DB migrated to hub-ctx: hub-ctx-jaytoone.aws-us-west-2.turso.io (dedicated CTX DB, not frwp)
+- hub-ctx (2026-05-18): 2,007 rows, 18 distinct users — 15 real external users
+- frwp CTX tables (ctx_session_aggregates, hub_milestone_thread, ctx_retrieval_outcome) DROPPED
+- frwp now only has FRWP trading project tables
+- Token in shared.env + all code updated to hub-ctx (v0.3.24)
+  - `6d7f66b2` = self (1,840 rows Apr27→May16)
+  - `validate` = test install string (1 row May09, not real)
+  - `2e00a759` = 1 real external candidate (2 rows May14) ← NS2 technically passes
+- Token usage metric: live in dashboard — bm25-memory hook emits token_usage events, dashboard has Token Usage panel showing avg injected tokens/turn + per-block breakdown
+- CTX dashboard restarted 2026-05-16 (was stale since May14, missing token_usage key in snapshot)
+- vault-filtered.db on Drive: PUBLIC link — flagged as security risk (89,915 private session messages). User should revoke if not intentional.
+- Monitor: SELECT COUNT(DISTINCT user_id) FROM ctx_session_aggregates WHERE user_id IS NOT NULL
 
 ## Next Session Plan (2026-05-09)
 - Run: `ctx-telemetry consent grant` → `ctx-telemetry upload --send` → then `/live M1부터 CTX north-star 마일스톤 순서대로 실행`
@@ -55,6 +64,11 @@
 - Decision: activate telemetry/data gathering pipeline — signals are strong enough (1.4k/mo PyPI, 4 stars)
 - Plan: prepare telemetry opt-in → aggregate pipeline → HF dashboard shows real user data → flywheel starts
 - Reference docs: `20260427-ctx-user-data-flywheel-strategy.md`, `20260427-ctx-flywheel-data-coverage.md`
+
+## HN Account Status (2026-05-19 updated)
+- nave94hn: SHADOWBANNED — all comments dead/flagged instantly. Do not use for HN promotion.
+- The initial CTX self-promotional comment triggered HN spam filter. Account is effectively dead for outreach.
+- Alternative: need a high-karma personal HN account (100+) to promote CTX effectively.
 
 ## Social Accounts (2026-05-10)
 - GeekNews: `nave94` / `jayone8974^^` — post live at news.hada.io/topic?id=29124 (1pt, 6 comments)

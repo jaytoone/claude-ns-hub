@@ -1,0 +1,14 @@
+2026/05/20-22:42:02.775 2deecd Reusing MANIFEST /home/desk-1/.claude/chromium-novnc-profile/Default/IndexedDB/https_www.youtube.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/20-22:42:02.775 2deecd Recovering log #10
+2026/05/20-22:42:02.776 2deecd Reusing old log /home/desk-1/.claude/chromium-novnc-profile/Default/IndexedDB/https_www.youtube.com_0.indexeddb.leveldb/000010.log 
+2026/05/20-22:42:03.419 2deed8 Level-0 table #15: started
+2026/05/20-22:42:03.425 2deed8 Level-0 table #15: 75621 bytes OK
+2026/05/20-22:42:03.431 2deed8 Delete type=0 #10
+2026/05/20-22:42:03.431 2deecc Manual compaction at level-0 from '\x00\x05\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/05/20-22:42:03.431 2deecc Manual compaction at level-1 from '\x00\x05\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at '\x00\x0d\x00\x00\xc8\x0e\x00h\x00o\x00t\x00C\x00o\x00n\x00f\x00i\x00g\x00S\x00t\x00o\x00r\x00e' @ 1470 : 1
+2026/05/20-22:42:03.431 2deecc Compacting 1@1 + 1@2 files
+2026/05/20-22:42:03.436 2deecc Generated table #16@1: 228 keys, 20755 bytes
+2026/05/20-22:42:03.436 2deecc Compacted 1@1 + 1@2 files => 20755 bytes
+2026/05/20-22:42:03.442 2deecc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/05/20-22:42:03.443 2deecc Delete type=2 #15
+2026/05/20-22:42:03.443 2deecc Manual compaction at level-1 from '\x00\x0d\x00\x00\xc8\x0e\x00h\x00o\x00t\x00C\x00o\x00n\x00f\x00i\x00g\x00S\x00t\x00o\x00r\x00e' @ 1470 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at (end)
