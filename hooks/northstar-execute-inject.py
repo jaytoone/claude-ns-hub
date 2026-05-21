@@ -13,45 +13,11 @@ Skips non-exec sessions to avoid hijacking interactive Claude windows whose
 cwd happens to match a hub project.
 """
 import json
-import os
-import subprocess
 import sys
 from pathlib import Path
-
-PROJECTS_DIR = Path.home() / ".claude/hub/projects"
-
-
-def exec_session_proj() -> str | None:
-    """Return the project ID encoded in the current claude-exec-{proj} tmux session,
-    or None if we're not in such a session. M197 fix — replaces the prior
-    in_exec_tmux() bool that allowed iterating across projects."""
-    tmux_val = os.environ.get("TMUX")
-    if not tmux_val:
-        try:
-            with open(f"/proc/{os.getppid()}/environ", "rb") as f:
-                for chunk in f.read().split(b"\0"):
-                    if chunk.startswith(b"TMUX="):
-                        tmux_val = chunk[5:].decode("utf-8", "replace")
-                        break
-        except Exception:
-            return None
-    if not tmux_val:
-        return None
-    socket = tmux_val.split(",")[0]
-    try:
-        r = subprocess.run(
-            ["tmux", "-S", socket, "display-message", "-p", "#S"],
-            capture_output=True, text=True, timeout=2,
-            env={**os.environ, "TMUX": tmux_val},
-        )
-        if r.returncode != 0:
-            return None
-        name = r.stdout.strip()
-        if not name.startswith("claude-exec-"):
-            return None
-        return name[len("claude-exec-"):]
-    except Exception:
-        return None
+import sys, os
+sys.path.insert(0, str(Path(__file__).parent))
+from _ns_utils import exec_session_proj, PROJECTS_DIR
 
 
 def main():
@@ -69,10 +35,7 @@ def main():
     for _once in (pdir,):
         pdir = _once
 
-        # Prefer new queue file; fall back to legacy single-shot file for SessionStart bootstrap
         queue = pdir / "pending-execute-queue.jsonl"
-        legacy = pdir / "pending-execute-prompt.txt"
-
         new_data = ""
         new_offset = None
 
@@ -105,16 +68,12 @@ def main():
             except Exception:
                 continue
 
-        # Legacy fallback (one-shot init from SessionStart bootstrap path)
-        legacy_body = ""
-        if legacy.exists():
-            try:
-                legacy_body = legacy.read_text(encoding="utf-8").strip()
-                legacy.unlink()
-            except Exception:
-                legacy_body = ""
+        # Legacy pending-execute-prompt.txt intentionally NOT read here.
+        # northstar-session-start.py always fires before UserPromptSubmit and
+        # already consumes + deletes that file. Reading it here would be a
+        # race condition (double-delivery) if session-start fires concurrently.
 
-        if not entries and not legacy_body:
+        if not entries:
             continue
 
         if new_offset is not None:
@@ -128,8 +87,6 @@ def main():
             b = e.get("body", "")
             if b:
                 bodies.append(b)
-        if legacy_body:
-            bodies.append(legacy_body)
 
         msg = (
             "\n## AUTONOMOUS TASK DISPATCH "

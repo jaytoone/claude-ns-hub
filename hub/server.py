@@ -4058,9 +4058,10 @@ async def update_layout(proj_id: str, request: Request):
 _NS_PUSH_SUBSCRIBERS: list[asyncio.Queue] = []
 
 _NTFY_TOPIC_FILE = Path.home() / ".claude" / "hub" / ".ntfy-topic"
+_NTFY_SERVER_FILE = Path.home() / ".claude" / "hub" / ".ntfy-server"
+_NTFY_DEFAULT_SERVER = "http://127.0.0.1:2585"  # self-hosted, HTTP for local hub→ntfy
 
 def _get_ntfy_topic() -> str:
-    """Read ntfy.sh topic from file or NTFY_TOPIC env var."""
     env_topic = os.environ.get("NTFY_TOPIC", "").strip()
     if env_topic:
         return env_topic
@@ -4068,14 +4069,41 @@ def _get_ntfy_topic() -> str:
         return _NTFY_TOPIC_FILE.read_text().strip()
     return ""
 
+def _get_ntfy_server() -> str:
+    """Return ntfy server base URL. Reads .ntfy-server file or falls back to self-hosted default."""
+    env_srv = os.environ.get("NTFY_SERVER", "").strip()
+    if env_srv:
+        return env_srv.rstrip("/")
+    if _NTFY_SERVER_FILE.exists():
+        return _NTFY_SERVER_FILE.read_text().strip().rstrip("/")
+    return _NTFY_DEFAULT_SERVER
+
+_ntfy_last_ts: dict[str, float] = {}   # key → last sent epoch
+_ntfy_day_count: list = [0, ""]        # [count, YYYY-MM-DD]
+_NTFY_COOLDOWN_SEC = 600               # 10 min per-key cooldown
+_NTFY_DAILY_CAP = 50                   # no longer relevant for self-hosted, kept as safety
+
 def _send_ntfy_notification(title: str, body: str, priority: str = "default") -> None:
-    """M226: Send push notification via ntfy.sh (iOS/Android/Windows). No-op if no topic."""
+    """M226: Send push notification via ntfy.sh. Rate-limited: 10-min per-key cooldown + 50/day cap."""
     topic = _get_ntfy_topic()
     if not topic:
         return
+    now = time.time()
+    today = __import__("datetime").date.today().isoformat()
+    # reset daily counter at midnight
+    if _ntfy_day_count[1] != today:
+        _ntfy_day_count[0] = 0
+        _ntfy_day_count[1] = today
+    if _ntfy_day_count[0] >= _NTFY_DAILY_CAP:
+        return
+    last = _ntfy_last_ts.get(title, 0)
+    if now - last < _NTFY_COOLDOWN_SEC:
+        return
+    _ntfy_last_ts[title] = now
+    _ntfy_day_count[0] += 1
     try:
         import urllib.request as _ur
-        url = f"https://ntfy.sh/{topic}"
+        url = f"{_get_ntfy_server()}/{topic}"
         req = _ur.Request(url, data=body.encode(),
                           headers={"Title": title, "Priority": priority,
                                    "Content-Type": "text/plain"})
@@ -5065,6 +5093,61 @@ async def corpus_skills_agents():
         "agents": agents,
         "counts": {"skills": len(skills), "agents": len(agents)},
     })
+
+
+@app.get("/api/ctx-telemetry")
+async def ctx_telemetry():
+    """CTX ↔ NS-Hub integration: live telemetry from hub-ctx Turso DB.
+
+    Returns user counts, recent session stats, and version breakdown so the
+    hub dashboard can show CTX data collection health alongside milestone progress.
+    """
+    try:
+        import urllib.request as _ur
+        turso_url = "https://hub-ctx-jaytoone.aws-us-west-2.turso.io"
+        turso_token = (
+            "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzkwODUwNDksImlkIjoiMDE5ZTM5YmEt"
+            "YmEwMS03OGU5LWEzMDMtOTQwMTBhZTllNGJlIiwicmlkIjoiYjRjZWFiNDUtNjk4MC00MGQ1LWFmYTUtNTdhMmY4NjNl"
+            "ZGYwIn0.aGVFInXKg0HCQrTGW76L-Wd0xlv8eqnVA_GqdFaj4cNwfacotQTNjRCVetdtdIMNryuzFd6d_wTFuuDTB9fwAw"
+        ).replace("\n", "")
+
+        def _q(sql: str):
+            payload = json.dumps({"requests": [
+                {"type": "execute", "stmt": {"sql": sql}},
+                {"type": "close"}
+            ]}).encode()
+            req = _ur.Request(f"{turso_url}/v2/pipeline", data=payload,
+                headers={"Authorization": f"Bearer {turso_token}", "Content-Type": "application/json"},
+                method="POST")
+            with _ur.urlopen(req, timeout=6) as r:
+                return json.load(r)["results"][0]["response"]["result"]["rows"]
+
+        total_rows = int(_q("SELECT COUNT(*) FROM ctx_session_aggregates")[0][0]["value"])
+        total_users = int(_q("SELECT COUNT(DISTINCT user_id) FROM ctx_session_aggregates")[0][0]["value"])
+
+        # External users (exclude self + test user IDs)
+        ext_q = ("SELECT COUNT(DISTINCT user_id) FROM ctx_session_aggregates "
+                 "WHERE user_id NOT IN ('6d7f66b2fb843134','2e00a759e17a12c4','validate_test_001') "
+                 "AND user_id NOT LIKE 'retry%' AND user_id NOT LIKE 'test%' "
+                 "AND user_id NOT LIKE '12293e702290%'")
+        ext_users = int(_q(ext_q)[0][0]["value"])
+
+        # Recent version breakdown
+        ver_rows = _q("SELECT ctx_version, COUNT(DISTINCT user_id) u FROM ctx_session_aggregates "
+                      "WHERE ctx_version >= '0.3.26' GROUP BY ctx_version ORDER BY ctx_version DESC LIMIT 5")
+        versions = {(r[0]["value"] if r[0]["type"] != "null" else "unknown"): int(r[1]["value"])
+                    for r in ver_rows}
+
+        return JSONResponse({
+            "total_rows": total_rows,
+            "total_users": total_users,
+            "external_users": ext_users,
+            "versions": versions,
+            "ns2_passed": ext_users > 0,
+            "db": "hub-ctx-jaytoone.aws-us-west-2.turso.io",
+        })
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)[:100]}, status_code=503)
 
 
 @app.get("/api/verify-plan")

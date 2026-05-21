@@ -1,0 +1,6 @@
+ns-events.db
+*.db
+*.db-shm
+*.db-wal
+projects/
+ctx-session-state.json

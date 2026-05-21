@@ -4058,9 +4058,10 @@ async def update_layout(proj_id: str, request: Request):
 _NS_PUSH_SUBSCRIBERS: list[asyncio.Queue] = []
 
 _NTFY_TOPIC_FILE = Path.home() / ".claude" / "hub" / ".ntfy-topic"
+_NTFY_SERVER_FILE = Path.home() / ".claude" / "hub" / ".ntfy-server"
+_NTFY_DEFAULT_SERVER = "http://127.0.0.1:2585"  # HTTP for local hub→ntfy; mobile uses HTTPS :2586
 
 def _get_ntfy_topic() -> str:
-    """Read ntfy.sh topic from file or NTFY_TOPIC env var."""
     env_topic = os.environ.get("NTFY_TOPIC", "").strip()
     if env_topic:
         return env_topic
@@ -4068,14 +4069,39 @@ def _get_ntfy_topic() -> str:
         return _NTFY_TOPIC_FILE.read_text().strip()
     return ""
 
+def _get_ntfy_server() -> str:
+    env_srv = os.environ.get("NTFY_SERVER", "").strip()
+    if env_srv:
+        return env_srv.rstrip("/")
+    if _NTFY_SERVER_FILE.exists():
+        return _NTFY_SERVER_FILE.read_text().strip().rstrip("/")
+    return _NTFY_DEFAULT_SERVER
+
+_ntfy_last_ts: dict[str, float] = {}   # key → last sent epoch
+_ntfy_day_count: list = [0, ""]        # [count, YYYY-MM-DD]
+_NTFY_COOLDOWN_SEC = 600               # 10 min per-key cooldown
+_NTFY_DAILY_CAP = 50                   # stay under free-tier 60/day limit
+
 def _send_ntfy_notification(title: str, body: str, priority: str = "default") -> None:
-    """M226: Send push notification via ntfy.sh (iOS/Android/Windows). No-op if no topic."""
+    """M226: Send push notification via ntfy.sh. Rate-limited: 10-min per-key cooldown + 50/day cap."""
     topic = _get_ntfy_topic()
     if not topic:
         return
+    now = time.time()
+    today = __import__("datetime").date.today().isoformat()
+    if _ntfy_day_count[1] != today:
+        _ntfy_day_count[0] = 0
+        _ntfy_day_count[1] = today
+    if _ntfy_day_count[0] >= _NTFY_DAILY_CAP:
+        return
+    last = _ntfy_last_ts.get(title, 0)
+    if now - last < _NTFY_COOLDOWN_SEC:
+        return
+    _ntfy_last_ts[title] = now
+    _ntfy_day_count[0] += 1
     try:
         import urllib.request as _ur
-        url = f"https://ntfy.sh/{topic}"
+        url = f"{_get_ntfy_server()}/{topic}"
         req = _ur.Request(url, data=body.encode(),
                           headers={"Title": title, "Priority": priority,
                                    "Content-Type": "text/plain"})

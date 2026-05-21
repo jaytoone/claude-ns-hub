@@ -9,35 +9,10 @@ queue has unconsumed bytes. Exit 2 blocks stop and feeds stderr as instruction.
 import json
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
-
-PROJECTS_DIR = Path.home() / ".claude/hub/projects"
-
-
-def in_exec_tmux() -> bool:
-    tmux_val = os.environ.get("TMUX")
-    if not tmux_val:
-        try:
-            with open(f"/proc/{os.getppid()}/environ", "rb") as f:
-                for chunk in f.read().split(b"\0"):
-                    if chunk.startswith(b"TMUX="):
-                        tmux_val = chunk[5:].decode("utf-8", "replace")
-                        break
-        except Exception:
-            return False
-    if not tmux_val:
-        return False
-    try:
-        r = subprocess.run(
-            ["tmux", "-S", tmux_val.split(",")[0], "display-message", "-p", "#S"],
-            capture_output=True, text=True, timeout=2,
-            env={**os.environ, "TMUX": tmux_val},
-        )
-        return r.returncode == 0 and r.stdout.strip().startswith("claude-exec-")
-    except Exception:
-        return False
+sys.path.insert(0, str(Path(__file__).parent))
+from _ns_utils import get_exec_tmux_session, PROJECTS_DIR
 
 
 def get_project_id(cwd: str):
@@ -80,7 +55,7 @@ def main():
         return
 
     pdir = PROJECTS_DIR / proj_id
-    is_exec = in_exec_tmux()
+    is_exec = get_exec_tmux_session() is not None
 
     # Capture session_id for all session types (exec + interactive)
     sid = data.get("session_id")
