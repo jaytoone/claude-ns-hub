@@ -221,6 +221,18 @@ milestones:
   - role: claude
     text: '4개 조항 공식 요청 서면 작성 완료 (현행→수정안 표 형식, 법적 근거 포함, 공문 형식·서명란). Drive: https://drive.google.com/open?id=1oMlmSUGadfZSKch9BgehntZUKynGwCKG'
     ts: '2026-05-21T16:50:48.822360'
+  - role: user
+    text: 최대한 간단 명료 한페이지 이내로 다시 작성, 딱딱한 말투 금지 .
+    ts: '2026-05-21T08:11:15.164Z'
+  - role: claude
+    text: '간단 버전 재작성 완료 — 1페이지, 자연스러운 말투, 4개 항목 표 형식. Drive: https://drive.google.com/open?id=15ilYFCWgrfDcZjPtxvoVM53Y1HE80GR2'
+    ts: '2026-05-21T17:14:05.855246'
+  - role: user
+    text: 그래도 명색이 cto 인데 페르소나 / 어투 / 느낌을 변경해야하지 않겠어 ?
+    ts: '2026-05-21T08:21:15.167Z'
+  - role: claude
+    text: 'CTO 페르소나 버전 재작성 — 대등한 어조, "법적 집행력 강화" 프레임, 간결 1페이지. Drive: https://drive.google.com/open?id=1wskKtOLQvig1rsSCKQGqjqMUIwBVXD81'
+    ts: '2026-05-21T17:23:05.535512'
   done: false
   exec_end: '2026-05-20T17:25:11+09:00'
   exec_start: '2026-05-20T17:09:00+09:00'
@@ -228,7 +240,7 @@ milestones:
   layer: 0
   model_used: claude-sonnet-4-6
   parent_id: null
-  pending_confirm_at: 2026-05-21T16:50
+  pending_confirm_at: 2026-05-21T17:23
   queued_at: 2026-05-20T17:09
   skill_ref: entity --ccrd
   skill_refs:

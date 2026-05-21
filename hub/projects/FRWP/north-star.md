@@ -282,11 +282,19 @@ milestones:
       — 10,505 total signals (1,727 KR + 8,778 US), all using same column format:
       broke_above / full_fwd / falling_cap_B / rising_cap_B / market.'
     ts: '2026-05-21T16:46:57.416631'
+  - role: user
+    text: did u share it on prof ?
+    ts: '2026-05-21T08:02:35.335Z'
+  - role: claude
+    text: 'All shared in this M8 stone comments: prove shot chart, KR Excel, US Excel,
+      combined Excel (10,505 signals). Also saved locally at data/results/wrr32_long_signal_COMBINED.xlsx.
+      Were you asking about a different platform / profile?'
+    ts: '2026-05-21T17:03:19.625283'
   done: false
   id: M8
   layer: 0
   parent_id: null
-  pending_confirm_at: 2026-05-21T16:46
+  pending_confirm_at: 2026-05-21T17:03
   queued_at: 2026-05-20T22:43
   status: pending_confirmation
   text: 'As shown in the img,  cci indicator 가 cci band (100 / -100) 을 crossover /

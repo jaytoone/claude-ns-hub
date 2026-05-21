@@ -74,6 +74,13 @@ milestones:
       ADB. PersistentService + AlarmManager restart + ACTION_USER_PRESENT re-register
       all active.
     ts: '2026-05-21T16:49:38.935913'
+  - role: user
+    text: share the new screen recorded one ,
+    ts: '2026-05-21T07:58:29.871Z'
+  - role: claude
+    text: 'New recording (录屏_20260521_165747.mp4, 12MB) uploaded: https://drive.google.com/open?id=1cCg_Z5Wi0cQeWetqI7IpsI35P4q31c-q
+      — gdrive:claude-shared/AIKB/outbox/new_rec_vivo.mp4'
+    ts: '2026-05-21T16:59:47.169313'
   done: false
   exec_end: '2026-05-21T15:44:51+09:00'
   exec_start: '2026-05-21T15:44:51+09:00'
@@ -81,7 +88,7 @@ milestones:
   layer: 0
   model_used: claude-sonnet-4-6
   parent_id: null
-  pending_confirm_at: 2026-05-21T16:49
+  pending_confirm_at: 2026-05-21T16:59
   queued_at: 2026-05-21T15:43
   star_relation: New test device confirmed — vivo Y55A (Android 6.0.1, API 23, ARM32)
     authorized via ADB, expanding test coverage beyond Huawei WAS-LX2J

@@ -84,6 +84,15 @@ log:
     updated 1256→729 (May 6-12); WoW -1.8% vs prior week. M18/M19 queued for CTX promotion.'
 metric: CTX distribution - installation - user data collecttion
 milestones:
+- claude_ack: null
+  done: false
+  id: M36
+  layer: 0
+  parent_id: null
+  queued_at: 2026-05-21T17:31
+  status: queued
+  text: can u intergrate ctx-system into ns-hu system ?
+  user_added_at: 2026-05-21T17:31
 - agent_ref: null
   agent_refs: null
   claude_ack: 2026-05-20T23:44

@@ -1,5 +1,7 @@
 # FromScratch Project Memory
 
+- [feedback_gpu_idle_policy.md](feedback_gpu_idle_policy.md) — When GPUs 0-6 are idle (0% util), auto-launch training/eval without waiting for user instruction (M40 user directive 2026-05-21)
+
 ## Active State (as of 2026-05-20 KST — MTI + BigCodeBench eval done)
 - [HumanEval+ CONFIRMED 2026-05-20]: 85.4% direct pass@1, 100% k=5 majority vote on full 164Q evalplus. Unbiased.
 - [TOOL-CALLING EVAL 2026-05-20]: darwin28b_code_v2 tool-calling (Qwen3 prompt-format, 30Q): 90.0% — EXCEEDS Claude 3.7 BFCL simple ~89%. Script: /home/work/vidraft/tool_call_eval_v3.py. Results: logs/tool_call_eval_v3_result.json.

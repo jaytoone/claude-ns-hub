@@ -59,17 +59,43 @@ log:
     (+1 more)
 metric: Code agent on darwin
 milestones:
-- agent_ref: null
-  agent_refs: null
-  claude_ack: now
+- claude_ack: null
   done: false
-  id: M40
+  id: M41
   layer: 0
   parent_id: null
+  text: close-popup.sh" remove it from the hook  ,
+  user_added_at: 2026-05-21T16:59
+- agent_ref: null
+  agent_refs: null
+  claude_ack: 2026-05-21T17:00
+  conversation:
+  - role: claude
+    text: 'Completed GPU 0-6 utilization research: designed 7-GPU optimal layout (2
+      UFT train + 1 inference + 2 eval + 1 BCB + 1 SWE-infra), prioritized IFEval
+      2-variant diagnostic as first action (30 min, zero GPU changes), flagged MoE
+      router collapse as key UFT risk; doc at docs/research/20260521-gpu-0-6-max-utilization-plan.md.'
+    ts: '2026-05-21T17:00:07.469561'
+  - role: user
+    text: lauanch it then now, (from now on u should run it when the gpu is idle on
+      0-6
+    ts: '2026-05-21T08:04:31.847Z'
+  done: false
+  exec_end: '2026-05-21T17:00:07+09:00'
+  exec_start: '2026-05-21T16:40:00+09:00'
+  id: M40
+  layer: 0
+  model_used: claude-sonnet-4-6
+  parent_id: null
+  pending_confirm_at: 2026-05-21T17:00
   queued_at: 2026-05-21T16:54
   skill_ref: expert-research
   skill_refs:
   - expert-research
+  star_relation: Designed concrete GPU 0-6 utilization plan that converts 7 idle inference-only
+    GPUs into 2-GPU UFT training + eval pipeline, projected to close MBPP+ gap by
+    +3-8pp and IFEval gap by +10-25pp without additional infrastructure.
+  star_target_at_completion: null
   status: queued
   text: 0-6 gpu 에 대해 계획과 유관하게 max 로 사용량을 올린만한 유의미한 방법 리서치 ,
   user_added_at: 2026-05-21T16:53

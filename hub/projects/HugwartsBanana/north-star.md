@@ -433,13 +433,26 @@ log:
     (+1 more)
 metric: Weekly new payers
 milestones:
-- claude_ack: null
+- claude_ack: 2026-05-21T17:03
+  conversation:
+  - role: claude
+    text: Removed wan-2.6 and hailuo-02, added Seedance-1-Pro (bytedance/seedance-1-pro
+      via Replicate). Edge functions deploy + Vercel v1.23.457 deployed. Both legacy
+      model IDs auto-redirect to Seedance.
+    ts: '2026-05-21T17:03:25.738606'
   done: false
+  exec_end: '2026-05-21T06:15:00+09:00'
+  exec_start: '2026-05-21T06:00:00+09:00'
   id: M38
   layer: 0
+  model_used: claude-sonnet-4-6
   parent_id: null
+  pending_confirm_at: 2026-05-21T17:03
   queued_at: 2026-05-21T16:53
-  status: queued
+  star_relation: Removed Hailuo/Wan from video model selection and added Seedance-1-Pro
+    (Replicate) — up-to-date model improves video quality for automation studio users.
+  star_target_at_completion: 5 new payers/week by Week 10
+  status: pending_confirmation
   text: 영상 자동화 -> 영상 페이지에서 halluo, wan 제거하고 seedance 최신 영상모델 추가 go in en ,
   user_added_at: 2026-05-21T16:52
 - claude_ack: 2026-05-21T13:04

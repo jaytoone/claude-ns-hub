@@ -145,10 +145,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $HOME/.claude/hooks/stop-decision-capture.py"
-          },
-          {
-            "type": "command",
             "command": "node $HOME/.claude/hooks/pre-compact-save.js"
           },
           {
@@ -181,14 +177,6 @@
           {
             "type": "command",
             "command": "python3 $HOME/.claude/hooks/chat-memory.py"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash $HOME/.claude/hooks/close-popup.sh"
           }
         ]
       },

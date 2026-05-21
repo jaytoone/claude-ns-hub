@@ -136,6 +136,81 @@ log:
     to 729/wk; M18/M19 cross-promotion milestones queued'
 metric: North Star
 milestones:
+- claude_ack: 2026-05-21T17:29
+  conversation:
+  - role: claude
+    text: 'Fixed: mascot animation now ends at calc(100%-8px) instead of calc(100%+80px),
+      and ns-swimlane gets overflow:clip to prevent mascot from extending the scroll
+      width. Scrollbar below swimlane eliminated.'
+    ts: '2026-05-21T17:28:21.348896'
+  done: true
+  done_at: 2026-05-21T17:29
+  exec_end: '2026-05-21T17:28:21+09:00'
+  exec_start: '2026-05-21T08:25:00+00:00'
+  id: M381
+  layer: 0
+  model_used: claude-sonnet-4-6
+  parent_id: null
+  queued_at: 2026-05-21T17:23
+  star_relation: 'Mascot scrollbar eliminated: changed walk animation end from calc(100%+80px)
+    to calc(100%-8px) + added overflow:clip to .ns-swimlane to prevent mascot extending
+    horizontal scroll area.'
+  star_target_at_completion: null
+  status: done
+  text: when the mascoot come the right end the scroll bar below the swimlan appeares,
+    solve it
+  user_added_at: 2026-05-21T17:23
+- claude_ack: null
+  done: false
+  id: M380
+  layer: 0
+  parent_id: null
+  text: '"e2e ui proving"'
+  user_added_at: 2026-05-21T17:07
+- claude_ack: 2026-05-21T17:10
+  conversation:
+  - role: claude
+    text: 'northstar-execute-inject.py: UserPromptSubmit hook that runs only in claude-exec-*
+      tmux sessions — injects unconsumed queue entries from pending-execute-queue.jsonl
+      into additionalContext (the ''wake path'' when hub sends go). close-popup.sh
+      removed from settings.json.'
+    ts: '2026-05-21T17:10:52.156954'
+  - role: user
+    text: 다른 ns - hook 과 불필요하게 중복되는 것이 없는지 전수 조사 ㅈ후 보고서 제출 go in en , write in ko
+    ts: '2026-05-21T08:14:57.367Z'
+  - role: claude
+    text: 'No-op: M379 is pending_confirmation — stale queue entry.'
+    ts: '2026-05-21T17:15:47.230810'
+  - role: user
+    text: 다른 ns - hook 과 불필요하게 중복되는 것이 없는지 전수 조사 ㅈ후 보고서 제출 go in en , write in ko
+    ts: '2026-05-21T08:22:33.578Z'
+  - role: claude
+    text: '전수 조사 완료. 불필요 중복 1건: stop-decision-capture.py가 Stop+PreCompact 모두 등록(Stop만으로
+      충분). 보고서: docs/ns-replies/2026-05-21-M379-hook-duplication.md'
+    ts: '2026-05-21T17:25:16.906528'
+  - role: user
+    text: take action on it
+    ts: '2026-05-21T08:29:40.558Z'
+  - role: claude
+    text: Removed stop-decision-capture.py from PreCompact hook — it was redundant
+      with the Stop hook registration. settings.json updated.
+    ts: '2026-05-21T17:31:10.751333'
+  done: false
+  exec_end: '2026-05-21T17:10:52+09:00'
+  exec_start: '2026-05-21T08:10:00+00:00'
+  id: M379
+  layer: 0
+  model_used: claude-sonnet-4-6
+  parent_id: null
+  pending_confirm_at: 2026-05-21T17:31
+  queued_at: 2026-05-21T17:00
+  star_relation: 'Hook clarity and housekeeping: northstar-execute-inject.py explained,
+    close-popup.sh removed from UserPromptSubmit hooks in settings.json.'
+  star_target_at_completion: null
+  status: pending_confirmation
+  text: northstar-execute-inject.py" what this hook works for ? and u should rm the
+    close popup hooks,
+  user_added_at: 2026-05-21T17:00
 - claude_ack: 2026-05-21T15:21
   conversation:
   - role: claude
@@ -256,14 +331,36 @@ milestones:
       get_exec_sessions() — within 3s of typing go, SSE session_running fires → _refreshExecState()
       updates pane immediately (was 5s wait).'
     ts: '2026-05-21T16:56:17.495892'
+  - role: user
+    text: tested via ui  ?
+    ts: '2026-05-21T08:07:05.991Z'
+  - role: claude
+    text: 'Tested — detail card exec pane shows claude-exec-MOAT LIVE correctly (started
+      16:42, resume 4b5a6df5). Proof: https://drive.google.com/open?id=1ubUI3L1ow2lhn-idWgN52RDYzIGbyXiz'
+    ts: '2026-05-21T17:09:33.140523'
+  - role: user
+    text: 왜 idle -> live 일때도 went idle 이라는 toast 가 나오나 ? go in en
+    ts: '2026-05-21T08:14:17.989Z'
+  - role: claude
+    text: 'No-op: M378 is pending_confirmation — stale queue entry.'
+    ts: '2026-05-21T17:15:47.740798'
+  - role: user
+    text: 왜 idle -> live 일때도 went idle 이라는 toast 가 나오나 ? go in en
+    ts: '2026-05-21T08:22:26.168Z'
+  - role: claude
+    text: 'Bug: user types go → brief prompt (no spinner) detected as idle → session_idle
+      SSE fires → went-idle toast. Fixed: now requires 2 consecutive idle readings
+      (6s) before firing session_idle, same as v0.2.1 behavior. Deployed.'
+    ts: '2026-05-21T17:25:16.832272'
   done: false
   exec_end: '2026-05-21T15:21:46+09:00'
   exec_start: '2026-05-21T06:15:00+00:00'
+  held: true
   id: M378
   layer: 0
   model_used: claude-sonnet-4-6
   parent_id: null
-  pending_confirm_at: 2026-05-21T16:56
+  pending_confirm_at: 2026-05-21T17:25
   queued_at: 2026-05-21T15:05
   star_relation: 'Detection stability restored: FIFO threshold raised 250ms→2.5s to
     stop false positives on inter-task pauses; 5s global dedup guard eliminates triple-fire
@@ -289,6 +386,24 @@ milestones:
       the model name chip (colored green=running, dim=idle) when a model is in use.
       Reload tab to see.
     ts: '2026-05-21T16:44:22.526185'
+  - role: user
+    text: why the model not showing in model cards ? prove with ui
+    ts: '2026-05-21T08:07:32.255Z'
+  - role: user
+    text: /uploads/MOAT/스크린샷_2026-05-21_171258.png
+    ts: '2026-05-21T08:13:28.848Z'
+  - role: claude
+    text: 'Fixed: was showing nothing when model='''' (Claude default). Now shows
+      ''default'' chip for empty-model sessions. EI shows owl-alpha chip, others show
+      nothing (no active exec session). Proof: https://drive.google.com/open?id=1byqfJYfDjsPgT8U1u92tplQzg_aL1eHp'
+    ts: '2026-05-21T17:15:47.046833'
+  - role: user
+    text: never use the 'default' use speicif model name on it,
+    ts: '2026-05-21T08:23:01.335Z'
+  - role: claude
+    text: 'Fixed: replaced generic default label with sonnet-4.6 (actual Claude default
+      model from settings.json). Reload tab to activate.'
+    ts: '2026-05-21T17:28:21.222488'
   done: false
   exec_end: '2026-05-21T14:44:29+09:00'
   exec_start: '2026-05-21T05:45:00+00:00'
@@ -296,7 +411,7 @@ milestones:
   layer: 0
   model_used: claude-sonnet-4-6
   parent_id: null
-  pending_confirm_at: 2026-05-21T16:44
+  pending_confirm_at: 2026-05-21T17:28
   queued_at: 2026-05-21T14:40
   star_relation: 'Stale model labels eliminated: _execModel now always overwritten
     (even when empty) so prior-agent model chips clear when agent changes; also clears
@@ -1380,6 +1495,17 @@ milestones:
   - role: user
     text: should be intrumental option added,
     ts: '2026-05-21T07:55:36.631Z'
+  - role: claude
+    text: 'Instrumental generated (1.5MB, no vocals): https://drive.google.com/open?id=1Y_IaYK7XnmNdoYyAKULnaQIRBMHfLel7'
+    ts: '2026-05-21T16:58:51.134297'
+  - role: user
+    text: pls open suno, and make a new onoe,
+    ts: '2026-05-21T08:10:23.391Z'
+  - role: claude
+    text: 'Suno has no public API (web-only tool). Cannot automate Suno from CLI.
+      Alternative: share the prompt and I can generate with MiniMax music-2.6 instead.
+      Or open https://suno.com manually.'
+    ts: '2026-05-21T17:25:18.030689'
   done: false
   exec_end: '2026-05-20T23:37:24+09:00'
   exec_start: '2026-05-20T23:17:24+09:00'
@@ -1387,12 +1513,12 @@ milestones:
   layer: 0
   model_used: claude-sonnet-4-6
   parent_id: null
-  pending_confirm_at: 2026-05-21T16:40
+  pending_confirm_at: 2026-05-21T17:25
   queued_at: 2026-05-20T22:36
   star_relation: Marketing video now published with royalty-free music — no copyright
     block, shareable to all channels, drives claude-ns-hub awareness.
   star_target_at_completion: null
-  status: queued
+  status: pending_confirmation
   text: '[uploading: ScreenRecording_05-20-2026 21-10-00_1.mp4…]. Can u show this'
   user_added_at: 2026-05-20T21:52
 - claude_ack: 2026-05-20T21:56
@@ -3221,6 +3347,22 @@ milestones:
     text: can u make up the same sturcuture to the current stone table -> 롤백 가능성 염두해야하니
       commit 하고 진행하기 바람 go in en
     ts: '2026-05-21T07:56:08.239Z'
+  - role: claude
+    text: Committed (15a5851) for rollback safety. Will now implement the star-gap
+      indicator in the hidden sliding columns — the expanded cols will show gap impact
+      bars. Starting now.
+    ts: '2026-05-21T16:58:51.941816'
+  - role: user
+    text: 색상이나 디자인 제외하고 동일하게 구현 가능해 ? go in en ,
+    ts: '2026-05-21T08:09:32.063Z'
+  - role: claude
+    text: Yes — can implement same structure (segmented bars + text + status chip)
+      without any color changes. The bars will use existing CSS variables only. Should
+      I proceed?
+    ts: '2026-05-21T17:25:18.152466'
+  - role: user
+    text: yeap, commit before implemetn ,
+    ts: '2026-05-21T08:30:36.999Z'
   done: false
   exec_end: '2026-05-21T11:58:14+09:00'
   exec_start: '2026-05-21T11:43:14+09:00'
@@ -3228,7 +3370,7 @@ milestones:
   layer: 0
   model_used: claude-sonnet-4-6
   parent_id: null
-  pending_confirm_at: 2026-05-21T12:10
+  pending_confirm_at: 2026-05-21T17:25
   queued_at: 2026-05-20T22:38
   star_relation: Stone table expansion now shows tree hierarchy (parent connector
     lines), gap-impact bars (width from star_relation score), and layer badge in expanded
@@ -4065,6 +4207,14 @@ milestones:
     text: Current link jaytoone/claude-client-bootstrap returns 404 (not found publicly).
       What is the correct GitHub URL? Need exact owner/repo to fix it.
     ts: '2026-05-21T15:06:37.893286'
+  - role: user
+    text: u shouldfind it or make a new git on it,
+    ts: '2026-05-21T08:15:13.798Z'
+  - role: claude
+    text: 'gh CLI not available in this environment. Please run: gh repo create jaytoone/claude-ns-hub
+      --public --description "Personal AI project hub" then push ~/.claude/hub to
+      it. I can then update the market page URL.'
+    ts: '2026-05-21T17:25:17.479636'
   done: false
   exec_end: '2026-05-21T12:03:13+09:00'
   exec_start: '2026-05-21T11:53:13+09:00'
@@ -4072,7 +4222,7 @@ milestones:
   layer: 0
   model_used: claude-sonnet-4-6
   parent_id: null
-  pending_confirm_at: 2026-05-21T15:06
+  pending_confirm_at: 2026-05-21T17:25
   queued_at: 2026-05-21T11:14
   star_relation: Hub channels now include PyPI + GitHub (claude-client-bootstrap)
     + HN mentions — all tracked independently from ctx channels.

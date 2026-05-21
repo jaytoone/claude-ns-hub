@@ -4423,17 +4423,23 @@ async def get_exec_sessions():
                 spawn_model = ""
         else:
             spawn_model = ""
-        # v0.2.4: restored v0.2.1 single-transition detection — fires SSE on first
-        # running→idle transition per client poll. No debounce (removed multi-poll counter).
-        # _push_session_idle() 5s dedup guard (from M378) prevents duplicate toasts.
+        # v0.2.4: single-transition detection with 2-read idle debounce.
+        # M378 false-positive fix: user typing "go" shows brief prompt (no spinner) then
+        # spinner appears — without debounce this fires session_idle toast immediately.
+        # Require 2 consecutive idle readings (2×3s = 6s) before firing session_idle SSE.
         _was_running = _exec_was_running.get(session_name, False)
         _exec_was_running[session_name] = not idle
-        if _was_running and idle:
+        if idle:
+            _exec_idle_count[session_name] = _exec_idle_count.get(session_name, 0) + 1
+        else:
+            _exec_idle_count.pop(session_name, None)
+        _consec_idle = _exec_idle_count.get(session_name, 0)
+        if _was_running and idle and _consec_idle >= 2:
             _push_session_idle(session_name, proj_id)
             _send_ntfy_notification(f"{proj_id} exec idle", f"Exec session for {proj_id} just went idle", priority="default")
         elif not _was_running and not idle:
-            # M378: idle→running transition — push SSE so detail-card SSE wiring updates exec pane
-            # within 3s (next client poll) instead of waiting 5s (_refreshExecState timer)
+            # idle→running: push SSE so detail-card updates within 3s poll
+            _exec_idle_count.pop(session_name, None)  # reset idle count on running
             _ns_push("session_running", proj_id=proj_id, kind="exec")
 
         # M365: find live_session_id = newest transcript modified after session spawn
