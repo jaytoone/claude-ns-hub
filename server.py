@@ -1174,12 +1174,20 @@ def _ensure_repo_path_exists(repo_path: str) -> tuple[bool, str]:
         return False, ""
     try:
         p = Path(repo_path).expanduser()
-        # Make absolute relative to user's home if a bare relative path was given.
         if not p.is_absolute():
             p = (Path.home() / p).resolve()
         else:
             p = p.resolve()
-        if p.exists() and p.is_dir():
+        # Guard against dead FUSE/remote mounts: run blocking stat in a thread
+        # with a short timeout so a dead mount never stalls the async event loop.
+        import concurrent.futures as _cf
+        with _cf.ThreadPoolExecutor(max_workers=1) as _ex:
+            _fut = _ex.submit(lambda: (p.exists(), p.is_dir()))
+            try:
+                _exists, _isdir = _fut.result(timeout=2.0)
+            except _cf.TimeoutError:
+                return False, repo_path  # path unresponsive — skip silently
+        if _exists and _isdir:
             return False, str(p)
         p.mkdir(parents=True, exist_ok=True)
         return True, str(p)
