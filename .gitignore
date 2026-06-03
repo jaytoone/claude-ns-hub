@@ -1,0 +1,51 @@
+# ── Secrets (NEVER commit — claude-ns-hub is a PUBLIC repo) ──────────────
+.telegram-token
+.telegram-chat-id
+.ntfy-topic
+.hub-consent.json
+config.yaml
+certs/
+*.key
+*.crt
+*.pem
+
+# ── Internal data/docs (NOT for public repo — M936) ──────────────────────
+dataset/
+docs/
+static/claude-md-preview.html
+
+# ── Runtime data ─────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+ns-events.db
+projects/
+uploads/
+corpora/
+causality-dataset/
+ctx-dashboard/
+usage-stats.jsonl
+northstar.json
+dataset.jsonl
+ctx-session-state.json
+
+# ── Runtime state / locks / logs ─────────────────────────────────────────
+task-locks/
+task-queue/
+task-results/
+*.log
+_archive-from-claude-*/
+
+# ── Caches / build / browser dumps ───────────────────────────────────────
+__pycache__/
+*.pyc
+build/
+dist/
+*.egg-info/
+.playwright-mcp/
+.playwright-hook.json
+
+# ── Backups ──────────────────────────────────────────────────────────────
+*.bak
+pyproject.toml.bak*
+global-memo.txt

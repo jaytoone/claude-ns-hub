@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NS Table — Test</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+<style>
+:root {
+  --bg: #faf9f6; --bg-deep: #f0ede7; --panel: #fff; --panel-border: #e4dfd5;
+  --text: #1f1c1a; --text-soft: #4a4540; --text-dim: #8a8278;
+  --accent: #cc785c; --accent-soft: #f5e6de;
+  --green: #3d8b5e; --green-soft: #e8f5ee;
+  --red: #c0392b; --yellow: #b8860b;
+  --serif: "Georgia", serif;
+  --mono: ui-monospace, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #181614; --bg-deep: #111009; --panel: #222019; --panel-border: #333028;
+  --text: #e8e0d6; --text-soft: #b0a89e; --text-dim: #6b6358;
+  --accent: #cc785c; --accent-soft: #2a1e17;
+  --green: #4caf78; --green-soft: #0e2318;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text-soft); font: 13px/1.5 var(--sans);
+  padding: 16px; -webkit-font-smoothing: antialiased; }
+
+h1 { font-family: var(--serif); font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.subtitle { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
+
+/* ── NS Table ── */
+.ns-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ns-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+/* Group header (lane label) */
+.ns-table .group-header { background: var(--bg-deep); }
+.ns-table .group-header td {
+  padding: 6px 10px; font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-dim); border-bottom: 1px solid var(--panel-border);
+  font-weight: 400;
+}
+.ns-table .group-header td .group-label { color: var(--text-soft); font-weight: 600; }
+.ns-table .group-header td .group-count { margin-left: 6px; opacity: .6; }
+
+/* Project row */
+.ns-table .proj-row { cursor: pointer; transition: background .08s; }
+.ns-table .proj-row:hover td { background: var(--accent-soft); }
+.ns-table .proj-row td { padding: 8px 10px; border-bottom: 1px solid var(--panel-border); vertical-align: middle; }
+
+/* Columns */
+.col-status { width: 6px; padding: 0 !important; }
+.col-avatar { width: 36px; text-align: center; }
+.col-name { font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text); }
+.col-name .proj-name { display: block; }
+.col-name .proj-path { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 1px; display: block; }
+.col-progress { width: 120px; }
+.col-metrics { width: 100px; font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+.col-session { width: 120px; font-family: var(--mono); font-size: 10px; }
+.col-actions { width: 60px; text-align: right; }
+
+/* Progress bar */
+.prog-bar-wrap { height: 4px; background: var(--panel-border); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
+.prog-bar { height: 100%; border-radius: 2px; background: var(--green); }
+.prog-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+
+/* Status indicator */
+.status-strip { width: 4px; height: 100%; border-radius: 2px; }
+.status-strip.active { background: var(--green); }
+.status-strip.warn { background: var(--yellow); }
+.status-strip.idle { background: var(--panel-border); }
+
+/* Avatar */
+.avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: var(--bg-deep); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-placeholder { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 9px; color: var(--accent); }
+
+/* Session badge */
+.sess-badge { display: inline-flex; align-items: center; gap: 3px; font-family: var(--mono); font-size: 9px; }
+.sess-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-dim); }
+.sess-dot.live { background: var(--green); }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 9px;
+  padding: 1px 5px; border-radius: 3px; }
+.badge-q { background: var(--accent-soft); color: var(--accent); }
+.badge-d { background: var(--panel-border); color: var(--text-dim); }
+
+/* Toolbar */
+.toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+.btn { font-family: var(--mono); font-size: 10px; padding: 4px 12px;
+  border: 1px solid var(--panel-border); border-radius: 4px; cursor: pointer;
+  background: none; color: var(--text-dim); }
+.btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.loading { color: var(--text-dim); font-family: var(--mono); font-size: 11px; padding: 20px; text-align: center; }
+
+@media (max-width: 600px) {
+  .col-path, .col-metrics, .col-session { display: none; }
+  .col-progress { width: 80px; }
+}
+</style>
+</head>
+<body>
+
+<h1>North Star — Table View <span style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-left:6px">TEST</span></h1>
+<p class="subtitle">Experimental table format — projects as rows, lanes as group headers</p>
+
+<div class="toolbar">
+  <button class="btn" id="btn-refresh" onclick="load()">refresh</button>
+  <span id="status-label" style="font-family:var(--mono);font-size:10px;color:var(--text-dim)">—</span>
+</div>
+
+<div class="ns-table-wrap">
+  <table class="ns-table" id="ns-table">
+    <thead>
+      <tr style="background:var(--bg-deep)">
+        <th style="width:4px;padding:0"></th>
+        <th style="width:36px;padding:6px 10px;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);text-align:left;font-weight:400"></th>
+        <th style="padding:6px 10px;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);text-align:left;font-weight:400">Project</th>
+        <th style="width:120px;padding:6px 10px;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);text-align:left;font-weight:400">Progress</th>
+        <th class="col-metrics" style="padding:6px 10px;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);text-align:right;font-weight:400">Stones</th>
+        <th class="col-session" style="padding:6px 10px;font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);text-align:left;font-weight:400">Session</th>
+        <th style="width:60px"></th>
+      </tr>
+    </thead>
+    <tbody id="ns-tbody"><tr><td colspan="7" class="loading">loading…</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+function esc(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function load() {
+  document.getElementById('btn-refresh').disabled = true;
+  try {
+    const [projsRes, laneRes] = await Promise.all([
+      fetch('/api/northstar').then(r => r.json()),
+      fetch('/api/user-settings/lane_labels').then(r => r.json()).catch(() => ({ value: null })),
+    ]);
+
+    const projects = projsRes || [];
+    const laneLabels = (laneRes.value && Array.isArray(laneRes.value))
+      ? laneRes.value
+      : ['Lane 0', 'Lane 1', 'Lane 2', 'Lane 3'];
+
+    // Group projects by lane (layer)
+    const groups = {};
+    laneLabels.forEach((label, i) => { groups[i] = { label, projects: [] }; });
+    projects.forEach(p => {
+      const l = Math.min(parseInt(p.layer) || 0, laneLabels.length - 1);
+      if (!groups[l]) groups[l] = { label: `Lane ${l}`, projects: [] };
+      groups[l].projects.push(p);
+    });
+
+    let html = '';
+    laneLabels.forEach((_, laneIdx) => {
+      const group = groups[laneIdx];
+      if (!group || !group.projects.length) return;
+
+      // Sort: focused first, then by position_x
+      const STAGE_ORDER = { focused: 0, assigned: 1, commercialized: 2, unassigned: 3 };
+      group.projects.sort((a, b) => {
+        const sd = (STAGE_ORDER[a.stage||'unassigned']||3) - (STAGE_ORDER[b.stage||'unassigned']||3);
+        return sd !== 0 ? sd : (a.position_x||0) - (b.position_x||0);
+      });
+
+      html += `<tr class="group-header">
+        <td colspan="7">
+          <span class="group-label">${esc(group.label)}</span>
+          <span class="group-count">${group.projects.length} projects</span>
+        </td>
+      </tr>`;
+
+      group.projects.forEach(p => {
+        const ms = p.milestones || [];
+        const done = ms.filter(m => m.status === 'done' || m.done).length;
+        const total = ms.length;
+        const pct = total ? Math.round(done / total * 100) : 0;
+        const queued = ms.filter(m => m.status === 'queued' && !m.done).length;
+        const starPct = Math.round((parseFloat(p.current) || 0));
+        const deadline = p.deadline || '—';
+        const agent = p.agent || 'claude';
+        const isLive = !!p.exec_session_id;
+        const statusClass = p.stage === 'focused' ? 'active' : (p.stage === 'assigned' ? 'warn' : 'idle');
+        const avatarUrl = p.avatar_url || '';
+
+        html += `<tr class="proj-row" onclick="window.location='/'">
+          <td style="padding:0;width:4px">
+            <div class="status-strip ${statusClass}" style="height:40px;margin:2px 0 2px 4px;border-radius:2px"></div>
+          </td>
+          <td class="col-avatar" style="text-align:center;padding:6px 8px">
+            ${avatarUrl
+              ? `<div class="avatar"><img src="${esc(avatarUrl)}" alt="${esc(p.name||p.id)}" loading="lazy"></div>`
+              : `<div class="avatar-placeholder">${esc((p.name||p.id||'?')[0].toUpperCase())}</div>`}
+          </td>
+          <td class="col-name" style="padding:6px 10px">
+            <span class="proj-name">${esc(p.name || p.id)}</span>
+            <span class="proj-path">${esc((p.repo_path||'').replace('/home/desk-1/','~/')||p.id)}</span>
+          </td>
+          <td class="col-progress" style="padding:6px 10px">
+            <div class="prog-bar-wrap"><div class="prog-bar" style="width:${pct}%;background:${pct>=80?'var(--green)':pct>=50?'var(--accent)':'var(--yellow)'}"></div></div>
+            <div class="prog-label">${pct}% · D${deadline.startsWith('D')?deadline.slice(1):'+'+deadline}</div>
+          </td>
+          <td class="col-metrics" style="padding:6px 10px;text-align:right">
+            ${queued ? `<span class="badge badge-q">${queued}q</span> ` : ''}
+            <span style="color:var(--text-dim)">${done}/${total}</span>
+          </td>
+          <td class="col-session" style="padding:6px 10px">
+            <div class="sess-badge">
+              <div class="sess-dot ${isLive ? 'live' : ''}"></div>
+              <span style="color:${isLive?'var(--green)':'var(--text-dim)'}">${isLive?'live':'idle'}</span>
+              <span style="opacity:.6;margin-left:3px">${esc(agent)}</span>
+            </div>
+          </td>
+          <td style="padding:6px 8px;text-align:right">
+            <button onclick="event.stopPropagation()" style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">open</button>
+          </td>
+        </tr>`;
+      });
+    });
+
+    document.getElementById('ns-tbody').innerHTML = html || '<tr><td colspan="7" class="loading">no projects</td></tr>';
+    document.getElementById('status-label').textContent = `${projects.length} projects · ${new Date().toLocaleTimeString()}`;
+  } catch(e) {
+    document.getElementById('ns-tbody').innerHTML = `<tr><td colspan="7" class="loading">error: ${esc(String(e))}</td></tr>`;
+  }
+  document.getElementById('btn-refresh').disabled = false;
+}
+
+load();
+(function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();
+window.addEventListener('message',e=>{if(e.data?.type==='hub-theme')document.documentElement.setAttribute('data-theme',e.data.value)});
+</script>
+</body>
+</html>

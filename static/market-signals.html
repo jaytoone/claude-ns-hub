@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hub Market</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf9f6; --bg-deep: #f0ede7; --panel: #fff; --panel-border: #e4dfd5;
+  --text: #1f1c1a; --text-soft: #4a4540; --text-dim: #8a8278;
+  --accent: #cc785c; --accent-deep: #a34b2c; --accent-soft: #f5e6de;
+  --green: #3d8b5e; --green-soft: #e8f5ee;
+  --red: #c0392b; --yellow: #b8860b;
+  --serif: "Fraunces", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #181614; --bg-deep: #111009; --panel: #222019; --panel-border: #333028;
+  --text: #e8e0d6; --text-soft: #b0a89e; --text-dim: #6b6358;
+  --accent: #cc785c; --accent-deep: #e8926e; --accent-soft: #2a1e17;
+  --green: #4caf78; --green-soft: #0e2318;
+  --red: #e05252; --yellow: #d4a017;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text-soft); font: 13px/1.6 var(--sans);
+  padding: 20px 24px 80px; -webkit-font-smoothing: antialiased; }
+
+h1 { font-family: var(--serif); font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.subtitle { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
+
+/* ── Toolbar ── */
+.toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.btn { font-family: var(--mono); font-size: 10px; background: none;
+  border: 1px solid var(--panel-border); border-radius: 4px; padding: 4px 12px;
+  cursor: pointer; color: var(--text-soft); transition: all .12s; }
+.btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.btn:disabled { opacity: .4; cursor: default; }
+.cache-note { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+
+/* ── Main market table ── */
+.market-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 28px;
+  border: 1px solid var(--panel-border); border-radius: 8px; }
+.market-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+
+/* Header row */
+.market-table thead th {
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text-dim); background: var(--bg-deep);
+  padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--panel-border);
+  white-space: nowrap; font-weight: 400;
+}
+.market-table thead th.col-service {
+  text-align: left; width: 140px; min-width: 120px;
+}
+.market-table thead th.col-ch { min-width: 72px; }
+
+/* Service header rows */
+.market-table .svc-row td {
+  padding: 10px 10px 4px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.market-table .svc-row td.col-service {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+  vertical-align: top;
+}
+.svc-install { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; display: block; }
+
+/* Metric cells */
+.market-table td.col-ch {
+  text-align: center; font-family: var(--mono); font-size: 12px;
+  color: var(--text); vertical-align: middle; padding: 10px 6px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.market-table td.col-ch.dim { color: var(--text-dim); font-size: 11px; }
+.market-table td.col-ch.err { color: var(--red); font-size: 10px; }
+.market-table td.col-ch.manual { color: var(--text-dim); font-size: 10px; font-style: italic; }
+.market-table tr:last-child td { border-bottom: none; }
+
+/* Metric value + sub */
+.metric-val { font-weight: 600; line-height: 1; }
+.metric-sub { font-size: 9px; color: var(--text-dim); margin-top: 2px; line-height: 1; }
+.metric-link { font-size: 9px; color: var(--accent); text-decoration: none; display: block; margin-top: 2px; }
+.metric-link:hover { text-decoration: underline; }
+
+/* Status dot */
+.dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--text-dim); margin-right: 4px; flex-shrink: 0; vertical-align: middle; }
+.dot.ok { background: var(--green); }
+.dot.warn { background: var(--yellow); }
+.dot.err { background: var(--red); }
+
+/* Section divider row */
+.market-table .divider-row td {
+  padding: 6px 10px; background: var(--bg-deep);
+  font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-dim);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+/* Demand signals row */
+.market-table .demand-row td {
+  padding: 10px; border-bottom: 1px solid var(--panel-border);
+  vertical-align: top;
+}
+.demand-row td.col-service {
+  font-family: var(--serif); font-size: 13px; font-weight: 500; color: var(--text);
+}
+.demand-cell { font-size: 11px; }
+.demand-cell .d-title { font-family: var(--serif); font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.demand-cell .d-big { font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--text); line-height: 1; }
+.demand-cell .d-sub { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.demand-cell .d-delta { font-family: var(--mono); font-size: 11px; margin-top: 4px; }
+.demand-cell .d-item { padding: 4px 0; border-bottom: 1px solid var(--panel-border); font-size: 10px; line-height: 1.4; } /* M928: reduced from 11px */
+.demand-cell .d-item:last-child { border-bottom: none; }
+.demand-cell .d-tag { font-family: var(--mono); font-size: 9px; border-radius: 3px; padding: 1px 5px;
+  background: var(--green-soft); color: var(--green); margin-right: 4px; }
+.daily-chart { display: flex; align-items: flex-end; gap: 1px; height: 36px; margin-top: 8px; }
+.day-bar { flex: 1; min-width: 2px; background: var(--accent); border-radius: 1px 1px 0 0;
+  opacity: .6; position: relative; }
+.day-bar:hover { opacity: 1; }
+.day-bar .tip { display: none; position: absolute; bottom: calc(100% + 3px); left: 50%;
+  transform: translateX(-50%); background: var(--text); color: var(--bg);
+  font-family: var(--mono); font-size: 9px; white-space: nowrap;
+  padding: 2px 5px; border-radius: 3px; pointer-events: none; z-index: 10; }
+.day-bar:hover .tip { display: block; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.loading { color: var(--text-dim); font-size: 11px; font-family: var(--mono); }
+.error { color: var(--red); font-size: 11px; font-family: var(--mono); }
+
+@media (max-width: 640px) {
+  body { padding: 14px 12px 80px; }
+  h1 { font-size: 14px; }
+  .market-table { font-size: 11px; }
+  .market-table thead th.col-service { width: 90px; min-width: 80px; }
+  .market-table thead th.col-ch { min-width: 58px; }
+  .demand-cell .d-big { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<h1>Hub Market</h1>
+<p class="subtitle">Channel traffic by service — distribution · demand signals</p>
+
+<div class="toolbar">
+  <button class="btn" id="btn-refresh">refresh</button>
+  <button class="btn" id="btn-save">save snapshot</button>
+  <span class="cache-note" id="cache-note">—</span>
+</div>
+
+<div class="market-table-wrap">
+  <table class="market-table" id="market-table">
+    <thead>
+      <tr id="market-head">
+        <th class="col-service">Service</th>
+        <!-- channel cols injected by JS -->
+      </tr>
+    </thead>
+    <tbody id="market-body">
+      <tr><td colspan="99" class="loading" style="padding:16px">loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+function esc(s) {
+  return String(s || "").replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ── Service + Channel registry ────────────────────────────────────────────────
+const SERVICES = [
+  { id: 'hub', label: 'claude-ns-hub', install: 'pip install claude-ns-hub',
+    channels: ['hub_pypi','hub_github','hub_hn','hub_geek','hub_devto'],
+    pypiPkg: 'claude-ns-hub', pypiBaseline: { week: 14 } },
+  { id: 'ctx', label: 'ctx-retriever', install: 'pip install ctx-retriever',
+    channels: ['github','geeknews','hn','devto','linkedin','pinterest','pypi'],
+    pypiPkg: 'ctx-retriever', pypiBaseline: { week: 633 } },
+];
+
+// Channel column definitions
+const CH_COLS = [
+  { key: 'pypi',    label: 'PyPI',    subKey: 'pypi_sub' },
+  { key: 'github',  label: 'GitHub',  subKey: 'gh_sub' },
+  { key: 'hn',      label: 'HN',      subKey: 'hn_sub' },
+  { key: 'gn',      label: 'GN',      subKey: 'gn_sub' },
+  { key: 'devto',   label: 'Dev.to',  subKey: 'devto_sub' },
+  { key: 'linkedin',label: 'LinkedIn',subKey: null },
+];
+
+let _channels = null, _signals = null, _daily = null;
+
+// ── Build table header ────────────────────────────────────────────────────────
+function _buildHeader() {
+  const head = document.getElementById('market-head');
+  head.innerHTML = '<th class="col-service">Service</th>' +
+    CH_COLS.map(c => `<th class="col-ch">${esc(c.label)}</th>`).join('') +
+    '<th class="col-ch">Demand</th>';
+}
+
+// ── Extract per-service channel metrics ───────────────────────────────────────
+function _extractMetrics(svc, channels) {
+  const metrics = {};
+  const relChs = (channels || []).filter(ch => {
+    const id = (ch.id || '').toLowerCase();
+    return svc.channels.some(r => id === r);  // exact match prevents hub_pypi matching ctx's 'pypi'
+  });
+  relChs.forEach(ch => {
+    const id = (ch.id || '').toLowerCase();
+    if (id.includes('pypi')) {
+      metrics.pypi = ch.week != null ? `${ch.week}/wk` : '—';
+      metrics.pypi_sub = ch.day != null ? `${ch.day}/day` : null;
+      metrics.pypi_url = ch.url;
+      metrics.pypi_ok = !ch.error;
+    }
+    if (id.includes('github') || id.includes('hub_github')) {
+      metrics.github = ch.stars != null ? `★ ${ch.stars}` : '—';
+      metrics.gh_sub = ch.forks != null ? `${ch.forks} forks` : null;
+      metrics.gh_url = ch.url;
+      metrics.gh_ok = !ch.error;
+    }
+    if (id.includes('hn') && !id.includes('geek')) {
+      metrics.hn = ch.points != null ? `${ch.points}pts` : '—';
+      metrics.hn_sub = ch.comments != null ? `${ch.comments} cmt` : null;
+      metrics.hn_url = ch.url;
+    }
+    if (id.includes('geek') || id.includes('gn')) {
+      metrics.gn = ch.points != null ? `${ch.points}pts` : '—';
+      metrics.gn_sub = ch.comments != null ? `${ch.comments} cmt` : null;
+      metrics.gn_url = ch.url;
+    }
+    if (id.includes('devto')) {
+      metrics.devto = ch.reactions != null ? `♥ ${ch.reactions}` : '—';
+      metrics.devto_sub = ch.reads != null ? `${ch.reads} reads` : null;
+      metrics.devto_url = ch.url;
+    }
+    if (id.includes('linkedin')) {
+      metrics.linkedin = 'manual';
+      metrics.linkedin_url = ch.url;
+    }
+  });
+  return metrics;
+}
+
+// ── Render PyPI demand cell ───────────────────────────────────────────────────
+function _pypiDemandCell(svc, sig, daily) {
+  // M928: use channel data as fallback for PyPI weekly numbers
+  const relChs = (_channels || []).filter(ch => svc.channels.some(r => (ch.id||'') === r));
+  const pypiCh = relChs.find(ch => (ch.id||'').includes('pypi'));
+  const pkgSig = (sig?.hub_pypi?.week != null ? sig.hub_pypi :
+                  sig?.pypi?.week != null ? sig.pypi :
+                  pypiCh ? { week: pypiCh.week, day: pypiCh.day, month: pypiCh.month, pct_week: 0 } : null);
+  if (!pkgSig || pkgSig.error) return `<div class="demand-cell"><div class="d-title">PyPI</div><span class="error">${esc(pkgSig?.error || 'unavailable')}</span></div>`;
+  const pct = pkgSig.pct_week ?? 0;
+  const sign = pct >= 0 ? '+' : '';
+  const col = pct > 15 ? 'var(--green)' : pct < -15 ? 'var(--red)' : 'var(--text-dim)';
+  const days = daily?.days || [];
+  let chart = '';
+  if (days.length > 1) {
+    const maxD = Math.max(...days.map(d => d.downloads), 1);
+    chart = `<div class="daily-chart">${days.map(d => {
+      const h = Math.max(2, Math.round(d.downloads / maxD * 34));
+      return `<div class="day-bar" style="height:${h}px"><span class="tip">${d.date.slice(5)}: ${d.downloads}</span></div>`;
+    }).join('')}</div>`;
+  }
+  return `<div class="demand-cell">
+    <div class="d-title">PyPI <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(svc.label)}</span></div>
+    <div class="d-big">${pkgSig.week ?? '—'}<span style="font-size:11px;font-weight:400;color:var(--text-dim)">/wk</span></div>
+    <div class="d-delta"><span style="color:${col}">${sign}${pct}%</span> vs baseline ${svc.pypiBaseline.week}/wk</div>
+    ${chart}
+    <div class="d-sub">${pkgSig.day ?? '—'}/day · ${pkgSig.month ?? '—'}/mo</div>
+  </div>`;
+}
+
+// ── Render full table ─────────────────────────────────────────────────────────
+function _buildTable(channels, signals, daily) {
+  _buildHeader();
+  const body = document.getElementById('market-body');
+  let html = '';
+
+  // Distribution rows
+  html += `<tr class="divider-row"><td colspan="99">Distribution Channels</td></tr>`;
+  SERVICES.forEach(svc => {
+    const m = _extractMetrics(svc, channels);
+    const cells = CH_COLS.map(col => {
+      const val = m[col.key];
+      const sub = col.subKey ? m[col.subKey] : null;
+      const url = m[col.key + '_url'];
+      const ok = m[col.key + '_ok'];
+      if (!val) return `<td class="col-ch dim">—</td>`;
+      if (val === 'manual') return `<td class="col-ch manual">manual</td>`;
+      const dot = ok === false ? 'err' : ok === true ? 'ok' : '';
+      return `<td class="col-ch">
+        ${dot ? `<span class="dot ${dot}"></span>` : ''}
+        <div class="metric-val">${esc(val)}</div>
+        ${sub ? `<div class="metric-sub">${esc(sub)}</div>` : ''}
+        ${url ? `<a class="metric-link" href="${esc(url)}" target="_blank">${esc(url.replace('https://','').slice(0,22))}…</a>` : ''}
+      </td>`;
+    }).join('');
+
+    html += `<tr class="svc-row">
+      <td class="col-service">
+        ${esc(svc.label)}
+        <span class="svc-install">${esc(svc.install)}</span>
+      </td>
+      ${cells}
+      <td class="col-ch">${_pypiDemandCell(svc, signals, svc.id === 'hub' ? daily : null)}</td>
+    </tr>`;
+  });
+
+  // M928: single unified demand signals row (no per-service keyword filter)
+  const sig = signals || {};
+  html += `<tr class="divider-row"><td colspan="99">Market Demand Signals</td></tr>`;
+  const hnItems = (sig.hn || []).slice(0, 5).map(i => `
+    <div class="d-item">
+      <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-right:4px">${i.points ?? 0}pts</span>
+      <a href="${esc(i.url)}" target="_blank" style="font-size:10px">${esc((i.title||'').slice(0,55))}</a>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(i.created)} · ${esc(i.keyword)}</div>
+    </div>`).join('');
+  const ghItems = (sig.github || []).slice(0, 5).map(i => `
+    <div class="d-item">
+      <span class="d-tag ${i.state}" style="font-size:9px">${i.state}</span>
+      <a href="${esc(i.url)}" target="_blank" style="font-size:10px">#${i.number} ${esc((i.title||'').slice(0,55))}</a>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(i.created)} · ${esc(i.keyword)}</div>
+    </div>`).join('');
+  html += `<tr class="demand-row">
+    <td class="col-service" style="font-family:var(--serif);font-weight:500;font-size:12px;color:var(--text);vertical-align:top;padding-top:10px">HN · GH pain</td>
+    <td colspan="${CH_COLS.length + 1}" style="padding:8px 10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Hacker News</div>
+          ${hnItems || '<span style="font-size:10px;color:var(--text-dim)">no matches</span>'}
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">GitHub pain</div>
+          ${ghItems || '<span style="font-size:10px;color:var(--text-dim)">no matches</span>'}
+        </div>
+      </div>
+    </td>
+  </tr>`;
+  });
+
+  body.innerHTML = html;
+}
+
+// ── Data loading ──────────────────────────────────────────────────────────────
+async function load(forceRefresh = false) {
+  document.getElementById('btn-refresh').disabled = true;
+  try {
+    const [chRes, sigRes, dailyRes] = await Promise.all([
+      fetch(forceRefresh ? '/api/channel-status?refresh=true' : '/api/channel-status').then(r => r.json()),
+      fetch(forceRefresh ? '/api/market-signals?refresh=true' : '/api/market-signals').then(r => r.json()),
+      fetch('/api/pypi-daily?days=30').then(r => r.json()).catch(() => ({ days: [] })),
+    ]);
+    _channels = chRes.channels || [];
+    _signals = sigRes.signals || {};
+    _daily = dailyRes;
+    _buildTable(_channels, _signals, _daily);
+    const age = sigRes.cached_at ? new Date(sigRes.cached_at * 1000).toLocaleTimeString() : '—';
+    document.getElementById('cache-note').textContent = `cached ${age} (TTL ${sigRes.ttl}s)`;
+  } catch(e) {
+    document.getElementById('cache-note').textContent = 'fetch error';
+    document.getElementById('market-body').innerHTML = `<tr><td colspan="99" class="error" style="padding:16px">Failed to load: ${esc(String(e))}</td></tr>`;
+  }
+  document.getElementById('btn-refresh').disabled = false;
+}
+
+document.getElementById('btn-refresh').addEventListener('click', () => load(true));
+document.getElementById('btn-save').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true; btn.textContent = 'saving…';
+  try { await fetch('/api/market-signals/save', { method: 'POST' }); btn.textContent = 'saved'; }
+  catch { btn.textContent = 'error'; }
+  setTimeout(() => { btn.textContent = 'save snapshot'; btn.disabled = false; }, 2000);
+});
+
+_buildHeader();
+load();
+(function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();
+window.addEventListener('message',e=>{if(e.data?.type==='hub-theme')document.documentElement.setAttribute('data-theme',e.data.value)});
+</script>
+</body>
+</html>
