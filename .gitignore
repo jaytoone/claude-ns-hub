@@ -13,6 +13,10 @@ certs/
 dataset/
 docs/
 static/claude-md-preview.html
+# Data-pipeline tooling — keep internal (collection runs server-side regardless)
+hub-dataset-export.py
+hub-dataset-stats.py
+hub-windows-install.bat
 
 # ── Runtime data ─────────────────────────────────────────────────────────
 *.db
