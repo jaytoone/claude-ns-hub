@@ -9257,7 +9257,10 @@ def _hub_init(proj_id=None, proj_dir=None):
 
 _HUB_HOOKS_DIR = Path(__file__).parent / "static" / "hooks"
 _HUB_SETTINGS_HOOKS = {
-    "Stop": [{"type": "command", "command": "python3 $HOME/.hub/static/hooks/northstar-stop-inject.py"}],
+    "Stop": [
+        {"type": "command", "command": "python3 $HOME/.hub/static/hooks/northstar-stop-inject.py"},
+        {"type": "command", "command": "python3 $HOME/.hub/static/hooks/stop-decision-capture.py"},
+    ],
     "UserPromptSubmit": [{"type": "command", "command": "python3 $HOME/.hub/static/hooks/northstar-execute-inject.py"}],
     "SessionStart": [{"type": "command", "command": "python3 $HOME/.hub/static/hooks/northstar-session-start.py", "timeout": 5}],
 }
