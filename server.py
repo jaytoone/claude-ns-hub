@@ -9255,7 +9255,7 @@ def _hub_init(proj_id=None, proj_dir=None):
     print(f"  Project : {pid}")
 
 
-_HUB_HOOKS = ["northstar-stop-inject.py", "northstar-execute-inject.py", "northstar-session-start.py"]
+_HUB_HOOKS = ["_ns_utils.py", "northstar-stop-inject.py", "northstar-execute-inject.py", "northstar-session-start.py"]
 _HUB_SETTINGS_HOOKS = {
     "Stop": [{"type": "command", "command": "python3 $HOME/.claude/hooks/northstar-stop-inject.py"}],
     "UserPromptSubmit": [{"type": "command", "command": "python3 $HOME/.claude/hooks/northstar-execute-inject.py"}],
