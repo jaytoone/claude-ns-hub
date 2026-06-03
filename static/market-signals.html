@@ -174,6 +174,10 @@ function esc(s) {
 }
 
 // ── Service + Channel registry ────────────────────────────────────────────────
+// M928: To add a new service, append an entry here.
+//   channels: list of channel IDs returned by /api/market-signals (API.channels[].id)
+//   pypiPkg:  pip package name for PyPI download stats
+//   pypiBaseline.week: expected weekly downloads (used for % delta display)
 const SERVICES = [
   { id: 'hub', label: 'claude-ns-hub', install: 'pip install claude-ns-hub',
     channels: ['hub_pypi','hub_github','hub_hn','hub_geek','hub_devto'],
@@ -181,6 +185,10 @@ const SERVICES = [
   { id: 'ctx', label: 'ctx-retriever', install: 'pip install ctx-retriever',
     channels: ['github','geeknews','hn','devto','linkedin','pinterest','pypi'],
     pypiPkg: 'ctx-retriever', pypiBaseline: { week: 633 } },
+  // new service template:
+  // { id: 'myservice', label: 'my-package', install: 'pip install my-package',
+  //   channels: ['myservice_pypi','myservice_github','myservice_hn'],
+  //   pypiPkg: 'my-package', pypiBaseline: { week: 10 } },
 ];
 
 // Channel column definitions
@@ -194,6 +202,7 @@ const CH_COLS = [
 ];
 
 let _channels = null, _signals = null, _daily = null;
+window._dailyByPkg = {};
 
 // ── Build table header ────────────────────────────────────────────────────────
 function _buildHeader() {
@@ -309,40 +318,45 @@ function _buildTable(channels, signals, daily) {
         <span class="svc-install">${esc(svc.install)}</span>
       </td>
       ${cells}
-      <td class="col-ch">${_pypiDemandCell(svc, signals, svc.id === 'hub' ? daily : null)}</td>
+      <td class="col-ch">${_pypiDemandCell(svc, signals, (window._dailyByPkg||{})[svc.pypiPkg] || null)}</td>
     </tr>`;
   });
 
-  // M928: single unified demand signals row (no per-service keyword filter)
+  // M928: per-service demand signals rows
   const sig = signals || {};
-  html += `<tr class="divider-row"><td colspan="99">Market Demand Signals</td></tr>`;
-  const hnItems = (sig.hn || []).slice(0, 5).map(i => `
-    <div class="d-item">
-      <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-right:4px">${i.points ?? 0}pts</span>
-      <a href="${esc(i.url)}" target="_blank" style="font-size:10px">${esc((i.title||'').slice(0,55))}</a>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(i.created)} · ${esc(i.keyword)}</div>
-    </div>`).join('');
-  const ghItems = (sig.github || []).slice(0, 5).map(i => `
-    <div class="d-item">
-      <span class="d-tag ${i.state}" style="font-size:9px">${i.state}</span>
-      <a href="${esc(i.url)}" target="_blank" style="font-size:10px">#${i.number} ${esc((i.title||'').slice(0,55))}</a>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(i.created)} · ${esc(i.keyword)}</div>
-    </div>`).join('');
-  html += `<tr class="demand-row">
-    <td class="col-service" style="font-family:var(--serif);font-weight:500;font-size:12px;color:var(--text);vertical-align:top;padding-top:10px">HN · GH pain</td>
-    <td colspan="${CH_COLS.length + 1}" style="padding:8px 10px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div>
-          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">Hacker News</div>
-          ${hnItems || '<span style="font-size:10px;color:var(--text-dim)">no matches</span>'}
+  const _hnAll = sig.hn || [];
+  const _ghAll = sig.github || [];
+  const _dItem = (i, type) => type === 'hn'
+    ? `<div class="d-item"><span style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-right:4px">${i.points??0}pts</span><a href="${esc(i.url)}" target="_blank" style="font-size:10px">${esc((i.title||'').slice(0,50))}</a><div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(i.created)} · ${esc(i.keyword)}</div></div>`
+    : `<div class="d-item"><span class="d-tag ${i.state}" style="font-size:9px">${i.state}</span><a href="${esc(i.url)}" target="_blank" style="font-size:10px">#${i.number} ${esc((i.title||'').slice(0,50))}</a><div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(i.created)} · ${esc(i.keyword)}</div></div>`;
+
+  html += `<tr class="divider-row"><td colspan="99">Market Demand Signals — per service</td></tr>`;
+  // Per-service: HN filtered by service label keywords, GH shared (claude-code pain = universal)
+  SERVICES.forEach(svc => {
+    const svcWords = svc.label.toLowerCase().split(/[-\s]/);
+    const hnFiltered = _hnAll.filter(i => {
+      const t = ((i.title||'')+(i.keyword||'')).toLowerCase();
+      return svcWords.some(w => w.length > 2 && t.includes(w));
+    });
+    const hnShow = (hnFiltered.length ? hnFiltered : _hnAll).slice(0, 3);
+    const ghShow = _ghAll.slice(0, 3);
+    html += `<tr class="demand-row">
+      <td class="col-service" style="font-family:var(--serif);font-weight:500;font-size:12px;color:var(--text);vertical-align:top;padding-top:10px">
+        ${esc(svc.label)}
+      </td>
+      <td colspan="${CH_COLS.length + 1}" style="padding:8px 10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;margin-bottom:5px">HN</div>
+            ${hnShow.map(i=>_dItem(i,'hn')).join('') || '<span style="font-size:10px;color:var(--text-dim)">—</span>'}
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;margin-bottom:5px">GH pain</div>
+            ${ghShow.map(i=>_dItem(i,'gh')).join('') || '<span style="font-size:10px;color:var(--text-dim)">—</span>'}
+          </div>
         </div>
-        <div>
-          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">GitHub pain</div>
-          ${ghItems || '<span style="font-size:10px;color:var(--text-dim)">no matches</span>'}
-        </div>
-      </div>
-    </td>
-  </tr>`;
+      </td>
+    </tr>`;
   });
 
   body.innerHTML = html;
@@ -352,14 +366,17 @@ function _buildTable(channels, signals, daily) {
 async function load(forceRefresh = false) {
   document.getElementById('btn-refresh').disabled = true;
   try {
-    const [chRes, sigRes, dailyRes] = await Promise.all([
+    const [chRes, sigRes, dailyHubRes, dailyCtxRes] = await Promise.all([
       fetch(forceRefresh ? '/api/channel-status?refresh=true' : '/api/channel-status').then(r => r.json()),
       fetch(forceRefresh ? '/api/market-signals?refresh=true' : '/api/market-signals').then(r => r.json()),
-      fetch('/api/pypi-daily?days=30').then(r => r.json()).catch(() => ({ days: [] })),
+      fetch('/api/pypi-daily?days=30&pkg=claude-ns-hub').then(r => r.json()).catch(() => ({ days: [] })),
+      fetch('/api/pypi-daily?days=30&pkg=ctx-retriever').then(r => r.json()).catch(() => ({ days: [] })),
     ]);
     _channels = chRes.channels || [];
     _signals = sigRes.signals || {};
-    _daily = dailyRes;
+    // Store per-service daily data
+    _daily = dailyHubRes;
+    _dailyByPkg = { 'claude-ns-hub': dailyHubRes, 'ctx-retriever': dailyCtxRes };
     _buildTable(_channels, _signals, _daily);
     const age = sigRes.cached_at ? new Date(sigRes.cached_at * 1000).toLocaleTimeString() : '—';
     document.getElementById('cache-note').textContent = `cached ${age} (TTL ${sigRes.ttl}s)`;

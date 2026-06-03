@@ -1252,6 +1252,8 @@ header {
       <div class="header-right">
         <button class="refresh-btn" onclick="showAddProject()" style="background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)">+ node</button>
         <button class="refresh-btn" id="align-btn" onclick="cycleAlign()" title="Card alignment">⇤ align</button>
+        <!-- M939: table view test page link -->
+        <button class="refresh-btn" onclick="window.open('/static/ns-table-test.html','_blank')" title="Table view (test)">⊞ table</button>
         <button class="refresh-btn" onclick="_showModelAvatarSettings()" title="Configure per-model avatar images">◎ avatar</button>
         <!-- M227 v2: per-card pointer replaces the top-bar pointer button; element kept for legacy script but hidden. -->
         <button class="refresh-btn" id="priority-toggle-btn" onclick="togglePriorityPointer()" style="display:none">+ pointer</button>
@@ -1739,6 +1741,7 @@ const MODEL_CATALOG = {
     ['claude-haiku-4-5-20251001',     'haiku-4.5'],
     ['claude-sonnet-4-5-20250929',    'sonnet-4.5'],
     ['claude-opus-4-7',               'opus-4.7'],
+    ['claude-opus-4-8',               'opus-4.8'],
   ],
   codex: [
     ['',                              'codex-auto'],
@@ -3372,7 +3375,7 @@ function renderMilestoneCreator(projId, milestones) {
     _msExtFingerprint[mid] = _extFp;
     const layer = Math.min(parseInt(m.layer) || 0, 2);
     // M301: tree connector — indent by layer, show parent label
-    const _indent = layer > 0 ? `<span style="display:inline-block;width:${layer*12}px;flex-shrink:0"></span><span style="color:var(--panel-border);font-size:10px;margin-right:3px">${layer===1?'└':'  └'}</span>` : '';
+    const _indent = '';
     const _parentLabel = (layer > 0 && m.parent_id) ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.7">${esc(m.parent_id)}</span>` : '';
     // M301 v2: gap-impact segmented bar + star_relation preview
     const _sr = _srStr.toLowerCase();
@@ -6252,7 +6255,7 @@ async function refreshSessionStatus() {
 
 function _shortModel(m) {
   if (!m) return '';
-  return m.replace(/^or-/,'').replace('claude-sonnet-4-6','sonnet-4.6').replace('claude-haiku-4-5-20251001','haiku-4.5').replace('claude-sonnet-4-5-20250929','sonnet-4.5').replace('claude-opus-4-7','opus-4.7').replace(/^claude-/,'').replace(/-20\d{6}$/,'');
+  return m.replace(/^or-/,'').replace('claude-sonnet-4-6','sonnet-4.6').replace('claude-haiku-4-5-20251001','haiku-4.5').replace('claude-sonnet-4-5-20250929','sonnet-4.5').replace('claude-opus-4-7','opus-4.7').replace('claude-opus-4-8','opus-4.8').replace(/^claude-/,'').replace(/-20\d{6}$/,'');
 }
 
 function buildSessPill(execState, projId) {
@@ -7064,13 +7067,13 @@ function applyAlign() {
   laneLabels.forEach((_, l) => {
     const layerProjects = projects.filter(p => (p.layer||0) === l);
     if (!layerProjects.length) return;
-    // Sort by stage, then by current position_x
+    // M950 fix: sort by stage, then by name A-Z (or Z-A for right) so sort is always visually distinct
     const sorted = [...layerProjects].sort((a, b) => {
       const sd = (STAGE_ORDER[a.stage||'unassigned']||3) - (STAGE_ORDER[b.stage||'unassigned']||3);
       if (sd !== 0) return key === 'right' ? -sd : sd;
-      return key === 'right'
-        ? (b.position_x||0) - (a.position_x||0)
-        : (a.position_x||0) - (b.position_x||0);
+      const na = (a.name||a.id||'').toLowerCase();
+      const nb = (b.name||b.id||'').toLowerCase();
+      return key === 'right' ? nb.localeCompare(na) : na.localeCompare(nb);
     });
     // Reassign sequential indices and PATCH to server
     sorted.forEach((p, idx) => {

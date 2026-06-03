@@ -2409,6 +2409,13 @@ async def ns_table_test_page():
                         headers={"Cache-Control": "no-store"})
 
 
+@app.get("/ns-test2")
+async def ns_test2_page():
+    """M939 test2: Circle card swimlane view."""
+    return FileResponse(str(STATIC / "ns-test2.html"),
+                        headers={"Cache-Control": "no-store"})
+
+
 @app.get("/api/market-signals")
 async def market_signals_api(refresh: bool = False):
     import time
@@ -2569,13 +2576,14 @@ async def market_signals_save():
 
 _PYPI_DAILY_CACHE: dict = {"data": None, "ts": 0.0}
 _PYPI_DAILY_TTL = 3600  # 1 hr
+_PYPI_DAILY_PKG_CACHE: dict = {}  # pkg -> {"data": ..., "ts": ...}
 
 
-def _fetch_pypi_daily_sync(days: int = 30) -> dict:
+def _fetch_pypi_daily_sync(days: int = 30, pkg: str = "claude-ns-hub") -> dict:
     import urllib.request as _ur
     try:
         req = _ur.Request(
-            "https://pypistats.org/api/packages/ctx-retriever/overall?total=daily",
+            f"https://pypistats.org/api/packages/{pkg}/overall?total=daily",
             headers={"User-Agent": "ctx-hub/1.0", "Accept": "application/json"},
         )
         with _ur.urlopen(req, timeout=10) as r:
@@ -2586,21 +2594,26 @@ def _fetch_pypi_daily_sync(days: int = 30) -> dict:
             if row.get("category") == "without_mirrors"
         ]
         rows.sort(key=lambda x: x["date"])
-        return {"days": rows[-days:], "package": "ctx-retriever"}
+        return {"days": rows[-days:], "package": pkg}
     except Exception as exc:
         return {"error": str(exc)[:120]}
 
 
 @app.get("/api/pypi-daily")
-async def pypi_daily_api(refresh: bool = False, days: int = 30):
+async def pypi_daily_api(refresh: bool = False, days: int = 30, pkg: str = "claude-ns-hub"):
     import time
     now = time.time()
-    if refresh or _PYPI_DAILY_CACHE["data"] is None or (now - _PYPI_DAILY_CACHE["ts"]) > _PYPI_DAILY_TTL:
+    cache = _PYPI_DAILY_PKG_CACHE.setdefault(pkg, {"data": None, "ts": 0.0})
+    if refresh or cache["data"] is None or (now - cache["ts"]) > _PYPI_DAILY_TTL:
         loop = asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: _fetch_pypi_daily_sync(days))
-        _PYPI_DAILY_CACHE["data"] = data
-        _PYPI_DAILY_CACHE["ts"] = now
-    return JSONResponse({**_PYPI_DAILY_CACHE["data"], "cached_at": _PYPI_DAILY_CACHE["ts"]})
+        data = await loop.run_in_executor(None, lambda: _fetch_pypi_daily_sync(days, pkg))
+        cache["data"] = data
+        cache["ts"] = now
+    # keep legacy single-cache in sync for backward compat
+    if pkg == "claude-ns-hub":
+        _PYPI_DAILY_CACHE["data"] = cache["data"]
+        _PYPI_DAILY_CACHE["ts"] = cache["ts"]
+    return JSONResponse({**cache["data"], "cached_at": cache["ts"], "pkg": pkg})
 
 
 # ── Channel Manager — live reaction scraper ──────────────────────────────────
@@ -3651,6 +3664,7 @@ _ALLOWED_MODELS = {
     "claude-haiku-4-5",
     "claude-sonnet-4-6",
     "claude-opus-4-7",
+    "claude-opus-4-8",
     # OSK/LiteLLM proxy on 127.0.0.1:4100 exposes OpenAI as the Anthropic API
     # (config: ~/.osk-litellm.yaml). Selecting this routes the spawned Claude
     # session to GPT — env splice happens in _get_project_spawn_env.
@@ -8571,6 +8585,7 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
                 {"key": "claude-sonnet-4-5-20250929", "label": "Sonnet 4.5"},
                 {"key": "claude-sonnet-4-6", "label": "Sonnet 4.6"},
                 {"key": "claude-opus-4-7", "label": "Opus 4.7"},
+                {"key": "claude-opus-4-8", "label": "Opus 4.8"},
             ]
 
         # Filter by model if specified
@@ -9322,11 +9337,10 @@ def _save_consent(data: dict):
 _USAGE_FILE = _HUB_DATA_DIR / "usage-stats.jsonl"
 
 def _record_usage_event(event: str, extra: dict = None):
-    """Record usage event locally (gated by consent). No PII collected."""
+    """M929: Record usage event locally + centrally via Turso (consent-gated, no PII)."""
     if not _get_consent().get("data_collection", True):
         return
     import hashlib, platform, time
-    # Anonymous install ID — hash of hostname, not reversible
     _install_id = hashlib.sha256(platform.node().encode()).hexdigest()[:16]
     entry = {
         "ts": int(time.time()), "event": event,
@@ -9335,11 +9349,24 @@ def _record_usage_event(event: str, extra: dict = None):
         "os": platform.system(),
         **(extra or {})
     }
+    # Local JSONL
     try:
         with open(_USAGE_FILE, "a") as f:
             f.write(json.dumps(entry) + "\n")
     except Exception:
         pass
+    # Central Turso (same DB as CTX stats) — async, non-blocking
+    if _TURSO_ENABLED:
+        import threading
+        def _send_to_turso():
+            _turso_execute(
+                "CREATE TABLE IF NOT EXISTS hub_usage (ts INTEGER, event TEXT, install_id TEXT, version TEXT, os TEXT)",
+            )
+            _turso_execute(
+                "INSERT INTO hub_usage (ts, event, install_id, version, os) VALUES (?, ?, ?, ?, ?)",
+                [entry["ts"], entry["event"], entry["install_id"], entry["version"], entry["os"]],
+            )
+        threading.Thread(target=_send_to_turso, daemon=True).start()
 
 @app.get("/api/hub/usage-stats")
 async def get_usage_stats():
