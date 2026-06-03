@@ -311,19 +311,30 @@ async def user_settings_put(key: str, req: Request):
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
+_UPDATE_CHECK_CACHE: dict = {"data": None, "ts": 0.0}
+_UPDATE_CHECK_TTL = 3600  # 1 hr — PyPI rate limit safe
+
 @app.get("/api/hub/update-check")
 async def hub_update_check():
     """M292: Check PyPI for latest claude-ns-hub version and compare to installed."""
-    import importlib.metadata, urllib.request, json as _json
+    import importlib.metadata, time as _t
+    now = _t.time()
+    if _UPDATE_CHECK_CACHE["data"] is not None and (now - _UPDATE_CHECK_CACHE["ts"]) < _UPDATE_CHECK_TTL:
+        return JSONResponse(_UPDATE_CHECK_CACHE["data"])
     try:
         current = importlib.metadata.version("claude-ns-hub")
     except Exception:
         current = "unknown"
     try:
-        with urllib.request.urlopen(
-            "https://pypi.org/pypi/claude-ns-hub/json", timeout=4
-        ) as r:
-            latest = _json.loads(r.read()).get("info", {}).get("version", "")
+        import urllib.request, json as _json
+        def _fetch_pypi():
+            with urllib.request.urlopen(
+                "https://pypi.org/pypi/claude-ns-hub/json", timeout=4
+            ) as r:
+                return _json.loads(r.read()).get("info", {}).get("version", "")
+        latest = await asyncio.to_thread(_fetch_pypi)
+    except Exception:
+        latest = ""
     except Exception:
         latest = ""
     # Try alternate package names (northstar-hub is the old name)
@@ -336,11 +347,15 @@ async def hub_update_check():
     # Show badge when update available OR when package unknown but latest exists (prompt install)
     update_available = bool(latest and (current == "unknown" or (latest != current)))
     pip_cmd = f"pip install --upgrade claude-ns-hub" if current != "unknown" else "pip install claude-ns-hub"
-    return JSONResponse({
+    result = {
         "current": current, "latest": latest,
         "update_available": update_available,
         "pip_cmd": pip_cmd if update_available else "",
-    })
+    }
+    import time as _t2
+    _UPDATE_CHECK_CACHE["data"] = result
+    _UPDATE_CHECK_CACHE["ts"] = _t2.time()
+    return JSONResponse(result)
 
 @app.post("/api/hub/restart")
 async def hub_restart():
@@ -807,10 +822,12 @@ async def telegram_get_updates():
     if not token:
         return JSONResponse({"ok": False, "error": "no token configured"}, status_code=400)
     try:
-        import urllib.request as _ur
-        req = _ur.Request(f"https://api.telegram.org/bot{token}/getUpdates?limit=5")
-        with _ur.urlopen(req, timeout=5) as r:
-            data = json.loads(r.read())
+        def _fetch():
+            import urllib.request as _ur
+            req = _ur.Request(f"https://api.telegram.org/bot{token}/getUpdates?limit=5")
+            with _ur.urlopen(req, timeout=5) as r:
+                return json.loads(r.read())
+        data = await asyncio.to_thread(_fetch)
         updates = data.get("result", [])
         chats = [{"chat_id": str(u["message"]["chat"]["id"]),
                   "name": u["message"]["chat"].get("first_name", "") + " " + u["message"]["chat"].get("last_name", ""),
@@ -826,12 +843,14 @@ async def test_telegram(request: Request):
     if not token or not chat_id:
         return JSONResponse({"ok": False, "error": "token or chat_id not configured"}, status_code=400)
     try:
-        import urllib.request as _ur, urllib.parse as _up
-        payload = _up.urlencode({"chat_id": chat_id, "text": "✅ Hub Telegram notifications working!"}).encode()
-        req = _ur.Request(f"https://api.telegram.org/bot{token}/sendMessage",
-                          data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
-        with _ur.urlopen(req, timeout=5) as r:
-            result = json.loads(r.read())
+        def _send():
+            import urllib.request as _ur, urllib.parse as _up
+            payload = _up.urlencode({"chat_id": chat_id, "text": "✅ Hub Telegram notifications working!"}).encode()
+            req = _ur.Request(f"https://api.telegram.org/bot{token}/sendMessage",
+                              data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
+            with _ur.urlopen(req, timeout=5) as r:
+                return json.loads(r.read())
+        result = await asyncio.to_thread(_send)
         return JSONResponse({"ok": result.get("ok", False), "sent": result.get("ok", False)})
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
@@ -1161,6 +1180,10 @@ def _load_projects() -> list:
     return projects
 
 
+# Shared executor for FUSE-safe filesystem checks — reuse across calls to prevent thread leak
+import concurrent.futures as _REPO_CF
+_REPO_PATH_EXECUTOR = _REPO_CF.ThreadPoolExecutor(max_workers=2, thread_name_prefix="repo-stat")
+
 def _ensure_repo_path_exists(repo_path: str) -> tuple[bool, str]:
     """M258: when a node points to a server path that doesn't exist, mkdir -p it.
 
@@ -1180,13 +1203,13 @@ def _ensure_repo_path_exists(repo_path: str) -> tuple[bool, str]:
             p = p.resolve()
         # Guard against dead FUSE/remote mounts: run blocking stat in a thread
         # with a short timeout so a dead mount never stalls the async event loop.
+        # Reuse module-level executor — do NOT create a new one per call (thread leak).
         import concurrent.futures as _cf
-        with _cf.ThreadPoolExecutor(max_workers=1) as _ex:
-            _fut = _ex.submit(lambda: (p.exists(), p.is_dir()))
-            try:
-                _exists, _isdir = _fut.result(timeout=2.0)
-            except _cf.TimeoutError:
-                return False, repo_path  # path unresponsive — skip silently
+        _fut = _REPO_PATH_EXECUTOR.submit(lambda: (p.exists(), p.is_dir()))
+        try:
+            _exists, _isdir = _fut.result(timeout=2.0)
+        except _cf.TimeoutError:
+            return False, repo_path  # path unresponsive — skip silently
         if _exists and _isdir:
             return False, str(p)
         p.mkdir(parents=True, exist_ok=True)
@@ -2615,8 +2638,13 @@ async def pypi_daily_api(refresh: bool = False, days: int = 30, pkg: str = "clau
     if refresh or cache["data"] is None or (now - cache["ts"]) > _PYPI_DAILY_TTL:
         loop = asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: _fetch_pypi_daily_sync(days, pkg))
-        cache["data"] = data
-        cache["ts"] = now
+        # M928: on error keep previous successful data; only update cache on success
+        if "error" in data and cache["data"] and "days" in cache["data"]:
+            cache["data"] = {**cache["data"], "error": data["error"], "stale": True}
+        else:
+            cache["data"] = data
+            if "days" in data:
+                cache["ts"] = now  # only refresh timestamp on success
     # keep legacy single-cache in sync for backward compat
     if pkg == "claude-ns-hub":
         _PYPI_DAILY_CACHE["data"] = cache["data"]
@@ -9079,14 +9107,28 @@ async def get_skill_content(skill_name: str):
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
+_CTX_TEL_CACHE: dict = {"data": None, "ts": 0.0}
+_CTX_TEL_TTL = 60  # 60s TTL — Turso is slow (Korea→AWS us-west-2), cache to avoid blocking
+
 @app.get("/api/ctx-telemetry")
 async def ctx_telemetry():
     """CTX ↔ NS-Hub integration: live telemetry from hub-ctx Turso DB.
 
     Returns user counts, recent session stats, and version breakdown so the
     hub dashboard can show CTX data collection health alongside milestone progress.
+    Uses asyncio.to_thread + TTL cache to avoid blocking the event loop.
     """
-    try:
+    import time as _time
+    now = _time.time()
+    if _CTX_TEL_CACHE["data"] is not None and (now - _CTX_TEL_CACHE["ts"]) < _CTX_TEL_TTL:
+        return JSONResponse(_CTX_TEL_CACHE["data"])
+
+    import os as _os_tel
+    _turso_token_check = _os_tel.environ.get("HUB_CTX_TURSO_TOKEN", "")
+    if not _turso_token_check:
+        return JSONResponse({"error": "HUB_CTX_TURSO_TOKEN not configured", "sources": []})
+
+    def _fetch_sync():
         import urllib.request as _ur, os as _os
         turso_url = _os.environ.get("HUB_CTX_TURSO_URL", "https://hub-ctx-jaytoone.aws-us-west-2.turso.io")
         turso_token = _os.environ.get("HUB_CTX_TURSO_TOKEN", "")
@@ -9104,29 +9146,31 @@ async def ctx_telemetry():
 
         total_rows = int(_q("SELECT COUNT(*) FROM ctx_session_aggregates")[0][0]["value"])
         total_users = int(_q("SELECT COUNT(DISTINCT user_id) FROM ctx_session_aggregates")[0][0]["value"])
-
-        # External users (exclude self + test user IDs)
         ext_q = ("SELECT COUNT(DISTINCT user_id) FROM ctx_session_aggregates "
                  "WHERE user_id NOT IN ('6d7f66b2fb843134','2e00a759e17a12c4','validate_test_001') "
                  "AND user_id NOT LIKE 'retry%' AND user_id NOT LIKE 'test%' "
                  "AND user_id NOT LIKE '12293e702290%'")
         ext_users = int(_q(ext_q)[0][0]["value"])
-
-        # Recent version breakdown
         ver_rows = _q("SELECT ctx_version, COUNT(DISTINCT user_id) u FROM ctx_session_aggregates "
                       "WHERE ctx_version >= '0.3.26' GROUP BY ctx_version ORDER BY ctx_version DESC LIMIT 5")
         versions = {(r[0]["value"] if r[0]["type"] != "null" else "unknown"): int(r[1]["value"])
                     for r in ver_rows}
-
-        return JSONResponse({
-            "total_rows": total_rows,
-            "total_users": total_users,
-            "external_users": ext_users,
-            "versions": versions,
+        return {
+            "total_rows": total_rows, "total_users": total_users,
+            "external_users": ext_users, "versions": versions,
             "ns2_passed": ext_users > 0,
             "db": "hub-ctx-jaytoone.aws-us-west-2.turso.io",
-        })
+        }
+
+    try:
+        data = await asyncio.to_thread(_fetch_sync)
+        _CTX_TEL_CACHE["data"] = data
+        _CTX_TEL_CACHE["ts"] = _time.time()
+        return JSONResponse(data)
     except Exception as exc:
+        stale = _CTX_TEL_CACHE.get("data")
+        if stale:
+            return JSONResponse({**stale, "_stale": True})
         return JSONResponse({"error": str(exc)[:100]}, status_code=503)
 
 
