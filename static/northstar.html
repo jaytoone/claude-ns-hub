@@ -1984,6 +1984,7 @@ let _resumeInfo = {}; // proj_id → {session_id_preview, at, at_epoch, has_tran
 // ── Milestone Creator ─────────────────────────────────────────────────────────
 let _msProjectId = null;
 let _msRenderFingerprint = {}; // proj_id → last-render fingerprint (M129 blink guard)
+let _swimlaneLaneFp = {};      // lane_idx → last swimlane fingerprint (skip DOM rebuild if unchanged)
 let _msCollapsedParents = {}; // M548 A+C: projId → Set of collapsed parent IDs
 let _msExtFingerprint = {};   // M300: per-stone ext-cell fingerprint → skip re-inject if unchanged
 let _groupingFingerprint = {}; // M649: proj_id → last grouping fingerprint (skip DOM rearrange when unchanged)
@@ -6597,9 +6598,30 @@ function render() {
     });
 
     // M925: index-based flex layout — position_x = order index, no pixel math
+    const sortedLane = [...lanes[l]].sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
+    // Fingerprint: skip full DOM rebuild when only realtime state (session/exec) changed
+    // — prevents 3s card flicker and mobile tap-miss caused by innerHTML = ''
+    const _laneFp = sortedLane.map(({p}) =>
+      `${p.id||p.name}:${p.stage||''}:${p.position_x||0}:${p.exec_session_id||''}:${p.current||''}`
+    ).join('|');
+    if (_swimlaneLaneFp[l] === _laneFp && el.children.length === sortedLane.length) {
+      // Same layout — update only session badges in-place, skip DOM rebuild
+      sortedLane.forEach(({p, i}, orderIdx) => {
+        const wrapper = el.children[orderIdx];
+        if (!wrapper) return;
+        const badge = wrapper.querySelector('.ns-exec-badge, .sess-badge, [class*="exec-state"]');
+        if (badge) {
+          const newNode = document.createElement('div');
+          newNode.innerHTML = nodeCard(p, i);
+          const newBadge = newNode.querySelector('.ns-exec-badge, .sess-badge, [class*="exec-state"]');
+          if (newBadge && badge.outerHTML !== newBadge.outerHTML) badge.replaceWith(newBadge);
+        }
+      });
+      return;
+    }
+    _swimlaneLaneFp[l] = _laneFp;
     el.innerHTML = '';
     el.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;padding:6px 8px;min-height:10px;align-content:flex-start;position:relative';
-    const sortedLane = [...lanes[l]].sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
     sortedLane.forEach(({p, i}, orderIdx) => {
       // Normalize to sequential indices on first render (stable for future drags)
       if ((p.position_x ?? 0) !== orderIdx) {
