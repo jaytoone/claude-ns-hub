@@ -1998,7 +1998,7 @@ async def landing_page():
 async def corpus_hub_page():
     """M275: built-in corpus page served from hub — eliminates need for separate port 8989."""
     # Serve the entity-corpus app.js static dashboard HTML embedded in hub
-    entity_dash = Path.home() / ".claude" / "hub" / "entity" / "dashboard" / "static"
+    entity_dash = _HUB_DATA_DIR / "entity" / "dashboard" / "static"
     idx = entity_dash / "index.html"
     if idx.exists():
         return FileResponse(str(idx), headers={"Cache-Control": "no-store"})
@@ -6071,7 +6071,7 @@ async def commit_milestone(proj_id: str, mid: str):
 @app.get("/api/northstar/{proj_id}/milestones/{mid}/commits")
 async def get_milestone_commits(proj_id: str, mid: str):
     """M444: Return commits linked to a milestone via milestone_commits table."""
-    db_path = Path.home() / ".claude" / "hub" / "ns-events.db"
+    db_path = _NS_EVENTS_DB  # M712 fix: live ~/.hub/ns-events.db
     if not db_path.exists():
         return JSONResponse({"ok": True, "commits": []})
     import sqlite3 as _sqlite3
@@ -7735,8 +7735,8 @@ async def update_layout(proj_id: str, request: Request):
 _NS_PUSH_SUBSCRIBERS: list[asyncio.Queue] = []
 
 # M389: Telegram-only push notifications (ntfy removed)
-_TG_TOKEN_FILE = Path.home() / ".claude" / "hub" / ".telegram-token"
-_TG_CHAT_FILE  = Path.home() / ".claude" / "hub" / ".telegram-chat-id"
+_TG_TOKEN_FILE = _HUB_DATA_DIR / ".telegram-token"
+_TG_CHAT_FILE  = _HUB_DATA_DIR / ".telegram-chat-id"
 
 def _get_telegram_config() -> tuple[str, str]:
     """Return (bot_token, chat_id). Empty strings if not configured."""
@@ -9305,7 +9305,7 @@ def _hub_install_global():
 
 
 # ── M561: Data collection consent ─────────────────────────────────────────────
-_CONSENT_FILE = Path.home() / ".claude" / "hub" / ".hub-consent.json"
+_CONSENT_FILE = _HUB_DATA_DIR / ".hub-consent.json"
 
 def _get_consent() -> dict:
     if _CONSENT_FILE.exists():
@@ -9319,7 +9319,7 @@ def _save_consent(data: dict):
     _CONSENT_FILE.write_text(json.dumps(data))
 
 # ── M929: Usage telemetry — local stats + optional PyPI ping ──────────────────
-_USAGE_FILE = Path.home() / ".claude" / "hub" / "usage-stats.jsonl"
+_USAGE_FILE = _HUB_DATA_DIR / "usage-stats.jsonl"
 
 def _record_usage_event(event: str, extra: dict = None):
     """Record usage event locally (gated by consent). No PII collected."""
