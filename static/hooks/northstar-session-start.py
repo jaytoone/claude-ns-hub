@@ -24,13 +24,13 @@ def _hub_api() -> str:
     try:
         r = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True, timeout=2)
         for line in r.stdout.splitlines():
-            if ":9000" in line and "LISTEN" in line:
-                m = re.search(r"(\d+\.\d+\.\d+\.\d+):9000", line)
+            if ":9001" in line and "LISTEN" in line:
+                m = re.search(r"(\d+\.\d+\.\d+\.\d+):9001", line)
                 if m:
-                    return f"http://{m.group(1)}:9000"
+                    return f"http://{m.group(1)}:9001"
     except Exception:
         pass
-    return "http://127.0.0.1:9000"
+    return "http://127.0.0.1:9001"
 
 
 def _get_milestones_db_or_api(proj_id: str, hub: str) -> dict | None:
@@ -188,7 +188,7 @@ def main():
                 lines.append(f"{prefix}: \"{text}\"")
         lines.append("")
         lines.append("  REPLY COMMAND (one curl per stone, REQUIRED — copy and adapt):")
-        hub_url = os.environ.get("NS_HUB_URL", "http://127.0.0.1:9000")
+        hub_url = os.environ.get("NS_HUB_URL", "http://127.0.0.1:9001")
         lines.append(f"    curl -s -X PATCH {hub_url}/api/northstar/{proj_id}/milestones/<MID> \\")
         lines.append(f'      -H "Content-Type: application/json" \\')
         lines.append(f"      -d '{{\"append_message\":{{\"role\":\"claude\",\"text\":\"<your reply>\"}}}}' ")

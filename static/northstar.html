@@ -139,6 +139,7 @@ header {
   #ns-trash-zone { min-width: 50px; padding: 6px 10px; }
   #lane-trash { scroll-margin-bottom: 120px; }
   .ns-lane-nodes { min-height: 10px; height: auto; }
+
 }
 .ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
 .ns-node.drop-before { border-left: 2px solid var(--accent); }
@@ -744,6 +745,7 @@ header {
 @media (pointer: coarse) {
   /* Mobile: same card dimensions as desktop — no size inflation */
   .ns-node { width: 154px; cursor: pointer; -webkit-tap-highlight-color: rgba(0,0,0,.05); }
+  .ns-lane-nodes { min-height: 10px; height: auto; }
   .ns-node-bottom { gap: 4px; }
   .ns-node-term, .ns-node-menu, .ns-node-exec { padding: 1px 5px; }
   /* Modal bottom row touch targets */
@@ -1237,6 +1239,7 @@ header {
 #blink-window-input::-webkit-outer-spin-button,
 #blink-window-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
 #blink-window-input { -moz-appearance:textfield; }
+
 </style>
 </head>
 <body>
@@ -1257,6 +1260,8 @@ header {
         <button class="refresh-btn" id="priority-toggle-btn" onclick="togglePriorityPointer()" style="display:none">+ pointer</button>
         <!-- M789: config moved between avatar and notify(tg) -->
         <button class="refresh-btn" onclick="_showHubConfigModal()" title="Hub settings: CLI paths, default agent/model">config</button>
+        <!-- M963: Tailscale status button — shows current hub URL / IP -->
+        <button class="refresh-btn" id="tailscale-btn" onclick="_showTailscaleInfo()" title="Hub network URL (Tailscale / local)">ts —</button>
         <!-- M261: notify button removed from top bar -->
         <button class="refresh-btn" id="ntfy-btn" onclick="setupNotify()" title="Set up push notifications (Telegram Bot)">notify</button>
         <!-- M581: log button removed -->
@@ -1364,8 +1369,8 @@ header {
       <!-- M232 follow-up: Set stage entry removed — exec-state border replaces it. -->
       <div id="ctx-node-items">
         <div class="ns-ctx-item" id="ctx-rename">✎ Rename</div>
-        <div class="ns-ctx-item" id="ctx-link-parent">⊂ Link to parent (click parent)</div>
-        <div class="ns-ctx-item" id="ctx-unlink-parent">⊄ Disconnect parent link</div>
+        <div class="ns-ctx-item" id="ctx-link-parent" style="display:none">⊂ Link to parent (click parent)</div>
+        <div class="ns-ctx-item" id="ctx-unlink-parent" style="display:none">⊄ Disconnect parent link</div>
         <div id="ctx-unlink-individual" style="display:none"></div>
         <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
         <div class="ns-ctx-sep"></div>
@@ -2814,6 +2819,7 @@ function renderMilestoneCreator(projId, milestones) {
               <button class="nt-why" title="Needs clarification — click to view question & reply" style="${_msBadgeStyle('clar')}" ${clarDataAttrs} onclick="${clarOnClick}">${msgCnt>0 ? msgCnt+' msg' : '?'}</button>${_msBangHtml(m.id, projId)}
               ${_msHoldBtnHtml(projId, m.id, !!m.held)}
               ${_ssScoreBadgeHtml(m)}
+              ${(m.layer||0)===0 ? _reviewBadgeHtml(projId, m.id, milestones) : ''}
               ${children.length>0?`<button id="sub-tog-${esc(m.id)}" title="Expand/collapse children (${children.length})"
                 style="display:flex;align-items:center;justify-content:center;margin:3px auto 0;height:22px;padding:0 6px;border-radius:3px;border:1px solid var(--accent-soft);background:none;color:var(--accent);cursor:pointer;font-size:10px;line-height:1;font-family:var(--mono)"
                 onclick="event.stopPropagation();_toggleSubstones('${esc(m.id)}',this)">${(_msCollapsedParents[projId]||new Set()).has(m.id)?`▷ ${children.length}`:`▾ ${children.length}`}</button>`:''}
@@ -3147,6 +3153,7 @@ function renderMilestoneCreator(projId, milestones) {
                 onmouseout="this.style.background='var(--accent-soft)';this.style.color='var(--accent)'">
                 ⇡ attach<input type="file" accept="*/*" multiple style="display:none" onchange="event.stopPropagation();_ntFileUpload(event,'${esc(projId)}','${esc(m.id)}')">
               </label>
+              ${(m.layer||0)===0 ? _reviewBadgeHtml(projId, m.id, milestones) : ''}
               ${[...(m.skill_refs||[]).map(s=>({type:'skill',name:s})), ...(m.agent_refs||[]).map(a=>({type:'agent',name:a})),
                  ...(m.skill_ref&&!(m.skill_refs||[]).includes(m.skill_ref)?[{type:'skill',name:m.skill_ref}]:[]),
                  ...(m.agent_ref&&!(m.agent_refs||[]).includes(m.agent_ref)?[{type:'agent',name:m.agent_ref}]:[])
@@ -3659,7 +3666,7 @@ function _patchCacheMs(projId, updatedMs) {
 }
 
 function _nodeTouchDrag() {
-  const DRAG_THRESHOLD = 8; // px movement before drag activates
+  const DRAG_THRESHOLD = 25; // M968: increased 8→25px, reduces accidental drag during scroll
   document.querySelectorAll('.ns-node:not([data-touch-bound])').forEach(node => {
     node.dataset.touchBound = '1';
     let _touchStartX = 0, _touchStartY = 0, _dragActive = false;
@@ -3686,7 +3693,9 @@ function _nodeTouchDrag() {
       if (!_dragActive) {
         const dx = t.clientX - _touchStartX, dy = t.clientY - _touchStartY;
         if (Math.sqrt(dx*dx + dy*dy) < DRAG_THRESHOLD) return; // not yet a drag
-        // Threshold crossed — activate drag
+        // M968: if primarily vertical movement → user is scrolling, not dragging
+        if (Math.abs(dy) > Math.abs(dx) * 1.5) { _nodeTouchSrc = null; return; }
+        // Threshold crossed and horizontal intent — activate drag
         _dragActive = true;
         const rect = node.getBoundingClientRect();
         _nodeTouchGhost = node.cloneNode(true);
@@ -4040,6 +4049,36 @@ function _ntMarkProofSeen(projId, mid, evidenceTs) {
   document.querySelectorAll(`[data-mid="${CSS.escape(mid)}"] .nt-evidence-bang`).forEach(el => el.remove());
 }
 
+// M964: [검수] badge — adds a review child stone manually
+// M964 v3: verify = toggle flag (ON/OFF) that triggers [검수] child creation on next dispatch
+// Clicking toggles verify_flag in stone via PATCH. Server uses verify_flag to auto-create [검수].
+function _reviewBadgeHtml(projId, mid, milestones) {
+  const stone = (milestones||[]).find(s => s.id === mid);
+  const verifyOn = !!(stone && stone.verify_flag);
+  const _p = esc(projId).replace(/'/g,'&#39;'), _m = esc(mid).replace(/'/g,'&#39;');
+  if (verifyOn) {
+    return `<button title="verify ON — [검수] will be created on next dispatch. Click to turn off." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(61,139,94,.15);color:var(--green,#3d8b5e);border:1px solid rgba(61,139,94,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',false,this)" >verify ✓</button>`;
+  }
+  return `<button title="verify OFF — click to flag this stone for [검수] review on next dispatch." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(123,159,212,.1);color:#7b9fd4;border:1px solid rgba(123,159,212,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',true,this)" >verify</button>`;
+}
+async function _toggleVerifyFlag(projId, mid, flagValue, btn) {
+  // M964: optimistic UI — immediately update button before server round-trip
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    if (flagValue) { btn.textContent = 'verify ✓'; btn.style.color = 'var(--green,#3d8b5e)'; btn.style.background = 'rgba(61,139,94,.15)'; btn.style.borderColor = 'rgba(61,139,94,.4)'; }
+    else { btn.textContent = 'verify'; btn.style.color = '#7b9fd4'; btn.style.background = 'rgba(123,159,212,.1)'; btn.style.borderColor = 'rgba(123,159,212,.4)'; }
+  }
+  await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`, {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({verify_flag: flagValue})
+  }).catch(()=>{});
+  await loadMilestones(projId);
+  render();
+}
+// Legacy: kept for backward compat (now unused — verify no longer creates stone directly)
+async function _addReviewStone(projId, mid) { await _toggleVerifyFlag(projId, mid, true); }
 function _msBangHtml(mid, projId) {
   // M206: red blinking '!' shown right of the msg badge when the last
   // conversation entry is from claude (i.e., user's turn to reply).
@@ -6129,6 +6168,41 @@ async function requestNotifyPermission() {
   }
 }
 // M382: Telegram Bot push notification setup
+// M963: Tailscale status button — show hub URL and Tailscale IP info
+async function _initTailscaleBtn() {
+  const btn = document.getElementById('tailscale-btn');
+  if (!btn) return;
+  try {
+    const info = await fetch('/api/hub/network-info').then(r=>r.json()).catch(()=>null);
+    if (info && info.tailscale_ip) {
+      btn.textContent = 'ts ✓';
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'var(--green)';
+      btn.title = `Hub URL (Tailscale): ${info.hub_url}\nTailscale IP: ${info.tailscale_ip}`;
+    } else {
+      btn.textContent = 'ts local';
+      btn.title = 'Hub running locally (no Tailscale). URL: http://127.0.0.1:' + (window.location.port||'9001');
+    }
+  } catch(_) {}
+}
+function _showTailscaleInfo() {
+  const btn = document.getElementById('tailscale-btn');
+  const msg = btn ? btn.title : 'Hub network info unavailable';
+  // Use pre-line style — no <br> needed, _hubAlert escapes HTML anyway
+  const _overlay = document.createElement('div');
+  _overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+  const _box = document.createElement('div');
+  _box.style.cssText = 'background:var(--panel-bg,var(--panel));border:1px solid var(--panel-border);border-radius:8px;padding:24px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+  _box.innerHTML = `<p style="color:var(--text);margin:0 0 20px;font-size:13px;line-height:1.7;white-space:pre-line">${msg.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="_ts-ok" style="padding:6px 16px;border-radius:4px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600">OK</button>
+    </div>`;
+  _overlay.appendChild(_box);
+  document.body.appendChild(_overlay);
+  const _close = () => _overlay.remove();
+  _box.querySelector('#_ts-ok').onclick = _close;
+  _overlay.onclick = e => { if (e.target === _overlay) _close(); };
+}
 async function setupNotify() {
   const btn = document.getElementById('ntfy-btn');
   const status = await fetch('/api/telegram/status').then(r=>r.json()).catch(()=>({configured:false}));
@@ -6167,6 +6241,7 @@ async function setupNotify() {
   }
 }
 // On load: reflect notification status
+document.addEventListener('DOMContentLoaded', () => { _initTailscaleBtn(); });
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/telegram/status').then(r=>r.json()).then(d => {
     const btn = document.getElementById('ntfy-btn');
@@ -6234,7 +6309,14 @@ async function refreshSessionStatus() {
         newExec[pid] = 'running';  // preserve SSE optimistic state
       }
     }
+    // M961 fix: re-render swimlane cards when exec status changes (avatar/model label brightness)
+    const _prevExecKeys = JSON.stringify(_execStatus);
     _execStatus = newExec;
+    if (JSON.stringify(newExec) !== _prevExecKeys) {
+      // Invalidate lane fingerprints so nodeCard() re-runs with updated _execStatus/_execModel
+      for (const k of Object.keys(window._swimlaneLaneFp || {})) delete window._swimlaneLaneFp[k];
+      if (typeof render === 'function') render();
+    }
     // Last-used Claude session per project (.last-session-id captured by Stop hook)
     if (resumeR && resumeR.ok) {
       try { _resumeInfo = await resumeR.json(); } catch(_) { _resumeInfo = {}; }
@@ -6601,9 +6683,11 @@ function render() {
     const sortedLane = [...lanes[l]].sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
     // Fingerprint: skip full DOM rebuild when only realtime state (session/exec) changed
     // — prevents 3s card flicker and mobile tap-miss caused by innerHTML = ''
-    const _laneFp = sortedLane.map(({p}) =>
-      `${p.id||p.name}:${p.stage||''}:${p.position_x||0}:${p.exec_session_id||''}:${p.current||''}`
-    ).join('|');
+    const _laneFp = sortedLane.map(({p}) => {
+      const _msDone = (p.milestones||[]).filter(m=>m.done||m.status==='done').length;
+      const _msTotal = (p.milestones||[]).length;
+      return `${p.id||p.name}:${p.stage||''}:${p.position_x||0}:${p.exec_session_id||''}:${p.current||''}:${p.deadline||''}:${_msDone}/${_msTotal}:${p.status||''}:${(window._execModel||{})[p.id||p.name]||''}`;
+    }).join('|'); // M965: include deadline/milestone/status/model for immediate ring+badge updates
     if (_swimlaneLaneFp[l] === _laneFp && el.children.length === sortedLane.length) {
       // Same layout — update only session badges in-place, skip DOM rebuild
       sortedLane.forEach(({p, i}, orderIdx) => {
@@ -6634,6 +6718,9 @@ function render() {
       const wrapper = document.createElement('div');
       wrapper.dataset.stackIdx = '0';
       wrapper.dataset.projIdx = String(i);
+      // M968: height:fit-content prevents wrapper from expanding to lane height on mobile
+      const _isTouchDevice = window.matchMedia('(pointer:coarse)').matches;
+      wrapper.style.alignSelf = 'flex-start';
       wrapper.innerHTML = nodeCard(p, i);
       el.appendChild(wrapper);
     });
@@ -7018,7 +7105,10 @@ function _getParents(p) {
 }
 
 function drawParentLines() {
+  // M967: card link feature disabled — clear SVG lines and return
   const svg = document.getElementById('ns-svg-lines');
+  if (svg) svg.innerHTML = '';
+  return;
   const swimlane = document.getElementById('ns-swimlane');
   if (!svg || !swimlane) return;
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -8160,7 +8250,7 @@ function _renderSubStarsPaneFromCache(projId) {
         ondragend="this.style.opacity=''"
         ondragover="event.preventDefault();this.style.background='var(--accent-soft)'"
         ondragleave="this.style.background=''"
-        ondrop="event.preventDefault();this.style.background='';_dmSpinOn();_ssReorder('${esc(projId)}',event.dataTransfer.getData('text/plain'),'${esc(ns.id)}')"
+        ondrop="event.preventDefault();this.style.background='';_dmSpinOn();_ssReorder('${esc(projId)}',event.dataTransfer.getData('text/plain'),'${esc(ns.id)}')">
         <span style="color:var(--text-soft);font-size:13px;cursor:grab;user-select:none;padding-top:2px">⋮⋮</span>
         <div style="flex:1;min-width:0">
           <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">${esc(ns.name||ns.id)}${statusBadge}</div>
@@ -9733,6 +9823,9 @@ function _refreshCommentThread(mid) {
   if (thread.length) {
     const html = `<div id="comment-thread" style="margin:7px 0 0">` +
       thread.map(msg => {
+        if (msg.role === 'summary') { // M819: summary role display
+          return `<div style="margin-bottom:6px;padding:4px 8px;background:var(--bg-deep);border-left:2px solid var(--text-dim);border-radius:0 3px 3px 0"><div style="font-size:9px;color:var(--text-dim);margin-bottom:2px">∑ summary · ${(msg.ts||'').slice(11,16)}</div><div style="font-size:10px;color:var(--text-soft);font-style:italic">${_renderNtTextHtml(msg.text||'')}</div></div>`;
+        }
         const skillTag = [
           ...(msg.skill_refs||[msg.skill_ref]).filter(Boolean).map(s=>`<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(123,159,212,.12);color:var(--accent);margin-left:3px">⚡${esc(s)}</span>`),
           ...(msg.agent_refs||[msg.agent_ref]).filter(Boolean).map(a=>`<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(61,139,94,.12);color:var(--green,#3d8b5e);margin-left:3px">🤖${esc(a)}</span>`),
@@ -9991,6 +10084,9 @@ function showCommentPopup(event, comment, projId, mid, currentStatus) {
     if (!thread.length) return '';
     return `<div id="comment-thread" style="margin:7px 0 0">` +
       thread.map(msg => {
+        if (msg.role === 'summary') { // M819: summary role display
+          return `<div style="margin-bottom:6px;padding:4px 8px;background:var(--bg-deep);border-left:2px solid var(--text-dim);border-radius:0 3px 3px 0"><div style="font-size:9px;color:var(--text-dim);margin-bottom:2px">∑ summary · ${(msg.ts||'').slice(11,16)}</div><div style="font-size:10px;color:var(--text-soft);font-style:italic">${_renderNtTextHtml(msg.text||'')}</div></div>`;
+        }
         const skillTag = [
           ...(msg.skill_refs||[msg.skill_ref]).filter(Boolean).map(s=>`<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(123,159,212,.12);color:var(--accent);margin-left:3px">⚡${esc(s)}</span>`),
           ...(msg.agent_refs||[msg.agent_ref]).filter(Boolean).map(a=>`<span style="font-size:8px;padding:1px 4px;border-radius:2px;background:rgba(61,139,94,.12);color:var(--green,#3d8b5e);margin-left:3px">🤖${esc(a)}</span>`),

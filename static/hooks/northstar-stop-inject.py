@@ -30,13 +30,13 @@ def _hub_api() -> str:
     try:
         r = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True, timeout=2)
         for line in r.stdout.splitlines():
-            if ":9000" in line and "LISTEN" in line:
-                m = re.search(r"(\d+\.\d+\.\d+\.\d+):9000", line)
+            if ":9001" in line and "LISTEN" in line:
+                m = re.search(r"(\d+\.\d+\.\d+\.\d+):9001", line)
                 if m:
-                    return f"http://{m.group(1)}:9000"
+                    return f"http://{m.group(1)}:9001"
     except Exception:
         pass
-    return "http://127.0.0.1:9000"
+    return "http://127.0.0.1:9001"
 
 
 def _get_queued_milestones(proj_id: str) -> list:
