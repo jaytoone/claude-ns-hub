@@ -4089,9 +4089,9 @@ function _reviewBadgeHtml(projId, mid, milestones) {
   const verifyOn = !!(stone && stone.verify_flag);
   const _p = esc(projId).replace(/'/g,'&#39;'), _m = esc(mid).replace(/'/g,'&#39;');
   if (verifyOn) {
-    return `<button title="verify ON — [검수] will be created on next dispatch. Click to turn off." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(61,139,94,.15);color:var(--green,#3d8b5e);border:1px solid rgba(61,139,94,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',false,this)" >verify ✓</button>`;
+    return `<button title="verify ON — a review child stone will be created on next dispatch. Click to turn off." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(61,139,94,.15);color:var(--green,#3d8b5e);border:1px solid rgba(61,139,94,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',false,this)" >verify ✓</button>`;
   }
-  return `<button title="verify OFF — click to flag this stone for [검수] review on next dispatch." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(123,159,212,.1);color:#7b9fd4;border:1px solid rgba(123,159,212,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',true,this)" >verify</button>`;
+  return `<button title="verify OFF — click to flag this stone for review on next dispatch." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(123,159,212,.1);color:#7b9fd4;border:1px solid rgba(123,159,212,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',true,this)" >verify</button>`;
 }
 async function _toggleVerifyFlag(projId, mid, flagValue, btn) {
   // M964: optimistic UI — immediately update button before server round-trip
@@ -9020,20 +9020,20 @@ async function _branchSession(projId, parentSession) {
   const m = document.createElement('div');
   m.style.cssText = 'position:fixed;inset:0;z-index:10010;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)';
   m.innerHTML = `<div onclick="event.stopPropagation()" style="background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:16px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:10px;font-family:var(--mono);font-size:12px">
-    <div style="font-weight:700;color:var(--text)">⑂ 자녀 세션 분기</div>
-    <div style="color:var(--text-dim);font-size:10px">접두어: <b style="color:var(--accent)">${esc(parentSession)}-</b></div>
-    <input id="_branch-suffix" placeholder="접미사 입력" autofocus style="background:var(--bg);border:1px solid var(--panel-border);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none"/>
-    <div style="color:var(--text-soft);font-size:10px">할당할 서브스타:</div>
+    <div style="font-weight:700;color:var(--text)">⑂ Branch Child Session</div>
+    <div style="color:var(--text-dim);font-size:10px">Prefix: <b style="color:var(--accent)">${esc(parentSession)}-</b></div>
+    <input id="_branch-suffix" placeholder="Enter suffix" autofocus style="background:var(--bg);border:1px solid var(--panel-border);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none"/>
+    <div style="color:var(--text-soft);font-size:10px">Substar to assign:</div>
     <div id="_branch-ns-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto">
       ${unassigned.length ? unassigned.map((ns,i) =>
         `<label style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer;border:1px solid var(--panel-border)">
           <input type="radio" name="_branch_ns" value="${esc(ns.id)}" ${i===0?'checked':''}>
           <span style="color:var(--text);font-size:11px">${esc(ns.name||ns.id)}</span>
-        </label>`).join('') : '<span style="color:var(--red);font-size:10px">할당 가능한 서브스타 없음</span>'}
+        </label>`).join('') : '<span style="color:var(--red);font-size:10px">No assignable substars</span>'}
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:1px solid var(--panel-border);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--text-dim)">취소</button>
-      <button id="_branch-confirm" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--accent)" ${unassigned.length?'':'disabled'}>할당</button>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:1px solid var(--panel-border);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--text-dim)">Cancel</button>
+      <button id="_branch-confirm" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--accent)" ${unassigned.length?'':'disabled'}>Assign</button>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -9728,7 +9728,7 @@ function renderHierarchy(p) {
           <span id="dm-activity-caret" style="margin-left:auto;color:var(--text-dim);font-size:11px">▸</span>
         </div>
         <div class="dm-toggle-pane dm-pane-body" id="dm-activity-pane-body" style="display:none;max-height:220px;overflow-y:auto;font-size:11px;font-family:monospace">
-          <div id="dm-activity-body" style="color:var(--text-dim)">로딩 중...</div>
+          <div id="dm-activity-body" style="color:var(--text-dim)">Loading...</div>
         </div>
       </div>
       <!-- M90: "View live session" button removed — use the session pill on the card instead -->
