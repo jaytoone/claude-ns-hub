@@ -181,10 +181,12 @@ function esc(s) {
 const SERVICES = [
   { id: 'hub', label: 'claude-ns-hub', install: 'pip install claude-ns-hub',
     channels: ['hub_pypi','hub_github','hub_hn','hub_geek','hub_devto'],
-    pypiPkg: 'claude-ns-hub', pypiBaseline: { week: 14 } },
+    pypiPkg: 'claude-ns-hub', pypiBaseline: { week: 14 },
+    githubUrl: 'https://github.com/jaytoone/claude-ns-hub' },
   { id: 'ctx', label: 'ctx-retriever', install: 'pip install ctx-retriever',
     channels: ['github','geeknews','hn','devto','linkedin','pinterest','pypi'],
-    pypiPkg: 'ctx-retriever', pypiBaseline: { week: 633 } },
+    pypiPkg: 'ctx-retriever', pypiBaseline: { week: 633 },
+    githubUrl: 'https://github.com/jaytoone/CTX' },
   // new service template:
   // { id: 'myservice', label: 'my-package', install: 'pip install my-package',
   //   channels: ['myservice_pypi','myservice_github','myservice_hn'],
@@ -228,9 +230,9 @@ function _extractMetrics(svc, channels) {
       metrics.pypi_ok = !ch.error;
     }
     if (id.includes('github') || id.includes('hub_github')) {
-      metrics.github = ch.stars != null ? `★ ${ch.stars}` : '—';
+      metrics.github = ch.stars != null ? `★ ${ch.stars}` : (svc.githubUrl ? 'GitHub' : '—');
       metrics.gh_sub = ch.forks != null ? `${ch.forks} forks` : null;
-      metrics.gh_url = ch.url;
+      metrics.gh_url = ch.url || svc.githubUrl; // M975: fallback to static githubUrl
       metrics.gh_ok = !ch.error;
     }
     if (id.includes('hn') && !id.includes('geek')) {
@@ -264,18 +266,27 @@ function _pypiDemandCell(svc, sig, daily) {
   const pkgSig = (sig?.hub_pypi?.week != null ? sig.hub_pypi :
                   sig?.pypi?.week != null ? sig.pypi :
                   pypiCh ? { week: pypiCh.week, day: pypiCh.day, month: pypiCh.month, pct_week: 0 } : null);
-  if (!pkgSig || pkgSig.error) return `<div class="demand-cell"><div class="d-title">PyPI</div><span class="error">${esc(pkgSig?.error || 'unavailable')}</span></div>`;
+  if (!pkgSig || (pkgSig.error && !pkgSig.week)) return `<div class="demand-cell"><div class="d-title">PyPI</div><span class="error">${esc(pkgSig?.error || 'unavailable')}</span></div>`;
   const pct = pkgSig.pct_week ?? 0;
   const sign = pct >= 0 ? '+' : '';
   const col = pct > 15 ? 'var(--green)' : pct < -15 ? 'var(--red)' : 'var(--text-dim)';
   const days = daily?.days || [];
+  // M928: show reason when chart unavailable
+  const _dailyErr = daily?.error || null;
+  const _isStale = daily?.stale || false;
   let chart = '';
   if (days.length > 1) {
     const maxD = Math.max(...days.map(d => d.downloads), 1);
+    const _staleLabel = _isStale ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.7"> (cached)</span>` : '';
     chart = `<div class="daily-chart">${days.map(d => {
       const h = Math.max(2, Math.round(d.downloads / maxD * 34));
       return `<div class="day-bar" style="height:${h}px"><span class="tip">${d.date.slice(5)}: ${d.downloads}</span></div>`;
-    }).join('')}</div>`;
+    }).join('')}</div>${_staleLabel}`;
+  } else if (_dailyErr) {
+    const _reason = _dailyErr.includes('429') ? 'rate limited' : _dailyErr.slice(0, 40);
+    chart = `<div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:4px">chart unavailable: ${esc(_reason)}</div>`;
+  } else if (days.length === 0) {
+    chart = `<div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:4px">no daily data</div>`;
   }
   return `<div class="demand-cell">
     <div class="d-title">PyPI <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${esc(svc.label)}</span></div>

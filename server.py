@@ -357,6 +357,14 @@ async def hub_update_check():
     _UPDATE_CHECK_CACHE["ts"] = _t2.time()
     return JSONResponse(result)
 
+@app.get("/api/hub/network-info")
+async def hub_network_info():
+    """M963: Return hub URL and Tailscale IP for NS header button."""
+    ts_ip = _tailscale_interface_ip()
+    has_tailscale = ts_ip != "127.0.0.1"
+    hub_url = f"http://{ts_ip}:{PORT}" if has_tailscale else f"http://127.0.0.1:{PORT}"
+    return JSONResponse({"hub_url": hub_url, "tailscale_ip": ts_ip if has_tailscale else None, "port": PORT})
+
 @app.post("/api/hub/restart")
 async def hub_restart():
     """Self-restart: replace the current process with a fresh uvicorn (picks up code changes)."""
@@ -4059,7 +4067,7 @@ def _spawn_claude(proj_id: str, agent: str | None = None, session_id: str | None
             "COLUMNS": "120",
             "LINES": "30",
             "CLAUDE_CODE_TASK_LIST_ID": f"hub-exec-{proj_id}",
-            "NS_HUB_URL": f"http://127.0.0.1:{PORT}",
+            "NS_HUB_URL": f"http://{_tailscale_interface_ip()}:{PORT}",
             **_get_project_spawn_env(proj_id),
         },
     )
@@ -5161,50 +5169,10 @@ _NON_DEV_KW = ["리서치", "조사", "분석", "가능한가", "공유바람", 
 _AUTO_REVIEW_FALLBACK_ENABLED = True
 
 
-async def _classify_dev_stone_llm(stone_text: str) -> bool:
-    """LLM-based dev stone classifier via Anthropic API. Falls back to keyword matching on error."""
-    # Cheap early exits — no LLM call needed
-    _t = stone_text.strip().lower()
-    if _t.startswith("[검수]") or _t.startswith("[e2e]"):
-        return False
-    try:
-        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        if not api_key:
-            raise ValueError("no ANTHROPIC_API_KEY")
-        prompt_text = stone_text[:300]
-        payload = {
-            "model": "claude-haiku-4-5-20251001",
-            "max_tokens": 5,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": (
-                        "Is this task a software development task that would require "
-                        "writing or modifying code? Answer YES or NO only.\n"
-                        f"Task: {prompt_text}"
-                    ),
-                }
-            ],
-        }
-        async with httpx.AsyncClient(timeout=5) as client:
-            r = await client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": api_key,
-                    "anthropic-version": "2023-06-01",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-            )
-            r.raise_for_status()
-            answer = r.json()["content"][0]["text"].strip().upper()
-        return answer.startswith("YES")
-    except Exception:
-        # Fallback to keyword matching
-        return (
-            any(kw in _t for kw in _DEV_KW)
-            and not any(kw in _t for kw in _NON_DEV_KW)
-        )
+async def _classify_dev_stone_llm(stone_text: str, stone_data: dict = None) -> bool:
+    """Dev stone classifier — M964 v4: verify_flag ONLY. Keyword fallback removed per user request."""
+    # Only verify_flag=True triggers [검수] auto-creation. Keyword matching removed.
+    return bool(stone_data and stone_data.get("verify_flag"))
 
 
 def _detect_code_change_signals(text: str) -> "dict | None":
@@ -5303,7 +5271,8 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
         if isinstance(m, dict) and m.get("id") == mid:
             # User-settable fields: text, layer, parent_id, claude_ack, status=queued/pending only
             # M216: `held` = user-paused stone, excluded from EXECUTE/REPLY SYNC queues until released.
-            for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id", "claude_comment", "star_relation", "substar_id", "held", "skill_ref", "agent_ref", "skill_refs", "agent_refs",
+            for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id", "claude_comment", "star_relation", "substar_id", "held", "verify_flag",  # M964: verify toggle
+                      "skill_ref", "agent_ref", "skill_refs", "agent_refs",
                       "total_tokens", "model_used", "exec_start", "exec_end",  # M287 monetization fields
                       "watching",   # M514: user-toggleable watch badge
                       "evidence_url",  # M511: proof link
@@ -5500,7 +5469,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                         if True:
                             # M913: use LLM dev-stone classifier instead of file+action keyword detection
                             # Trigger review stone if stone TEXT is dev-related (not just completion msg keywords)
-                            _m722_is_dev = await _classify_dev_stone_llm(m.get("text", ""))
+                            _m722_is_dev = await _classify_dev_stone_llm(m.get("text", ""), m)
                             if _m722_is_dev:
                                 _m722_has_review = any(
                                     isinstance(_s, dict)
@@ -5912,7 +5881,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
         if _has_review_child:
             pass  # exec agent already created it — skip LLM call entirely
         _rev_txt = (updated_m.get("text") or "")
-        _is_dev = False if _has_review_child else await _classify_dev_stone_llm(_rev_txt)
+        _is_dev = False if _has_review_child else await _classify_dev_stone_llm(_rev_txt, updated_m)
         if _is_dev and not any(
             isinstance(s, dict) and s.get("parent_id") == mid
             and str(s.get("text", "")).startswith("[검수]")
@@ -5998,6 +5967,46 @@ async def delete_milestone(proj_id: str, mid: str, background_tasks: BackgroundT
 
 
 
+
+@app.post("/api/northstar/{proj_id}/milestones/{mid}/compress-conv")
+async def compress_milestone_conv(proj_id: str, mid: str, request: Request):
+    """M819: Compress conversation[] — keep last N turns + inject {role:'summary'} entry for older turns.
+    Body: {keep_last: int (default 4)}. Updates milestone in SQLite, returns {ok, summary_text, kept, compressed}."""
+    data = await request.json()
+    keep_last = max(1, int(data.get("keep_last", 4)))
+    try:
+        import sqlite3 as _sq3
+        conn = _sq3.connect(str(_NS_EVENTS_DB), timeout=5)
+        row = conn.execute("SELECT data_json FROM milestones_store WHERE proj_id=? AND stone_id=?",
+                           (proj_id, mid)).fetchone()
+        if not row:
+            conn.close()
+            return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
+        m = json.loads(row[0])
+        conv = m.get("conversation") or []
+        if len(conv) <= keep_last:
+            conn.close()
+            return JSONResponse({"ok": True, "summary_text": None, "kept": len(conv), "compressed": 0})
+        old_turns = conv[:-keep_last]
+        recent_turns = conv[-keep_last:]
+        _trim = lambda t: (str(t or "").replace("\n", " ").strip())[:150]
+        _u = [c for c in old_turns if c.get("role") == "user"]
+        _c = [c for c in old_turns if c.get("role") == "claude"]
+        lines = []
+        if _u: lines.append("U: " + _trim(_u[0].get("text") or _u[0].get("content", "")))
+        if len(_u) > 1: lines.append("Un: " + _trim(_u[-1].get("text") or _u[-1].get("content", "")))
+        if _c: lines.append("C: " + _trim(_c[-1].get("text") or _c[-1].get("content", "")))
+        summary_text = " | ".join(lines) if lines else f"({len(old_turns)} turns compressed)"
+        summary_entry = {"role": "summary", "text": summary_text,
+                         "ts": old_turns[-1].get("ts", ""), "compressed_count": len(old_turns)}
+        m["conversation"] = [summary_entry] + recent_turns
+        import datetime as _dt2
+        conn.execute("UPDATE milestones_store SET data_json=?, updated_at=? WHERE proj_id=? AND stone_id=?",
+                     (json.dumps(m, ensure_ascii=False), _dt2.datetime.now().isoformat(), proj_id, mid))
+        conn.commit(); conn.close()
+        return JSONResponse({"ok": True, "summary_text": summary_text, "kept": keep_last, "compressed": len(old_turns)})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/rationale")
 async def milestone_rationale(proj_id: str, mid: str):
@@ -6818,7 +6827,7 @@ async def execute_project(proj_id: str, request: Request):
                                         )
                                         _br_env = [
                                             "-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}-{_br_short}",
-                                            "-e", f"NS_HUB_URL=http://127.0.0.1:{PORT}",
+                                            "-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}",
                                             "-e", f"NS_SESSION_KEY={_br_sess}",
                                         ]
                                         for _k, _v in _get_project_spawn_env(proj_id).items():
@@ -6914,7 +6923,7 @@ async def execute_project(proj_id: str, request: Request):
                 spawn_cwd = proj_dir if Path(proj_dir).exists() else str(Path.home())
                 resume_args = _get_resume_args(proj_id, spawn_cwd, explicit_session_id, agent=agent)
                 _record_spawn_info(proj_id, resume_args, agent=agent)
-                _tmux_env = ["-e", f"NS_HUB_URL=http://127.0.0.1:{PORT}"]
+                _tmux_env = ["-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}"]
                 for _k, _v in _get_project_spawn_env(proj_id).items():
                     _tmux_env += ["-e", f"{_k}={_v}"]
                 subprocess.Popen([
@@ -7112,7 +7121,7 @@ async def execute_project(proj_id: str, request: Request):
                 f"  5c. [검수] SCREENSHOT PROOF (M817): if THIS stone IS a [검수] stone (text starts with '[검수]'),\n"
                 f"      after completing the review, capture a Playwright screenshot of the affected UI feature\n"
                 f"      and attach it as evidence:\n"
-                f"      ① Take screenshot: mcp__playwright-session-1__browser_navigate to http://127.0.0.1:9000/northstar,\n"
+                f"      ① Take screenshot: mcp__playwright-session-1__browser_navigate to http://127.0.0.1:{PORT}/northstar,\n"
                 f"         then mcp__playwright-session-1__browser_take_screenshot with\n"
                 f"         filename='/home/desk-1/Project/Moat/.playwright-mcp/review-<MID>-proof.png'\n"
                 f"      ② Upload: rclone copy /home/desk-1/Project/Moat/.playwright-mcp/review-<MID>-proof.png 'gdrive:claude-shared/Moat/outbox/'\n"
@@ -7257,7 +7266,7 @@ async def execute_project(proj_id: str, request: Request):
             # ["--continue"], which starts a new conversation. No try/except needed.
             resume_args = _get_resume_args(proj_id, spawn_cwd, explicit_session_id, agent=agent)
             _record_spawn_info(proj_id, resume_args, agent=agent)
-            _tmux_env = ["-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}", "-e", f"NS_HUB_URL=http://127.0.0.1:{PORT}"]
+            _tmux_env = ["-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}", "-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}"]
             for _k, _v in _get_project_spawn_env(proj_id).items():
                 _tmux_env += ["-e", f"{_k}={_v}"]
             subprocess.Popen([
@@ -7300,7 +7309,7 @@ async def execute_project(proj_id: str, request: Request):
                 _retried = True
                 resume_args = []  # fresh spawn — no continuity
                 _record_spawn_info(proj_id, resume_args, agent=agent)
-                _tmux_env = ["-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}", "-e", f"NS_HUB_URL=http://127.0.0.1:{PORT}"]
+                _tmux_env = ["-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}", "-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}"]
                 for _k, _v in _get_project_spawn_env(proj_id).items():
                     _tmux_env += ["-e", f"{_k}={_v}"]
                 subprocess.Popen([
@@ -7353,7 +7362,7 @@ async def execute_project(proj_id: str, request: Request):
                         subprocess.run(["tmux", "send-keys", "-t", _skey, "go", "Enter"])
                         continue
                     _ss_env = ["-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}-{_ss_short}",
-                               "-e", f"NS_HUB_URL=http://127.0.0.1:{PORT}",
+                               "-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}",
                                "-e", f"NS_SESSION_KEY={_skey}"]
                     for _k, _v in _get_project_spawn_env(proj_id).items():
                         _ss_env += ["-e", f"{_k}={_v}"]
@@ -9344,8 +9353,31 @@ def _hub_deploy_hooks():
         settings_path.write_text(json.dumps(settings, indent=2, ensure_ascii=False))
 
 def _hub_install_global():
-    """Write NS Hub global protocol block to ~/.claude/CLAUDE.md (once) and deploy hooks."""
+    """Write NS Hub global protocol block to ~/.claude/CLAUDE.md (once) and deploy hooks.
+    Also triggers ctx-install (CTX is a hub dependency) to register memory/intelligence hooks."""
     _hub_deploy_hooks()
+    # M959: also run ctx-install so CTX hooks (bm25-memory, chat-memory, utility-rate, etc.)
+    # are registered — CTX is a required dependency so it's always available.
+    try:
+        import subprocess, shutil
+        ctx_install_bin = shutil.which("ctx-install")
+        if ctx_install_bin:
+            result = subprocess.run([ctx_install_bin], capture_output=True, text=True, timeout=15)
+            if result.returncode == 0:
+                print("[hub] ctx-install: CTX hooks registered.")
+            else:
+                print(f"[hub] ctx-install warning: {result.stderr[:120]}")
+        else:
+            # Try python -m entry point
+            import sys
+            result = subprocess.run(
+                [sys.executable, "-m", "ctx_retriever.cli.install"],
+                capture_output=True, text=True, timeout=15
+            )
+            if result.returncode == 0:
+                print("[hub] ctx-install (module): CTX hooks registered.")
+    except Exception as _ctx_err:
+        print(f"[hub] ctx-install skipped: {_ctx_err}")
     global_md = Path.home() / ".claude" / "CLAUDE.md"
     if not global_md.parent.exists():
         global_md.parent.mkdir(parents=True, exist_ok=True)

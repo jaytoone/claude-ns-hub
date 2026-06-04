@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NS Swimlane — Circle Cards Test</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+<style>
+:root {
+  --bg: #faf9f6; --bg-deep: #f0ede7; --panel: #fff; --panel-border: #e4dfd5;
+  --text: #1f1c1a; --text-soft: #4a4540; --text-dim: #8a8278;
+  --accent: #cc785c; --accent-soft: #f5e6de;
+  --green: #3d8b5e; --green-soft: #e8f5ee;
+  --red: #c0392b; --yellow: #b8860b;
+  --serif: "Georgia", serif;
+  --mono: ui-monospace, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #181614; --bg-deep: #111009; --panel: #222019; --panel-border: #333028;
+  --text: #e8e0d6; --text-soft: #b0a89e; --text-dim: #6b6358;
+  --accent: #cc785c; --accent-soft: #2a1e17;
+  --green: #4caf78; --green-soft: #0e2318;
+  --red: #e05252; --yellow: #d4a017;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text-soft); font: 13px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased; }
+
+/* ── Header ── */
+.page-header { padding: 12px 16px 10px; border-bottom: 1px solid var(--panel-border);
+  display: flex; align-items: center; gap: 12px; background: var(--bg); }
+.page-title { font-family: var(--serif); font-size: 15px; font-weight: 500; color: var(--text); }
+.page-badge { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 10px;
+  background: var(--accent-soft); color: var(--accent); }
+.page-header a { font-family: var(--mono); font-size: 10px; color: var(--text-dim); text-decoration: none;
+  margin-left: auto; }
+.page-header a:hover { color: var(--accent); }
+
+/* ── Swimlane ── */
+.swimlane-wrap { padding: 12px 0 60px; }
+.lane { display: flex; align-items: flex-start; margin-bottom: 0; min-height: 110px; }
+.lane-label { width: 64px; flex-shrink: 0; font-family: var(--mono); font-size: 9px;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim);
+  padding-top: 38px; padding-right: 8px; text-align: right; }
+.lane-cards { flex: 1; border-left: 2px solid var(--panel-border); padding: 8px 12px 12px;
+  display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; min-height: 90px; }
+
+/* ── Circle Card ── */
+.circle-card {
+  width: 116px;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  cursor: pointer; position: relative;
+  transition: transform .15s;
+  padding-bottom: 4px;
+}
+.circle-card:hover { transform: translateY(-3px); }
+.circle-card:hover .avatar-ring { box-shadow: 0 6px 20px rgba(204,120,92,.25); }
+
+/* Avatar ring — status color */
+.avatar-ring {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 3px solid var(--panel-border);
+  overflow: hidden; position: relative;
+  background: var(--bg-deep);
+  transition: box-shadow .12s;
+  flex-shrink: 0;
+}
+.avatar-ring.status-focused { border-color: var(--green); }
+.avatar-ring.status-active  { border-color: var(--accent); }
+.avatar-ring.status-warn    { border-color: var(--yellow); }
+.avatar-ring.status-idle    { border-color: var(--panel-border); }
+
+.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-fallback {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--text-dim);
+}
+
+/* Overlay badges on ring */
+.ring-badges {
+  position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 3px;
+}
+.ring-badge {
+  font-family: var(--mono); font-size: 8px; font-weight: 700;
+  padding: 1px 4px; border-radius: 8px; border: 1.5px solid var(--bg);
+  white-space: nowrap; line-height: 1.3;
+}
+.ring-badge.queued { background: var(--accent); color: #fff; }
+.ring-badge.done   { background: var(--green); color: #fff; }
+.ring-badge.day    { background: var(--bg-deep); color: var(--text-dim); border-color: var(--panel-border); }
+
+/* Live indicator dot */
+.live-dot {
+  position: absolute; top: 4px; right: 4px; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--green); border: 2px solid var(--bg);
+  animation: pulse-live 2s infinite;
+}
+@keyframes pulse-live { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* Card label area — below ring zone (rings extend 22px below avatar center) */
+.card-name {
+  font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--text);
+  text-align: center; line-height: 1.3; letter-spacing: .01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100px;
+  margin-top: 28px; /* push below bottom ring edge (22px overhang + 6px gap) */
+}
+.card-metrics {
+  display: flex; gap: 4px; align-items: center; justify-content: center;
+  margin-top: 3px;
+}
+.card-metric {
+  font-family: var(--mono); font-size: 8px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 1px;
+}
+.card-metric.pct { color: var(--green); font-weight: 700; }
+.card-metric.pct.warn { color: var(--yellow); }
+/* Ring legend dots */
+.card-metric.dl  { color: #4a9fd4; }
+.card-metric.ms  { color: var(--accent); }
+
+/* Triple-ring arc overlay — 3 rings OUTSIDE the avatar */
+.progress-arc-wrap {
+  position: absolute; top: -22px; left: -22px; width: 116px; height: 116px;
+  pointer-events: none;
+}
+.progress-arc-wrap svg { transform: rotate(-90deg); }
+/* Ring stroke colors */
+.arc-bg  { fill: none; stroke: var(--panel-border); stroke-linecap: round; }
+.arc-fill{ fill: none; stroke-linecap: round; transition: stroke-dashoffset .4s ease; }
+.arc-deadline { stroke: #4a9fd4; }         /* blue — deadline */
+.arc-star     { stroke: var(--green); }    /* green — star arc */
+.arc-milestone{ stroke: var(--accent); }   /* orange — milestone */
+.arc-deadline.warn  { stroke: var(--yellow); }
+.arc-star.warn      { stroke: var(--yellow); }
+.arc-milestone.warn { stroke: var(--yellow); }
+
+.loading { color: var(--text-dim); font-family: var(--mono); font-size: 11px; padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">North Star</div>
+  <span class="page-badge">CIRCLE TEST 2</span>
+  <a href="/">← back to swimlane</a>
+</div>
+
+<div class="swimlane-wrap" id="swimlane">
+  <div class="loading">loading…</div>
+</div>
+
+<script>
+function esc(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function pct(p) {
+  const v = parseFloat(p) || 0;
+  const cls = v >= 80 ? 'pct' : v >= 50 ? 'pct warn' : 'card-metric';
+  return `<span class="card-metric ${cls}">${v}%</span>`;
+}
+
+function arcDashoffset(pctVal, r) {
+  const circ = 2 * Math.PI * r;
+  const filled = circ * (Math.min(100, Math.max(0, pctVal)) / 100);
+  return circ - filled;
+}
+
+function renderCard(p) {
+  const ms = p.milestones || [];
+  const done = ms.filter(m => m.status==='done'||m.done).length;
+  const queued = ms.filter(m => m.status==='queued'&&!m.done).length;
+  const total = ms.length;
+
+  // 3 progress values
+  const starPct   = Math.min(100, parseFloat(p.current) || 0);
+  const msPct     = total > 0 ? Math.round(done / total * 100) : 0;
+  // deadline: parse "D+15" → 15 days into ~90 day window = ~17%
+  const dlRaw = p.deadline || '';
+  const dlNum = parseInt(dlRaw.replace('D+','').replace('D-','')) || 0;
+  const dlPct = dlRaw.startsWith('D+') ? Math.min(100, Math.round(dlNum / 90 * 100))
+               : dlRaw.startsWith('D-') ? Math.max(0, 100 - Math.round(dlNum / 90 * 100)) : 0;
+
+  // Three concentric rings OUTSIDE avatar (r=36): outer(r=54)=deadline, mid(r=47)=star, inner(r=40)=milestone
+  const rings = [
+    { r: 54, pct: dlPct,   cls: 'arc-deadline', warn: dlPct > 80 },
+    { r: 47, pct: starPct, cls: 'arc-star',      warn: starPct < 50 },
+    { r: 40, pct: msPct,   cls: 'arc-milestone', warn: msPct < 30 },
+  ].map(({r, pct, cls, warn}) => {
+    const circ = 2 * Math.PI * r;
+    const offset = circ - circ * (pct / 100);
+    const sw = 3.5;
+    return `<circle class="arc-bg" cx="58" cy="58" r="${r}" stroke-width="${sw}" stroke-dasharray="${circ.toFixed(1)}" />
+            <circle class="arc-fill ${cls}${warn?' warn':''}" cx="58" cy="58" r="${r}" stroke-width="${sw}"
+              stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" />`;
+  }).join('\n');
+
+  const isLive = !!p.exec_session_id;
+  const stage = p.stage || 'unassigned';
+  const statusCls = stage==='focused' ? 'status-focused' : isLive ? 'status-active' : 'status-idle';
+  const initials = (p.name||p.id||'?')[0].toUpperCase();
+  const avatarHtml = p.avatar_url
+    ? `<img class="avatar-img" src="${esc(p.avatar_url)}" alt="${esc(p.name||p.id)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      + `<div class="avatar-fallback" style="display:none">${esc(initials)}</div>`
+    : `<div class="avatar-fallback">${esc(initials)}</div>`;
+  const dLabel = dlRaw.startsWith('D') ? dlRaw : '';
+
+  return `<div class="circle-card" title="${esc(p.name||p.id)}\n⏱ deadline: ${dlPct}%\n⭐ star: ${starPct}%\n✓ ms: ${msPct}%">
+    <div style="position:relative;width:72px;height:72px;flex-shrink:0">
+      <div class="avatar-ring ${statusCls}">
+        ${avatarHtml}
+        ${isLive ? '<div class="live-dot"></div>' : ''}
+      </div>
+      <div class="progress-arc-wrap">
+        <svg width="116" height="116" viewBox="0 0 116 116">
+          ${rings}
+        </svg>
+      </div>
+      <div class="ring-badges">
+        ${queued ? `<span class="ring-badge queued">${queued}q</span>` : ''}
+        ${dLabel ? `<span class="ring-badge day">${dLabel}</span>` : ''}
+      </div>
+    </div>
+    <div class="card-name">${esc((p.name||p.id).slice(0,13))}</div>
+    <div class="card-metrics">
+      <span class="card-metric dl" title="deadline ●">${dlPct}%</span>
+      <span style="color:var(--panel-border);font-size:7px">·</span>
+      <span class="card-metric pct${starPct<50?' warn':''}" title="star ●">${starPct}%</span>
+      <span style="color:var(--panel-border);font-size:7px">·</span>
+      <span class="card-metric ms" title="milestones ●">${done}/${total}</span>
+    </div>
+  </div>`;
+}
+
+async function load() {
+  try {
+    const [projsRes, laneRes] = await Promise.all([
+      fetch('/api/northstar').then(r=>r.json()),
+      fetch('/api/user-settings/lane_labels').then(r=>r.json()).catch(()=>({value:null})),
+    ]);
+    const projects = projsRes || [];
+    const laneLabels = (laneRes.value && Array.isArray(laneRes.value))
+      ? laneRes.value : ['Lane 0','Lane 1','Lane 2','Lane 3'];
+
+    const STAGE_ORDER = {focused:0,assigned:1,commercialized:2,unassigned:3};
+    const groups = {};
+    laneLabels.forEach((_,i) => { groups[i] = {label:laneLabels[i], projs:[]}; });
+    projects.forEach(p => {
+      const l = Math.min(parseInt(p.layer)||0, laneLabels.length-1);
+      if (!groups[l]) groups[l] = {label:`Lane ${l}`, projs:[]};
+      groups[l].projs.push(p);
+    });
+
+    const sw = document.getElementById('swimlane');
+    sw.innerHTML = laneLabels.map((_,l) => {
+      const g = groups[l];
+      if (!g || !g.projs.length) return '';
+      const sorted = [...g.projs].sort((a,b)=>{
+        const sd=(STAGE_ORDER[a.stage||'unassigned']||3)-(STAGE_ORDER[b.stage||'unassigned']||3);
+        return sd!==0?sd:(a.position_x||0)-(b.position_x||0);
+      });
+      return `<div class="lane">
+        <div class="lane-label">${esc(g.label)}</div>
+        <div class="lane-cards">${sorted.map(renderCard).join('')}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('swimlane').innerHTML = `<div class="loading">error: ${esc(String(e))}</div>`;
+  }
+}
+
+load();
+(function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();
+window.addEventListener('message',e=>{if(e.data?.type==='hub-theme')document.documentElement.setAttribute('data-theme',e.data.value)});
+</script>
+</body>
+</html>
