@@ -7110,7 +7110,7 @@ function render() {
   });
 
   // Drag: free positioning within lane + move between lanes
-  let _dragSrc = null, _dragIdx = null, _dragOffsetX = 0;
+  let _dragSrc = null, _dragIdx = null, _dragOffsetX = 0, _dragSrcLane = null;
   // M852 pending layout map — keyed by project id, holds last drag position + timestamp
   if (!window._pendingLayoutByPid) window._pendingLayoutByPid = {};
   // M852 column-mates: list of indices of other cards in same column as current drag source
@@ -7121,6 +7121,7 @@ function render() {
       // M991: only drag from avatar ring area
       if (!e.target.closest('.avatar-ring')) { e.preventDefault(); return; }
       _dragSrc = node; _dragIdx = +node.dataset.idx;
+      _dragSrcLane = parseInt(projects[_dragIdx]?.layer) || 0; // M1032: track source lane
       const rect = node.getBoundingClientRect();
       _dragOffsetX = Math.round(e.clientX - rect.left);
       const _dragOffsetY = Math.round(e.clientY - rect.top);
@@ -7154,7 +7155,8 @@ function render() {
       const layer = targetLaneEl ? parseInt(targetLaneEl.id.replace('lane-', '')) : parseInt(projects[_dragIdx]?.layer)||0;
       document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
       window._dragSwapTarget = null;
-      if (targetIdx != null && targetIdx !== _dragIdx) {
+      // M1032: block cross-lane swap via drag — use ⋮ menu instead
+      if (targetIdx != null && targetIdx !== _dragIdx && layer === _dragSrcLane) {
         _swapDropOrder(_dragIdx, targetIdx, layer);
       }
       _dragColumnMates = [];
@@ -7169,6 +7171,8 @@ function render() {
     const laneEl = document.getElementById(`lane-nodes-${l}`);
     if (!laneEl) return;
     laneEl.addEventListener('dragover', e => {
+      // M1032: block cross-lane drag — only allow within source lane
+      if (_dragIdx != null && l !== _dragSrcLane) { e.dataTransfer.dropEffect = 'none'; return; }
       e.preventDefault();
       laneEl.classList.add('drag-over');
       // M989: swap mode — highlight hovered card as swap target (no drop bar)
@@ -7190,6 +7194,8 @@ function render() {
       }
     });
     laneEl.addEventListener('drop', async e => {
+      // M1032: block cross-lane drop — lane moves go through ⋮ menu only
+      if (_dragIdx != null && l !== _dragSrcLane) return;
       e.preventDefault();
       laneEl.classList.remove('drag-over');
       document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
@@ -7197,19 +7203,10 @@ function render() {
       const targetIdx = window._dragSwapTarget;
       window._dragSwapTarget = null;
       if (targetIdx != null) {
-        // M989: swap with target card
+        // M989: swap with target card (same lane only)
         _swapDropOrder(_dragIdx, targetIdx, l);
-      } else {
-        // Empty space in lane — move card to this lane preserving position
-        const p = projects[_dragIdx];
-        if (p && parseInt(p.layer)||0 !== l) {
-          p.layer = l;
-          fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
-            method: 'PATCH', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({layer: l, position_x: p.position_x||0, position_y: 0})
-          }).catch(() => {});
-        }
       }
+      // cross-lane empty-space drop removed (M1032)
       _dragColumnMates = [];
       _dragSrc = null; _dragIdx = null;
       document.querySelectorAll('.ns-lane-nodes').forEach(ln => ln.classList.remove('drag-over'));
@@ -7227,6 +7224,8 @@ function render() {
     if (!p) return;
     const targetLane = parseInt(slot.dataset.lane);
     const targetCol  = parseInt(slot.dataset.col);
+    // M1032: block cross-lane ghost drop
+    if (targetLane !== _dragSrcLane) { slot.classList.remove('drag-hover'); return; }
     p.layer = targetLane; p.position_x = targetCol;
     _dragSrc = null; _dragIdx = null;
     // M112: clear guideline before render()
