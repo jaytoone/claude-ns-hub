@@ -3803,7 +3803,7 @@ async function _msDrop(e, projId) {
 // ── Touch drag for milestone reordering (mobile support) ───────────────────
 let _touchDragMid = null, _touchDragEl = null, _touchDragProjId = null;
 let _touchDragGhost = null, _touchDragOffsetX = 0, _touchDragOffsetY = 0;
-let _nodeTouchSrc = null, _nodeTouchIdx = null, _nodeTouchGhost = null, _nodeTouchOX = 0, _nodeTouchOY = 0;
+let _nodeTouchSrc = null, _nodeTouchIdx = null, _nodeTouchGhost = null, _nodeTouchOX = 0, _nodeTouchOY = 0, _nodeTouchSrcLane = null;
 let _msConversations = {}; // mid → [{role,text,ts}] conversation thread cache
 let _msCacheByProject = {}; // M121: projId → milestones[] for immediate re-render on setting change
 const _nsStarsCache = {}; // M541: projId → north_stars[] for auto-priority computation
@@ -3859,6 +3859,7 @@ function _nodeTouchDrag() {
       _dragActive = false;
       _nodeTouchSrc = node;
       _nodeTouchIdx = +node.dataset.idx;
+      _nodeTouchSrcLane = parseInt(projects[_nodeTouchIdx]?.layer) || 0; // M1034: track source lane for cross-lane guard
       _nodeTouchOX = t.clientX - rect.left;
       _nodeTouchOY = t.clientY - rect.top;
       _nodeTouchGhost = null;
@@ -3931,17 +3932,19 @@ function _nodeTouchDrag() {
       // M989: swap with target card (or move to empty lane)
       const _touchTgt = window._touchSwapTarget;
       window._touchSwapTarget = null;
+      // M1034: block cross-lane touch drag — same guard as desktop _dragSrcLane
+      if (targetLayer !== _nodeTouchSrcLane) {
+        _nodeTouchSrc = null; _nodeTouchIdx = null;
+        render(); return;
+      }
       if (_touchTgt != null && _touchTgt !== _nodeTouchIdx) {
         _swapDropOrder(_nodeTouchIdx, _touchTgt, targetLayer);
       } else if (_touchTgt == null) {
-        // Dropped on empty space — just update layer if changed
+        // Dropped on empty space in same lane — reorder only, no lane change
         const _tp = projects[_nodeTouchIdx];
-        if (_tp && (parseInt(_tp.layer)||0) !== targetLayer) {
-          _tp.layer = targetLayer;
-          fetch(`/api/northstar/${encodeURIComponent(_tp.id||_tp.name)}/layout`, {
-            method: 'PATCH', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({layer: targetLayer, position_x: _tp.position_x||0, position_y: 0})
-          }).catch(() => {});
+        if (_tp) {
+          render();
+          requestAnimationFrame(() => { if (typeof drawParentLines === 'function') drawParentLines(); });
         }
       }
       _nodeTouchSrc = null; _nodeTouchIdx = null;
@@ -7995,8 +7998,8 @@ async function _moveCardToLane(pid, targetLane) {
   if (!p) return;
   // M1033 fix④: place card at end of target lane to avoid position_x collision
   const _maxX = projects
-    .filter(q => (q.layer||0) === targetLane && (q.id||q.name) !== pid)
-    .reduce((m, q) => Math.max(m, q.position_x||0), -1);
+    .filter(q => parseInt(q.layer||0) === targetLane && (q.id||q.name) !== pid)  // M1034: parseInt for string/number parity
+    .reduce((m, q) => Math.max(m, q.position_x ?? -1), -1);  // M1034: ?? not || so position_x=0 is not treated as missing
   const targetPosX = _maxX + 1;
   p.layer = targetLane;
   p.position_x = targetPosX;
