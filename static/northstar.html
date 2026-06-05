@@ -1,4 +1,10 @@
 <!doctype html>
+<!--
+  claude-ns-hub © 2026 jaytoone <be2jay67@gmail.com>
+  Licensed under the MIT License. See LICENSE and NOTICE in the source tree
+  https://github.com/jaytoone/claude-ns-hub
+  Third-party libraries (xterm.js, FastAPI, etc.) are credited in NOTICE.
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -85,7 +91,7 @@ header {
 
 /* ── Swimlane layout ────────────────────────────────────────────────────────── */
 .grid-wrap {
-  padding: 12px 16px 240px 16px; /* M939: bottom padding 240px — banner(110px) + circle card(~120px) + gap */
+  padding: 12px 16px 110px 16px; /* M994: desktop = 110px per user */
   overflow-x: auto;
   overflow-y: hidden;             /* vertical scroll handled by .layout, not swimlane */
   -webkit-overflow-scrolling: touch;
@@ -94,7 +100,6 @@ header {
   transform: translateZ(0);       /* force own compositing layer */
   /* M320: expand to fill freed space after memo pane removal */
   min-height: calc(100vh - 80px);
-  padding-bottom: 32px;
 }
 .ns-swimlane {
   position: relative;
@@ -102,11 +107,11 @@ header {
   overflow-x: clip; /* M381: clip horizontal only so mascot doesn't extend scroll width */
   overflow-y: visible; /* M407: allow mascot counter/food to extend below swimlane bottom */
   /* M935v3: fill viewport height — distribute lanes equally */
-  display: flex; flex-direction: column; gap: 0; /* M939: ns-test2 identical — no gap between lanes */
+  display: flex; flex-direction: column; gap: 16px; /* M978: lane gap added */
   min-height: calc(100vh - 148px); /* viewport minus header (~80px) + top padding (12px) + bottom (56px) */
 }
 .ns-lane { display: flex; align-items: flex-start; min-height: 110px; } /* M939: ns-test2 .lane identical */
-.ns-lane-nodes { flex-wrap: wrap; } /* M939: ns-test2 wrap */
+.ns-lane-nodes { flex-wrap: wrap; max-width: calc(100vw - 80px); } /* M978: bounded by viewport for wrapping */
 .ns-lane-label {
   width: 64px; flex-shrink: 0; font-family: var(--mono); font-size: 9px;
   text-transform: uppercase; letter-spacing: .08em; color: var(--text-soft, rgba(255,255,255,.55));
@@ -135,6 +140,12 @@ header {
   border-radius: 0 8px 8px 0; transition: border-color .1s, background .1s;
   overflow: visible; /* no per-lane scroll — .grid-wrap handles shared horizontal scroll */
   display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; /* M939: ns-test2 wrap */
+  /* M989: grid lines in swim lane showing card slot positions (~132px = 116px card + 16px gap) */
+  background-image:
+    linear-gradient(to right, var(--panel-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--panel-border) 1px, transparent 1px);
+  background-size: 132px 148px; /* approx card width + gap × card height + gap */
+  background-position: 0 0;
 }
 /* M867: mobile trash zone */
 @media (max-width: 640px) {
@@ -143,7 +154,9 @@ header {
   .ns-lane-nodes { min-height: 10px; height: auto; }
 
 }
-.ns-lane-nodes.drag-over { border-left-color: var(--accent); background: var(--accent-soft); }
+.ns-lane-nodes.drag-over { border-left-color: var(--accent); }
+/* M989: swap-target highlight on hovered card wrapper */
+.ns-lane-nodes [data-proj-idx].ns-swap-target { outline: 2px solid var(--accent); border-radius: 10px; box-shadow: 0 0 8px rgba(204,120,92,.35); }
 .ns-node.drop-before { border-left: 2px solid var(--accent); }
 .ns-node.drop-after  { border-right: 2px solid var(--accent); }
 /* M76: ghost column slots — clean empty-column targets */
@@ -207,7 +220,12 @@ header {
 }
 /* M339: per-card pointer repositioned to left-center so it no longer overlaps the stone count badges at the top. */
 .ns-card-pointer {
-  position: absolute; top: 50%; left: -11px; transform: translateY(-50%); z-index: 4;
+  /* M1003: anchor to a fixed offset (avatar-row level) instead of 50% of the
+     variable card height — active-session cards are taller (142px) than idle
+     ones (130px), so 50% put the pointer/bang at different absolute levels
+     between adjacent cards. Fixed 65px = the idle-card reference level so all
+     badges (normal 22px + bang 28px, both translateY(-50%)) align. */
+  position: absolute; top: 65px; left: -11px; transform: translateY(-50%); z-index: 4;
   width: 22px; height: 22px; padding: 3px; border-radius: 50%;
   border: 1px solid var(--panel-border); background: var(--panel);
   color: var(--text-dim); cursor: pointer; opacity: .85;
@@ -228,15 +246,17 @@ header {
 .ns-card-pointer.bang {
   background: var(--red, #c0392b); border-color: var(--red, #c0392b); color: #fff;
   box-shadow: 0 0 0 3px rgba(192,57,43,.22);
-  /* M339: keep left-center position; widen without repositioning top */
-  width: 28px; height: 28px; left: -14px;
+  /* M1003 v2: shrink bang to match the normal pointer size (22px) so the '!'
+     badge is not oversized vs adjacent badges — left:-11px aligns it horizontally
+     with the normal pointer too. top:65px + translateY(-50%) keeps it centered. */
+  width: 22px; height: 22px; left: -11px;
   /* keep the existing M227 v5 pulse animation inherited from .on so the alert breathes. */
 }
 .ns-card-pointer.bang:hover {
   background: #a83025; border-color: #a83025;
 }
 .ns-card-pointer.bang .ptr-spokes { display: none; }
-.ns-card-pointer.bang .ptr-bang   { display: inline-block; font: 800 20px/1 var(--mono); }
+.ns-card-pointer.bang .ptr-bang   { display: inline-block; font: 800 14px/1 var(--mono); }
 .ns-card-pointer .ptr-bang { display: none; }
 /* Terminal button in card footer */
 .ns-node-term {
@@ -430,7 +450,7 @@ header {
 
 @media (max-width: 640px) {
   /* Swimlane scrolls horizontally — layout preserved as-is */
-  .grid-wrap { padding: 6px 8px; }
+  .grid-wrap { padding: 6px 8px 110px 8px; } /* M994: mobile banner ~70px + buffer */
 }
 
 /* ── Milestone Creator ────────────────────────────────────────────────────── */
@@ -636,7 +656,7 @@ header {
 
   /* Grid: single column on mobile */
   .grid { grid-template-columns: 1fr; }
-  .grid-wrap { padding: 12px 14px; }
+  .grid-wrap { padding: 12px 14px 110px 14px; } /* M994 */
 
   /* Card: compact */
   .card-inner { padding: 13px 14px 12px; }
@@ -696,6 +716,27 @@ header {
   .updated-at { display: none; }
 }
 
+/* M1002 v2: account usage bars in the top bar — MOVED OUT of the (max-width: 640px) media
+   query above. Previously these rules only applied on mobile (<640px) so the desktop bar
+   was unstyled (.ub-fill stayed display:inline → 0px width). Now global so desktop and
+   mobile both render the bars. */
+.usage-badge { font-family: var(--mono); font-size: 8px; padding: 3px 8px; border: 1px solid var(--panel-border);
+  border-radius: 8px; color: var(--text-dim); margin-right: 6px; cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 8px; user-select: none; transition: border-color .12s; }
+.usage-badge:hover { border-color: var(--accent); }
+.usage-badge .ub-seg { display: inline-flex; align-items: center; gap: 4px; }
+.usage-badge .ub-lbl { letter-spacing: .03em; opacity: .8; }
+.usage-badge .ub-bar { width: 46px; height: 8px; border-radius: 4px; background: var(--bg-deep, rgba(0,0,0,.25));
+  border: 1px solid var(--panel-border); overflow: hidden; flex-shrink: 0; display: block; box-sizing: border-box; }
+.usage-badge .ub-fill { display: block; height: 100%; min-width: 3px; border-radius: 3px; transition: width .3s; }
+.usage-badge .ub-pct { font-size: 8px; min-width: 22px; text-align: right; }
+.usage-badge .ub-seg.hi  .ub-fill { background: var(--red, #c0392b); }
+.usage-badge .ub-seg.hi  .ub-pct  { color: var(--red, #c0392b); font-weight: 700; }
+.usage-badge .ub-seg.mid .ub-fill { background: #c08a20; }
+.usage-badge .ub-seg.mid .ub-pct  { color: #c08a20; }
+.usage-badge .ub-seg.lo  .ub-fill { background: var(--green, #3d8b5e); }
+.usage-badge .ub-seg.lo  .ub-pct  { color: var(--green, #3d8b5e); }
+
 /* Drawer backdrop — tap outside to close on mobile */
 .drawer-backdrop {
   display: none;
@@ -711,7 +752,7 @@ header {
 }
 
 @media (max-width: 380px) {
-  .grid-wrap { padding: 10px; }
+  .grid-wrap { padding: 10px 10px 110px 10px; } /* M994 */
   .drawer-area.open { height: 85vh; }
 }
 
@@ -754,14 +795,16 @@ header {
   .dm-btn { min-height: 36px; font-size: 12px; }
 
   #ns-terminal-float {
-    top: 44px !important; left: 0 !important; right: 0 !important;
+    /* M1027: top:0 so the terminal's own header sits above (forward of) the NS top bar
+       — previously top:44px tucked it BELOW the NS nav, hiding the terminal title row. */
+    top: 0 !important; left: 0 !important; right: 0 !important;
     transform: none !important; -webkit-transform: none !important;
-    width: 100% !important; height: 72svh !important;
+    width: 100% !important; height: 78svh !important;
     border-radius: 0 0 0 0 !important; border: none !important;
     max-width: 100vw !important; bottom: auto !important;
   }
   /* iPad: ensure xterm fills container width for proper pty cols */
-  #dm-xterm { width: 100% !important; height: calc(72svh - 40px) !important; }
+  #dm-xterm { width: 100% !important; height: calc(78svh - 40px) !important; }
   /* KEY FIX: pass vertical swipe to viewport scroll — !important overrides xterm.js internal CSS */
   #dm-xterm .xterm-screen { touch-action: pan-y !important; }
   #dm-xterm canvas { touch-action: pan-y !important; }
@@ -782,6 +825,38 @@ header {
   /* Paste button visible */
   #ns-terminal-drag-hdr { flex-wrap: wrap; gap: 6px; }
 }
+/* M1014: special-key buttons for the terminal top bar (mobile keyboards lack ESC/arrows/Tab) */
+.tk-btn { background:none; border:1px solid #555; border-radius:4px; color:#cc785c;
+  font-family:var(--mono); font-size:10px; padding:2px 6px; cursor:pointer; line-height:1.2; min-width:22px; }
+.tk-btn:hover { border-color:#cc785c; }
+.tk-btn:active { background:#3a3431; }
+#ns-term-keys { display:inline-flex; gap:3px; align-items:center; flex-wrap:wrap; }
+/* M1014 v4: Termius-style virtual keyboard panel — adaptive sizing.
+   Strategy: every row evenly distributes its OWN key count across the available
+   width via `grid-template-columns: repeat(var(--n), minmax(0,1fr))`. No wrap.
+   Keys auto-shrink (with smaller font + tighter padding) on narrow viewports so
+   the row always fits, instead of wrapping into a gap-left half-row. */
+#ns-vkbd { display:none; background:#1a1614; border-top:1px solid #333;
+  padding:6px 4px; flex-shrink:0; }
+#ns-vkbd.open { display:flex; flex-direction:column; gap:4px; }
+.vkbd-row { display:grid; gap:4px;
+  grid-template-columns:repeat(var(--vkbd-cols, 10), minmax(0, 1fr)); }
+.vkbd-key { background:#2a2522; border:1px solid #444; border-radius:5px; color:#cc785c;
+  font-family:var(--mono); font-size:12px; padding:7px 2px; cursor:pointer; line-height:1;
+  min-height:32px; min-width:0; text-align:center;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  user-select:none; -webkit-tap-highlight-color:transparent; }
+/* Phone widths: shrink font so 12-key rows still legible. */
+@media (max-width: 420px) {
+  .vkbd-key { font-size:10px; padding:6px 1px; min-height:28px; }
+}
+.vkbd-key:hover { border-color:#cc785c; }
+.vkbd-key:active { background:#3a3431; transform:scale(0.96); }
+.vkbd-key.mod { color:#7b9fd4; }
+.vkbd-key.danger { color:#e05252; }
+#ns-vkbd-toggle { background:none; border:1px solid #555; border-radius:4px; color:#cc785c;
+  font-family:var(--mono); font-size:11px; padding:2px 8px; cursor:pointer; }
+#ns-vkbd-toggle.active { background:#3a3431; border-color:#cc785c; }
 
 /* M80: minimized terminal — class-based beats media-query specificity */
 #ns-terminal-float.ns-term-minimized {
@@ -1287,8 +1362,10 @@ header {
         <span class="page-sub">project goals</span>
       </div>
       <div class="header-right">
+        <!-- M1002: account usage bars (5h / 7d / 7d-model) — left of + node -->
+        <span id="usage-badge" class="usage-badge" onclick="_loadClaudeUsage(true)" title="Account usage" style="display:none"></span>
         <button class="refresh-btn" onclick="showAddProject()" style="background:var(--accent-soft);color:var(--accent-deep);border-color:var(--accent)">+ node</button>
-        <button class="refresh-btn" id="align-btn" onclick="cycleAlign()" title="Card alignment">⇤ align</button>
+        <!-- M950: align/sort button removed per user request -->
         <button class="refresh-btn" onclick="_showModelAvatarSettings()" title="Configure per-model avatar images">◎ avatar</button>
         <!-- M227 v2: per-card pointer replaces the top-bar pointer button; element kept for legacy script but hidden. -->
         <button class="refresh-btn" id="priority-toggle-btn" onclick="togglePriorityPointer()" style="display:none">+ pointer</button>
@@ -1407,6 +1484,8 @@ header {
         <div class="ns-ctx-item" id="ctx-unlink-parent" style="display:none">⊄ Disconnect parent link</div>
         <div id="ctx-unlink-individual" style="display:none"></div>
         <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
+        <div class="ns-ctx-sep" id="ctx-lane-sep" style="display:none"></div>
+        <div id="ctx-move-lane-list"></div>
         <div class="ns-ctx-sep"></div>
         <div class="ns-ctx-item danger" id="ctx-delete">✕ Remove node</div>
       </div>
@@ -1486,7 +1565,7 @@ header {
 <!-- Floating draggable terminal — full-screen on mobile, floating on desktop -->
 <!-- M183: z-index:9200 — above detail-overlay (9001) -->
 <div id="ns-terminal-float" style="display:none;position:fixed;
-  top:60px;left:50%;transform:translateX(-50%) translateZ(0);
+  top:0;left:50%;transform:translateX(-50%) translateZ(0);
   z-index:9200;width:min(680px,75vw);height:min(680px,78vh);
   background:#1a1916;border:1px solid #333;border-radius:10px;
   box-shadow:0 12px 40px rgba(0,0,0,.45);flex-direction:column;overflow:hidden;
@@ -1504,11 +1583,56 @@ header {
     </div>
     <!-- M208 v2: explicit Paste button for mobile (no paste key on phone keyboards) -->
     <button onclick="pasteToPty()" style="background:none;border:1px solid #555;border-radius:4px;color:#cc785c;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Paste clipboard into terminal">paste</button>
+    <!-- M1014 v2: virtual keyboard toggle (Termius-style panel below terminal) -->
+    <button id="ns-vkbd-toggle" onclick="_toggleVkbd()" title="Virtual keyboard">⌨ keys</button>
     <button onclick="minimizeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" id="ns-term-min-btn" title="Minimize">—</button>
     <button onclick="closeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Close">✕</button>
     <button onclick="killSession()" style="background:none;border:1px solid #c0392b;border-radius:4px;color:#e05252;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Kill session">⬛</button>
   </div>
   <div id="dm-xterm" style="flex:1;overflow:hidden;padding:2px 4px;-webkit-overflow-scrolling:touch"></div>
+  <!-- M1014 v2: Termius-style virtual keyboard panel (hidden by default; ⌨ button toggles)
+       M1014 v4: each row sets --vkbd-cols to its own key count so the row evenly
+       distributes ALL keys with NO wrap (CSS @media shrinks key padding on phones). -->
+  <div id="ns-vkbd">
+    <div class="vkbd-row" style="--vkbd-cols:10">
+      <button class="vkbd-key" onclick="_sendKey('\x1b')" title="Escape">esc</button>
+      <button class="vkbd-key" onclick="_sendKey('\t')" title="Tab">tab</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[A')" title="Up arrow">↑</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[B')" title="Down arrow">↓</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[D')" title="Left arrow">←</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[C')" title="Right arrow">→</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[H')" title="Home">home</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[F')" title="End">end</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[5~')" title="Page Up">pgup</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[6~')" title="Page Down">pgdn</button>
+    </div>
+    <div class="vkbd-row" style="--vkbd-cols:10">
+      <button class="vkbd-key mod danger" onclick="_sendKey('\x03')" title="Ctrl-C (interrupt)">^C</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x04')" title="Ctrl-D (EOF)">^D</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x1a')" title="Ctrl-Z (suspend)">^Z</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x0c')" title="Ctrl-L (clear)">^L</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x12')" title="Ctrl-R (rsearch)">^R</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x01')" title="Ctrl-A (line start)">^A</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x05')" title="Ctrl-E (line end)">^E</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x0b')" title="Ctrl-K (kill to EOL)">^K</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x17')" title="Ctrl-W (kill word)">^W</button>
+      <button class="vkbd-key mod" onclick="_sendKey('\x15')" title="Ctrl-U (kill line)">^U</button>
+    </div>
+    <div class="vkbd-row" style="--vkbd-cols:12">
+      <button class="vkbd-key" onclick="_sendKey('\x1bOP')" title="F1">F1</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1bOQ')" title="F2">F2</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1bOR')" title="F3">F3</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1bOS')" title="F4">F4</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[15~')" title="F5">F5</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[17~')" title="F6">F6</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[18~')" title="F7">F7</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[19~')" title="F8">F8</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[20~')" title="F9">F9</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[21~')" title="F10">F10</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[23~')" title="F11">F11</button>
+      <button class="vkbd-key" onclick="_sendKey('\x1b[24~')" title="F12">F12</button>
+    </div>
+  </div>
   <div id="ns-term-resize" style="position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:se-resize;
     display:flex;align-items:center;justify-content:center;color:#555;font-size:10px;user-select:none">⤡</div>
 </div>
@@ -1652,7 +1776,11 @@ window.addEventListener('message', e => {
     if (overlay && overlay.classList.contains('show')) {
       if (activeIdx !== null && projects[activeIdx]) _refreshDetailCard(projects[activeIdx].id);
     } else {
-      fetch('/api/northstar').then(r=>r.json()).then(data => {
+      // M998: also poll exec-sessions in swimlane view — captures idle transitions for all projects
+      Promise.all([
+        fetch('/api/northstar').then(r=>r.json()),
+        refreshSessionStatus().catch(()=>{}),
+      ]).then(([data]) => {
         projects = data;
         projects.forEach(p => { p.milestones = p.milestones || []; });
         // M852 rollback fix: re-apply any locally-pending layout changes that haven't been
@@ -2599,15 +2727,16 @@ function renderMilestoneCreator(projId, milestones) {
     .nt-table td.ms-td-id,
     .nt-table td.ms-td-text,
     .nt-table td.ms-td-msg { border-right:1px solid var(--panel-border); }
-    .nt-table tr.nt-draggable-row { border-bottom:1px solid var(--panel-border); cursor:pointer; transition:background .08s; }
-    .nt-table tr.nt-draggable-row:last-child { border-bottom:none; }
+    .nt-table tr.nt-draggable-row { cursor:pointer; transition:background .08s; }
+    .nt-table tr.nt-draggable-row td { border-bottom:1px solid var(--panel-border); } /* M984: match column border color */
+    .nt-table tr.nt-draggable-row:last-child td { border-bottom:none; }
     .nt-table tr.nt-draggable-row:hover td { background:var(--panel-soft); }
     .nt-table tr.nt-draggable-row:hover .nt-del { opacity:1; }
     .nt-table tr.nt-draggable-row:hover .nt-drag-handle { opacity:.85; }
     .nt-table tr.nt-draggable-row.drag-over td { border-top:2px solid var(--accent); }
     /* M180: unified vertical alignment — remove per-column padding-top tweaks (was 5/5/4/4/3 → misaligned).
        Single padding + vertical-align:middle aligns all column content to the row's optical center. */
-    .nt-table td { padding:6px 4px; vertical-align:middle; border-right:1px solid var(--panel-border); }
+    .nt-table td { padding:6px 4px; vertical-align:middle; border-right:1px solid var(--panel-border); } /* M984 */
     .nt-table td:last-child { border-right:none; }
     .nt-table .ms-td-drag { width:18px; padding-left:4px; padding-right:2px; }
     /* M282 FINAL: toggle between 2 views (4 cols each, no scroll, same row height)
@@ -2712,6 +2841,12 @@ function renderMilestoneCreator(projId, milestones) {
     /* M815-fix: grandchildren default mode */
     .nt-table-slide-wrap:not(.slid) .nt-table tbody.ms-group.has-grandchildren tr td.ms-td-drag { box-shadow: inset 4px 0 0 var(--text-dim); }
     .nt-table tbody.ms-group.has-grandchildren tr td:last-child { border-right: 4px double var(--text-dim) !important; }
+    /* M980: grandchild row grouping — subtle bg tint to visually pair with parent child row.
+       (M980 v2 nested-box rolled back per user — the extra border was more confusing.) */
+    .nt-table tr.ms-grandchild-row td { background: rgba(var(--text-dim-rgb, 130,130,120), 0.05) !important; }
+    .nt-table tr.ms-grandchild-row:first-of-type td { border-top: 1px dashed rgba(100,100,90,.3) !important; }
+    .nt-table tr.ms-grandchild-row td:first-child { box-shadow: inset 6px 0 0 rgba(100,100,90,.35); }
+    .nt-table-slide-wrap:not(.slid) .nt-table tr.ms-grandchild-row td.ms-td-drag { box-shadow: inset 6px 0 0 rgba(100,100,90,.35); }
     /* M753: ms-group-orange CSS removed — grouping border always gray (var(--text-dim)) */
     /* Held rows */
     .nt-table tr.nt-draggable-row[data-held="1"] td { opacity:1.0; color: var(--accent) !important; }
@@ -2761,11 +2896,11 @@ function renderMilestoneCreator(projId, milestones) {
       .nt-table-slide-wrap.slid .ms-td-gap {
         width:90px !important; max-width:90px !important; padding:6px 4px !important;
         display:table-cell; overflow:visible !important; font-size:inherit !important;
-        border-right:1px solid var(--panel-border) !important; }
+        border-right:1px solid var(--panel-border) !important; } /* M984 */
       .nt-table-slide-wrap.slid .ms-td-rel {
         width:130px !important; max-width:130px !important; padding:6px 4px !important;
         display:table-cell; overflow:visible !important; font-size:inherit !important;
-        border-right:1px solid var(--panel-border) !important; }
+        border-right:1px solid var(--panel-border) !important; } /* M984 */
       .nt-table-slide-wrap.slid .nt-table .ms-td-text,
       .nt-table-slide-wrap.slid .nt-table .ms-td-msg,
       .nt-table-slide-wrap.slid .nt-table .ms-td-meta { display:none; }
@@ -2908,16 +3043,16 @@ function renderMilestoneCreator(projId, milestones) {
               ${_msHoldBtnHtml(projId, c.id, !!c.held)}
             </td>
             <td class="ms-td-meta">
-              <button class="nt-del" title="Detach from parent" style="opacity:.7;font-size:9px;padding:2px 4px;margin-bottom:2px" onclick="event.stopPropagation();_detachSubstone('${esc(projId)}','${esc(c.id)}')">⊄</button>
+              <!-- M1031: ⊄ detach button removed from inline X-column on child rows; use sub-stone manager instead -->
               <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${escJsC(c.text.slice(0,60))}')">✕</button>
             </td>
           </tr>` +
           milestones.filter(gc => (gc.layer||0)===2 && gc.parent_id === c.id).map(gc => {
             const gcS = gc.status || (gc.done ? 'done' : 'pending');
-            const gcColor = {done:'var(--green)',queued:'var(--accent)',pending:'var(--text-dim)',pending_confirmation:'var(--accent-deep)',needs_clarification:'#7b9fd4'}[gcS]||'var(--text-dim)';
+            const gcColor = {done:'var(--text-dim)',queued:'var(--text)',pending:'var(--text)',pending_confirmation:'var(--text)',needs_clarification:'var(--text)'}[gcS]||'var(--text)'; /* M977: grandchild text always normal color */
             // M851: grandchild collapses with ITS PARENT (c.id), not the grandparent (m.id)
             const _gcCollapsed = (_msCollapsedParents[projId]||new Set()).has(m.id);
-            return `<tr class="ms-child-row nt-draggable-row${gcS==='done'?' nt-done':''}${_gcCollapsed?' ms-collapsed':''}" data-mid="${esc(gc.id)}" data-status="${esc(gcS)}" data-parent="${esc(c.id)}" data-held="${gc.held?'1':'0'}" style="position:relative">
+            return `<tr class="ms-child-row ms-grandchild-row nt-draggable-row${gcS==='done'?' nt-done':''}${_gcCollapsed?' ms-collapsed':''}" data-mid="${esc(gc.id)}" data-status="${esc(gcS)}" data-parent="${esc(c.id)}" data-held="${gc.held?'1':'0'}" style="position:relative">
               <td class="ms-td-drag"><span style="display:inline-block;width:20px;flex-shrink:0"></span><span style="color:var(--panel-border);font-size:10px;margin-right:2px">  └</span></td>
               ${_gapCells(gc)}
               <td class="ms-td-id">
@@ -3067,16 +3202,16 @@ function renderMilestoneCreator(projId, milestones) {
               ${_msHoldBtnHtml(projId, c.id, !!c.held)}
             </td>
             <td class="ms-td-meta">
-              <button class="nt-del" title="Detach from parent" style="opacity:.7;font-size:9px;padding:2px 4px;margin-bottom:2px" onclick="event.stopPropagation();_detachSubstone('${esc(projId)}','${esc(c.id)}')">⊄</button>
+              <!-- M1031: ⊄ detach button removed from inline X-column on child rows; use sub-stone manager instead -->
               <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${escJsC(c.text.slice(0,60))}')">✕</button>
             </td>
           </tr>` +
           milestones.filter(gc => (gc.layer||0)===2 && gc.parent_id === c.id).map(gc => {
             const gcS = gc.status || (gc.done ? 'done' : 'pending');
-            const gcColor = {done:'var(--green)',queued:'var(--accent)',pending:'var(--text-dim)',pending_confirmation:'var(--accent-deep)',needs_clarification:'#7b9fd4'}[gcS]||'var(--text-dim)';
+            const gcColor = {done:'var(--text-dim)',queued:'var(--text)',pending:'var(--text)',pending_confirmation:'var(--text)',needs_clarification:'var(--text)'}[gcS]||'var(--text)'; /* M977: grandchild text always normal color */
             // M851: grandchild collapses with ITS PARENT (c.id), not the grandparent (m.id)
             const _gcCollapsed = (_msCollapsedParents[projId]||new Set()).has(m.id);
-            return `<tr class="ms-child-row nt-draggable-row${gcS==='done'?' nt-done':''}${_gcCollapsed?' ms-collapsed':''}" data-mid="${esc(gc.id)}" data-status="${esc(gcS)}" data-parent="${esc(c.id)}" data-held="${gc.held?'1':'0'}" style="position:relative">
+            return `<tr class="ms-child-row ms-grandchild-row nt-draggable-row${gcS==='done'?' nt-done':''}${_gcCollapsed?' ms-collapsed':''}" data-mid="${esc(gc.id)}" data-status="${esc(gcS)}" data-parent="${esc(c.id)}" data-held="${gc.held?'1':'0'}" style="position:relative">
               <td class="ms-td-drag"><span style="display:inline-block;width:20px;flex-shrink:0"></span><span style="color:var(--panel-border);font-size:10px;margin-right:2px">  └</span></td>
               ${_gapCells(gc)}
               <td class="ms-td-id">
@@ -3305,17 +3440,17 @@ function renderMilestoneCreator(projId, milestones) {
               ${_msHoldBtnHtml(projId, c.id, !!c.held)}
             </td>
             <td class="ms-td-meta">
-              <button class="nt-del" title="Detach from parent (move to top level)" style="opacity:.7;font-size:9px;padding:2px 4px;margin-bottom:2px" onclick="event.stopPropagation();_detachSubstone('${esc(projId)}','${esc(c.id)}')">⊄</button>
+              <!-- M1031: ⊄ detach button removed from inline X-column on grandchild rows; use sub-stone manager instead -->
               <button class="nt-del" title="Delete" onclick="event.stopPropagation();confirmDeleteMs('${esc(projId)}','${esc(c.id)}','${escJsC(c.text.slice(0,60))}')">✕</button>
             </td>
           </tr>` +
           // M559: grandchild rows — layer 1 stones whose parent is this child (layer 1)
           milestones.filter(gc => (gc.layer||0)===2 && gc.parent_id === c.id).map(gc => {
             const gcS = gc.status || (gc.done ? 'done' : 'pending');
-            const gcColor = {done:'var(--green)',queued:'var(--accent)',pending:'var(--text-dim)',pending_confirmation:'var(--accent-deep)',needs_clarification:'#7b9fd4'}[gcS]||'var(--text-dim)';
+            const gcColor = {done:'var(--text-dim)',queued:'var(--text)',pending:'var(--text)',pending_confirmation:'var(--text)',needs_clarification:'var(--text)'}[gcS]||'var(--text)'; /* M977: grandchild text always normal color */
             // M851: grandchild collapses with ITS PARENT (c.id), not the grandparent (m.id)
             const _gcCollapsed = (_msCollapsedParents[projId]||new Set()).has(m.id);
-            return `<tr class="ms-child-row nt-draggable-row${gcS==='done'?' nt-done':''}${_gcCollapsed?' ms-collapsed':''}" data-mid="${esc(gc.id)}" data-status="${esc(gcS)}" data-parent="${esc(c.id)}" data-held="${gc.held?'1':'0'}" style="position:relative">
+            return `<tr class="ms-child-row ms-grandchild-row nt-draggable-row${gcS==='done'?' nt-done':''}${_gcCollapsed?' ms-collapsed':''}" data-mid="${esc(gc.id)}" data-status="${esc(gcS)}" data-parent="${esc(c.id)}" data-held="${gc.held?'1':'0'}" style="position:relative">
               <td class="ms-td-drag"><span style="display:inline-block;width:20px;flex-shrink:0"></span><span style="color:var(--panel-border);font-size:10px;margin-right:2px">  └</span></td>
               ${_gapCells(gc)}
               <td class="ms-td-id">
@@ -3526,8 +3661,11 @@ async function _registerSeqSubstones() {
   const raw = document.getElementById('ns-ssm-input').value.trim();
   if (!raw) return;
   document.getElementById('ns-seq-substone-modal').style.display = 'none';
-  // Auto-prefix M for bare numbers
-  const mid = /^\d+$/.test(raw) ? 'M' + raw : raw.toUpperCase();
+  // M1022 fix: auto-prefix M for bare numbers OR dotted numbers ("1022", "1022.1", "1022.1.2").
+  // Previously /^\d+$/ only accepted all-digit input, so "1022.1" fell through to raw.toUpperCase()
+  // without an M prefix → PATCH to non-existent stone → silent no-op (registration appeared to fail).
+  const looksNumeric = /^\d+(\.\d+)*$/.test(raw);
+  const mid = looksNumeric ? 'M' + raw : raw.toUpperCase();
   try {
     const r = await fetch(`/api/northstar/${encodeURIComponent(_ssm_projId)}/milestones/${encodeURIComponent(mid)}`, {
       method: 'PATCH',
@@ -3537,8 +3675,13 @@ async function _registerSeqSubstones() {
     if (r.ok) {
       delete _msRenderFingerprint[_ssm_projId];
       if (typeof loadMilestones === 'function') loadMilestones(_ssm_projId);
+    } else {
+      // M1022 fix: surface the 404 to the user instead of silently failing.
+      alert(`Could not link "${mid}" as a child — stone not found (HTTP ${r.status}).`);
     }
-  } catch(_) {}
+  } catch(e) {
+    alert(`Sub-stone registration failed: ${e?.message || e}`);
+  }
 }
 
 // M395: mobile button wrapper for indent/unindent (no Tab key on mobile)
@@ -3698,7 +3841,7 @@ function _patchCacheMs(projId, updatedMs) {
 }
 
 function _nodeTouchDrag() {
-  const DRAG_THRESHOLD = 25; // M968: increased 8→25px, reduces accidental drag during scroll
+  const DRAG_THRESHOLD = 8; // px movement before drag activates
   document.querySelectorAll('.ns-node:not([data-touch-bound])').forEach(node => {
     node.dataset.touchBound = '1';
     let _touchStartX = 0, _touchStartY = 0, _dragActive = false;
@@ -3707,6 +3850,8 @@ function _nodeTouchDrag() {
       if (e.touches.length !== 1) return;
       // Skip drag setup on buttons/links — let them handle their own click natively
       if (e.target.closest('button, a, [contenteditable="true"]')) return;
+      // M991: drag only from avatar ring area
+      if (!e.target.closest('.avatar-ring')) return;
       const t = e.touches[0];
       const rect = node.getBoundingClientRect();
       _touchStartX = t.clientX;
@@ -3725,9 +3870,7 @@ function _nodeTouchDrag() {
       if (!_dragActive) {
         const dx = t.clientX - _touchStartX, dy = t.clientY - _touchStartY;
         if (Math.sqrt(dx*dx + dy*dy) < DRAG_THRESHOLD) return; // not yet a drag
-        // M968: if primarily vertical movement → user is scrolling, not dragging
-        if (Math.abs(dy) > Math.abs(dx) * 1.5) { _nodeTouchSrc = null; return; }
-        // Threshold crossed and horizontal intent — activate drag
+        // Threshold crossed — activate drag
         _dragActive = true;
         const rect = node.getBoundingClientRect();
         _nodeTouchGhost = node.cloneNode(true);
@@ -3742,36 +3885,18 @@ function _nodeTouchDrag() {
       _nodeTouchGhost.style.top  = (t.clientY - _nodeTouchOY) + 'px';
       // M879: show drop bar on mobile during touchmove
       if (_nodeTouchIdx != null) {
-        // M923 fix2: dynamic lane count (not hardcoded 3)
+        // M989: swap mode on mobile — highlight hovered card as swap target (no drop bar)
+        document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
         let _tl = 0; while (document.getElementById(`lane-nodes-${_tl}`)) {
           const _tlEl = document.getElementById(`lane-nodes-${_tl}`);
           const _tlR = _tlEl.getBoundingClientRect();
           if (t.clientY >= _tlR.top && t.clientY <= _tlR.bottom) {
-            // M925: flex-based drop bar position
-            const _wrappers = [..._tlEl.querySelectorAll('[data-proj-idx]')]
-              .filter(w => parseInt(w.dataset.projIdx) !== _nodeTouchIdx)
-              .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-            let _barLeft = 4;
-            if (_wrappers.length) {
-              const _hov = _wrappers.find(w => { const r = w.getBoundingClientRect(); return t.clientX >= r.left && t.clientX < r.right; });
-              if (_hov) {
-                const r = _hov.getBoundingClientRect();
-                _barLeft = t.clientX < (r.left + r.right) / 2 ? r.left - _tlR.left - 2 : r.right - _tlR.left + 6;
-              } else if (t.clientX > _wrappers[_wrappers.length-1].getBoundingClientRect().right) {
-                _barLeft = _wrappers[_wrappers.length-1].getBoundingClientRect().right - _tlR.left + 6;
-              }
-            }
-            let _bar = _tlEl.querySelector('.ns-drop-bar');
-            if (!_bar) {
-              _bar = document.createElement('div');
-              _bar.className = 'ns-drop-bar';
-              _bar.style.cssText = 'position:absolute;top:4px;width:3px;height:calc(100% - 8px);background:var(--accent);border-radius:2px;pointer-events:none;z-index:50;box-shadow:0 0 6px rgba(204,120,92,.6)';
-              _tlEl.appendChild(_bar);
-            }
-            _bar.style.left = Math.max(0, _barLeft) + 'px';
+            const _ws = [..._tlEl.querySelectorAll('[data-proj-idx]')].filter(w => parseInt(w.dataset.projIdx) !== _nodeTouchIdx);
+            const _hit = _ws.find(w => { const r = w.getBoundingClientRect(); return t.clientX >= r.left && t.clientX < r.right && t.clientY >= r.top && t.clientY < r.bottom; });
+            if (_hit) { _hit.classList.add('ns-swap-target'); window._touchSwapTarget = parseInt(_hit.dataset.projIdx); }
+            else window._touchSwapTarget = null;
             break;
           }
-          _tlEl.querySelectorAll('.ns-drop-bar').forEach(b => b.remove());
           _tl++;
         }
       }
@@ -3781,7 +3906,7 @@ function _nodeTouchDrag() {
       if (!_nodeTouchSrc || _nodeTouchSrc !== node) return;
       node.style.opacity = '';
       if (_nodeTouchGhost) { _nodeTouchGhost.remove(); _nodeTouchGhost = null; }
-      document.querySelectorAll('.ns-lane-nodes .ns-drop-bar').forEach(b => b.remove());
+      document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
       const wasDrag = _dragActive;
       _dragActive = false;
       const t = e.changedTouches[0];
@@ -3803,9 +3928,22 @@ function _nodeTouchDrag() {
       }
       const laneEl = document.getElementById(`lane-nodes-${targetLayer}`);
       if (!laneEl) { _nodeTouchSrc = null; _nodeTouchIdx = null; return; }
-      // M925: index-based insert using rendered flex positions
-      const insertPos = _getDropOrderIndex(laneEl, _nodeTouchIdx, t.clientX);
-      _assignDropOrder(targetLayer, _nodeTouchIdx, insertPos);
+      // M989: swap with target card (or move to empty lane)
+      const _touchTgt = window._touchSwapTarget;
+      window._touchSwapTarget = null;
+      if (_touchTgt != null && _touchTgt !== _nodeTouchIdx) {
+        _swapDropOrder(_nodeTouchIdx, _touchTgt, targetLayer);
+      } else if (_touchTgt == null) {
+        // Dropped on empty space — just update layer if changed
+        const _tp = projects[_nodeTouchIdx];
+        if (_tp && (parseInt(_tp.layer)||0) !== targetLayer) {
+          _tp.layer = targetLayer;
+          fetch(`/api/northstar/${encodeURIComponent(_tp.id||_tp.name)}/layout`, {
+            method: 'PATCH', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({layer: targetLayer, position_x: _tp.position_x||0, position_y: 0})
+          }).catch(() => {});
+        }
+      }
       _nodeTouchSrc = null; _nodeTouchIdx = null;
       render();
       requestAnimationFrame(() => drawParentLines());
@@ -4089,9 +4227,9 @@ function _reviewBadgeHtml(projId, mid, milestones) {
   const verifyOn = !!(stone && stone.verify_flag);
   const _p = esc(projId).replace(/'/g,'&#39;'), _m = esc(mid).replace(/'/g,'&#39;');
   if (verifyOn) {
-    return `<button title="verify ON — [검수] will be created on next dispatch. Click to turn off." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(61,139,94,.15);color:var(--green,#3d8b5e);border:1px solid rgba(61,139,94,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',false,this)" >verify ✓</button>`;
+    return `<button title="verify ON — a review child stone will be created on next dispatch. Click to turn off." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(61,139,94,.15);color:var(--green,#3d8b5e);border:1px solid rgba(61,139,94,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',false,this)" >verify ✓</button>`;
   }
-  return `<button title="verify OFF — click to flag this stone for [검수] review on next dispatch." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(123,159,212,.1);color:#7b9fd4;border:1px solid rgba(123,159,212,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',true,this)" >verify</button>`;
+  return `<button title="verify OFF — click to flag this stone for review on next dispatch." style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(123,159,212,.1);color:#7b9fd4;border:1px solid rgba(123,159,212,.4);cursor:pointer;line-height:1.3;white-space:nowrap;display:inline-flex;align-items:center;gap:2px" onclick="event.stopPropagation();_toggleVerifyFlag('${_p}','${_m}',true,this)" >verify</button>`;
 }
 async function _toggleVerifyFlag(projId, mid, flagValue, btn) {
   // M964: optimistic UI — immediately update button before server round-trip
@@ -4106,11 +4244,36 @@ async function _toggleVerifyFlag(projId, mid, flagValue, btn) {
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({verify_flag: flagValue})
   }).catch(()=>{});
-  await loadMilestones(projId);
+  // M993: optimistic cache update — skip full loadMilestones (too slow for 900+ stone projects)
+  const _c = _msCacheByProject[projId];
+  if (_c) {
+    const _m = _c.find(x => x.id === mid);
+    if (_m) _m.verify_flag = flagValue;
+    delete _msRenderFingerprint[projId];
+    renderMilestoneCreator(projId, _c);
+    // Background refresh to pick up any server-created [검수] child
+    setTimeout(() => loadMilestones(projId), 800);
+  } else {
+    await loadMilestones(projId);
+  }
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
   render();
 }
 // Legacy: kept for backward compat (now unused — verify no longer creates stone directly)
 async function _addReviewStone(projId, mid) { await _toggleVerifyFlag(projId, mid, true); }
+// M987: chatbox verify chip toggle — reads current state then flips
+async function _toggleCommentVerify(projId, mid, btn) {
+  const res = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(mid)}`).then(r=>r.json()).catch(()=>({}));
+  const current = !!(res.verify_flag);
+  const next = !current;
+  if (btn) {
+    btn.style.opacity = '0.5'; btn.disabled = true;
+    if (next) { btn.textContent = 'verify ✓'; btn.style.color = 'var(--green,#3d8b5e)'; btn.style.background = 'rgba(61,139,94,.15)'; btn.style.borderColor = 'rgba(61,139,94,.4)'; }
+    else { btn.textContent = 'verify'; btn.style.color = '#7b9fd4'; btn.style.background = 'rgba(123,159,212,.08)'; btn.style.borderColor = 'rgba(123,159,212,.4)'; }
+  }
+  await _toggleVerifyFlag(projId, mid, next, null);
+  if (btn) { btn.style.opacity = '1'; btn.disabled = false; }
+}
 function _msBangHtml(mid, projId) {
   // M206: red blinking '!' shown right of the msg badge when the last
   // conversation entry is from claude (i.e., user's turn to reply).
@@ -4581,6 +4744,43 @@ function _ntPasteHandler(ev) {
   }
 }
 
+// M1010: paste long text into the comment/chat box → collapse into a paste-text chip.
+// #comment-reply-input is an <input> (cannot hold chip spans like the contenteditable
+// stone-text fields), so route through the M890 pending-attachment PASTE-token pipeline:
+// push a `PASTE<body>/PASTE` token (which _doCommentReply prepends on send and the thread
+// renders as a chip via _renderNtTextHtml) and show a removable chip in the status bar.
+function _commentPasteHandler(ev) {
+  const txt = (ev.clipboardData || window.clipboardData)?.getData('text') || '';
+  if (!txt) return;
+  const lines = txt.split('\n').length;
+  if (txt.length < _NT_PASTE_THRESHOLD_CHARS && lines <= _NT_PASTE_THRESHOLD_LINES) return;
+  ev.preventDefault();  // keep the raw blob out of the single-line input
+  const pasteToken = `PASTE${txt}/PASTE`;
+  window._commentPendingAttachments = window._commentPendingAttachments || [];
+  window._commentPendingAttachments.push(pasteToken);
+  const statusEl = document.getElementById('comment-upload-status');
+  if (!statusEl) return;
+  const chip = document.createElement('span');
+  chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:3px;background:var(--panel-soft);border:1px solid var(--panel-border);color:var(--text);font-size:9px;font-family:var(--mono);cursor:pointer;margin:2px 2px 0 0';
+  chip.title = 'Click to view pasted text';
+  const label = document.createElement('span');
+  label.textContent = `Pasted text +${lines} lines, ${txt.length} chars`;
+  label.onclick = (e) => { e.stopPropagation(); if (typeof _hubConfirm === 'function') _hubConfirm(txt.slice(0, 4000) + (txt.length > 4000 ? '\n…(truncated)' : '')); };
+  chip.appendChild(label);
+  const rm = document.createElement('span');
+  rm.textContent = '✕';
+  rm.style.cssText = 'cursor:pointer;margin-left:2px;opacity:.6';
+  rm.onclick = (e) => {
+    e.stopPropagation();
+    chip.remove();
+    window._commentPendingAttachments = (window._commentPendingAttachments || []).filter(t => t !== pasteToken);
+    if (!statusEl.querySelector('span')) statusEl.classList.remove('active');
+  };
+  chip.appendChild(rm);
+  statusEl.appendChild(chip);
+  statusEl.classList.add('active');
+}
+
 // M335: drag-and-drop handlers for .nt-text stone text pane
 function _ntDragOverHandler(ev) {
   ev.preventDefault();
@@ -4721,8 +4921,10 @@ async function _ntFileUpload(ev, projId, mid) {
       chip.style.color = 'var(--accent-warn, #b45309)';
       chip.dataset.full = sizeErr;
     } else {
-      chip.textContent = `[uploading: ${f.name}…]`;
+      // M995: show badge immediately — filename shown right away, spinner via CSS ::after only
+      chip.textContent = f.name;
       chip.classList.add('uploading'); // M840: spinner via CSS ::after
+      chip.dataset.full = `[file:${f.name}]`; // placeholder until URL resolves
     }
     chip.onclick = (e) => { e.stopPropagation(); chip.replaceWith(document.createTextNode(chip.dataset.full || chip.textContent)); };
     if (el) {
@@ -4742,16 +4944,18 @@ async function _ntFileUpload(ev, projId, mid) {
           const d = await r.json();
           const url = d.url || d.path || `/uploads/${projId}/${f.name}`;
           chip.dataset.full = url;
-          chip.textContent = `[file:${f.name}]`;
+          chip.textContent = f.name; // M995: keep clean name, just update data-full
           chip.title = url;
+          chip.style.color = 'var(--accent)';
+          chip.style.borderColor = 'var(--accent-soft)';
         } else {
           chip.dataset.full = `[file:${f.name}]`;
-          chip.textContent = `[file:${f.name}]`;
+          chip.textContent = f.name;
         }
       } catch(_) {
         chip.classList.remove('uploading'); // M840: stop spinner on error
         chip.dataset.full = `[file:${f.name}]`;
-        chip.textContent = `[file:${f.name}]`;
+        chip.textContent = f.name;
       }
     }
     if (el && mid && projId) saveMs(projId, mid, _readNtText(el));
@@ -6117,6 +6321,8 @@ let _prevPtyStatus = null;
 // Track last-fired timestamp per projId:kind; suppress if within 30s.
 const _idleNotifyTs = {};
 function _notifyTransition(projId, kind) {
+  // M986: sticky toast disabled per user request
+  return;
   const _key = `${projId}:${kind}`;
   const _now = Date.now();
   if (_idleNotifyTs[_key] && _now - _idleNotifyTs[_key] < 30000) return;
@@ -6274,6 +6480,49 @@ async function setupNotify() {
 }
 // On load: reflect notification status
 document.addEventListener('DOMContentLoaded', () => { _initTailscaleBtn(); });
+
+// M1002: account usage badge (session 5h / weekly 7d % used) — server-cached 5min.
+async function _loadClaudeUsage(force) {
+  const el = document.getElementById('usage-badge');
+  if (!el) return;
+  try {
+    if (force) el.style.opacity = '.5';
+    const r = await fetch('/api/claude-usage' + (force ? '?t=' + Date.now() : ''), {cache:'no-store'});
+    const d = await r.json();
+    el.style.opacity = '1';
+    if (!d || !d.ok) { el.style.display = 'none'; return; }
+    // M1002: render each window as a labelled mini progress bar (used %).
+    const seg = (label, o) => {
+      if (!o || o.util == null) return '';
+      const u = Math.round(o.util);
+      const cls = u >= 80 ? 'hi' : u >= 50 ? 'mid' : 'lo';
+      return `<span class="ub-seg ${cls}"><span class="ub-lbl">${label}</span>`
+           + `<span class="ub-bar"><span class="ub-fill" style="width:${Math.min(u,100)}%"></span></span>`
+           + `<span class="ub-pct">${u}%</span></span>`;
+    };
+    const parts = [seg('5h', d.five_hour), seg('7d', d.seven_day), seg('Snt', d.seven_day_sonnet)].filter(Boolean);
+    if (!parts.length) { el.style.display = 'none'; return; }
+    el.innerHTML = parts.join('');
+    const rt = o => (o && o.resets_at) ? new Date(o.resets_at).toLocaleString() : '?';
+    el.title = `Account usage (used %) — 5h resets ${rt(d.five_hour)} · 7d resets ${rt(d.seven_day)} · Snt(7d) resets ${rt(d.seven_day_sonnet)} · click to refresh`;
+    el.style.display = 'inline-flex';
+  } catch(_) { el.style.opacity = '1'; }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  _loadClaudeUsage();
+  setInterval(() => _loadClaudeUsage(), 5 * 60 * 1000);
+});
+document.addEventListener('DOMContentLoaded', () => {
+  // M955/M987: load blink_window_min from server (M955 centralization)
+  fetch('/api/user-settings/blink_window_min', {cache:'no-store'}).then(r=>r.json()).then(d => {
+    const v = d && d.value ? parseInt(d.value) : null;
+    if (v && v >= 1 && v <= 1440) {
+      localStorage.setItem('_blinkWindowMin', v);
+      const inp = document.getElementById('blink-window-input');
+      if (inp) inp.value = v;
+    }
+  }).catch(()=>{});
+});
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/telegram/status').then(r=>r.json()).then(d => {
     const btn = document.getElementById('ntfy-btn');
@@ -6345,8 +6594,8 @@ async function refreshSessionStatus() {
     const _prevExecKeys = JSON.stringify(_execStatus);
     _execStatus = newExec;
     if (JSON.stringify(newExec) !== _prevExecKeys) {
-      // Invalidate lane fingerprints so nodeCard() re-runs with updated _execStatus/_execModel
-      for (const k of Object.keys(window._swimlaneLaneFp || {})) delete window._swimlaneLaneFp[k];
+      // M976 fix: use actual let var (not window.) to invalidate lane fingerprints
+      Object.keys(_swimlaneLaneFp).forEach(k => delete _swimlaneLaneFp[k]);
       if (typeof render === 'function') render();
     }
     // Last-used Claude session per project (.last-session-id captured by Stop hook)
@@ -6502,7 +6751,18 @@ function nodeCard(p, idx) {
   // M741 final: avatar based solely on _execModel (live tmux session) — p.model not used
   const _liveModel = ((window._execModel||{})[p.id||p.name]||'');
   const _modelAvatars = _nsModelAvatars(); // localStorage map: model-key → url
-  const _mdlKey = _liveModel ? (Object.keys(_modelAvatars).find(k => _liveModel.includes(k)) || null) : null;
+  // M1011: prefer exact match, then longest-substring match. The old
+  // .find(k => _liveModel.includes(k)) returned the FIRST key that was a
+  // substring — so a generic key like "opus" matched any "claude-opus-*"
+  // session, showing an avatar the user never assigned for that specific
+  // model. Sort keys descending by length so the most specific key wins.
+  let _mdlKey = null;
+  if (_liveModel && _modelAvatars[_liveModel]) {
+    _mdlKey = _liveModel; // exact match
+  } else if (_liveModel) {
+    const _keys = Object.keys(_modelAvatars).sort((a,b) => b.length - a.length);
+    _mdlKey = _keys.find(k => _liveModel.includes(k)) || null;
+  }
   // M793: only show avatar when the user has explicitly assigned one via
   // ◎ avatar settings. Built-in fallbacks were misleading users into thinking
   // hy3 / haiku / etc. had pre-assigned characters even when the per-model map
@@ -6532,7 +6792,7 @@ function nodeCard(p, idx) {
   const _dLabel = dl.text && dl.text !== '—' ? dl.text : '';
   const _rawModel = (window._execModel||{})[p.id||p.name];
   const _modelLabel = _execKey ? (_shortModel(_rawModel !== undefined ? _rawModel : '') || (_rawModel !== undefined ? 'sonnet-4.6' : '')) : '';
-  return `<div class="ns-node circle-card ${active} ${stageClass} ${_execClass}" data-idx="${idx}" data-pid="${pid}" draggable="true"
+  return `<div class="ns-node circle-card ${active} ${stageClass} ${_execClass}" data-idx="${idx}" data-pid="${pid}" draggable="false"
     title="${esc(p.name||p.id)}
 ⏱ deadline: ${dlPctNum}%
 ⭐ star: ${pct}%
@@ -6540,7 +6800,8 @@ function nodeCard(p, idx) {
     ${_cardPtrHtml}
     ${stageBadge}
     <div style="position:relative;width:72px;height:72px;flex-shrink:0">
-      <div class="avatar-ring ${_statusCls}">${_avatarHtml}${_execKey === 'running' ? '<div class="live-dot"></div>' : ''}</div>
+      <!-- M991: drag handle = avatar ring only -->
+      <div class="avatar-ring ${_statusCls}" draggable="true" style="cursor:grab" title="Drag to reorder">${_avatarHtml}${_execKey === 'running' ? '<div class="live-dot"></div>' : ''}</div>
       <div class="progress-arc-wrap"><svg width="116" height="116" viewBox="0 0 116 116">${_rings}</svg></div>
       <div class="ring-badges">
         ${queuedN ? `<span class="ring-badge queued">${queuedN}q</span>` : ''}
@@ -6577,6 +6838,24 @@ function _snapOverlapPos(x, y, layer, excludeId) {
 
 // M925: index-based drop — returns order index to insert the dragged card at in given lane
 // Uses rendered flex children bounding rects (not stored pixel positions)
+// M989: swap-based drop — exchange position_x (and layer) of dragged and target cards
+function _swapDropOrder(dragIdx, targetIdx, targetLayer) {
+  const pSrc = projects[dragIdx], pTgt = projects[targetIdx];
+  if (!pSrc || !pTgt || dragIdx === targetIdx) return;
+  const srcX = pSrc.position_x ?? 0, srcL = parseInt(pSrc.layer) || 0;
+  const tgtX = pTgt.position_x ?? 0, tgtL = parseInt(pTgt.layer) || 0;
+  pSrc.position_x = tgtX; pSrc.layer = tgtL;
+  pTgt.position_x = srcX; pTgt.layer = srcL;
+  [[pSrc, tgtX, tgtL], [pTgt, srcX, srcL]].forEach(([p, x, l]) => {
+    if (!window._pendingLayoutByPid) window._pendingLayoutByPid = {};
+    window._pendingLayoutByPid[p.id||p.name] = {layer: l, position_x: x, position_y: 0, ts: Date.now()};
+    fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({layer: l, position_x: x, position_y: 0})
+    }).catch(() => {});
+  });
+}
+
 function _getDropOrderIndex(laneEl, dragIdx, clientX) {
   const wrappers = [...laneEl.querySelectorAll('[data-proj-idx]')]
     .filter(w => parseInt(w.dataset.projIdx) !== dragIdx);
@@ -6704,25 +6983,34 @@ function render() {
     if (!el) return;
     if (!lanes[l].length) { el.innerHTML = ''; return; }
 
-    // Sort: focused first, then by position_x
-    const STAGE_ORDER = {focused:0, assigned:1, commercialized:2, unassigned:3};
+    // M988: session-assigned cards first (exec_session_id set), then by position_x (no stage sort per M978)
     lanes[l].sort((a, b) => {
-      const sd = (STAGE_ORDER[a.p.stage||'unassigned']||3) - (STAGE_ORDER[b.p.stage||'unassigned']||3);
-      return sd !== 0 ? sd : (a.p.position_x||0) - (b.p.position_x||0);
+      // M999: 4-tier sort — exec(0) > idle(1) > null(2), then pointer-ON(0)/OFF(1), then position_x
+      const _sessRank = p => { const s = _execStatus[p.id||p.name]; return s==='running'?0:s==='idle'?1:2; };
+      const aHasSess = _sessRank(a.p);
+      const bHasSess = _sessRank(b.p);
+      const sd = aHasSess - bHasSess;
+      if (sd !== 0) return sd;
+      const _ncpMap = typeof _ncpLoadMap === 'function' ? _ncpLoadMap() : {};
+      const aPtr = _ncpMap[a.p.id||a.p.name] ? 0 : 1;
+      const bPtr = _ncpMap[b.p.id||b.p.name] ? 0 : 1;
+      const pd = aPtr - bPtr;
+      return pd !== 0 ? pd : (a.p.position_x||0) - (b.p.position_x||0);
     });
 
-    // M925: index-based flex layout — position_x = order index, no pixel math
-    const sortedLane = [...lanes[l]].sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
+    // M988: displayLane = M988 sort order (session-assigned first); fpLane = position_x order for fingerprint
+    const displayLane = [...lanes[l]]; // M988 sort already applied above
+    const fpLane = [...lanes[l]].sort((a, b) => (a.p.position_x||0) - (b.p.position_x||0));
     // Fingerprint: skip full DOM rebuild when only realtime state (session/exec) changed
     // — prevents 3s card flicker and mobile tap-miss caused by innerHTML = ''
-    const _laneFp = sortedLane.map(({p}) => {
+    const _laneFp = fpLane.map(({p}) => {
       const _msDone = (p.milestones||[]).filter(m=>m.done||m.status==='done').length;
       const _msTotal = (p.milestones||[]).length;
       return `${p.id||p.name}:${p.stage||''}:${p.position_x||0}:${p.exec_session_id||''}:${p.current||''}:${p.deadline||''}:${_msDone}/${_msTotal}:${p.status||''}:${(window._execModel||{})[p.id||p.name]||''}`;
     }).join('|'); // M965: include deadline/milestone/status/model for immediate ring+badge updates
-    if (_swimlaneLaneFp[l] === _laneFp && el.children.length === sortedLane.length) {
-      // Same layout — update only session badges in-place, skip DOM rebuild
-      sortedLane.forEach(({p, i}, orderIdx) => {
+    if (_swimlaneLaneFp[l] === _laneFp && el.children.length === displayLane.length) {
+      // Same layout — update only session badges in-place using displayLane order
+      displayLane.forEach(({p, i}, orderIdx) => {
         const wrapper = el.children[orderIdx];
         if (!wrapper) return;
         const badge = wrapper.querySelector('.ns-exec-badge, .sess-badge, [class*="exec-state"]');
@@ -6739,9 +7027,10 @@ function render() {
     _lanesRebuilt = true;
     el.innerHTML = '';
     el.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px;padding:8px 12px 12px;min-height:90px;align-content:flex-start;align-items:flex-start;position:relative'; /* M939: ns-test2 */
-    sortedLane.forEach(({p, i}, orderIdx) => {
-      // Normalize to sequential indices on first render (stable for future drags)
-      if ((p.position_x ?? 0) !== orderIdx) {
+    const _hasSessInLane = displayLane.some(({p}) => p.exec_session_id);
+    displayLane.forEach(({p, i}, orderIdx) => {
+      // Normalize position_x only when no session-assigned cards (session sort is transient)
+      if (!_hasSessInLane && (p.position_x ?? 0) !== orderIdx) {
         p.position_x = orderIdx;
         if (!window._pendingLayoutByPid) window._pendingLayoutByPid = {};
         window._pendingLayoutByPid[p.id||p.name] = {layer: p.layer||0, position_x: orderIdx, position_y: 0, ts: Date.now()};
@@ -6829,6 +7118,8 @@ function render() {
   if (_lanesRebuilt) document.querySelectorAll('.ns-node:not([data-drag-bound])').forEach(node => {
     node.dataset.dragBound = '1';
     node.addEventListener('dragstart', e => {
+      // M991: only drag from avatar ring area
+      if (!e.target.closest('.avatar-ring')) { e.preventDefault(); return; }
       _dragSrc = node; _dragIdx = +node.dataset.idx;
       const rect = node.getBoundingClientRect();
       _dragOffsetX = Math.round(e.clientX - rect.left);
@@ -6856,17 +7147,16 @@ function render() {
     node.addEventListener('drop', async e => {
       e.preventDefault(); e.stopPropagation();
       if (_dragIdx == null) return;
-      const pSrc = projects[_dragIdx];
-      if (!pSrc) return;
-      // M925: use target node's lane, compute index-based order
-      const targetLaneEl = e.currentTarget.closest('.ns-lane');
-      const layer = targetLaneEl
-        ? parseInt(targetLaneEl.id.replace('lane-', ''))
-        : parseInt(pSrc.layer)||0;
-      const laneNodesEl = document.getElementById(`lane-nodes-${layer}`);
-      if (!laneNodesEl) return;
-      const insertPos = _getDropOrderIndex(laneNodesEl, _dragIdx, e.clientX);
-      _assignDropOrder(layer, _dragIdx, insertPos);
+      // M989: swap with the card we dropped onto
+      const targetWrapper = node.closest('[data-proj-idx]');
+      const targetIdx = targetWrapper ? parseInt(targetWrapper.dataset.projIdx) : null;
+      const targetLaneEl = node.closest('.ns-lane');
+      const layer = targetLaneEl ? parseInt(targetLaneEl.id.replace('lane-', '')) : parseInt(projects[_dragIdx]?.layer)||0;
+      document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
+      window._dragSwapTarget = null;
+      if (targetIdx != null && targetIdx !== _dragIdx) {
+        _swapDropOrder(_dragIdx, targetIdx, layer);
+      }
       _dragColumnMates = [];
       _dragSrc = null; _dragIdx = null;
       document.querySelectorAll('.ns-lane-nodes').forEach(ln => ln.classList.remove('drag-over'));
@@ -6880,50 +7170,46 @@ function render() {
     if (!laneEl) return;
     laneEl.addEventListener('dragover', e => {
       e.preventDefault();
-      document.querySelectorAll('.ns-lane-nodes').forEach(x => x.classList.remove('drag-over'));
       laneEl.classList.add('drag-over');
-      // M925: drop bar between flex children using rendered bounding rects
+      // M989: swap mode — highlight hovered card as swap target (no drop bar)
       if (_dragIdx != null) {
-        const laneRect = laneEl.getBoundingClientRect();
         const wrappers = [...laneEl.querySelectorAll('[data-proj-idx]')]
-          .filter(w => parseInt(w.dataset.projIdx) !== _dragIdx)
-          .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-        let barLeft = 4; // default: before all cards
-        if (wrappers.length) {
-          const hover = wrappers.find(w => { const r = w.getBoundingClientRect(); return e.clientX >= r.left && e.clientX < r.right; });
-          if (hover) {
-            const r = hover.getBoundingClientRect();
-            barLeft = e.clientX < (r.left + r.right) / 2
-              ? r.left - laneRect.left - 2
-              : r.right - laneRect.left + 6;
-          } else if (e.clientX > wrappers[wrappers.length-1].getBoundingClientRect().right) {
-            barLeft = wrappers[wrappers.length-1].getBoundingClientRect().right - laneRect.left + 6;
-          }
-        }
-        let bar = laneEl.querySelector('.ns-drop-bar');
-        if (!bar) {
-          bar = document.createElement('div');
-          bar.className = 'ns-drop-bar';
-          bar.style.cssText = 'position:absolute;top:4px;width:3px;height:calc(100% - 8px);background:var(--accent);border-radius:2px;pointer-events:none;z-index:10;box-shadow:0 0 6px rgba(204,120,92,.6)';
-          laneEl.appendChild(bar);
-        }
-        bar.style.left = Math.max(0, barLeft) + 'px';
+          .filter(w => parseInt(w.dataset.projIdx) !== _dragIdx);
+        // Find card directly under cursor (exact hit test)
+        const hit = wrappers.find(w => { const r = w.getBoundingClientRect(); return e.clientX >= r.left && e.clientX < r.right && e.clientY >= r.top && e.clientY < r.bottom; });
+        document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
+        if (hit) hit.classList.add('ns-swap-target');
+        window._dragSwapTarget = hit ? parseInt(hit.dataset.projIdx) : null;
       }
     });
-    laneEl.addEventListener('dragleave', () => {
-      laneEl.classList.remove('drag-over');
-      laneEl.querySelectorAll('.ns-drop-bar').forEach(b => b.remove());
+    laneEl.addEventListener('dragleave', (e) => {
+      if (!laneEl.contains(e.relatedTarget)) {
+        laneEl.classList.remove('drag-over');
+        document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
+        window._dragSwapTarget = null;
+      }
     });
     laneEl.addEventListener('drop', async e => {
       e.preventDefault();
       laneEl.classList.remove('drag-over');
-      laneEl.querySelectorAll('.ns-drop-bar').forEach(b => b.remove());
+      document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
       if (_dragIdx == null) return;
-      const p = projects[_dragIdx];
-      if (!p) return;
-      // M925: index-based insert — compute order from rendered flex positions
-      const insertPos = _getDropOrderIndex(laneEl, _dragIdx, e.clientX);
-      _assignDropOrder(l, _dragIdx, insertPos);
+      const targetIdx = window._dragSwapTarget;
+      window._dragSwapTarget = null;
+      if (targetIdx != null) {
+        // M989: swap with target card
+        _swapDropOrder(_dragIdx, targetIdx, l);
+      } else {
+        // Empty space in lane — move card to this lane preserving position
+        const p = projects[_dragIdx];
+        if (p && parseInt(p.layer)||0 !== l) {
+          p.layer = l;
+          fetch(`/api/northstar/${encodeURIComponent(p.id||p.name)}/layout`, {
+            method: 'PATCH', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({layer: l, position_x: p.position_x||0, position_y: 0})
+          }).catch(() => {});
+        }
+      }
       _dragColumnMates = [];
       _dragSrc = null; _dragIdx = null;
       document.querySelectorAll('.ns-lane-nodes').forEach(ln => ln.classList.remove('drag-over'));
@@ -7317,6 +7603,9 @@ function _ncpToggle(pid) {
               : shouldBang ? 'Focus pointer on — live session is idle / killed (click to turn off)'
               : 'Focus pointer on — click to turn off';
   }
+  // M999: pointer change → invalidate lane fingerprint so sort re-evaluates
+  Object.keys(_swimlaneLaneFp).forEach(k => delete _swimlaneLaneFp[k]);
+  render();
 }
 
 function _ppLoadAll() {
@@ -7668,24 +7957,61 @@ function showNodeCtxMenu(pid, x, y) {
   const parents = p?.parents?.length ? p.parents : (p?.parent ? [p.parent] : []);
   const indivEl = document.getElementById('ctx-unlink-individual');
   const bulkEl = document.getElementById('ctx-unlink-parent');
-  if (indivEl && parents.length > 1) {
-    // Multiple parents — show individual disconnect options, hide bulk
-    bulkEl.style.display = 'none';
-    indivEl.style.display = '';
-    indivEl.innerHTML = parents.map(parentId => {
-      const parentProj = projects.find(x => (x.id||x.name) === parentId);
-      const parentName = parentProj?.name || parentId;
-      return `<div class="ns-ctx-item" style="padding-left:20px;font-size:11px" onclick="event.stopPropagation();_unlinkSingleParent('${esc(pid)}','${esc(parentId)}')">⊄ Disconnect from ${esc(parentName)}</div>`;
-    }).join('') + `<div class="ns-ctx-item" onclick="document.getElementById('ctx-unlink-parent').onclick()">⊄ Disconnect all parents</div>`;
-    bulkEl.style.display = 'none';
-  } else {
-    indivEl.style.display = 'none';
-    bulkEl.style.display = '';
+  // M967: card link disabled — always hide all link/unlink options
+  if (indivEl) indivEl.style.display = 'none';
+  if (bulkEl) bulkEl.style.display = 'none';
+  // M1032: populate "Move to lane" items
+  const laneList = document.getElementById('ctx-move-lane-list');
+  const laneSep  = document.getElementById('ctx-lane-sep');
+  if (laneList) {
+    const labels = (typeof getLaneLabels === 'function') ? getLaneLabels() : [];
+    const curLane = parseInt(p?.layer) || 0;
+    const otherLanes = labels.map((lbl, i) => ({i, lbl})).filter(x => x.i !== curLane);
+    // M1033: escape single quotes for JS string context (esc() only escapes &<>")
+    const escPid = esc(pid).replace(/'/g, '\\u0027');
+    if (otherLanes.length) {
+      laneList.innerHTML = otherLanes.map(({i, lbl}) =>
+        `<div class="ns-ctx-item" onclick="event.stopPropagation();_moveCardToLane('${escPid}',${i})">→ Move to ${esc(lbl)}</div>`
+      ).join('');
+      laneList.style.display = '';
+      if (laneSep) laneSep.style.display = '';
+    } else {
+      laneList.innerHTML = '';
+      laneList.style.display = 'none';
+      if (laneSep) laneSep.style.display = 'none';
+    }
   }
   const menu = document.getElementById('ns-ctx-menu');
   menu.style.left = `${Math.min(x, window.innerWidth - 180)}px`;
-  menu.style.top  = `${Math.min(y, window.innerHeight - 160)}px`;
+  // M1033: dynamic height guard — base ~100px + ~30px per lane item
+  const _laneCount = (typeof getLaneLabels === 'function') ? getLaneLabels().length : 0;
+  const _menuH = 100 + Math.max(0, _laneCount - 1) * 30;
+  menu.style.top  = `${Math.min(y, window.innerHeight - _menuH)}px`;
   menu.classList.add('show');
+}
+
+async function _moveCardToLane(pid, targetLane) {
+  hideCtxMenu();
+  const p = projects.find(x => (x.id||x.name) === pid);
+  if (!p) return;
+  // M1033 fix④: place card at end of target lane to avoid position_x collision
+  const _maxX = projects
+    .filter(q => (q.layer||0) === targetLane && (q.id||q.name) !== pid)
+    .reduce((m, q) => Math.max(m, q.position_x||0), -1);
+  const targetPosX = _maxX + 1;
+  p.layer = targetLane;
+  p.position_x = targetPosX;
+  // M1033 fix①: register pending layout so hub-refresh doesn't snap card back
+  if (!window._pendingLayoutByPid) window._pendingLayoutByPid = {};
+  window._pendingLayoutByPid[pid] = {layer: targetLane, position_x: targetPosX, ts: Date.now()};
+  render();
+  requestAnimationFrame(() => { if (typeof drawParentLines === 'function') drawParentLines(); });
+  await fetch(`/api/northstar/${encodeURIComponent(pid)}/layout`, {
+    method: 'PATCH', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({layer: targetLane, position_x: targetPosX, position_y: 0}),
+  }).catch(() => {});
+  // Clear pending guard after PATCH resolves (success or fail)
+  if (window._pendingLayoutByPid) delete window._pendingLayoutByPid[pid];
 }
 
 function hideCtxMenu() {
@@ -8231,7 +8557,16 @@ function _mmNodeClick(mid, projId, evt) {
 
 // M204 (restored): sub-stars pane below the star/sentence area
 // M636: fast grouping re-apply — skips full milestone re-render when only substars changed
+// M992: blink window changed — invalidate fingerprint so blink re-check runs even when milestones unchanged
+function _blinkWindowChanged(projId) {
+  if (!projId) return;
+  delete _groupingFingerprint[projId];
+  _fastReapplyGrouping(projId);
+}
+
 function _fastReapplyGrouping(projId) {
+  // M982: guard against stale async from previous card — dm-ms-creator belongs to current project only
+  if (_activeDetailProjId && _activeDetailProjId !== projId) return;
   const el = document.getElementById('dm-ms-creator');
   if (!el) return;
   const ms = _msCacheByProject[projId] || [];
@@ -8696,12 +9031,21 @@ async function _showSkillBadgeModal(projId, mid, currentSkill, currentAgent, com
     onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">
     ${type==='skill'?'⚡':'🤖'} <span style="font-weight:600">${esc(name)}</span>
   </div>`;
-  // M258: Recent tab — localStorage stores last 10 used skill/agent refs
+  // M258 → M1025: server-centralized recent skill/agent (state truth on server,
+  // localStorage as read-through cache for instant render). One-time hydrate on
+  // page load (_sbRecentHydrate) writes server → localStorage; every Add writes
+  // through to both. Matches M955 state centralization principle.
   const _sbRecent = () => { try { return JSON.parse(localStorage.getItem('sb-recent')||'[]'); } catch{return[];} };
   const _sbAddRecent = (type, name) => {
     const r = _sbRecent().filter(x=>!(x.type===type&&x.name===name));
     r.unshift({type, name});
-    localStorage.setItem('sb-recent', JSON.stringify(r.slice(0,10)));
+    const next = r.slice(0,10);
+    localStorage.setItem('sb-recent', JSON.stringify(next));
+    // Write-through to server so any device/browser sees the same list.
+    fetch('/api/user-settings/sb_recent', {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({value: next}),
+    }).catch(() => {});
   };
   const _clearBtn = (!commentMode && (currentSkill||currentAgent)) ? `<button onclick="event.stopPropagation();_sbSelect('${esc(projId)}','${esc(mid)}','clear','')"
       style="margin-left:auto;font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid rgba(192,57,43,.3);background:none;color:var(--red,#c0392b);cursor:pointer">✕ clear</button>` : '';
@@ -8988,6 +9332,10 @@ function closeDetail() {
   window.__multiNSActive = null;  // clear multi-NS lock
   window.__nsLPCur = 0;           // reset NS page for next open
   window._m267Synced = {};        // M423: reset per-project sync flag so next open re-syncs fresh
+  // M1007 v2: reset blink hydration guard so reopening the detail card re-reads fresh
+  // server blink_state (server is authoritative; client only reads). Without this the
+  // once-per-session guard would hide blinks stamped while the card was closed.
+  try { window._blinkCenterHydrated = {}; } catch(_) {}
   document.getElementById('detail-overlay').classList.remove('show');
   _hideColToggleBtn(); // M282: hide floating col-toggle when detail closes
   const _ssFab = document.getElementById('ms-ss-toggle-btn'); // M657: hide substar toggle FAB
@@ -9020,20 +9368,20 @@ async function _branchSession(projId, parentSession) {
   const m = document.createElement('div');
   m.style.cssText = 'position:fixed;inset:0;z-index:10010;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)';
   m.innerHTML = `<div onclick="event.stopPropagation()" style="background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:16px;max-width:360px;width:90%;display:flex;flex-direction:column;gap:10px;font-family:var(--mono);font-size:12px">
-    <div style="font-weight:700;color:var(--text)">⑂ 자녀 세션 분기</div>
-    <div style="color:var(--text-dim);font-size:10px">접두어: <b style="color:var(--accent)">${esc(parentSession)}-</b></div>
-    <input id="_branch-suffix" placeholder="접미사 입력" autofocus style="background:var(--bg);border:1px solid var(--panel-border);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none"/>
-    <div style="color:var(--text-soft);font-size:10px">할당할 서브스타:</div>
+    <div style="font-weight:700;color:var(--text)">⑂ Branch Child Session</div>
+    <div style="color:var(--text-dim);font-size:10px">Prefix: <b style="color:var(--accent)">${esc(parentSession)}-</b></div>
+    <input id="_branch-suffix" placeholder="Enter suffix" autofocus style="background:var(--bg);border:1px solid var(--panel-border);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none"/>
+    <div style="color:var(--text-soft);font-size:10px">Substar to assign:</div>
     <div id="_branch-ns-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto">
       ${unassigned.length ? unassigned.map((ns,i) =>
         `<label style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer;border:1px solid var(--panel-border)">
           <input type="radio" name="_branch_ns" value="${esc(ns.id)}" ${i===0?'checked':''}>
           <span style="color:var(--text);font-size:11px">${esc(ns.name||ns.id)}</span>
-        </label>`).join('') : '<span style="color:var(--red);font-size:10px">할당 가능한 서브스타 없음</span>'}
+        </label>`).join('') : '<span style="color:var(--red);font-size:10px">No assignable substars</span>'}
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:1px solid var(--panel-border);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--text-dim)">취소</button>
-      <button id="_branch-confirm" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--accent)" ${unassigned.length?'':'disabled'}>할당</button>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:1px solid var(--panel-border);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--text-dim)">Cancel</button>
+      <button id="_branch-confirm" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--accent)" ${unassigned.length?'':'disabled'}>Assign</button>
     </div>
   </div>`;
   document.body.appendChild(m);
@@ -9396,6 +9744,31 @@ async function pasteToPty() {
   _termWs.send(txt);
 }
 
+// M1014: send a raw key sequence (ESC/arrows/Tab/Ctrl-C) to the PTY for mobile users
+// whose keyboards lack these keys. Sequences: ESC=\x1b, up/down/right/left=\x1b[A/B/C/D,
+// Tab=\t, Ctrl-C=\x03. Keeps focus on the terminal so typing continues afterward.
+function _sendKey(seq) {
+  if (!_termWs || _termWs.readyState !== 1) return;
+  _termWs.send(seq);
+  try { if (_term) _term.focus(); } catch (_) {}
+}
+
+// M1014 v2: Termius-style virtual keyboard panel — open/close toggle
+function _toggleVkbd() {
+  const panel = document.getElementById('ns-vkbd');
+  const btn = document.getElementById('ns-vkbd-toggle');
+  if (!panel) return;
+  const open = panel.classList.toggle('open');
+  if (btn) btn.classList.toggle('active', open);
+  // Re-fit terminal so xterm honors the new available height
+  try {
+    setTimeout(() => {
+      if (_termFit) _termFit.fit();
+      if (_termWs && _termWs.readyState === 1) _sendResize(_termWs);
+    }, 50);
+  } catch (_) {}
+}
+
 function closeTerminal() {
   const projId = document.getElementById('ns-term-proj')?.textContent?.trim();
   if (_termRo) { _termRo.disconnect(); _termRo = null; }
@@ -9728,7 +10101,7 @@ function renderHierarchy(p) {
           <span id="dm-activity-caret" style="margin-left:auto;color:var(--text-dim);font-size:11px">▸</span>
         </div>
         <div class="dm-toggle-pane dm-pane-body" id="dm-activity-pane-body" style="display:none;max-height:220px;overflow-y:auto;font-size:11px;font-family:monospace">
-          <div id="dm-activity-body" style="color:var(--text-dim)">로딩 중...</div>
+          <div id="dm-activity-body" style="color:var(--text-dim)">Loading...</div>
         </div>
       </div>
       <!-- M90: "View live session" button removed — use the session pill on the card instead -->
@@ -9739,7 +10112,7 @@ function renderHierarchy(p) {
       <div class="dm-layer-head" onclick="toggleDmPane('dm-metrics-pane')" style="cursor:pointer">
         <div class="dm-layer-icon al" title="Efficiency Metrics">&#9649;</div>
         <span class="dm-layer-title">Efficiency Metrics</span>
-        <span id="dm-metrics-caret" style="margin-left:auto;color:var(--text-dim);font-size:11px">&#9658;</span>
+        <span id="dm-metrics-caret" style="margin-left:auto;color:var(--text-dim);font-size:11px">▸</span>
       </div>
       <div class="dm-toggle-pane dm-pane-body" id="dm-metrics-pane-body" style="display:none;font-size:11px">
         <div id="dm-metrics-cards" style="color:var(--text-dim)">Loading...</div>
@@ -9769,10 +10142,10 @@ function renderHierarchy(p) {
           <!-- M732: blink window time picker -->
           <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px 2px 6px;border:1px solid var(--panel-border);border-radius:10px;background:var(--panel-bg);opacity:.8;transition:opacity .15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='.8'" title="Section bar blink window (minutes)" onclick="event.stopPropagation()">
             <span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);letter-spacing:.03em">blink</span>
-            <input id="blink-window-input" type="number" min="1" max="240" step="1" value="${parseInt(localStorage.getItem('_blinkWindowMin')) || 60}"
+            <input id="blink-window-input" type="number" min="1" max="1440" step="1" value="${parseInt(localStorage.getItem('_blinkWindowMin')) || 60}"
               style="width:36px;font-size:11px;font-weight:600;padding:0;border:none;background:transparent;color:var(--accent);text-align:center;font-family:var(--mono);outline:none;-moz-appearance:textfield;appearance:textfield;-webkit-appearance:none"
               title="Blink window in minutes (default 60)"
-              oninput="(function(v){const n=parseInt(v);if(n>=1&&n<=240){localStorage.setItem('_blinkWindowMin',n);if(window._openDetailProjId)_fastReapplyGrouping(window._openDetailProjId);}})(this.value)"
+              oninput="(function(v){const n=parseInt(v);if(n>=1&&n<=1440){localStorage.setItem('_blinkWindowMin',n);fetch('/api/user-settings/blink_window_min',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:n})}).catch(()=>{});_blinkWindowChanged(window._openDetailProjId);}})( this.value)"
               onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault()}"
               onclick="event.stopPropagation()">
             <span style="font-size:9px;color:var(--text-dim);font-family:var(--mono)">min</span>
@@ -10147,24 +10520,33 @@ function showCommentPopup(event, comment, projId, mid, currentStatus) {
         oninput="sessionStorage.setItem('${_draftKey}',this.value)"
         onkeydown="if(event.key==='Enter'){event.stopPropagation();_doCommentReply('${esc(projId)}','${esc(mid)}',this,'${esc(currentStatus||'')}')}"
         onclick="event.stopPropagation()"
+        onpaste="_commentPasteHandler(event)"
         ondragover="_commentInputDragOver(event)"
         ondragleave="_commentInputDragLeave(event)"
         ondrop="_commentInputDrop(event,'${esc(projId)}')">
       <div id="comment-skill-tags" style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px"></div>
       <div id="comment-upload-status"></div>
-      <div style="display:flex;gap:4px;margin-top:4px">
+      <div style="display:flex;gap:4px;margin-top:4px;align-items:center">
+        <!-- M819: summary badge left of skill button -->
+        <span id="comment-summary-badge" style="display:none;flex-shrink:0;font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--text-dim);background:var(--bg-deep);color:var(--text-dim);cursor:default"></span>
+        <!-- M987: order = skill | attach | verify | Send(fills) -->
         <button id="comment-skill-chip" onclick="event.stopPropagation();_openCommentSkillPicker()"
           title="Assign skill/agent for this message (multiple allowed)"
           style="flex-shrink:0;font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">⚡ +skill</button>
-        <!-- M340 v2: vivid comment upload button -->
+        <!-- M340 v2: attach (2nd) -->
         <label title="Attach file" onclick="event.stopPropagation()"
           style="flex-shrink:0;font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-soft);cursor:pointer;display:inline-flex;align-items:center;gap:2px;font-weight:600;transition:background .12s,color .12s"
           onmouseover="this.style.background='var(--accent)';this.style.color='#fff'"
           onmouseout="this.style.background='var(--accent-soft)';this.style.color='var(--accent)'">
           ⇡ attach<input type="file" accept="*/*" multiple style="display:none" onchange="event.stopPropagation();_commentFileUpload(event,'${esc(projId)}')">
         </label>
+        <!-- M987: verify (3rd) -->
+        <button id="comment-verify-chip" onclick="event.stopPropagation();_toggleCommentVerify('${esc(projId)}','${esc(mid)}',this)"
+          title="Toggle [검수] flag for this stone"
+          style="flex-shrink:0;font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid rgba(123,159,212,.4);background:rgba(123,159,212,.08);color:#7b9fd4;cursor:pointer">verify</button>
+        <!-- M987: Send fills remaining space (4th) -->
         <button onclick="event.stopPropagation();_doCommentReply('${esc(projId)}','${esc(mid)}',document.getElementById('comment-reply-input'),'${esc(currentStatus||'')}')"
-          style="flex:1;font-size:9px;font-family:var(--mono);padding:3px 0;border-radius:3px;
+          style="flex:1;font-size:9px;font-family:var(--mono);padding:2px 0;border-radius:3px;
             border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer">Send</button>
       </div>
     </div>`;
@@ -10258,6 +10640,15 @@ function showCommentPopup(event, comment, projId, mid, currentStatus) {
     if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
     popup.querySelector('#comment-reply-input')?.focus();
   }, 80);
+  // M987: initialize verify chip state from live cache
+  { const _verifyChip = popup.querySelector('#comment-verify-chip');
+    if (_verifyChip) {
+      const _stone = Object.values(_msCacheByProject||{}).flatMap(v=>v||[]).find(m=>m.id===mid);
+      if (_stone?.verify_flag) { _verifyChip.textContent='verify ✓'; _verifyChip.style.color='var(--green,#3d8b5e)'; _verifyChip.style.background='rgba(61,139,94,.15)'; _verifyChip.style.borderColor='rgba(61,139,94,.4)'; }
+    }
+  }
+  // M819: populate summary badge if conversation has compressed entries
+  { const _conv = (_msConversations[mid]||[]); const _sumEntry = _conv.find(c=>c.role==='summary'); const _badge = popup.querySelector('#comment-summary-badge'); if (_badge) { if (_sumEntry) { _badge.textContent = '∑ '+(_sumEntry.compressed_count||'?'); _badge.style.display='inline'; _badge.title='Compressed conversation: '+(_sumEntry.compressed_count||'?')+' turns'; } else { _badge.style.display='none'; } } }
   // M263: restore click-outside auto-close (user wants swimlane click to dismiss the
   // chat history popup). M255 sticky-popup intent was actually about OS notifications,
   // which already persist via requireInteraction (M255 v1). ESC also dismisses.
@@ -11161,9 +11552,23 @@ function renderRight(p, topics) {
           // M419: exec_live rows removed from session list (redundant with exec info panel below)
           // Terminal button moved to exec info panel row instead.
           const resumeRows = rows.filter(r => r.session.type !== 'fresh' && r.session.type !== 'exec_live');
+          // M1018: sort resume rows so the CURRENTLY-USED session is at the top,
+          // then the rest by most recent activity desc. (User clarified: cur
+          // session should sit right under ✦ new session, not buried by activity-only sort.)
+          resumeRows.sort((a, b) => {
+            const aCur = (selSess.session_id === a.session.id) ? 1 : 0;
+            const bCur = (selSess.session_id === b.session.id) ? 1 : 0;
+            if (aCur !== bCur) return bCur - aCur;
+            const aAct = a.session.activity || 0;
+            const bAct = b.session.activity || 0;
+            return bAct - aAct;
+          });
           // Pick fresh row matching curModel, or first fresh available
           const freshMatch = rows.find(r => r.session.type === 'fresh' && r.model_key === curModel)
             || rows.find(r => r.session.type === 'fresh');
+          // M1018 v2: user clarified — ✦ new session ALWAYS at TOP; resume rows
+          // below it sorted by most recent activity. (Original draft put fresh
+          // at the bottom; user reverted that direction.)
           const allRows = [...(freshMatch ? [freshMatch] : []), ...resumeRows];
           // M220: last-used session is the default auto-select (M192 behavior restored).
           // Fresh is in the list but only selected when user explicitly clicks it or no history.
@@ -11210,7 +11615,14 @@ function renderRight(p, topics) {
             // M342: removed ● live from subLabel — exec button already shows IDLE/LIVE state; duplicate badge causes confusion
             // M436: model name more vivid — remove dim opacity, use accent-soft color for selected
             const _mlColor = isPicked ? 'var(--accent)' : 'var(--text-soft,var(--text-dim))';
-            const subLabel = (isFresh || isExecLive) ? '' : `<span style="font-size:8px;color:${_mlColor};margin-left:4px;font-weight:${isPicked?'600':'400'}">${esc(model_label)}</span>`;
+            // M1018: per-session last-used timestamp (YY/MM/DD HH:MM, local TZ). Hidden for fresh/exec_live rows.
+            let _lastUsed = '';
+            if (!isFresh && !isExecLive && s.activity) {
+                const _d = new Date(s.activity * 1000);
+                const _pad = n => String(n).padStart(2,'0');
+                _lastUsed = `<span style="font-size:8px;color:var(--text-dim);margin-left:6px;opacity:.75;font-family:var(--mono)" title="last used (local time)">${String(_d.getFullYear()).slice(2)}/${_pad(_d.getMonth()+1)}/${_pad(_d.getDate())} ${_pad(_d.getHours())}:${_pad(_d.getMinutes())}</span>`;
+            }
+            const subLabel = (isFresh || isExecLive) ? '' : `<span style="font-size:8px;color:${_mlColor};margin-left:4px;font-weight:${isPicked?'600':'400'}">${esc(model_label)}</span>${_lastUsed}`;
             // M183: ›_ button on right of each session row; resume rows pass session_id → --resume
             const _ptySessionArg = isFresh ? '' : `,'${esc(s.id)}'`;
             // M283: exec_live rows attach to tmux session directly (enables typing into live exec session)
@@ -11702,6 +12114,8 @@ document.getElementById('detail-overlay').addEventListener('click', e => {
             cardNode.classList.remove('exec-idle');
             cardNode.classList.add('exec-live');
           }
+          // M976 fix: clear fingerprint before render so nodeCard() rebuilds with updated opacity
+          Object.keys(_swimlaneLaneFp).forEach(k => delete _swimlaneLaneFp[k]);
           if (typeof render === 'function') render();
           // M374: if detail card open for this proj_id, refresh exec pane immediately
           if (d.proj_id === window._detailModalOpenProjId && typeof window._refreshExecState === 'function') {
@@ -11868,6 +12282,8 @@ function _computeBestSubstarIdx(stoneText, projId) {
 
 // M608: DOM post-processing — group milestone tbodys under collapsible substar headers
 function _applySubstarGrouping(container, projId, l0) {
+  // M982: guard against stale async — skip if another project is now active
+  if (_activeDetailProjId && _activeDetailProjId !== projId) return;
   const nsList = _nsStarsCache[projId] || [];
   if (!nsList.length) return;
   const tableWrap = container.querySelector('.nt-table-slide-wrap');
@@ -13098,6 +13514,7 @@ async function _blinkCenterHydrate(projId) {
     // M942: track which sKeys the server confirmed as non-empty
     if (!window._blinkServerConfirmedEmpty) window._blinkServerConfirmedEmpty = {};
     const serverKeys = new Set(Object.keys(bundle));
+    let _restoredBlink = false;  // M1000/M1001: did we restore any active blink state?
     Object.entries(bundle).forEach(([sKey, entry]) => {
       if (entry && typeof entry === 'object') {
         if (entry.ts) localStorage.setItem('_ssBlinkTs_' + sKey, String(entry.ts));
@@ -13105,6 +13522,7 @@ async function _blinkCenterHydrate(projId) {
           localStorage.setItem('_ssBlinkMids_' + sKey, JSON.stringify(entry.mids));
           if (entry.mids.length > 0 && window._ssBlinkMids) {
             window._ssBlinkMids[sKey] = new Set(entry.mids); // restore in-memory
+            _restoredBlink = true;
           }
         }
         // Only mark as "server confirmed empty" when server explicitly returned empty mids
@@ -13113,6 +13531,16 @@ async function _blinkCenterHydrate(projId) {
         }
       }
     });
+    // M1000/M1001 FIX: hydration is async and resolves AFTER the synchronous first
+    // render. On a fresh session localStorage is empty (M955 centralized state to
+    // server), so the first render shows no blink and — when the fingerprint is
+    // unchanged (e.g. FromScratch with no poll-cycle delta) — _applySubstarGrouping
+    // never re-runs, so blink never appears until reopen. Force a fingerprint-
+    // invalidated re-apply once hydration lands, mirroring the M992 _blinkWindowChanged
+    // pattern, so blink shows on first card open.
+    if (_restoredBlink && (!_activeDetailProjId || _activeDetailProjId === projId)) {
+      if (typeof _blinkWindowChanged === 'function') _blinkWindowChanged(projId);
+    }
   } catch(_) {}
 }
 
@@ -13132,21 +13560,13 @@ function _blinkCenterCollectBundle() {
 }
 
 function _blinkCenterSave(projId) {
-  if (!projId) return;
-  if (window._blinkCenterSaveTimer) clearTimeout(window._blinkCenterSaveTimer);
-  window._blinkCenterSaveTimer = setTimeout(() => {
-    const bundle = _blinkCenterCollectBundle();
-    // M942: skip saving empty bundle — prevents server state erasure that causes premature blink clear
-    const hasData = bundle && Object.values(bundle).some(e => Array.isArray(e.mids) && e.mids.length > 0);
-    if (!hasData) return;
-    try {
-      fetch(`/api/user-settings/blink_state_${encodeURIComponent(projId)}`, {
-        method: 'PUT',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ value: bundle }),
-      }).catch(()=>{});
-    } catch(_) {}
-  }, 1500);  // debounce 1.5s — coalesce burst writes during render
+  // M1007 v2: NO-OP. The server is now the single source of truth for blink state
+  // (every stone change stamps it via _mark_blink_server in _update_milestone_locked).
+  // The old client-side full-bundle PUT here clobbered fresh server stamps with the
+  // browser's stale localStorage view (INSERT OR REPLACE = full overwrite) — that race
+  // is exactly why server-stamped blinks vanished. Client is now read-only: it hydrates
+  // + renders (count-delta still drives immediate local blink), but never writes back.
+  return;
 }
 // ── end M794 ──────────────────────────────────────────────────────────────────
 
@@ -13181,6 +13601,18 @@ async function _nsModelAvatarsHydrate() {
   } catch(_) {}
 }
 document.addEventListener('DOMContentLoaded', () => { _nsModelAvatarsHydrate(); });
+
+// M1025: hydrate Recent skill/agent list from server on page load so devices/browsers share state.
+async function _sbRecentHydrate() {
+  try {
+    const r = await fetch('/api/user-settings/sb_recent', {cache:'no-store'});
+    const d = await r.json();
+    if (d.ok && Array.isArray(d.value)) {
+      localStorage.setItem('sb-recent', JSON.stringify(d.value.slice(0,10)));
+    }
+  } catch(_) {}
+}
+document.addEventListener('DOMContentLoaded', () => { _sbRecentHydrate(); });
 
 function _avatarPreviewUpdate(inp) {
   let _el = inp;
@@ -13341,7 +13773,11 @@ function _saveModelAvatarSettings() {
   });
   _nsModelAvatarsSave(map);
   modal.remove();
-  // Refresh all project cards to apply new avatars
+  // M1022: avatar requires re-render of the whole card (avatar lives in the
+  // ns-card SVG, not in the stone-table grouping). _fastReapplyGrouping only
+  // touches the stone table, so avatars stayed stale until a manual refresh.
+  // Call render() to rebuild the cards, then re-apply grouping per project.
+  if (typeof render === 'function') render();
   Object.keys(_msCacheByProject || {}).forEach(pid => {
     delete _groupingFingerprint[pid];
     _fastReapplyGrouping(pid);
