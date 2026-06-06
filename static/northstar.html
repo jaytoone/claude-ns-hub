@@ -10204,16 +10204,16 @@ function renderHierarchy(p) {
         <span class="dm-layer-title">Milestones</span>
         <span class="dm-layer-count" id="dm-ms-ack-badge"></span>
         <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
-          <!-- M732: blink window time picker -->
-          <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px 2px 6px;border:1px solid var(--panel-border);border-radius:10px;background:var(--panel-bg);opacity:.8;transition:opacity .15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='.8'" title="Section bar blink window (minutes)" onclick="event.stopPropagation()">
+          <!-- M732/M1058: blink window time picker — 'min' is now a confirm button -->
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px 2px 6px;border:1px solid var(--panel-border);border-radius:10px;background:var(--panel-bg);opacity:.8;transition:opacity .15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='.8'" title="Section bar blink window (minutes) — click 'min' or press Enter to apply" onclick="event.stopPropagation()">
             <span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);letter-spacing:.03em">blink</span>
             <input id="blink-window-input" type="number" min="1" max="1440" step="1" value="${parseInt(localStorage.getItem('_blinkWindowMin')) || 60}"
               style="width:36px;font-size:11px;font-weight:600;padding:0;border:none;background:transparent;color:var(--accent);text-align:center;font-family:var(--mono);outline:none;-moz-appearance:textfield;appearance:textfield;-webkit-appearance:none"
-              title="Blink window in minutes (default 60)"
-              oninput="(function(v){const n=parseInt(v);if(n>=1&&n<=1440){localStorage.setItem('_blinkWindowMin',n);fetch('/api/user-settings/blink_window_min',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:n})}).catch(()=>{});_blinkWindowChanged(window._openDetailProjId);}})( this.value)"
-              onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault()}"
+              title="Type value then click 'min' or press Enter to apply"
+              onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault()}if(event.key==='Enter'){event.preventDefault();(function(v){const n=parseInt(v);if(n>=1&&n<=1440){localStorage.setItem('_blinkWindowMin',n);fetch('/api/user-settings/blink_window_min',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:n})}).catch(()=>{});_blinkWindowChanged(window._openDetailProjId);}}) (this.value);}"
               onclick="event.stopPropagation()">
-            <span style="font-size:9px;color:var(--text-dim);font-family:var(--mono)">min</span>
+            <button onclick="event.stopPropagation();(function(){const inp=document.getElementById('blink-window-input');const n=parseInt(inp.value);if(n>=1&&n<=1440){localStorage.setItem('_blinkWindowMin',n);fetch('/api/user-settings/blink_window_min',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:n})}).catch(()=>{});_blinkWindowChanged(window._openDetailProjId);}else{inp.style.outline='1px solid var(--red)';setTimeout(()=>inp.style.outline='',800);}})();"
+              style="font-size:9px;color:var(--accent);font-family:var(--mono);background:none;border:none;padding:0;cursor:pointer;font-weight:700" title="Apply blink interval">min</button>
           </span>
           <!-- M658: Compute semantic scores button -->
           <button id="dm-semantic-score-btn" title="Compute semantic proximity scores for each stone (sentence-transformers)" onclick="event.stopPropagation();_triggerSemanticScore()" style="font-size:8px;padding:2px 7px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono);display:none">⊛ score</button>
