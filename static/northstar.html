@@ -13740,6 +13740,8 @@ async function _saveModelAvatarSettings() {
   } catch(_) {}
   _nsAvatarCache = map;
   try { sessionStorage.setItem('ns-avatar-cache', JSON.stringify(map)); } catch(_) {}
+  // M1046: avatar change not in lane fingerprint → clear it to force full DOM rebuild
+  if (typeof _swimlaneLaneFp !== 'undefined') window._swimlaneLaneFp = {};
   if (typeof render === 'function') render();
 }
 // ── end M685 ──────────────────────────────────────────────────────────────────
