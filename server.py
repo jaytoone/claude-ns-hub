@@ -6240,61 +6240,6 @@ async def milestone_rationale(proj_id: str, mid: str):
     return JSONResponse({"ok": True, "rationale": rationale})
 
 
-@app.post("/api/northstar/{proj_id}/milestones/{mid}/request-comment")
-async def request_milestone_comment(proj_id: str, mid: str):
-    """M182: queue a request for Claude to post an initial 1-line comment on
-    a new stone. Triggered when user opens msg popup on a stone with no prior
-    claude_comment and empty conversation. Server appends a queue entry; Stop
-    hook delivers to Claude on next idle; Claude PATCHes append_message{role:'claude'}.
-    """
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists() and not (PROJECTS_DIR / proj_id).exists():
-        return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    # M215: fast single-stone SQLite lookup instead of full project parse
-    ms = _db_get_milestone(proj_id, mid)
-    if ms is None:
-        # Fallback to YAML
-        if not md.exists():
-            return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
-        proj = _parse_md_frontmatter(md)
-        ms = next((m for m in proj.get("milestones", []) if isinstance(m, dict) and m.get("id") == mid), None)
-    if not ms:
-        return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
-    # Skip if already has a comment or conversation
-    if (ms.get("claude_comment") or "").strip():
-        return JSONResponse({"ok": True, "skipped": "already_commented"})
-    conv = ms.get("conversation") or []
-    if conv:
-        return JSONResponse({"ok": True, "skipped": "conversation_not_empty"})
-    # Skip initial comment if stone is queued (M239) or already pending_confirmation
-    # Also skip for done/held — no value in commenting on finished/paused stones
-    if ms.get("status") in ("queued", "pending_confirmation", "done"):
-        return JSONResponse({"ok": True, "skipped": f"status_{ms.get('status')}_no_initial_comment_needed"})
-    if ms.get("held"):
-        return JSONResponse({"ok": True, "skipped": "stone_held"})
-
-    from datetime import datetime as _dt_rc
-    _qf = PROJECTS_DIR / proj_id / "pending-execute-queue.jsonl"
-    _qf.parent.mkdir(parents=True, exist_ok=True)
-    _entry = json.dumps({
-        "ts": _dt_rc.now().isoformat(),
-        "body": (
-            f"[INITIAL COMMENT REQUEST] User just opened msg popup on a new stone with no prior comment.\n"
-            f"Stone: {mid} — \"{(ms.get('text') or '')[:100]}\"\n\n"
-            f"Action: PATCH http://100.119.82.4:9000/api/northstar/{proj_id}/milestones/{mid}\n"
-            f"  body: {{\"append_message\":{{\"role\":\"claude\",\"text\":\"<≤3 line reply>\"}}}}\n\n"
-            f"Rules (per docs/ns-comment-reply-protocol.md):\n"
-            f"  - ≤3 lines, no preamble, no code blocks\n"
-            f"  - If stone is a QUESTION → answer it directly.\n"
-            f"  - If stone is a CLEAR TASK (self-explanatory) → do NOT ask questions. Acknowledge in 1 line or skip.\n"
-            f"  - Ask a clarifying question ONLY if the stone is genuinely ambiguous (missing critical info to act).\n"
-            f"  - NEVER describe what you plan to do — no future-tense work plans, no implementation steps.\n"
-            f"  - Goal: minimize token usage. Prefer silence over unnecessary questions."
-        ),
-    }, ensure_ascii=False)
-    with _qf.open("a", encoding="utf-8") as _qh:
-        _qh.write(_entry + "\n")
-    return JSONResponse({"ok": True, "queued": True})
 
 
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/commit")
