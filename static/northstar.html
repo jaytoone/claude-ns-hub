@@ -13812,7 +13812,7 @@ function _showModelAvatarSettings() {
   const saveBtn = document.createElement('button');
   saveBtn.textContent = 'Save';
   saveBtn.style.cssText = 'font-family:var(--mono);font-size:9px;padding:5px 14px;border:1px solid var(--accent);border-radius:5px;background:var(--accent-soft);color:var(--accent);cursor:pointer;font-weight:700';
-  saveBtn.onclick = () => _saveModelAvatarSettings();
+  saveBtn.onclick = async () => { saveBtn.disabled=true; await _saveModelAvatarSettings(); };
   foot.appendChild(cancelBtn);
   foot.appendChild(saveBtn);
   panel.appendChild(foot);
@@ -13822,7 +13822,8 @@ function _showModelAvatarSettings() {
   document.body.appendChild(m);
 }
 
-function _saveModelAvatarSettings() {
+async function _saveModelAvatarSettings() {
+  // M1022 server-centric: await server save → update localStorage → render
   const modal = document.getElementById('ns-avatar-settings-modal');
   if (!modal) return;
   const map = {};
@@ -13830,12 +13831,17 @@ function _saveModelAvatarSettings() {
     const val = inp.value.trim();
     if (val) map[inp.dataset.modelKey] = val;
   });
-  _nsModelAvatarsSave(map);
   modal.remove();
-  // M1022: avatar requires re-render of the whole card (avatar lives in the
-  // ns-card SVG, not in the stone-table grouping). _fastReapplyGrouping only
-  // touches the stone table, so avatars stayed stale until a manual refresh.
-  // Call render() to rebuild the cards, then re-apply grouping per project.
+  try {
+    const r = await fetch('/api/user-settings/model_avatars', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ value: map }),
+    });
+    if (r.ok) localStorage.setItem('ns-model-avatars', JSON.stringify(map));
+  } catch(_) {
+    localStorage.setItem('ns-model-avatars', JSON.stringify(map));
+  }
   if (typeof render === 'function') render();
   Object.keys(_msCacheByProject || {}).forEach(pid => {
     delete _groupingFingerprint[pid];
