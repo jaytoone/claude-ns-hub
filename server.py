@@ -5639,6 +5639,9 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                     conv = m.get("conversation") or []
                     conv.append(msg)
                     m["conversation"] = conv
+                    # M1050: verify_flag is one-shot — auto-clear after claude replies
+                    if msg.get("role") == "claude" and m.get("verify_flag"):
+                        m["verify_flag"] = False
                     # M535: log server-side comment event
                     _server_log_action(proj_id, mid, f"comment:{msg.get('role','?')}",
                                        (msg.get("text",""))[:120])
