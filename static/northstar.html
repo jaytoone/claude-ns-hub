@@ -4125,7 +4125,8 @@ function _pasteChipHtml(raw) {
     const shortName = fname.length > 24 ? fname.slice(0,11)+'…'+fname.slice(-9) : fname;
     const label = shortName; // M951: icon removed
     const onclick = `event.stopPropagation();_previewFile('${enc}','${esc(fname)}',${isImg},${isVideo})`;
-    return `<span class="nt-paste-chip" contenteditable="false" data-full="${enc}" title="${esc(fname)}" onclick="${onclick}" style="color:var(--accent);border-color:var(--accent-soft);display:inline-flex;align-items:center;gap:3px">${label}</span>`;
+    const xOnclick = `event.stopPropagation();const c=this.closest('.nt-paste-chip');const nt=c?.closest('.nt-text');c?.remove();if(nt?.isContentEditable)nt.dispatchEvent(new Event('blur'));`;
+    return `<span class="nt-paste-chip" contenteditable="false" data-full="${enc}" title="${esc(fname)}" onclick="${onclick}" style="color:var(--accent);border-color:var(--accent-soft);display:inline-flex;align-items:center;gap:3px">${label}<span contenteditable="false" onclick="${xOnclick}" style="opacity:.55;cursor:pointer;font-size:8px;line-height:1;padding-left:1px" title="Remove attachment">✕</span></span>`;
   }
   const lines = raw.split('\n').length;
   return `<span class="nt-paste-chip" contenteditable="false" data-full="${enc}" `
@@ -7445,7 +7446,7 @@ function drawParentLines() {
   const swimlane = document.getElementById('ns-swimlane');
   if (!svg || !swimlane) return;
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const lineColor = dark ? 'rgba(200,190,180,0.35)' : 'rgba(0,0,0,0.55)';
+  const lineColor = dark ? 'rgba(200,190,180,0.60)' : 'rgba(0,0,0,0.75)'; // M1062: clarity up
 
   const paths = [];
   projects.forEach(p => {
@@ -7466,7 +7467,7 @@ function drawParentLines() {
       const x2 = cO.x; // left edge of child
       const y2 = cO.y + cO.h / 2;
       const d = `M${x1},${y1} C${gutter},${y1} ${gutter},${y2} ${x2},${y2}`;
-      paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>`);
+      paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="5,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
   });
