@@ -153,6 +153,9 @@ a:hover { text-decoration: underline; }
   <span class="cache-note" id="cache-note">—</span>
 </div>
 
+<!-- M975 v2: top duplicate bar chart row removed — the per-row DEMAND column
+     already renders the same daily download spark, so this was redundant. -->
+
 <div class="market-table-wrap">
   <table class="market-table" id="market-table">
     <thead>
@@ -232,8 +235,8 @@ function _extractMetrics(svc, channels) {
     if (id.includes('github') || id.includes('hub_github')) {
       metrics.github = ch.stars != null ? `★ ${ch.stars}` : (svc.githubUrl ? 'GitHub' : '—');
       metrics.gh_sub = ch.forks != null ? `${ch.forks} forks` : null;
-      metrics.gh_url = ch.url || svc.githubUrl; // M975: fallback to static githubUrl
-      metrics.gh_ok = !ch.error;
+      metrics.github_url = ch.url || svc.githubUrl; // M975: key must match col.key+'_url' = 'github_url'
+      metrics.github_ok = !ch.error;
     }
     if (id.includes('hn') && !id.includes('geek')) {
       metrics.hn = ch.points != null ? `${ch.points}pts` : '—';
@@ -255,17 +258,32 @@ function _extractMetrics(svc, channels) {
       metrics.linkedin_url = ch.url;
     }
   });
+  // M975: static GitHub URL fallback when channel data unavailable
+  if (!metrics.github && svc.githubUrl) {
+    metrics.github = 'GitHub';
+    metrics.github_url = svc.githubUrl;
+  }
   return metrics;
 }
 
 // ── Render PyPI demand cell ───────────────────────────────────────────────────
 function _pypiDemandCell(svc, sig, daily) {
-  // M928: use channel data as fallback for PyPI weekly numbers
+  // M928: use channel data for per-service PyPI weekly numbers.
+  // M975 fix: previously prefered the GLOBAL sig.hub_pypi / sig.pypi which
+  // applied the same numbers to every service row (both rows showed 289/wk
+  // because the global key won regardless of which service was being rendered).
+  // Now: per-service channel lookup wins; only fall back to global keys IF
+  // the channel is missing AND the global key matches this service's package.
   const relChs = (_channels || []).filter(ch => svc.channels.some(r => (ch.id||'') === r));
   const pypiCh = relChs.find(ch => (ch.id||'').includes('pypi'));
-  const pkgSig = (sig?.hub_pypi?.week != null ? sig.hub_pypi :
-                  sig?.pypi?.week != null ? sig.pypi :
-                  pypiCh ? { week: pypiCh.week, day: pypiCh.day, month: pypiCh.month, pct_week: 0 } : null);
+  let pkgSig = null;
+  if (pypiCh && pypiCh.week != null) {
+    pkgSig = { week: pypiCh.week, day: pypiCh.day, month: pypiCh.month, pct_week: pypiCh.pct_week ?? 0 };
+  } else if (svc.pypiPkg === 'claude-ns-hub' && sig?.hub_pypi?.week != null) {
+    pkgSig = sig.hub_pypi;
+  } else if (sig?.pypi?.week != null && svc.pypiPkg && (sig.pypi.pkg || '').includes(svc.pypiPkg)) {
+    pkgSig = sig.pypi;
+  }
   if (!pkgSig || (pkgSig.error && !pkgSig.week)) return `<div class="demand-cell"><div class="d-title">PyPI</div><span class="error">${esc(pkgSig?.error || 'unavailable')}</span></div>`;
   const pct = pkgSig.pct_week ?? 0;
   const sign = pct >= 0 ? '+' : '';
@@ -391,6 +409,7 @@ async function load(forceRefresh = false) {
     _buildTable(_channels, _signals, _daily);
     const age = sigRes.cached_at ? new Date(sigRes.cached_at * 1000).toLocaleTimeString() : '—';
     document.getElementById('cache-note').textContent = `cached ${age} (TTL ${sigRes.ttl}s)`;
+    // M975 v2: top _renderDlCharts() call removed — element gone.
   } catch(e) {
     document.getElementById('cache-note').textContent = 'fetch error';
     document.getElementById('market-body').innerHTML = `<tr><td colspan="99" class="error" style="padding:16px">Failed to load: ${esc(String(e))}</td></tr>`;
@@ -407,8 +426,58 @@ document.getElementById('btn-save').addEventListener('click', async () => {
   setTimeout(() => { btn.textContent = 'save snapshot'; btn.disabled = false; }, 2000);
 });
 
+// M975: render prominent real-time download bar charts above the table
+function _renderDlCharts() {
+  const row = document.getElementById('dl-charts-row');
+  if (!row) return;
+  const pkgs = [
+    { key: 'claude-ns-hub', label: 'hub (PyPI)' },
+    { key: 'ctx-retriever',  label: 'ctx (PyPI)' },
+  ];
+  row.innerHTML = pkgs.map(({ key, label }) => {
+    const d = (_dailyByPkg || {})[key] || {};
+    const days = (d.days || []).slice(-14); // last 14 days
+    const maxD = Math.max(...days.map(x => x.downloads), 1);
+    const total = days.reduce((s, x) => s + x.downloads, 0);
+    const bars = days.map(x => {
+      const h = Math.max(3, Math.round(x.downloads / maxD * 48));
+      const tip = `${x.date.slice(5)}: ${x.downloads.toLocaleString()}`;
+      return `<div title="${tip}" style="flex:1;min-width:6px;height:${h}px;background:var(--accent);border-radius:2px 2px 0 0;opacity:.85;cursor:default"></div>`;
+    }).join('');
+    const stale = d.stale ? ' (cached)' : '';
+    const lastDl = days.length ? days[days.length-1].downloads : '—';
+    return `<div style="flex:1;min-width:160px;background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;padding:10px 12px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:4px">${esc(label)}</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px">
+        <span style="font-size:18px;font-weight:700;color:var(--text)">${lastDl.toLocaleString()}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">/day · ${total.toLocaleString()} total${stale}</span>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:2px;height:52px;border-bottom:1px solid var(--panel-border);padding-bottom:2px">${bars || '<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim)">loading…</span>'}</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:4px">last 14 days · refreshes every 5 min</div>
+    </div>`;
+  }).join('');
+}
+
+// M975: auto-refresh download charts every 5 min (respects pypistats rate limit)
+let _dlRefreshTimer = null;
+function _scheduleDlRefresh() {
+  clearTimeout(_dlRefreshTimer);
+  _dlRefreshTimer = setTimeout(async () => {
+    try {
+      const [r1, r2] = await Promise.all([
+        fetch('/api/pypi-daily?days=14&pkg=claude-ns-hub').then(r => r.json()).catch(() => ({})),
+        fetch('/api/pypi-daily?days=14&pkg=ctx-retriever').then(r => r.json()).catch(() => ({})),
+      ]);
+      _dailyByPkg = { 'claude-ns-hub': r1, 'ctx-retriever': r2 };
+      _renderDlCharts();
+    } catch (_) {}
+    _scheduleDlRefresh(); // reschedule
+  }, 5 * 60 * 1000); // 5 minutes
+}
+
 _buildHeader();
 load();
+// M975 v2: _scheduleDlRefresh removed with the top duplicate chart row.
 (function(){const s=localStorage.getItem('hub-theme');if(s==='dark'||(s==null&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark')})();
 window.addEventListener('message',e=>{if(e.data?.type==='hub-theme')document.documentElement.setAttribute('data-theme',e.data.value)});
 </script>
