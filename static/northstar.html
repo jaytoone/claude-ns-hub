@@ -2735,7 +2735,7 @@ function renderMilestoneCreator(projId, milestones) {
     .nt-table td.ms-td-text,
     .nt-table td.ms-td-msg { border-right:1px solid var(--panel-border); }
     .nt-table tr.nt-draggable-row { cursor:pointer; transition:background .08s; }
-    .nt-table tr.nt-draggable-row td { border-bottom:1px solid var(--panel-border); } /* M984: match column border color */
+    .nt-table tr.nt-draggable-row td { border-bottom:1px solid rgba(150,140,130,0.28); } /* M984: explicit rgba — --panel-border too dim in dark mode */
     .nt-table tr.nt-draggable-row:last-child td { border-bottom:none; }
     .nt-table tr.nt-draggable-row:hover td { background:var(--panel-soft); }
     .nt-table tr.nt-draggable-row:hover .nt-del { opacity:1; }
