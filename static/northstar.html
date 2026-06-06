@@ -7436,10 +7436,8 @@ function _getParents(p) {
 }
 
 function drawParentLines() {
-  // M967: card link feature disabled — clear SVG lines and return
+  // M1039: card link feature re-enabled (was disabled in M967)
   const svg = document.getElementById('ns-svg-lines');
-  if (svg) svg.innerHTML = '';
-  return;
   const swimlane = document.getElementById('ns-swimlane');
   if (!svg || !swimlane) return;
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -7973,9 +7971,19 @@ function showNodeCtxMenu(pid, x, y) {
   const parents = p?.parents?.length ? p.parents : (p?.parent ? [p.parent] : []);
   const indivEl = document.getElementById('ctx-unlink-individual');
   const bulkEl = document.getElementById('ctx-unlink-parent');
-  // M967: card link disabled — always hide all link/unlink options
-  if (indivEl) indivEl.style.display = 'none';
-  if (bulkEl) bulkEl.style.display = 'none';
+  // M1039: card link re-enabled — show link/unlink options based on parent state
+  const hasParents = parents.length > 0;
+  if (bulkEl) bulkEl.style.display = hasParents ? '' : 'none';
+  if (indivEl) {
+    indivEl.style.display = hasParents && parents.length > 1 ? '' : 'none';
+    if (hasParents && parents.length > 1) {
+      indivEl.innerHTML = parents.map(parentId =>
+        `<div class="ns-ctx-item" onclick="event.stopPropagation();_unlinkSingleParent('${esc(pid)}','${esc(parentId)}')">⊄ Unlink from ${esc(parentId)}</div>`
+      ).join('');
+    }
+  }
+  const linkEl = document.getElementById('ctx-link-parent');
+  if (linkEl) linkEl.style.display = '';
   // M1032: populate "Move to lane" items
   const laneList = document.getElementById('ctx-move-lane-list');
   const laneSep  = document.getElementById('ctx-lane-sep');
