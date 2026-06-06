@@ -1766,8 +1766,11 @@ function _updateWatchPill() {
     document.documentElement.setAttribute('data-theme', 'dark');
 })();
 window.addEventListener('message', e => {
-  if (e.data?.type === 'hub-theme')
+  if (e.data?.type === 'hub-theme') {
     document.documentElement.setAttribute('data-theme', e.data.value);
+    // M1049: redraw parent link lines immediately after theme attribute is set
+    requestAnimationFrame(() => { if (typeof drawParentLines === 'function') drawParentLines(); });
+  }
   // M135: hub-driven refresh — sync to hub's 8s health cycle
   if (e.data?.type === 'hub-refresh') {
     if (_isUserTyping()) return;
@@ -6761,8 +6764,10 @@ function nodeCard(p, idx) {
   </button>`;
   // M232: exec session state → ns-card border color (idle=orange / live=green-blink / none=default).
   const _execClass = _execKey === 'running' ? 'exec-live' : (_execKey === 'idle' ? 'exec-idle' : '');
-  // M685/M741: per-model avatar — exec session model only (live session must be active)
-  const _liveModel = ((window._execModel||{})[p.id||p.name]||'');
+  // M685/M741: per-model avatar — prefer exec session model; fall back to card's default model
+  // M1046: p.model fallback restores immediate avatar on refresh (exec data loads async after first render)
+  const _execModelRaw = (window._execModel||{})[p.id||p.name];
+  const _liveModel = (_execModelRaw != null) ? _execModelRaw : (p.model || '');
   const _modelAvatars = _nsModelAvatars(); // localStorage map: model-key → url
   // M1011: prefer exact match, then longest-substring match. The old
   // .find(k => _liveModel.includes(k)) returned the FIRST key that was a
@@ -11515,13 +11520,10 @@ function renderRight(p, topics) {
           const resumeRows = rows.filter(r => r.session.type !== 'fresh' && r.session.type !== 'exec_live');
           // M1018 cur-fix: track the actual live exec session ID so 'cur' badge is shown only there
           const _liveExecSid = (rows.find(r => r.session.type === 'exec_live')?.session.id) || '';
-          // M1018: sort resume rows so the CURRENTLY-USED session is at the top,
-          // then the rest by most recent activity desc. (User clarified: cur
-          // session should sit right under ✦ new session, not buried by activity-only sort.)
+          // M1018: sort resume rows by most recent activity desc only.
+          // Do NOT factor in selSess — clicking a session changes selSess which re-triggers
+          // sort and jumps the clicked session to top, causing visible list reorder on click.
           resumeRows.sort((a, b) => {
-            const aCur = (selSess.session_id === a.session.id) ? 1 : 0;
-            const bCur = (selSess.session_id === b.session.id) ? 1 : 0;
-            if (aCur !== bCur) return bCur - aCur;
             const aAct = a.session.activity || 0;
             const bAct = b.session.activity || 0;
             return bAct - aAct;
