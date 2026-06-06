@@ -41,9 +41,9 @@ PORT = int(os.environ.get("HUB_PORT", "9000"))
 _HUB_CONFIG_FILE = _HUB_DATA_DIR / "config.yaml"
 
 # M215: Turso (libSQL cloud) dual-write sync
-# M929: hardcoded defaults so all pip-installed users send telemetry (consent-gated, write-only risk)
-_TURSO_URL = os.environ.get("TURSO_DATABASE_URL", "libsql://hub-ctx-jaytoone.aws-us-west-2.turso.io").replace("libsql://", "https://")
-_TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzkwODUwNDksImlkIjoiMDE5ZTM5YmEtYmEwMS03OGU5LWEzMDMtOTQwMTBhZTllNGJlIiwicmlkIjoiYjRjZWFiNDUtNjk4MC00MGQ1LWFmYTUtNTdhMmY4NjNlZGYwIn0.aGVFInXKg0HCQrTGW76L-Wd0xlv8eqnVA_GqdFaj4cNwfacotQTNjRCVetdtdIMNryuzFd6d_wTFuuDTB9fwAw")
+# M929/M1051: telemetry Turso — token must be set via env (never hardcode in public repo)
+_TURSO_URL = os.environ.get("TURSO_DATABASE_URL", "").replace("libsql://", "https://")
+_TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 _TURSO_ENABLED = bool(_TURSO_URL and _TURSO_TOKEN)
 
 def _turso_execute(sql: str, args: list = None) -> bool:
