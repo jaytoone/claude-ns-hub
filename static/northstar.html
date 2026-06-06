@@ -844,7 +844,8 @@ header {
   font-family:var(--mono); font-size:12px; padding:7px 2px; cursor:pointer; line-height:1;
   min-height:32px; min-width:0; text-align:center;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  user-select:none; -webkit-tap-highlight-color:transparent; }
+  user-select:none; -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation; /* M1065: prevent iOS double-tap zoom, ensure immediate touch response */ }
 /* Phone widths: shrink font so 12-key rows still legible. */
 @media (max-width: 420px) {
   .vkbd-key { font-size:10px; padding:6px 1px; min-height:28px; }
@@ -9826,7 +9827,12 @@ async function pasteToPty() {
 // whose keyboards lack these keys. Sequences: ESC=\x1b, up/down/right/left=\x1b[A/B/C/D,
 // Tab=\t, Ctrl-C=\x03. Keeps focus on the terminal so typing continues afterward.
 function _sendKey(seq) {
-  if (!_termWs || _termWs.readyState !== 1) return;
+  // M1065: flash red if terminal not connected so user knows why key didn't work
+  if (!_termWs || _termWs.readyState !== 1) {
+    const btn = event?.currentTarget;
+    if (btn) { btn.style.borderColor='#c0392b'; setTimeout(()=>{btn.style.borderColor='';},600); }
+    return;
+  }
   _termWs.send(seq);
   try { if (_term) _term.focus(); } catch (_) {}
 }
