@@ -7454,13 +7454,13 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      // M1039 rollback: route via left gutter (x=24, always within swimlane)
-      const gutterX = 24;
-      const x1 = Math.min(pO.x, cO.x);
+      // M1039.2: route via left gutter (lane-label area, always card-free)
+      const gutter = 24;
+      const x1 = pO.x; // left edge of parent
       const y1 = pO.y + pO.h / 2;
-      const x2 = Math.min(pO.x, cO.x);
+      const x2 = cO.x; // left edge of child
       const y2 = cO.y + cO.h / 2;
-      const d = `M${x1},${y1} C${gutterX},${y1} ${gutterX},${y2} ${x2},${y2}`;
+      const d = `M${x1},${y1} C${gutter},${y1} ${gutter},${y2} ${x2},${y2}`;
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="6,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
