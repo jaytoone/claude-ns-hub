@@ -3947,7 +3947,12 @@ function _nodeTouchDrag() {
     });
     // M1035 fix①: touchcancel — mirrors _msTouchCleanup pattern; prevents ghost+opacity+state leak on incoming call/scroll override
     node.addEventListener('touchcancel', () => {
-      node.style.opacity = '';
+      // M1036: guard — only clean up when THIS node is the active drag source
+      // Without this, touchcancel on node B (scroll override/multi-touch) would null
+      // module-level state and skip restoring node A's opacity (stuck at 0.35).
+      if (_nodeTouchSrc && _nodeTouchSrc !== node) return;
+      if (_nodeTouchSrc) _nodeTouchSrc.style.opacity = ''; // restore actual source opacity
+      node.style.opacity = ''; // also clear this node (safe no-op if same)
       if (_nodeTouchGhost) { _nodeTouchGhost.remove(); _nodeTouchGhost = null; }
       document.querySelectorAll('.ns-lane-nodes [data-proj-idx].ns-swap-target').forEach(w => w.classList.remove('ns-swap-target'));
       _dragActive = false;
