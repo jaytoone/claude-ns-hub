@@ -7454,14 +7454,15 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      // M1039.6: route via right edge — exit/enter from rightmost card's right edge, bow 60px outward
+      // M1039.6: route via right edge — exit/enter from rightmost card's right edge, bow outward
+      // Clamp bow within swimlane clientWidth to prevent overflow-x:clip cutoff
       const gap = 60;
       const rightEdge = Math.max(pO.x + pO.w, cO.x + cO.w);
       const x1 = rightEdge;
       const y1 = pO.y + pO.h / 2;
       const x2 = rightEdge;
       const y2 = cO.y + cO.h / 2;
-      const bowX = rightEdge + gap;
+      const bowX = Math.min(rightEdge + gap, swimlane.clientWidth - 12);
       const d = `M${x1},${y1} C${bowX},${y1} ${bowX},${y2} ${x2},${y2}`;
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="6,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
