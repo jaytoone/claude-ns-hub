@@ -13531,10 +13531,12 @@ function _blinkCenterSave(projId) {
 }
 // ── end M794 ──────────────────────────────────────────────────────────────────
 
-// ── M685/M785/M1045: per-model avatar helpers — server-only, no localStorage ──
-// M1045: localStorage removed entirely. Single source of truth = server SQLite.
-// In-memory cache (_nsAvatarCache) for fast synchronous access within a session.
-let _nsAvatarCache = {};
+// ── M685/M785/M1045: per-model avatar helpers ──
+// M1045: server = source of truth. sessionStorage = fast-load cache (tab-scoped, no cross-device bleed).
+// On hard refresh: sessionStorage clears, hydrate fills it → re-render. Avoids avatar flash.
+let _nsAvatarCache = (() => {
+  try { return JSON.parse(sessionStorage.getItem('ns-avatar-cache') || '{}'); } catch { return {}; }
+})();
 
 function _nsModelAvatars() {
   return _nsAvatarCache;
@@ -13546,8 +13548,10 @@ async function _nsModelAvatarsHydrate() {
     if (!r.ok) return;
     const d = await r.json();
     if (d && d.value && typeof d.value === 'object') {
+      const prev = JSON.stringify(_nsAvatarCache);
       _nsAvatarCache = d.value;
-      if (typeof render === 'function') render();
+      sessionStorage.setItem('ns-avatar-cache', JSON.stringify(d.value));
+      if (prev !== JSON.stringify(d.value) && typeof render === 'function') render();
     }
   } catch(_) {}
 }
@@ -13732,6 +13736,7 @@ async function _saveModelAvatarSettings() {
     });
   } catch(_) {}
   _nsAvatarCache = map;
+  try { sessionStorage.setItem('ns-avatar-cache', JSON.stringify(map)); } catch(_) {}
   if (typeof render === 'function') render();
 }
 // ── end M685 ──────────────────────────────────────────────────────────────────
