@@ -12957,13 +12957,18 @@ function _applySubstarGrouping(container, projId, l0) {
       // Read blink timestamp from localStorage (persists across refresh)
       const _storedTs = parseInt(localStorage.getItem(_lsBlinkKey) || '0');
       const _winMs = (parseInt(localStorage.getItem('_blinkWindowMin')) || 60) * 60 * 1000;
-      // Auto-clear if blink window has expired
-      if (_storedTs) {
+      const _HARD_MAX_MS = 24 * 60 * 60 * 1000; // M1058: hard 24h expiry; soft window only hides blink
+      // Hard-clear only after 24h — soft window controls display so increasing window restores blink
+      if (_storedTs && (Date.now() - _storedTs) >= _HARD_MAX_MS) {
+        localStorage.removeItem(_lsBlinkKey);
+        localStorage.removeItem(_lsBlinkMids);
+        delete window._ssBlinkMids[_sKey];
+        _blinkCenterSave(_proj);
+      }
+      // Soft-expire: within hard max but outside window — just hide, keep timestamp
+      if (_storedTs && (Date.now() - _storedTs) < _HARD_MAX_MS) {
         if ((Date.now() - _storedTs) >= _winMs) {
-          localStorage.removeItem(_lsBlinkKey);
-          localStorage.removeItem(_lsBlinkMids);
-          delete window._ssBlinkMids[_sKey];
-          _blinkCenterSave(_proj);  // M794: sync removal to server
+          // Outside soft window — don't show blink, don't delete
         } else {
           // M782: restore row blink mids from localStorage on page refresh
           if (!window._ssBlinkMids[_sKey]) {
