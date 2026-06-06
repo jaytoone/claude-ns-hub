@@ -9087,12 +9087,18 @@ async function _showSkillBadgeModal(projId, mid, currentSkill, currentAgent, com
   const _tab = (id, label, active) => `<button data-tab="${id}" onclick="event.stopPropagation();_sbTab('${id}')"
     style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid ${active?'var(--accent)':'var(--panel-border)'};background:${active?'var(--accent-soft)':'none'};color:${active?'var(--accent)':'var(--text-dim)'};cursor:pointer">${label}</button>`;
   // M258: item click shows inline flag input below the row
-  const _row = (name, type) => `<div class="sb-row" data-sbname="${esc(name)}" data-sbtype="${type}"
-    onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(projId)}','${esc(mid)}','${type}','${esc(name)}')"
-    style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)"
-    onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">
-    ${type==='skill'?'⚡':'🤖'} <span style="font-weight:600">${esc(name)}</span>
-  </div>`;
+  // M1023: also show plugin source badge so users can identify plugin-installed skills
+  const _row = (name, type, source) => {
+    const isPlugin = (source || '').startsWith('plugin:');
+    const pluginName = isPlugin ? (source.split('plugin:')[1].split('@')[0]) : '';
+    const sourceBadge = isPlugin ? `<span style="margin-left:6px;font-size:8px;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:3px">${esc(pluginName)}</span>` : '';
+    return `<div class="sb-row" data-sbname="${esc(name)}" data-sbtype="${type}" data-sbsource="${esc(source||'')}"
+      onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(projId)}','${esc(mid)}','${type}','${esc(name)}')"
+      style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text);display:flex;align-items:center"
+      onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">
+      ${type==='skill'?'⚡':'🤖'} <span style="font-weight:600;margin-left:4px">${esc(name)}</span>${sourceBadge}
+    </div>`;
+  };
   // M258 → M1025: server-centralized recent skill/agent (state truth on server,
   // localStorage as read-through cache for instant render). One-time hydrate on
   // page load (_sbRecentHydrate) writes server → localStorage; every Add writes
@@ -9129,7 +9135,7 @@ async function _showSkillBadgeModal(projId, mid, currentSkill, currentAgent, com
       style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;padding:4px 7px;font-family:var(--mono);font-size:9px;color:var(--text);box-sizing:border-box;margin-bottom:2px">
     <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:6px;opacity:.7">Press Enter to use search text as custom invocation with flags</div>
     <div id="sb-list" style="overflow-y:auto;max-height:58vh;border:1px solid var(--panel-border);border-radius:5px">
-      ${recent.length ? recent.map(x=>`<div class="sb-row" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(projId)}','${esc(mid)}','${esc(x.type)}','${esc(x.name)}')" style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">${x.type==='skill'?'⚡':'🤖'} <span style="font-weight:600">${esc(x.name)}</span></div>`).join('') : skills.map(s=>_row(s.name,'skill')).join('')}
+      ${recent.length ? recent.map(x=>`<div class="sb-row" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(projId)}','${esc(mid)}','${esc(x.type)}','${esc(x.name)}')" style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">${x.type==='skill'?'⚡':'🤖'} <span style="font-weight:600">${esc(x.name)}</span></div>`).join('') : skills.map(s=>_row(s.name,'skill',s.source)).join('')}
     </div>
     <div id="sb-selected-msg" style="display:none;margin-top:6px;padding:4px 8px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font-family:var(--mono);font-size:9px;text-align:center"></div>
   </div>`;
@@ -9226,11 +9232,17 @@ function _sbTab(tab) {
   }
   const isSkill = tab === 'skill';
   const items = isSkill ? m._skills : m._agents;
-  list.innerHTML = items.map(s=>`<div class="sb-row" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(m._projId)}','${esc(m._mid)}','${tab}','${esc(s.name)}')"
-    style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)"
-    onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">
-    ${isSkill?'⚡':'🤖'} <span style="font-weight:600">${esc(s.name)}</span>
-  </div>`).join('');
+  list.innerHTML = items.map(s=>{
+    const src = s.source || '';
+    const isPlugin = src.startsWith('plugin:');
+    const pluginName = isPlugin ? src.split('plugin:')[1].split('@')[0] : '';
+    const badge = isPlugin ? `<span style="margin-left:6px;font-size:8px;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:3px">${esc(pluginName)}</span>` : '';
+    return `<div class="sb-row" data-sbsource="${esc(src)}" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(m._projId)}','${esc(m._mid)}','${tab}','${esc(s.name)}')"
+      style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text);display:flex;align-items:center"
+      onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">
+      ${isSkill?'⚡':'🤖'} <span style="font-weight:600;margin-left:4px">${esc(s.name)}</span>${badge}
+    </div>`;
+  }).join('');
   m.querySelectorAll('[data-tab]').forEach(b => {
     const active = b.dataset.tab === tab;
     b.style.border = `1px solid ${active?'var(--accent)':'var(--panel-border)'}`;
@@ -13601,9 +13613,9 @@ function _showModelAvatarSettings() {
   document.getElementById('ns-avatar-settings-modal')?.remove();
   const current = _nsModelAvatars();
   const _models = [
-    { key: 'sonnet',   label: 'sonnet (all versions)' },
-    { key: 'haiku',    label: 'haiku (all versions)' },
-    { key: 'opus',     label: 'opus (all versions)' },
+    { key: 'sonnet',   label: 'sonnet' },
+    { key: 'haiku',    label: 'haiku' },
+    { key: 'opus',     label: 'opus' },
     { key: 'gemini',   label: 'gemini' },
     { key: 'gpt',      label: 'gpt' },
     { key: 'deepseek', label: 'deepseek' },
