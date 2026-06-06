@@ -7455,12 +7455,14 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      const x1 = pO.x + pO.w / 2;
-      const y1 = pO.y + pO.h + 2;
-      const x2 = cO.x + cO.w / 2;
-      const y2 = cO.y - 2;
-      const mid = (y1 + y2) / 2;
-      const d = `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`;
+      // M1039: route via left gutter (lane-label area, always card-free) so lines
+      // never overlap cards. Cards start at x≥64px (lane label width); gutter=24 is safe.
+      const gutter = 24;
+      const x1 = pO.x; // left edge of parent
+      const y1 = pO.y + pO.h / 2; // vertical center of parent
+      const x2 = cO.x; // left edge of child
+      const y2 = cO.y + cO.h / 2; // vertical center of child
+      const d = `M${x1},${y1} C${gutter},${y1} ${gutter},${y2} ${x2},${y2}`;
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${pid}" data-parent="${parentPid}" style="cursor:pointer"/>`);
     });
