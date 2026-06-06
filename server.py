@@ -5577,11 +5577,23 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                                     f"\"allow_stale\":true in the body to override (M780.2)."
                                 ),
                             }, status_code=422)
-                    # M185/M1064: enforce 3-line cap — clean truncation, no [details:] suffix
+                    # M185/M1064 v2: max 3-line summary — extract key lines, skip blanks
                     _text = str(msg.get("text", ""))
-                    _lines = _text.split("\n")
-                    if len(_lines) > 3:
-                        msg["text"] = "\n".join(_lines[:3])
+                    _all_lines = _text.split("\n")
+                    if len(_all_lines) > 3:
+                        # Strategy: first non-empty line (headline) + pick next 2 non-empty key lines
+                        _non_empty = [l for l in _all_lines if l.strip()]
+                        if len(_non_empty) <= 3:
+                            msg["text"] = "\n".join(_non_empty)
+                        else:
+                            # Take headline + middle key line + last key line
+                            _h = _non_empty[0]
+                            _m2 = _non_empty[1]  # second key point
+                            _last = _non_empty[-1]
+                            _chosen = [_h, _m2]
+                            if _last not in _chosen:
+                                _chosen.append(_last)
+                            msg["text"] = "\n".join(_chosen[:3])
                         msg["truncated"] = True
                     msg.setdefault("ts", _dt.datetime.now().isoformat())
                     conv = m.get("conversation") or []
