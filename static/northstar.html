@@ -1480,10 +1480,10 @@ header {
       <!-- M232 follow-up: Set stage entry removed — exec-state border replaces it. -->
       <div id="ctx-node-items">
         <div class="ns-ctx-item" id="ctx-rename">✎ Rename</div>
+        <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
         <div class="ns-ctx-item" id="ctx-link-parent" style="display:none">⊂ Link to parent (click parent)</div>
         <div class="ns-ctx-item" id="ctx-unlink-parent" style="display:none">⊄ Disconnect parent link</div>
         <div id="ctx-unlink-individual" style="display:none"></div>
-        <div class="ns-ctx-item" id="ctx-setpath">⌂ Set directory path</div>
         <div class="ns-ctx-sep" id="ctx-lane-sep" style="display:none"></div>
         <div id="ctx-move-lane-list"></div>
         <div class="ns-ctx-sep"></div>
@@ -6761,9 +6761,8 @@ function nodeCard(p, idx) {
   </button>`;
   // M232: exec session state → ns-card border color (idle=orange / live=green-blink / none=default).
   const _execClass = _execKey === 'running' ? 'exec-live' : (_execKey === 'idle' ? 'exec-idle' : '');
-  // M685: per-model avatar — reads user-configured mappings, fallback to p.model for immediate post-save display
-  // M1046 fix: include p.model_used/p.model as fallback so avatar updates immediately after save even without live session
-  const _liveModel = ((window._execModel||{})[p.id||p.name]||p.model_used||p.model||'');
+  // M685/M741: per-model avatar — exec session model only (live session must be active)
+  const _liveModel = ((window._execModel||{})[p.id||p.name]||'');
   const _modelAvatars = _nsModelAvatars(); // localStorage map: model-key → url
   // M1011: prefer exact match, then longest-substring match. The old
   // .find(k => _liveModel.includes(k)) returned the FIRST key that was a
@@ -7094,6 +7093,7 @@ function render() {
             });
             childP.parents = nextParents;
             childP.parent = nextParents[0];
+            drawParentLines(); // M1049: immediate line draw before full render
             render();
           }
         }
