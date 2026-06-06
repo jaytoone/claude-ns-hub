@@ -7469,7 +7469,13 @@ function drawParentLines() {
     });
   });
   svg.setAttribute('width', swimlane.scrollWidth);
-  svg.setAttribute('height', swimlane.scrollHeight);
+  // M1039 gap fix: overflow-y:visible makes scrollHeight = offsetHeight (viewport only).
+  // Measure actual content bottom from last child to cover all lanes.
+  const _lastLane = swimlane.lastElementChild;
+  const _svgH = _lastLane
+    ? offsetRelTo(_lastLane, swimlane).y + offsetRelTo(_lastLane, swimlane).h + 20
+    : swimlane.scrollHeight;
+  svg.setAttribute('height', Math.max(swimlane.scrollHeight, _svgH));
   svg.innerHTML = paths.join('');
 
   // Click hit area → remove that specific parent link (M221: multi-parent aware)
