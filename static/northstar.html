@@ -902,7 +902,8 @@ header {
 .dm-sess-fresh { color: var(--yellow,#d4a574) !important; }
 .dm-sess-resume { color: var(--text) !important; }
 .dm-sess-row { display: flex; align-items: center; gap: 6px; padding: 5px 8px;
-  border-radius: 4px; cursor: pointer; font-size: 9px; border: 1px solid transparent; }
+  border-radius: 4px; cursor: pointer; font-size: 9px; border: 1px solid transparent;
+  flex-wrap: nowrap; min-width: 0; overflow: hidden; }
 .dm-sess-row:hover { background: rgba(0,0,0,.06); }
 .dm-sess-row.picked {
   background: rgba(61,139,94,.12);
@@ -11580,7 +11581,7 @@ function renderRight(p, topics) {
             if (!isFresh && !isExecLive && s.activity) {
                 const _d = new Date(s.activity * 1000);
                 const _pad = n => String(n).padStart(2,'0');
-                _lastUsed = `<span style="font-size:8px;color:var(--text-dim);margin-left:6px;opacity:.75;font-family:var(--mono)" title="last used (local time)">${String(_d.getFullYear()).slice(2)}/${_pad(_d.getMonth()+1)}/${_pad(_d.getDate())} ${_pad(_d.getHours())}:${_pad(_d.getMinutes())}</span>`;
+                _lastUsed = `<span style="font-size:8px;color:var(--text-soft,var(--text-dim));margin-left:auto;padding-left:6px;font-family:var(--mono);flex-shrink:0;white-space:nowrap" title="last used (local time)">${String(_d.getFullYear()).slice(2)}/${_pad(_d.getMonth()+1)}/${_pad(_d.getDate())} ${_pad(_d.getHours())}:${_pad(_d.getMinutes())}</span>`;
             }
             const subLabel = (isFresh || isExecLive) ? '' : `<span style="font-size:8px;color:${_mlColor};margin-left:4px;font-weight:${isPicked?'600':'400'}">${esc(model_label)}</span>${_lastUsed}`;
             // M183: ›_ button on right of each session row; resume rows pass session_id → --resume
@@ -11609,8 +11610,8 @@ function renderRight(p, topics) {
             html += `<div class="dm-sess-row${isPicked?' picked':''}" data-agent="${esc(agent)}" data-model="${esc(model_key)}" data-session="${esc(s.id)}"
               onclick="${_sessOnclick}"
               style="color:${isFresh?'var(--yellow,#d4a574)':isExecLive?'var(--green)':'var(--text)'}">
-              <span style="color:${isExecLive?'var(--green)':pickColor};font-size:9px">${isExecLive?'●':(isPicked?'●':'○')}</span>
-              <span>${label}</span>${subLabel}
+              <span style="color:${isExecLive?'var(--green)':pickColor};font-size:9px;flex-shrink:0">${isExecLive?'●':(isPicked?'●':'○')}</span>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${label}</span>${subLabel}
               ${isExecLive ? `<span style="font-size:8px;color:var(--green);font-weight:600">live</span>` : (isPicked && !isFresh ? `<span style="font-size:8px;color:var(--green);opacity:.7">cur</span>` : '')}
               ${_ptyRowBtn}
             </div>`;
