@@ -8853,20 +8853,18 @@ function _editSubStarFromDataset(btn) {
 }
 // M249: edit an existing sub-star entry
 function _editSubStar(projId, nsId, curName, curMetric, curTarget, curCurrent, curStatus) {
+  // M1044: redesigned — numbered items list replaces metric/target fields
   document.getElementById('ss-edit-modal')?.remove();
   const m = document.createElement('div');
   m.id = 'ss-edit-modal';
   m.style.cssText = 'position:fixed;inset:0;z-index:10200;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)';
-  // M780: show empty string if value is the legacy "—" placeholder so users see a clean blank field
-  const inp = (id, ph, val) =>
-    `<input id="${id}" placeholder="${ph}" value="${esc(val === '—' ? '' : val)}" autocomplete="off"
-      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:10px;color:var(--text);box-sizing:border-box;margin-bottom:6px">`;
+  const _inpStyle = 'width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:10px;color:var(--text);box-sizing:border-box';
   m.innerHTML = `<div style="background:var(--panel);border:1px solid var(--panel-border);border-radius:8px;padding:16px 20px;max-width:320px;width:92%;font-family:var(--mono)">
     <div style="font-size:10px;font-weight:600;color:var(--accent);margin-bottom:12px;letter-spacing:.04em">EDIT SUB-STAR</div>
-    ${inp('ss-edit-name','Name / goal',curName)}
-    ${inp('ss-edit-metric','Metric (optional)',curMetric)}
-    ${inp('ss-edit-target','Target value (optional)',curTarget)}
-    ${inp('ss-edit-current','Current value (optional)',curCurrent)}
+    <input id="ss-edit-name" placeholder="Name / goal" value="${esc(curName)}" autocomplete="off" style="${_inpStyle};margin-bottom:10px">
+    <div id="ss-edit-items-wrap" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"></div>
+    <button id="ss-edit-add-item" style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;margin-bottom:8px;width:100%;text-align:left">+ add item</button>
+    <input id="ss-edit-current" placeholder="Current value (optional)" value="${esc((curCurrent||'') === '—' ? '' : (curCurrent||''))}" autocomplete="off" style="${_inpStyle};margin-bottom:8px">
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="document.getElementById('ss-edit-modal').remove()"
         style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">Cancel</button>
@@ -8874,11 +8872,35 @@ function _editSubStar(projId, nsId, curName, curMetric, curTarget, curCurrent, c
         style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid rgba(123,159,212,.4);background:rgba(123,159,212,.08);color:var(--accent);cursor:pointer">Save</button>
     </div>
   </div>`;
+  const itemsWrap = m.querySelector('#ss-edit-items-wrap');
+  const _renumber = () => itemsWrap.querySelectorAll('.ss-item-num').forEach((s,i) => { s.textContent = (i+1)+'.'; });
+  const _addRow = (val='') => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:4px';
+    const numSpan = document.createElement('span');
+    numSpan.className = 'ss-item-num';
+    numSpan.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--text-dim);flex-shrink:0;width:16px;text-align:right';
+    numSpan.textContent = (itemsWrap.children.length+1)+'.';
+    const inp = document.createElement('input');
+    inp.placeholder = 'Item';
+    inp.value = val;
+    inp.autocomplete = 'off';
+    inp.style.cssText = 'flex:1;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;padding:4px 8px;font-family:var(--mono);font-size:10px;color:var(--text);box-sizing:border-box';
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '✕';
+    delBtn.style.cssText = 'flex-shrink:0;font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:3px;border:1px solid rgba(192,57,43,.3);background:none;color:var(--red,#c0392b);cursor:pointer';
+    delBtn.onclick = () => { row.remove(); _renumber(); };
+    row.appendChild(numSpan); row.appendChild(inp); row.appendChild(delBtn);
+    itemsWrap.appendChild(row);
+  };
+  const existItems = (curMetric && curMetric !== '—') ? curMetric.split('\n').filter(s=>s.trim()) : [];
+  if (existItems.length) existItems.forEach(v => _addRow(v)); else _addRow();
+  m.querySelector('#ss-edit-add-item').onclick = () => _addRow();
   m.querySelector('#ss-edit-ok').onclick = async (e) => {
     const name = m.querySelector('#ss-edit-name').value.trim();
     if (!name) return;
-    const metric = m.querySelector('#ss-edit-metric').value.trim();
-    const target = m.querySelector('#ss-edit-target').value.trim();
+    const items = Array.from(itemsWrap.querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
+    const metric = items.join('\n');
     const current = m.querySelector('#ss-edit-current').value.trim();
     const btn = e.currentTarget;
     btn.disabled = true;
@@ -8886,7 +8908,7 @@ function _editSubStar(projId, nsId, curName, curMetric, curTarget, curCurrent, c
     _dmSpinOn();
     await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars/${encodeURIComponent(nsId)}`, {
       method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name, metric, target, current}),
+      body: JSON.stringify({name, metric, target:'', current}),
     });
     m.remove();
     loadSubStars(projId).finally(() => _dmSpinOff());
@@ -13099,20 +13121,29 @@ function _applySubstarGrouping(container, projId, l0) {
       hTd.appendChild(statusBadge);
     }
 
-    // M642/M681: metric/description row shown just below section bar header
+    // M1044: numbered items display — white text, line breaks, parsed from newline-separated metric
     let metaFooterTb = null;
-    if (ns && (ns.metric || ns.target || ns.current)) {
+    if (ns && (ns.metric || ns.current)) {
       metaFooterTb = document.createElement('tbody');
       metaFooterTb.className = 'ss-mg-meta-footer';
       const mTr = document.createElement('tr');
       const mTd = document.createElement('td');
       mTd.colSpan = 99;
-      mTd.style.cssText = "padding:5px 10px 7px 28px;font-family:'Inter','Söhne',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:9px;color:var(--text-dim);background:var(--panel-soft,rgba(0,0,0,.04));border-bottom:1px solid var(--panel-border);line-height:1.45";
-      const parts = [];
-      if (ns.metric) parts.push(ns.metric);
-      if (ns.target) parts.push('→ ' + ns.target);
-      if (ns.current) parts.push('now: ' + ns.current);
-      mTd.textContent = parts.join('  ');
+      mTd.style.cssText = "padding:5px 10px 7px 28px;font-family:'Inter','Söhne',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:9px;color:var(--text);background:var(--panel-soft,rgba(0,0,0,.04));border-bottom:1px solid var(--panel-border);line-height:1.6";
+      if (ns.metric) {
+        const items = (ns.metric||'').split('\n').filter(s=>s.trim());
+        items.forEach((item, i) => {
+          const d = document.createElement('div');
+          d.textContent = items.length > 1 ? `${i+1}. ${item.trim()}` : item.trim();
+          mTd.appendChild(d);
+        });
+      }
+      if (ns.current && ns.current !== '—') {
+        const d = document.createElement('div');
+        d.style.cssText = 'color:var(--text-dim);margin-top:2px';
+        d.textContent = 'now: ' + ns.current;
+        mTd.appendChild(d);
+      }
       mTr.appendChild(mTd);
       metaFooterTb.appendChild(mTr);
     }
