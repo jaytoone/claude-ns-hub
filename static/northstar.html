@@ -6764,10 +6764,8 @@ function nodeCard(p, idx) {
   </button>`;
   // M232: exec session state → ns-card border color (idle=orange / live=green-blink / none=default).
   const _execClass = _execKey === 'running' ? 'exec-live' : (_execKey === 'idle' ? 'exec-idle' : '');
-  // M685/M741: per-model avatar — prefer exec session model; fall back to card's default model
-  // M1046: p.model fallback restores immediate avatar on refresh (exec data loads async after first render)
-  const _execModelRaw = (window._execModel||{})[p.id||p.name];
-  const _liveModel = (_execModelRaw != null) ? _execModelRaw : (p.model || '');
+  // M685/M741: per-model avatar — exec session model only (live session must be active)
+  const _liveModel = ((window._execModel||{})[p.id||p.name]||'');
   const _modelAvatars = _nsModelAvatars(); // localStorage map: model-key → url
   // M1011: prefer exact match, then longest-substring match. The old
   // .find(k => _liveModel.includes(k)) returned the FIRST key that was a
