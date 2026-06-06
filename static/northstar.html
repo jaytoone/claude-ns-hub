@@ -13658,7 +13658,11 @@ async function _nsModelAvatarsHydrate() {
     if (!r.ok) return;
     const d = await r.json();
     if (d && d.value && typeof d.value === 'object') {
-      localStorage.setItem('ns-model-avatars', JSON.stringify(d.value));
+      const prev = localStorage.getItem('ns-model-avatars') || '{}';
+      const next = JSON.stringify(d.value);
+      localStorage.setItem('ns-model-avatars', next);
+      // M1045: re-render if server data differs from local cache (cross-device sync)
+      if (prev !== next && typeof render === 'function') render();
     }
   } catch(_) {}
 }
