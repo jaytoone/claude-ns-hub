@@ -13554,7 +13554,11 @@ async function _nsModelAvatarsHydrate() {
       const prev = JSON.stringify(_nsAvatarCache);
       _nsAvatarCache = d.value;
       sessionStorage.setItem('ns-avatar-cache', JSON.stringify(d.value));
-      if (prev !== JSON.stringify(d.value) && typeof render === 'function') render();
+      if (prev !== JSON.stringify(d.value) && typeof render === 'function') {
+        // M1052: avatar data changed — clear lane fingerprint to force DOM rebuild (same fix as save path)
+        if (typeof _swimlaneLaneFp !== 'undefined') window._swimlaneLaneFp = {};
+        render();
+      }
     }
   } catch(_) {}
 }
