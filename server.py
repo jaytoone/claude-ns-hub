@@ -5482,31 +5482,9 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                     # M511: auto-stamp evidence_updated_at when evidence_url changes
                     if k == "evidence_url" and data[k]:
                         m["evidence_updated_at"] = now_iso
-                    # M990: verify_flag=True → immediately create [검수] child if none exists
-                    if k == "verify_flag" and data[k]:
-                        _vf_has_review = any(
-                            isinstance(_s, dict) and _s.get("parent_id") == mid
-                            and str(_s.get("text", "")).startswith("[검수]")
-                            for _s in milestones
-                        )
-                        if not _vf_has_review:
-                            _vf_existing_ids = {_s.get("id", "") for _s in milestones if isinstance(_s, dict)}
-                            _vf_siblings = [_s for _s in milestones if isinstance(_s, dict) and _s.get("parent_id") == mid]
-                            _vf_rev_id = f"{mid}.{len(_vf_siblings)+1}"
-                            while _vf_rev_id in _vf_existing_ids:
-                                _vf_rev_id += "x"
-                            _vf_brief = str(m.get("text", ""))[:80]
-                            milestones.append({
-                                "id": _vf_rev_id,
-                                "text": _build_review_stone_text(mid, _vf_brief),
-                                "layer": (m.get("layer", 0) or 0) + 1,
-                                "parent_id": mid,
-                                "done": False,
-                                "status": "queued",
-                                "claude_ack": None,
-                                "user_added_at": now_iso,
-                                "skill_refs": ["code-review"],  # M996: trigger code-review skill
-                            })
+                    # M1059: verify_flag child creation moved to queued-time (not flag-set-time)
+                    # Previously: M990 created [검수] child immediately when flag toggled ON
+                    # Now: flag just marks the stone; child created only when stone is queued
             # M725: rename stone ID when parent_id is newly (or re-)assigned
             _725_new_parent = data.get("parent_id")
             if _725_new_parent and not (m.get("id", "").startswith(_725_new_parent + ".")):
@@ -5798,6 +5776,31 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                     # M511.3: reopen_count — difficulty proxy (how many times user reopened)
                     if _prev_status == "pending_confirmation":
                         m["reopen_count"] = (m.get("reopen_count") or 0) + 1
+                    # M1059: verify_flag=True → create [검수] child NOW (stone is being queued)
+                    if m.get("verify_flag"):
+                        _vq_has_review = any(
+                            isinstance(_s, dict) and _s.get("parent_id") == mid
+                            and str(_s.get("text", "")).startswith("[검수]")
+                            and _s.get("status") not in ("done",)
+                            for _s in milestones
+                        )
+                        if not _vq_has_review:
+                            _vq_existing_ids = {_s.get("id", "") for _s in milestones if isinstance(_s, dict)}
+                            _vq_siblings = [_s for _s in milestones if isinstance(_s, dict) and _s.get("parent_id") == mid]
+                            _vq_rev_id = f"{mid}.{len(_vq_siblings)+1}"
+                            while _vq_rev_id in _vq_existing_ids:
+                                _vq_rev_id += "x"
+                            milestones.append({
+                                "id": _vq_rev_id,
+                                "text": _build_review_stone_text(mid, str(m.get("text",""))[:80]),
+                                "layer": (m.get("layer", 0) or 0) + 1,
+                                "parent_id": mid,
+                                "done": False,
+                                "status": "queued",
+                                "claude_ack": None,
+                                "user_added_at": now_iso,
+                                "skill_refs": ["code-review"],
+                            })
                 else:
                     m.pop("queued_at", None)
             elif new_status == "needs_clarification":
@@ -9304,7 +9307,41 @@ async def corpus_skills_agents():
                 "name": (fm.get("name") or p.name).strip(),
                 "dir": p.name,  # M944: directory name for delete API
                 "description": (fm.get("description") or "").strip(),
+                "source": "local",
             })
+
+    # M1023: also discover plugin-installed skills at ~/.claude/plugins/cache/*/*/<version>/skills/<name>/SKILL.md
+    plugins_cache = home / ".claude" / "plugins" / "cache"
+    if plugins_cache.is_dir():
+        for plugin_dir in sorted(plugins_cache.iterdir(), key=lambda x: x.name.lower()):
+            if not plugin_dir.is_dir():
+                continue
+            # Walk: <plugin>/<plugin>/<version>/skills/
+            for inner in plugin_dir.iterdir():
+                if not inner.is_dir():
+                    continue
+                for ver in inner.iterdir():
+                    if not ver.is_dir():
+                        continue
+                    plugin_skills = ver / "skills"
+                    if not plugin_skills.is_dir():
+                        continue
+                    for p in sorted(plugin_skills.iterdir(), key=lambda x: x.name.lower()):
+                        if not p.is_dir():
+                            continue
+                        md = p / "SKILL.md"
+                        if not md.is_file():
+                            continue
+                        fm = _frontmatter(md)
+                        skills.append({
+                            "name": (fm.get("name") or p.name).strip(),
+                            "dir": f"plugin:{plugin_dir.name}/{p.name}",
+                            "description": (fm.get("description") or "").strip(),
+                            "source": f"plugin:{plugin_dir.name}@{ver.name}",
+                        })
+
+    # M1023: final alphabetical sort so local + plugin skills interleave correctly in UI
+    skills.sort(key=lambda s: s.get("name", "").lower())
 
     agents = []
     if agents_dir.is_dir():
