@@ -7454,16 +7454,13 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      // M1039.6: route via right edge — exit/enter from rightmost card's right edge, bow outward
-      // Clamp bow within swimlane clientWidth to prevent overflow-x:clip cutoff
-      const gap = 60;
-      const rightEdge = Math.max(pO.x + pO.w, cO.x + cO.w);
-      const x1 = rightEdge;
+      // M1039 rollback: route via left gutter (x=24, always within swimlane)
+      const gutterX = 24;
+      const x1 = Math.min(pO.x, cO.x);
       const y1 = pO.y + pO.h / 2;
-      const x2 = rightEdge;
+      const x2 = Math.min(pO.x, cO.x);
       const y2 = cO.y + cO.h / 2;
-      const bowX = Math.min(rightEdge + gap, swimlane.clientWidth - 12);
-      const d = `M${x1},${y1} C${bowX},${y1} ${bowX},${y2} ${x2},${y2}`;
+      const d = `M${x1},${y1} C${gutterX},${y1} ${gutterX},${y2} ${x2},${y2}`;
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="6,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
@@ -13632,24 +13629,13 @@ function _blinkCenterSave(projId) {
 }
 // ── end M794 ──────────────────────────────────────────────────────────────────
 
-// ── M685/M785: per-model avatar helpers ──────────────────────────────────────
-// M785: avatars now live in server SQLite (user_settings table) so the same
-// settings follow the user across tailscale peers / browsers. localStorage stays
-// as a sync cache for fast UI access without an API round-trip.
-function _nsModelAvatars() {
-  try { return JSON.parse(localStorage.getItem('ns-model-avatars') || '{}'); }
-  catch { return {}; }
-}
+// ── M685/M785/M1045: per-model avatar helpers — server-only, no localStorage ──
+// M1045: localStorage removed entirely. Single source of truth = server SQLite.
+// In-memory cache (_nsAvatarCache) for fast synchronous access within a session.
+let _nsAvatarCache = {};
 
-function _nsModelAvatarsSave(map) {
-  localStorage.setItem('ns-model-avatars', JSON.stringify(map));
-  try {
-    fetch('/api/user-settings/model_avatars', {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ value: map }),
-    }).catch(()=>{});
-  } catch(_) {}
+function _nsModelAvatars() {
+  return _nsAvatarCache;
 }
 
 async function _nsModelAvatarsHydrate() {
@@ -13658,11 +13644,8 @@ async function _nsModelAvatarsHydrate() {
     if (!r.ok) return;
     const d = await r.json();
     if (d && d.value && typeof d.value === 'object') {
-      const prev = localStorage.getItem('ns-model-avatars') || '{}';
-      const next = JSON.stringify(d.value);
-      localStorage.setItem('ns-model-avatars', next);
-      // M1045: re-render if server data differs from local cache (cross-device sync)
-      if (prev !== next && typeof render === 'function') render();
+      _nsAvatarCache = d.value;
+      if (typeof render === 'function') render();
     }
   } catch(_) {}
 }
@@ -13830,7 +13813,7 @@ function _showModelAvatarSettings() {
 }
 
 async function _saveModelAvatarSettings() {
-  // M1022 server-centric: await server save → update localStorage → render
+  // M1045 server-only: await PUT → update in-memory cache → render (no localStorage)
   const modal = document.getElementById('ns-avatar-settings-modal');
   if (!modal) return;
   const map = {};
@@ -13840,20 +13823,14 @@ async function _saveModelAvatarSettings() {
   });
   modal.remove();
   try {
-    const r = await fetch('/api/user-settings/model_avatars', {
+    await fetch('/api/user-settings/model_avatars', {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ value: map }),
     });
-    if (r.ok) localStorage.setItem('ns-model-avatars', JSON.stringify(map));
-  } catch(_) {
-    localStorage.setItem('ns-model-avatars', JSON.stringify(map));
-  }
+  } catch(_) {}
+  _nsAvatarCache = map;
   if (typeof render === 'function') render();
-  Object.keys(_msCacheByProject || {}).forEach(pid => {
-    delete _groupingFingerprint[pid];
-    _fastReapplyGrouping(pid);
-  });
 }
 // ── end M685 ──────────────────────────────────────────────────────────────────
 
