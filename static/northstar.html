@@ -1808,10 +1808,13 @@ const STATUS_LABEL = { 'on-track': 'on track', 'behind': 'behind', 'achieved': '
 
 async function loadData() {
   try {
+    // M1037: _initGlobalLaneLabels in parallel so getLaneLabels() never falls back
+    // to DEFAULT_LABELS on the first render() call below.
     const [projRes, ctxRes] = await Promise.all([
       fetch('/api/northstar'),
       fetch('/api/ctx-pulse').catch(() => ({ json: () => ({ ok: false, topics: [] }) })),
       refreshSessionStatus(),
+      _initGlobalLaneLabels(),
     ]);
     projects = await projRes.json();
     const ctxData = await ctxRes.json();
@@ -7870,7 +7873,10 @@ async function _initGlobalLaneLabels() {
       const d = await r.json();
       if (d && Array.isArray(d.value) && d.value.length >= 1) {
         window._globalLaneLabels = d.value;
-        render();
+        // M1037: do NOT call render() here — loadData() awaits this function and
+        // calls render() itself after all data (projects + labels) is ready.
+        // The old render() call here fired before projects[] was set, causing
+        // an extra partial render.
       }
     }
   } catch(_) {}
