@@ -11513,6 +11513,8 @@ function renderRight(p, topics) {
           // M419: exec_live rows removed from session list (redundant with exec info panel below)
           // Terminal button moved to exec info panel row instead.
           const resumeRows = rows.filter(r => r.session.type !== 'fresh' && r.session.type !== 'exec_live');
+          // M1018 cur-fix: track the actual live exec session ID so 'cur' badge is shown only there
+          const _liveExecSid = (rows.find(r => r.session.type === 'exec_live')?.session.id) || '';
           // M1018: sort resume rows so the CURRENTLY-USED session is at the top,
           // then the rest by most recent activity desc. (User clarified: cur
           // session should sit right under ✦ new session, not buried by activity-only sort.)
@@ -11612,7 +11614,7 @@ function renderRight(p, topics) {
               style="color:${isFresh?'var(--yellow,#d4a574)':isExecLive?'var(--green)':'var(--text)'}">
               <span style="color:${isExecLive?'var(--green)':pickColor};font-size:9px;flex-shrink:0">${isExecLive?'●':(isPicked?'●':'○')}</span>
               <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${label}</span>${subLabel}
-              ${isExecLive ? `<span style="font-size:8px;color:var(--green);font-weight:600">live</span>` : (isPicked && !isFresh ? `<span style="font-size:8px;color:var(--green);opacity:.7">cur</span>` : '')}
+              ${isExecLive ? `<span style="font-size:8px;color:var(--green);font-weight:600">live</span>` : (!isFresh && _liveExecSid && s.id === _liveExecSid ? `<span style="font-size:8px;color:var(--green);opacity:.7">cur</span>` : '')}
               ${_ptyRowBtn}
             </div>`;
           }
