@@ -6189,39 +6189,36 @@ async def delete_milestone(proj_id: str, mid: str, background_tasks: BackgroundT
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/compress-conv")
 async def compress_milestone_conv(proj_id: str, mid: str, request: Request):
     """M819: Compress conversation[] — keep last N turns + inject {role:'summary'} entry for older turns.
-    Body: {keep_last: int (default 4)}. Updates milestone in SQLite, returns {ok, summary_text, kept, compressed}."""
+    M819 fix: uses _parse_md_frontmatter + _save_project (same path as PATCH) so result survives next PATCH."""
     data = await request.json()
     keep_last = max(1, int(data.get("keep_last", 4)))
     try:
-        import sqlite3 as _sq3
-        conn = _sq3.connect(str(_NS_EVENTS_DB), timeout=5)
-        row = conn.execute("SELECT data_json FROM milestones_store WHERE proj_id=? AND stone_id=?",
-                           (proj_id, mid)).fetchone()
-        if not row:
-            conn.close()
-            return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
-        m = json.loads(row[0])
-        conv = m.get("conversation") or []
-        if len(conv) <= keep_last:
-            conn.close()
-            return JSONResponse({"ok": True, "summary_text": None, "kept": len(conv), "compressed": 0})
-        old_turns = conv[:-keep_last]
-        recent_turns = conv[-keep_last:]
-        _trim = lambda t: (str(t or "").replace("\n", " ").strip())[:150]
-        _u = [c for c in old_turns if c.get("role") == "user"]
-        _c = [c for c in old_turns if c.get("role") == "claude"]
-        lines = []
-        if _u: lines.append("U: " + _trim(_u[0].get("text") or _u[0].get("content", "")))
-        if len(_u) > 1: lines.append("Un: " + _trim(_u[-1].get("text") or _u[-1].get("content", "")))
-        if _c: lines.append("C: " + _trim(_c[-1].get("text") or _c[-1].get("content", "")))
-        summary_text = " | ".join(lines) if lines else f"({len(old_turns)} turns compressed)"
-        summary_entry = {"role": "summary", "text": summary_text,
-                         "ts": old_turns[-1].get("ts", ""), "compressed_count": len(old_turns)}
-        m["conversation"] = [summary_entry] + recent_turns
-        import datetime as _dt2
-        conn.execute("UPDATE milestones_store SET data_json=?, updated_at=? WHERE proj_id=? AND stone_id=?",
-                     (json.dumps(m, ensure_ascii=False), _dt2.datetime.now().isoformat(), proj_id, mid))
-        conn.commit(); conn.close()
+        md = PROJECTS_DIR / proj_id / "north-star.md"
+        if not md.exists():
+            return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+        async with _get_proj_lock(proj_id):
+            proj = _parse_md_frontmatter(md)
+            milestones = proj.get("milestones", [])
+            m = next((x for x in milestones if isinstance(x, dict) and x.get("id") == mid), None)
+            if not m:
+                return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
+            conv = m.get("conversation") or []
+            if len(conv) <= keep_last:
+                return JSONResponse({"ok": True, "summary_text": None, "kept": len(conv), "compressed": 0})
+            old_turns = conv[:-keep_last]
+            recent_turns = conv[-keep_last:]
+            _trim = lambda t: (str(t or "").replace("\n", " ").strip())[:150]
+            _u = [c for c in old_turns if c.get("role") == "user"]
+            _c = [c for c in old_turns if c.get("role") == "claude"]
+            lines = []
+            if _u: lines.append("U: " + _trim(_u[0].get("text") or _u[0].get("content", "")))
+            if len(_u) > 1: lines.append("Un: " + _trim(_u[-1].get("text") or _u[-1].get("content", "")))
+            if _c: lines.append("C: " + _trim(_c[-1].get("text") or _c[-1].get("content", "")))
+            summary_text = " | ".join(lines) if lines else f"({len(old_turns)} turns compressed)"
+            summary_entry = {"role": "summary", "text": summary_text,
+                             "ts": old_turns[-1].get("ts", ""), "compressed_count": len(old_turns)}
+            m["conversation"] = [summary_entry] + recent_turns
+            _save_project(proj_id, proj)  # saves to YAML + SQLite — survives subsequent PATCH
         return JSONResponse({"ok": True, "summary_text": summary_text, "kept": keep_last, "compressed": len(old_turns)})
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
