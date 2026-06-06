@@ -13768,6 +13768,13 @@ async function _saveModelAvatarSettings() {
   // M1046: avatar change not in lane fingerprint → clear it to force full DOM rebuild
   if (typeof _swimlaneLaneFp !== 'undefined') window._swimlaneLaneFp = {};
   if (typeof render === 'function') render();
+  // M1061: re-fetch exec sessions so _execModel is fresh → avatar shows immediately (exec-only constraint)
+  if (typeof refreshSessionStatus === 'function') {
+    refreshSessionStatus().then(() => {
+      if (typeof _swimlaneLaneFp !== 'undefined') window._swimlaneLaneFp = {};
+      if (typeof render === 'function') render();
+    });
+  }
 }
 // ── end M685 ──────────────────────────────────────────────────────────────────
 
