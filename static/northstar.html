@@ -795,9 +795,8 @@ header {
   .dm-btn { min-height: 36px; font-size: 12px; }
 
   #ns-terminal-float {
-    /* M1027: top:0 so the terminal's own header sits above (forward of) the NS top bar
-       — previously top:44px tucked it BELOW the NS nav, hiding the terminal title row. */
-    top: 0 !important; left: 0 !important; right: 0 !important;
+    /* M1027 rollback: reverted top:0 back to top:44px per user request */
+    top: 44px !important; left: 0 !important; right: 0 !important;
     transform: none !important; -webkit-transform: none !important;
     width: 100% !important; height: 78svh !important;
     border-radius: 0 0 0 0 !important; border: none !important;
@@ -9471,6 +9470,9 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
 
   // Show floating terminal (no longer embedded in modal)
   const float = document.getElementById('ns-terminal-float');
+  // M1027: always reset to default centered position on open
+  float.style.top = '0'; float.style.left = '50%'; float.style.right = '';
+  float.style.bottom = ''; float.style.transform = 'translateX(-50%) translateZ(0)';
   float.style.display = 'flex';
   const bd = document.getElementById('ns-term-backdrop');
   if (bd) bd.style.display = 'block';
