@@ -362,7 +362,7 @@ header {
 /* SVG connection lines overlay */
 #ns-svg-lines {
   position: absolute; top: 0; left: 0; pointer-events: none;
-  overflow: visible; z-index: 1;
+  overflow: visible; z-index: 3;
 }
 /* Each node is its own column — no group wrapper */
 .ns-group-orphan, .ns-group-nodes-col { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
@@ -7440,7 +7440,7 @@ function drawParentLines() {
   const swimlane = document.getElementById('ns-swimlane');
   if (!svg || !swimlane) return;
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const lineColor = dark ? 'rgba(200,190,180,0.35)' : 'rgba(100,90,80,0.25)';
+  const lineColor = dark ? 'rgba(200,190,180,0.75)' : 'rgba(80,70,60,0.65)';
 
   const paths = [];
   projects.forEach(p => {
@@ -7454,8 +7454,8 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      // M1039.6: route via right edge — exit/enter from rightmost card's right edge, bow 20px outward
-      const gap = 20;
+      // M1039.6: route via right edge — exit/enter from rightmost card's right edge, bow 60px outward
+      const gap = 60;
       const rightEdge = Math.max(pO.x + pO.w, cO.x + cO.w);
       const x1 = rightEdge;
       const y1 = pO.y + pO.h / 2;
@@ -7463,7 +7463,7 @@ function drawParentLines() {
       const y2 = cO.y + cO.h / 2;
       const bowX = rightEdge + gap;
       const d = `M${x1},${y1} C${bowX},${y1} ${bowX},${y2} ${x2},${y2}`;
-      paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>`);
+      paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="6,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
   });
