@@ -7455,14 +7455,18 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      // M1039 v2: short right-side curve — start/end at right edges, bow just 24px past the wider card
-      const gap = 24;
-      const x1 = pO.x + pO.w; // right edge of parent
+      // M1039 v3: right-side S-curve that avoids cards and never hooks back
+      // Exit from right edge of the rightmost card, bow only 20px further right,
+      // then enter the other card from its right edge.
+      // Uses the SAME right edge for both endpoints so the bow is always outward.
+      const gap = 20;
+      const rightEdge = Math.max(pO.x + pO.w, cO.x + cO.w); // rightmost card's right edge
+      const x1 = rightEdge; // uniform start x (right of wider card)
       const y1 = pO.y + pO.h / 2;
-      const x2 = cO.x + cO.w; // right edge of child
+      const x2 = rightEdge; // uniform end x
       const y2 = cO.y + cO.h / 2;
-      const rightX = Math.max(x1, x2) + gap;
-      const d = `M${x1},${y1} C${rightX},${y1} ${rightX},${y2} ${x2},${y2}`;
+      const bowX = rightEdge + gap; // bow just 20px to the right
+      const d = `M${x1},${y1} C${bowX},${y1} ${bowX},${y2} ${x2},${y2}`;
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
