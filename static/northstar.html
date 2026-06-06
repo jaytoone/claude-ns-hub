@@ -8869,8 +8869,7 @@ function _editSubStar(projId, nsId, curName, curMetric, curTarget, curCurrent, c
     <div style="font-size:10px;font-weight:600;color:var(--accent);margin-bottom:12px;letter-spacing:.04em">EDIT SUB-STAR</div>
     <input id="ss-edit-name" placeholder="Name / goal" value="${esc(curName)}" autocomplete="off" style="${_inpStyle};margin-bottom:10px">
     <div id="ss-edit-items-wrap" style="display:flex;flex-direction:column;gap:5px;margin-bottom:6px"></div>
-    <button id="ss-edit-add-item" style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;margin-bottom:8px;width:100%;text-align:left">+ add item</button>
-    <input id="ss-edit-current" placeholder="Current value (optional)" value="${esc((curCurrent||'') === '—' ? '' : (curCurrent||''))}" autocomplete="off" style="${_inpStyle};margin-bottom:8px">
+    <button id="ss-edit-add-item" style="font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;margin-bottom:10px;width:100%;text-align:left">+ add item</button>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="document.getElementById('ss-edit-modal').remove()"
         style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">Cancel</button>
@@ -8907,14 +8906,13 @@ function _editSubStar(projId, nsId, curName, curMetric, curTarget, curCurrent, c
     if (!name) return;
     const items = Array.from(itemsWrap.querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
     const metric = items.join('\n');
-    const current = m.querySelector('#ss-edit-current').value.trim();
     const btn = e.currentTarget;
     btn.disabled = true;
     btn.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;border:1.5px solid var(--accent);border-top-color:transparent;animation:dm-spin .7s linear infinite;vertical-align:middle;margin-right:4px"></span>Saving…`;
     _dmSpinOn();
     await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars/${encodeURIComponent(nsId)}`, {
       method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name, metric, target:'', current}),
+      body: JSON.stringify({name, metric, target:'', current:''}),
     });
     m.remove();
     loadSubStars(projId).finally(() => _dmSpinOff());
@@ -13129,27 +13127,19 @@ function _applySubstarGrouping(container, projId, l0) {
 
     // M1044: numbered items display — white text, line breaks, parsed from newline-separated metric
     let metaFooterTb = null;
-    if (ns && (ns.metric || ns.current)) {
+    if (ns && ns.metric) {
       metaFooterTb = document.createElement('tbody');
       metaFooterTb.className = 'ss-mg-meta-footer';
       const mTr = document.createElement('tr');
       const mTd = document.createElement('td');
       mTd.colSpan = 99;
       mTd.style.cssText = "padding:5px 10px 7px 28px;font-family:'Inter','Söhne',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:9px;color:var(--text);background:var(--panel-soft,rgba(0,0,0,.04));border-bottom:1px solid var(--panel-border);line-height:1.6";
-      if (ns.metric) {
-        const items = (ns.metric||'').split('\n').filter(s=>s.trim());
-        items.forEach((item, i) => {
-          const d = document.createElement('div');
-          d.textContent = items.length > 1 ? `${i+1}. ${item.trim()}` : item.trim();
-          mTd.appendChild(d);
-        });
-      }
-      if (ns.current && ns.current !== '—') {
+      const items = (ns.metric||'').split('\n').filter(s=>s.trim());
+      items.forEach((item, i) => {
         const d = document.createElement('div');
-        d.style.cssText = 'color:var(--text-dim);margin-top:2px';
-        d.textContent = 'now: ' + ns.current;
+        d.textContent = items.length > 1 ? `${i+1}. ${item.trim()}` : item.trim();
         mTd.appendChild(d);
-      }
+      });
       mTr.appendChild(mTd);
       metaFooterTb.appendChild(mTr);
     }
