@@ -9,11 +9,26 @@ certs/
 *.crt
 *.pem
 
-# ── Internal data/docs (NOT for public repo — M936) ──────────────────────
+# ── Core implementation (distributed via PyPI only — M1064) ──────────────
+server.py
+install-hooks.sh
+task-worker.sh
+entity/
+scripts/
+hooks/
+corpus/
+corpora/
+
+# ── Frontend assets (distributed via PyPI only) ──────────────────────────
+static/
+static/claude-md-preview.html
+
+# ── Internal data/docs ────────────────────────────────────────────────────
 dataset/
 docs/
-static/claude-md-preview.html
-# Data-pipeline tooling — keep internal (collection runs server-side regardless)
+ARCHITECTURE.md
+
+# ── Data-pipeline tooling — keep internal ─────────────────────────────────
 hub-dataset-export.py
 hub-dataset-stats.py
 hub-windows-install.bat
@@ -25,13 +40,14 @@ hub-windows-install.bat
 ns-events.db
 projects/
 uploads/
-corpora/
 causality-dataset/
 ctx-dashboard/
 usage-stats.jsonl
 northstar.json
 dataset.jsonl
 ctx-session-state.json
+global-memo.txt
+worker.log
 
 # ── Runtime state / locks / logs ─────────────────────────────────────────
 task-locks/
@@ -52,4 +68,3 @@ dist/
 # ── Backups ──────────────────────────────────────────────────────────────
 *.bak
 pyproject.toml.bak*
-global-memo.txt
