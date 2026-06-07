@@ -8912,11 +8912,19 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
                         seen_sids.add(sid)
                         t = Path.home() / ".claude" / "projects" / encoded_path / f"{sid}.jsonl"
                         if t.exists() and t.stat().st_size > 0:
+                            # M1071: when session is in the default bucket (mkey==""), detect
+                            # actual model from transcript so CUR row shows real runtime model
+                            # instead of defaulting to the empty-key label ("sonnet-4.6").
+                            _effective_model = mkey
+                            if not mkey:
+                                _detected = _detect_session_model(t)
+                                if _detected:
+                                    _effective_model = _detected
                             sessions.append({
                                 "id": sid,
                                 "type": "transcript",
                                 "label": f"Session {sid[:8]}…",
-                                "model": mkey,
+                                "model": _effective_model,
                                 "activity": t.stat().st_mtime,  # M1018: unix epoch for last-used timestamp
                             })
 

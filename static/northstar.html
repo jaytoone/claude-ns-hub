@@ -11602,6 +11602,9 @@ function renderRight(p, topics) {
             // M342: removed ● live from subLabel — exec button already shows IDLE/LIVE state; duplicate badge causes confusion
             // M436: model name more vivid — remove dim opacity, use accent-soft color for selected
             const _mlColor = isPicked ? 'var(--accent)' : 'var(--text-soft,var(--text-dim))';
+            // M1071: prefer session's own detected model (e.g. claude-opus-4-7) over group bucket label
+            // so default-bucket sessions show their real runtime model, not the bucket default "sonnet-4.6".
+            const _effectiveModelLabel = (s.model && s.model !== model_key) ? s.model : model_label;
             // M1018: per-session last-used timestamp (YY/MM/DD HH:MM, local TZ). Hidden for fresh/exec_live rows.
             let _lastUsed = '';
             if (!isFresh && !isExecLive && s.activity) {
@@ -11609,7 +11612,7 @@ function renderRight(p, topics) {
                 const _pad = n => String(n).padStart(2,'0');
                 _lastUsed = `<span style="font-size:8px;color:var(--text-soft,var(--text-dim));font-family:var(--mono);flex-shrink:0;white-space:nowrap;width:88px;text-align:right" title="last used (local time)">${String(_d.getFullYear()).slice(2)}/${_pad(_d.getMonth()+1)}/${_pad(_d.getDate())} ${_pad(_d.getHours())}:${_pad(_d.getMinutes())}</span>`;
             }
-            const subLabel = (isFresh || isExecLive) ? '' : `<span style="font-size:8px;color:${_mlColor};margin-left:4px;font-weight:${isPicked?'600':'400'};flex-shrink:0;width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(model_label)}</span>${_lastUsed}`;
+            const subLabel = (isFresh || isExecLive) ? '' : `<span style="font-size:8px;color:${_mlColor};margin-left:4px;font-weight:${isPicked?'600':'400'};flex-shrink:0;width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(_effectiveModelLabel)}</span>${_lastUsed}`;
             // M183: ›_ button on right of each session row; resume rows pass session_id → --resume
             const _ptySessionArg = isFresh ? '' : `,'${esc(s.id)}'`;
             // M283: exec_live rows attach to tmux session directly (enables typing into live exec session)
