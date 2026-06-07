@@ -106,6 +106,21 @@ nav {
   .status-dot { width: 5px; height: 5px; }
 }
 
+/* M1068: pill-tab nav horizontal scroll on mobile */
+@media (max-width: 640px) {
+  nav { padding: 0 12px 0 12px; overflow: hidden; }
+  .tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .tabs::-webkit-scrollbar { height: 0; }
+  .tab { flex-shrink: 0; }
+  .nav-right { flex-shrink: 0; }
+}
+
 /* ── Pane container ── */
 .content { height: calc(100vh - var(--nav-h)); position: relative; overflow: hidden; }
 .wrap {
