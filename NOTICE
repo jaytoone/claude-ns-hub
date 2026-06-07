@@ -1,0 +1,67 @@
+claude-ns-hub
+Copyright (c) 2026 jaytoone (be2jay67@gmail.com)
+
+Licensed under the MIT License. See LICENSE for the full license text.
+
+----------------------------------------------------------------------
+THIRD-PARTY ACKNOWLEDGEMENTS
+----------------------------------------------------------------------
+
+This product includes or depends on the following third-party software:
+
+* xterm.js (v5.3.0)
+    https://github.com/xtermjs/xterm.js
+    Copyright (c) 2017-2024 The xterm.js authors. All rights reserved.
+    Copyright (c) 2014-2017 SourceLair Limited.
+    Copyright (c) 2012-2013 Christopher Jeffrey (under the original name "term.js").
+    Licensed under the MIT License.
+
+* xterm-addon-fit (v0.8.0)
+    https://github.com/xtermjs/xterm.js/tree/master/addons/xterm-addon-fit
+    Copyright (c) The xterm.js authors. Licensed under the MIT License.
+
+* FastAPI (>=0.110)
+    https://github.com/tiangolo/fastapi
+    Copyright (c) 2018 Sebastián Ramírez. Licensed under the MIT License.
+
+* Uvicorn (>=0.29)
+    https://github.com/encode/uvicorn
+    Copyright (c) 2017-present, Encode OSS Ltd. Licensed under the BSD-3-Clause License.
+
+* httpx (>=0.27)
+    https://github.com/encode/httpx
+    Copyright (c) 2019-present, Encode OSS Ltd. Licensed under the BSD-3-Clause License.
+
+* PyYAML (>=6.0)
+    https://pyyaml.org
+    Copyright (c) 2017-2021 Ingy döt Net. Copyright (c) 2006-2016 Kirill Simonov.
+    Licensed under the MIT License.
+
+* ptyprocess (>=0.7; non-Windows)
+    https://github.com/pexpect/ptyprocess
+    Copyright (c) Pexpect contributors. Licensed under the ISC License.
+
+* psutil (>=5.9)
+    https://github.com/giampaolo/psutil
+    Copyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola.
+    Licensed under the BSD-3-Clause License.
+
+* anthropic (>=0.28)
+    https://github.com/anthropics/anthropic-sdk-python
+    Copyright (c) Anthropic, PBC. Licensed under the MIT License.
+
+* ctx-retriever (>=0.3.30)
+    Companion package by the same author. Licensed under the MIT License.
+
+* python-multipart (>=0.0.9)
+    https://github.com/Kludex/python-multipart
+    Copyright (c) Andrew Dunham and contributors. Licensed under the Apache-2.0 License.
+
+* Fraunces font / JetBrains Mono font
+    Loaded from Google Fonts CDN. Each licensed under the SIL Open Font License v1.1.
+
+* Skill registry and Claude Code hook patterns
+    Built on top of Anthropic's Claude Code (proprietary) CLI surface.
+    Claude Code itself is not redistributed by this project.
+
+Tokens, credentials, and user-supplied data are NOT covered by this license.

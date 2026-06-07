@@ -1,5 +1,10 @@
 # claude-ns-hub
 
+[![PyPI Downloads](https://img.shields.io/pypi/dm/claude-ns-hub?label=downloads%2Fmonth&color=orange)](https://pypi.org/project/claude-ns-hub/)
+[![PyPI Version](https://img.shields.io/pypi/v/claude-ns-hub?color=blue)](https://pypi.org/project/claude-ns-hub/)
+[![GitHub Stars](https://img.shields.io/github/stars/jaytoone/claude-ns-hub?style=flat&color=yellow)](https://github.com/jaytoone/claude-ns-hub)
+[![Python](https://img.shields.io/pypi/pyversions/claude-ns-hub)](https://pypi.org/project/claude-ns-hub/)
+
 **The personal AI project hub that runs while you work.** North Star milestone tracking · live Claude exec sessions · entity corpus browser · mobile-ready terminal.
 
 > One command. Your whole AI workflow, visible from any device.

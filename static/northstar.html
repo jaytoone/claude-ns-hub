@@ -7450,6 +7450,60 @@ function drawParentLines() {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   const lineColor = dark ? 'rgba(200,190,180,0.60)' : 'rgba(0,0,0,0.75)'; // M1062: clarity up
 
+  // M1070: Build lane boundary map — Y positions of each lane for inter-lane channel computation
+  // Lane elements: #lane-0, #lane-1, ... each is a flex row (label + nodes-div)
+  const laneEls = Array.from(swimlane.querySelectorAll('.ns-lane'));
+  // laneTopY[i] = top Y of lane i relative to swimlane
+  const laneTopY = laneEls.map(el => offsetRelTo(el, swimlane).y);
+  const laneBottomY = laneEls.map(el => {
+    const o = offsetRelTo(el, swimlane);
+    return o.y + o.h;
+  });
+  // interLaneChannelY(rowA, rowB) → Y midpoint in the gap between the two lane rows
+  // Uses the gap between laneBottomY[rowA] and laneTopY[rowB] (or vice-versa if rowA > rowB)
+  function interLaneChannelY(rowA, rowB) {
+    const lo = Math.min(rowA, rowB);
+    const hi = Math.max(rowA, rowB);
+    if (hi >= laneBottomY.length || lo < 0) return (laneBottomY[lo] + (laneTopY[hi] || laneBottomY[lo])) / 2;
+    return (laneBottomY[lo] + laneTopY[hi]) / 2;
+  }
+
+  // M1070: Build column position map from all visible nodes across all lanes
+  // We collect all card center-X values and sort them to find inter-column channel X positions
+  const allNodes = Array.from(swimlane.querySelectorAll('.ns-node'));
+  const allCenterXs = allNodes.map(n => {
+    const o = offsetRelTo(n, swimlane);
+    return o.x + o.w / 2;
+  }).filter(x => isFinite(x));
+  allCenterXs.sort((a, b) => a - b);
+  // Deduplicate centers that are within 10px of each other (same column)
+  const colCenters = [];
+  allCenterXs.forEach(x => {
+    if (!colCenters.length || x - colCenters[colCenters.length - 1] > 10) colCenters.push(x);
+  });
+  // interColChannelX(x1, x2) → X midpoint in the gap between the nearest column to the right of x1
+  // and the nearest column to the left of x2 (or just midpoint if columns are adjacent)
+  function interColChannelX(x1, x2) {
+    const xLeft = Math.min(x1, x2);
+    const xRight = Math.max(x1, x2);
+    // Find the rightmost colCenter that is <= xLeft
+    let rightOfLeft = xLeft;
+    for (let i = colCenters.length - 1; i >= 0; i--) {
+      if (colCenters[i] <= xLeft + 2) { rightOfLeft = colCenters[i]; break; }
+    }
+    // Find the leftmost colCenter that is >= xRight
+    let leftOfRight = xRight;
+    for (let i = 0; i < colCenters.length; i++) {
+      if (colCenters[i] >= xRight - 2) { leftOfRight = colCenters[i]; break; }
+    }
+    // Channel is the midpoint in the gap between these two columns
+    if (rightOfLeft >= leftOfRight - 4) {
+      // Same column or adjacent — use midpoint of the two X values
+      return (x1 + x2) / 2;
+    }
+    return (rightOfLeft + leftOfRight) / 2;
+  }
+
   const paths = [];
   projects.forEach(p => {
     const parents = _getParents(p);
@@ -7458,18 +7512,64 @@ function drawParentLines() {
     const childEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(pid)}"]`);
     if (!childEl) return;
     const cO = offsetRelTo(childEl, swimlane);
+    const childRow = p.layer || 0;
     parents.forEach(parentPid => {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      // M1070: orthogonal ladder path via left gutter (lane-label area, always card-free)
-      // Route: parent → gutter (horizontal) → child lane Y (vertical) → child (horizontal)
-      const gutter = 24;
-      const x1 = pO.x; // left edge of parent
-      const y1 = pO.y + pO.h / 2;
-      const x2 = cO.x; // left edge of child
-      const y2 = cO.y + cO.h / 2;
-      const d = `M${x1},${y1} L${gutter},${y1} L${gutter},${y2} L${x2},${y2}`;
+      const parentProj = projects.find(x => (x.id||x.name) === parentPid);
+      const parentRow = parentProj ? (parentProj.layer || 0) : 0;
+
+      // Card center X and Y for exit/entry points
+      const px = pO.x + pO.w / 2;
+      const py = pO.y + pO.h / 2;
+      const cx = cO.x + cO.w / 2;
+      const cy = cO.y + cO.h / 2;
+
+      let d;
+      if (parentRow === childRow) {
+        // M1070: Same row — horizontal line segment in a row-channel just below (or above) the row
+        // Route: parent center → interLane channel below → across → entry child center
+        const rowBelow = Math.min(parentRow + 1, laneBottomY.length - 1);
+        const chY = parentRow < laneBottomY.length - 1
+          ? interLaneChannelY(parentRow, parentRow + 1)
+          : laneTopY[parentRow] - 8; // use above if bottom lane
+        // Exit parent bottom, horizontal in channel, enter child bottom
+        const pyExit = pO.y + pO.h;
+        const cyEntry = cO.y + cO.h;
+        d = `M${px},${pyExit} L${px},${chY} L${cx},${chY} L${cx},${cyEntry}`;
+      } else {
+        // M1070: Different rows — full ladder routing through inter-lane and inter-column channels
+        // Determine vertical direction
+        const goingDown = childRow > parentRow;
+        // Parent exits from bottom-center if going down, top-center if going up
+        const pyExit = goingDown ? pO.y + pO.h : pO.y;
+        // Child enters from top-center if going down, bottom-center if going up
+        const cyEntry = goingDown ? cO.y : cO.y + cO.h;
+
+        // Row channel between parent row and the next row toward child
+        const adjRow = goingDown ? parentRow + 1 : parentRow - 1;
+        const rowCh1Y = interLaneChannelY(parentRow, adjRow);
+
+        // Row channel just above/below child row (between child-row and the row before it toward parent)
+        const prevChildRow = goingDown ? childRow - 1 : childRow + 1;
+        const rowCh2Y = interLaneChannelY(prevChildRow, childRow);
+
+        // Column channel between parent column and child column (X midpoint in card gap)
+        const colChX = interColChannelX(px, cx);
+
+        if (Math.abs(px - cx) < 10) {
+          // M1070: Same column — straight vertical through col channel
+          d = `M${px},${pyExit} L${px},${rowCh1Y} L${colChX},${rowCh1Y} L${colChX},${rowCh2Y} L${cx},${rowCh2Y} L${cx},${cyEntry}`;
+        } else if (Math.abs(rowCh1Y - rowCh2Y) < 6) {
+          // Adjacent rows — single row channel, route across then down
+          d = `M${px},${pyExit} L${px},${rowCh1Y} L${cx},${rowCh1Y} L${cx},${cyEntry}`;
+        } else {
+          // M1070: Full ladder — exit vertically into row-ch1, across to col-channel,
+          // down/up col-channel to row-ch2, across to child column, enter child
+          d = `M${px},${pyExit} L${px},${rowCh1Y} L${colChX},${rowCh1Y} L${colChX},${rowCh2Y} L${cx},${rowCh2Y} L${cx},${cyEntry}`;
+        }
+      }
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="5,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
