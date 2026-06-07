@@ -7461,12 +7461,13 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      const x1 = pO.x + pO.w / 2;
+      // M1039.2: route via left gutter (lane-label area, always card-free)
+      const gutter = 24;
+      const x1 = pO.x; // left edge of parent
       const y1 = pO.y + pO.h / 2;
-      const x2 = cO.x + cO.w / 2;
+      const x2 = cO.x; // left edge of child
       const y2 = cO.y + cO.h / 2;
-      // M1070 v3: straight diagonal line between card centers
-      const d = `M${x1},${y1} L${x2},${y2}`;
+      const d = `M${x1},${y1} C${gutter},${y1} ${gutter},${y2} ${x2},${y2}`;
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="5,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
@@ -9088,16 +9089,13 @@ async function _showSkillBadgeModal(projId, mid, currentSkill, currentAgent, com
   const _tab = (id, label, active) => `<button data-tab="${id}" onclick="event.stopPropagation();_sbTab('${id}')"
     style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid ${active?'var(--accent)':'var(--panel-border)'};background:${active?'var(--accent-soft)':'none'};color:${active?'var(--accent)':'var(--text-dim)'};cursor:pointer">${label}</button>`;
   // M258: item click shows inline flag input below the row
-  // M1023: also show plugin source badge so users can identify plugin-installed skills
+  // M1023: plugin skills get {owner}- prefix in name (server-side), no badge
   const _row = (name, type, source) => {
-    const isPlugin = (source || '').startsWith('plugin:');
-    const pluginName = isPlugin ? (source.split('plugin:')[1].split('@')[0]) : '';
-    const sourceBadge = isPlugin ? `<span style="margin-left:6px;font-size:8px;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:3px">${esc(pluginName)}</span>` : '';
     return `<div class="sb-row" data-sbname="${esc(name)}" data-sbtype="${type}" data-sbsource="${esc(source||'')}"
       onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(projId)}','${esc(mid)}','${type}','${esc(name)}')"
       style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text);display:flex;align-items:center"
       onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">
-      ${type==='skill'?'⚡':'🤖'} <span style="font-weight:600;margin-left:4px">${esc(name)}</span>${sourceBadge}
+      ${type==='skill'?'⚡':'🤖'} <span style="font-weight:600;margin-left:4px">${esc(name)}</span>
     </div>`;
   };
   // M258 → M1025: server-centralized recent skill/agent (state truth on server,
@@ -9235,13 +9233,10 @@ function _sbTab(tab) {
   const items = isSkill ? m._skills : m._agents;
   list.innerHTML = items.map(s=>{
     const src = s.source || '';
-    const isPlugin = src.startsWith('plugin:');
-    const pluginName = isPlugin ? src.split('plugin:')[1].split('@')[0] : '';
-    const badge = isPlugin ? `<span style="margin-left:6px;font-size:8px;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:3px">${esc(pluginName)}</span>` : '';
     return `<div class="sb-row" data-sbsource="${esc(src)}" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(m._projId)}','${esc(m._mid)}','${tab}','${esc(s.name)}')"
       style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text);display:flex;align-items:center"
       onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">
-      ${isSkill?'⚡':'🤖'} <span style="font-weight:600;margin-left:4px">${esc(s.name)}</span>${badge}
+      ${isSkill?'⚡':'🤖'} <span style="font-weight:600;margin-left:4px">${esc(s.name)}</span>
     </div>`;
   }).join('');
   m.querySelectorAll('[data-tab]').forEach(b => {

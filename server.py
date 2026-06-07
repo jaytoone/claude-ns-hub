@@ -9298,11 +9298,25 @@ async def corpus_skills_agents():
             })
 
     # M1023: also discover plugin-installed skills at ~/.claude/plugins/cache/*/*/<version>/skills/<name>/SKILL.md
+    # Owner prefix: name → "{owner}-{skill}" using known_marketplaces.json source.repo (github owner)
     plugins_cache = home / ".claude" / "plugins" / "cache"
+    plugin_owners = {}
+    km_file = home / ".claude" / "plugins" / "known_marketplaces.json"
+    if km_file.is_file():
+        try:
+            km = json.loads(km_file.read_text(encoding="utf-8"))
+            for plugin_name, meta in km.items():
+                repo = (meta.get("source") or {}).get("repo") or ""
+                if "/" in repo:
+                    plugin_owners[plugin_name] = repo.split("/")[0]
+        except Exception:
+            pass
+
     if plugins_cache.is_dir():
         for plugin_dir in sorted(plugins_cache.iterdir(), key=lambda x: x.name.lower()):
             if not plugin_dir.is_dir():
                 continue
+            owner = plugin_owners.get(plugin_dir.name, plugin_dir.name)
             # Walk: <plugin>/<plugin>/<version>/skills/
             for inner in plugin_dir.iterdir():
                 if not inner.is_dir():
@@ -9320,11 +9334,15 @@ async def corpus_skills_agents():
                         if not md.is_file():
                             continue
                         fm = _frontmatter(md)
+                        raw_name = (fm.get("name") or p.name).strip()
+                        # Prefix with owner (e.g., "fcakyon-reviewer-defense")
+                        display_name = f"{owner}-{raw_name}"
                         skills.append({
-                            "name": (fm.get("name") or p.name).strip(),
+                            "name": display_name,
                             "dir": f"plugin:{plugin_dir.name}/{p.name}",
                             "description": (fm.get("description") or "").strip(),
                             "source": f"plugin:{plugin_dir.name}@{ver.name}",
+                            "owner": owner,
                         })
 
     # M1023: final alphabetical sort so local + plugin skills interleave correctly in UI
