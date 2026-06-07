@@ -7462,13 +7462,14 @@ function drawParentLines() {
       const parentEl = document.querySelector(`.ns-node[data-pid="${CSS.escape(parentPid)}"]`);
       if (!parentEl) return;
       const pO = offsetRelTo(parentEl, swimlane);
-      // M1039.2: route via left gutter (lane-label area, always card-free)
+      // M1070: orthogonal ladder path via left gutter (lane-label area, always card-free)
+      // Route: parent → gutter (horizontal) → child lane Y (vertical) → child (horizontal)
       const gutter = 24;
       const x1 = pO.x; // left edge of parent
       const y1 = pO.y + pO.h / 2;
       const x2 = cO.x; // left edge of child
       const y2 = cO.y + cO.h / 2;
-      const d = `M${x1},${y1} C${gutter},${y1} ${gutter},${y2} ${x2},${y2}`;
+      const d = `M${x1},${y1} L${gutter},${y1} L${gutter},${y2} L${x2},${y2}`;
       paths.push(`<path d="${d}" stroke="${lineColor}" stroke-width="2" fill="none" stroke-dasharray="5,3"/>`);
       paths.push(`<path d="${d}" stroke="transparent" stroke-width="12" fill="none" class="ns-line-hit" data-child="${esc(pid)}" data-parent="${esc(parentPid)}" style="cursor:pointer"/>`);
     });
