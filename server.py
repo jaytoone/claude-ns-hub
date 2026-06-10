@@ -3932,6 +3932,14 @@ async def _start_auto_reply_worker():
                     stone_status, stone_json = _row
                     stone_data = json.loads(stone_json) if stone_json else {}
 
+                    # M1174-fix: stale eviction — stone was transitioned externally
+                    # (MCP call, user click, prev session reply_to_stone).
+                    # Worker has no PATCH path for non-queued status → entry never cleared.
+                    if stone_status != "queued":
+                        _active_stone_clear(proj_id)
+                        logger.info(f"[auto-reply] {proj_id}/{stone_id} status={stone_status} — cleared stale active_stone")
+                        continue
+
                     # Fetch git hash once — used by both ① and ②
                     _proj_list = [p for p in _load_projects() if p.get("id") == proj_id]
                     _repo = _proj_list[0].get("repo_path") if _proj_list else None
