@@ -1858,6 +1858,7 @@ window.addEventListener('message', e => {
         refreshSessionStatus().catch(()=>{}),
       ]).then(([data]) => {
         projects = data;
+        window.projects = projects;  // M1199: expose globally for move-to-project picker
         projects.forEach(p => { p.milestones = p.milestones || []; });
         // M852 rollback fix: re-apply any locally-pending layout changes that haven't been
         // acknowledged by the server yet (drag-just-happened within 4s window).
@@ -1893,6 +1894,7 @@ async function loadData() {
       _initGlobalLaneLabels(),
     ]);
     projects = await projRes.json();
+    window.projects = projects;  // M1199: expose globally for move-to-project picker
     const ctxData = await ctxRes.json();
     ctxTopics = ctxData.ok ? (ctxData.topics || []) : [];
 
@@ -9847,8 +9849,9 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
         // M1125 v2: bind to #dm-xterm (parent) instead of .xterm-screen so the whole
         // visible terminal area captures vertical swipes — .xterm-screen is sometimes
         // smaller than the visible region, leaving dead zones that swallowed swipes.
+        const vp = document.querySelector('#dm-xterm .xterm-viewport');
         const host = document.getElementById('dm-xterm');
-        if (!host || host._touchScrollAttached) return;
+        if (!vp || !host || host._touchScrollAttached) return;
         host._touchScrollAttached = true;
         let lastY = 0;
         host.addEventListener('touchstart', e => { lastY = e.touches[0].clientY; }, { passive: true });
@@ -9857,11 +9860,14 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
           const y = e.touches[0].clientY;
           const dy = lastY - y;
           lastY = y;
-          // M1125 v6: use xterm-viewport.scrollTop directly — scrollLines() on DOM renderer
-          // updates buffer state but may not repaint if _currentRowHeight isn't measured yet.
-          // Direct scrollTop always works; xterm.js picks up the scroll event and syncs state.
-          const vp2 = document.querySelector('#dm-xterm .xterm-viewport');
-          if (vp2) vp2.scrollTop += dy;
+          if (_term) {
+            const lineH = (_term._core?._charSizeService?.height) || 17;
+            const lines = dy / lineH;
+            const stepped = Math.round(lines) || (lines > 0 ? 1 : -1);
+            if (Math.abs(lines) >= 0.1) _term.scrollLines(stepped);
+          } else {
+            vp.scrollTop += dy;
+          }
         }, { passive: false });
       };
       patchVP();
@@ -10001,13 +10007,14 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
         const maxTop = trackH - thumbH;
         const newTop = Math.max(0, Math.min(maxTop, _dragTop0 + dy));
         _thumb.style.top = newTop + 'px';
-        // M1125 v6: map thumb → viewport scrollTop directly (avoids scrollLines() DOM-renderer bug)
+        // Map thumb position → buffer scroll line
         try {
-          const vp3 = document.querySelector('#dm-xterm .xterm-viewport');
-          if (vp3) {
-            const maxScroll = vp3.scrollHeight - vp3.clientHeight;
-            vp3.scrollTop = (newTop / Math.max(1, maxTop)) * maxScroll;
-          }
+          const buf = _term.buffer.active;
+          const total = buf.length;
+          const view = _term.rows;
+          const targetTop = Math.round((total - view) * newTop / Math.max(1, maxTop));
+          const curTop = buf.viewportY;
+          _term.scrollLines(targetTop - curTop);
         } catch(_) {}
         e.preventDefault();
         e.stopPropagation();
@@ -10020,17 +10027,16 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
       _thumb.addEventListener('touchend', _dragEnd, { passive: true });
       _thumb.addEventListener('touchcancel', _dragEnd, { passive: true });
 
-      // Tap on track (not thumb) → page up/down via scrollTop
+      // Tap on track (not thumb) → page up/down
       _track.addEventListener('touchstart', e => {
         if (e.target === _thumb) return;
         const rect = _track.getBoundingClientRect();
         const y = e.touches[0].clientY - rect.top;
         const thumbTop = parseInt(_thumb.style.top || '0', 10);
         const thumbH = _thumb.clientHeight;
-        const vp4 = document.querySelector('#dm-xterm .xterm-viewport');
-        if (vp4) {
-          if (y < thumbTop) vp4.scrollTop -= vp4.clientHeight;  // tap above → page up
-          else if (y > thumbTop + thumbH) vp4.scrollTop += vp4.clientHeight;  // tap below → page down
+        if (_term) {
+          if (y < thumbTop) _term.scrollLines(-_term.rows);  // tap above → page up
+          else if (y > thumbTop + thumbH) _term.scrollLines(_term.rows);  // tap below → page down
         }
         e.preventDefault();
       }, { passive: false });
