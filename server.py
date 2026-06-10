@@ -4144,7 +4144,9 @@ def _get_project_spawn_env(proj_id: str) -> dict:
 def _write_mcp_config(proj_id: str, session_name: str) -> str | None:
     """Generate a per-session MCP config file for Claude Code.
     Returns the config file path, or None if generation fails.
-    Only applies to claude agent sessions (not codex/openrouter/dsk).
+    Applies to claude and openrouter sessions (both use the claude CLI with --mcp-config).
+    Not for codex (separate binary) or dsk (Darwin bridge, limited function calling).
+    M1116: openrouter added — LiteLLM-proxied models still run through claude CLI.
     """
     try:
         hub_url = f"http://{_tailscale_interface_ip()}:{PORT}"
@@ -4175,6 +4177,41 @@ def _exec_wake_msg(session_name: str) -> str:
     if Path(f"/tmp/hub/mcp/{session_name}.json").exists():
         return "Tasks ready. Call mcp__ns-hub__get_pending_task() now."
     return "go"
+
+
+_COMPACT_THRESHOLD_MB = 10  # M1175: auto-compact when transcript exceeds this
+
+
+def _transcript_too_large(proj_id: str) -> bool:
+    """M1175: Return True when the current session transcript exceeds COMPACT_THRESHOLD_MB.
+    Used to decide whether to inject /compact before the next task wake message."""
+    try:
+        pdir = PROJECTS_DIR / proj_id
+        proj_dir = _hub_config_get(proj_id, "project_dir") or str(pdir)
+        encoded = _encode_cwd_for_claude(str(proj_dir))
+        transcripts_dir = Path.home() / ".claude" / "projects" / encoded
+        # Look up the active session ID from history
+        hist_file = pdir / ".session-history.json"
+        sid = ""
+        if hist_file.exists():
+            try:
+                hist = json.loads(hist_file.read_text())
+                model = _get_project_model_value(proj_id) or "_default"
+                sid = (hist.get(model) or hist.get("_current") or "").strip()
+            except Exception:
+                pass
+        if not sid:
+            last_id_file = pdir / ".last-session-id"
+            if last_id_file.exists():
+                sid = last_id_file.read_text().strip()
+        if not sid:
+            return False
+        t = transcripts_dir / f"{sid}.jsonl"
+        if t.exists():
+            return t.stat().st_size > _COMPACT_THRESHOLD_MB * 1024 * 1024
+    except Exception:
+        pass
+    return False
 
 
 def _record_spawn_info(proj_id: str, resume_args: list, agent: str = "claude") -> None:
@@ -4213,7 +4250,18 @@ def _record_spawn_info(proj_id: str, resume_args: list, agent: str = "claude") -
     else:
         info = {"agent": agent, "mode": "fresh", "from_id": "", "at": _dt.now().isoformat(timespec="seconds")}
     # M189: add model to spawn info so UI can display it in the session pane
-    info["model"] = _get_project_model_value(proj_id) or ""
+    # M1131: when no explicit model is set for the project, read the effective
+    # default from ~/.claude/settings.json so _execModel is never empty.
+    _proj_model = _get_project_model_value(proj_id) or ""
+    if not _proj_model:
+        try:
+            import json as _json
+            _cc_settings = Path.home() / ".claude" / "settings.json"
+            if _cc_settings.exists():
+                _proj_model = _json.loads(_cc_settings.read_text()).get("model", "") or ""
+        except Exception:
+            pass
+    info["model"] = _proj_model
     try:
         pdir = PROJECTS_DIR / proj_id
         pdir.mkdir(parents=True, exist_ok=True)
@@ -4485,12 +4533,14 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
     if tmux_session_name and _HAS_PTY:
         import ptyprocess as _pty_mod
         try:
-            # M804: replay last 2000 lines of tmux scrollback before attaching so mobile
-            # users can scroll up to see previous output without needing copy mode.
+            # M1125: replay up to 10000 lines of tmux scrollback (was 2000) so mobile
+            # users can scroll back through long exec sessions. tmux history-limit is 50000
+            # globally so the source has room; xterm.js scrollback is 5000 client-side which
+            # bounds the upper end. Timeout 3→8s to give large pane dumps room.
             import subprocess as _sp
             _cap = _sp.run(
-                ["tmux", "capture-pane", "-p", "-J", "-S", "-2000", "-t", tmux_session_name],
-                capture_output=True, text=True, timeout=3
+                ["tmux", "capture-pane", "-p", "-J", "-S", "-10000", "-t", tmux_session_name],
+                capture_output=True, text=True, timeout=8
             )
             if _cap.returncode == 0 and _cap.stdout.strip():
                 await websocket.send_text(_cap.stdout)
@@ -5551,15 +5601,35 @@ def _detect_code_change_signals(text: str) -> "dict | None":
 # Static code review alone produces false PASSes ("the code looks right but did it actually render?").
 # When the diff touches HTML/CSS/JS that affects the rendered UI, the reviewer MUST run Playwright
 # to verify and attach a screenshot+counted observations as evidence.
-def _build_review_stone_text(mid: str, brief: str) -> str:
-    # M1063: simplified — UI-focused, concise
+def _stone_completion_summary(m: dict) -> str:
+    """M1126: extract 'what was ACTUALLY done' from a completed stone — the last
+    claude completion message (report_task_complete append_message), falling back
+    to star_relation. Fed into the review stone so the reviewer understands the
+    real change instead of re-deriving it from the original request text."""
+    if not isinstance(m, dict):
+        return ""
+    conv = m.get("conversation") or []
+    for e in reversed(conv):
+        if isinstance(e, dict) and e.get("role") == "claude" and str(e.get("text", "")).strip():
+            return str(e.get("text", "")).strip()[:240]
+    return str(m.get("star_relation", "") or "").strip()[:240]
+
+
+def _build_review_stone_text(mid: str, brief: str, change_summary: str = "") -> str:
+    # M1126: change-aware + screen-verify focused. The old template prepended a
+    # generic OWASP/0-10 checklist to a truncated COPY OF THE ORIGINAL REQUEST, so
+    # the reviewer never knew what was actually changed ("허접"). Now we embed the
+    # actual completion summary and reduce the checklist to "does the applied
+    # update work on screen?" — a simple visual verification, not a code audit.
+    _applied = f"적용내용: {change_summary}\n" if change_summary else ""
     return (
         f"[검수] {mid}: {brief}\n"
-        f"①변경파일/함수 명시 + 회귀위험(영향 범위)\n"
-        f"②UI 실측 필수(Playwright navigate→동작→DOM 측정·스크린샷) — UI 변경이면 before/after 스크린샷 1쌍\n"
-        f"③의도대로 동작하는지 + 엣지케이스(null/empty/동시성)\n"
-        f"④OWASP 해당 여부(XSS/SQLi/auth 등)\n"
-        f"⑤완성도 0-10점"
+        f"{_applied}"
+        f"→ 위 변경이 화면에서 실제로 잘 동작하는지만 확인 (해당 UI를 Playwright로 열어 동작 실측).\n"
+        f"①무엇이 바뀌었나 1줄 + 변경 파일\n"
+        f"②화면 실측: 의도대로 동작하나? (UI 변경이면 스크린샷 1장)\n"
+        f"③눈에 띄는 깨짐/빈값 없나 빠르게 점검\n"
+        f"④판정: 동작 OK / 수정 필요 — 이유 1줄"
     )
 
 
@@ -5626,7 +5696,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                       "confounder",              # JSON: session_start_ts, git_hash, model, exec_duration_sec
                       "counterfactual_pair_id"):  # peer child stone ID at branch points
                 if k in data:
-                    m[k] = data[k] if data[k] else None
+                    m[k] = data[k] if data[k] is not None else None
                     # M118: clear stale star_relation when milestone text changes
                     if k == "text" and data[k]:
                         m.pop("star_relation", None)
@@ -5746,28 +5816,101 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                                     f"\"allow_stale\":true in the body to override (M780.2)."
                                 ),
                             }, status_code=422)
-                    # M185/M1064 v2: max 3-line summary — extract key lines, skip blanks
+                    # M185/M1064 v2: line-summary — extract key lines, skip blanks
+                    # M1161 v2: per user clarification — 3-line strict cap removed. Hard cap raised
+                    # from 3 to 12 so faithful answers aren't truncated; only excessively long
+                    # replies (>12 non-empty lines) are Q-anchor-reduced to the most relevant 12.
+                    _MAX_LINES = 12
                     _text = str(msg.get("text", ""))
                     _all_lines = _text.split("\n")
-                    if len(_all_lines) > 3:
-                        # Strategy: first non-empty line (headline) + pick next 2 non-empty key lines
-                        _non_empty = [l for l in _all_lines if l.strip()]
-                        if len(_non_empty) <= 3:
-                            msg["text"] = "\n".join(_non_empty)
-                        else:
-                            # Take headline + middle key line + last key line
-                            _h = _non_empty[0]
-                            _m2 = _non_empty[1]  # second key point
-                            _last = _non_empty[-1]
-                            _chosen = [_h, _m2]
-                            if _last not in _chosen:
-                                _chosen.append(_last)
-                            msg["text"] = "\n".join(_chosen[:3])
+                    _non_empty = [l for l in _all_lines if l.strip()]
+                    if len(_non_empty) > _MAX_LINES:
+                        _chosen = None
+                        # Q-anchored top-N (claude responses only)
+                        if msg.get("role") == "claude":
+                            _prev_conv = m.get("conversation") or []
+                            _q_text = ""
+                            for _prev in reversed(_prev_conv):
+                                if isinstance(_prev, dict) and _prev.get("role") == "user":
+                                    _q_text = str(_prev.get("text", ""))
+                                    break
+                            if _q_text:
+                                import re as _re_qa
+                                def _toks(s):
+                                    return set(t for t in _re_qa.findall(r"[\w가-힣]+", (s or "").lower()) if len(t) > 1)
+                                _q_tokens = _toks(_q_text)
+                                if _q_tokens:
+                                    _scored = []
+                                    for _idx, _ln in enumerate(_non_empty):
+                                        _ov = len(_q_tokens & _toks(_ln))
+                                        _bias = (1 if _idx == 0 else 0) + (1 if _idx == len(_non_empty) - 1 else 0)
+                                        _scored.append((_idx, _ln, _ov * 10 + _bias))
+                                    _top = sorted(_scored, key=lambda x: -x[2])[:_MAX_LINES]
+                                    _top_ordered = sorted(_top, key=lambda x: x[0])
+                                    _chosen = [t[1] for t in _top_ordered]
+                        if _chosen is None:
+                            # Fallback: head + tail (preserve flow when no Q-anchor)
+                            _chosen = _non_empty[: _MAX_LINES // 2] + _non_empty[-(_MAX_LINES - _MAX_LINES // 2):]
+                        msg["text"] = "\n".join(_chosen[:_MAX_LINES])
                         msg["truncated"] = True
+                    else:
+                        # ≤MAX_LINES — keep as-is but strip pure-blank lines for cleanliness
+                        if len(_all_lines) != len(_non_empty):
+                            msg["text"] = "\n".join(_non_empty)
                     msg.setdefault("ts", _dt.datetime.now().isoformat())
                     conv = m.get("conversation") or []
                     conv.append(msg)
                     m["conversation"] = conv
+                    # M1154 v4: auto-compression DISABLED — user requested full conversation
+                    # history in the chatbox. The destructive squash was losing original turns
+                    # which violated UI contract. LLM context grows accordingly (acceptable
+                    # trade-off per user). Leaving the code path in place for legacy stones
+                    # (existing role:'summary' entries still render via badge), guarded by False.
+                    _AUTO_KEEP_LAST = 4
+                    _AUTO_THRESHOLD = 5
+                    if False and len(conv) > _AUTO_THRESHOLD:
+                        # Treat existing role:'summary' (if at index 0) as already-compressed older history.
+                        _old_summary = None
+                        if conv and isinstance(conv[0], dict) and conv[0].get("role") == "summary":
+                            _old_summary = conv[0]
+                            _raw_conv = conv[1:]
+                        else:
+                            _raw_conv = conv[:]
+                        # Compress all but the last KEEP_LAST raw turns
+                        if len(_raw_conv) > _AUTO_KEEP_LAST:
+                            _to_squash = _raw_conv[:-_AUTO_KEEP_LAST]
+                            _keep = _raw_conv[-_AUTO_KEEP_LAST:]
+                            _trim = lambda t: (str(t or "").replace("\n", " ").strip())[:150]
+                            _u_turns = [c for c in _to_squash if isinstance(c, dict) and c.get("role") == "user"]
+                            _c_turns = [c for c in _to_squash if isinstance(c, dict) and c.get("role") == "claude"]
+                            _sum_lines = []
+                            if _u_turns: _sum_lines.append("U: " + _trim(_u_turns[0].get("text") or _u_turns[0].get("content", "")))
+                            if len(_u_turns) > 1: _sum_lines.append("Un: " + _trim(_u_turns[-1].get("text") or _u_turns[-1].get("content", "")))
+                            if _c_turns: _sum_lines.append("C: " + _trim(_c_turns[-1].get("text") or _c_turns[-1].get("content", "")))
+                            _new_summary_text = " | ".join(_sum_lines) if _sum_lines else f"({len(_to_squash)} turns compressed)"
+                            _new_compressed_count = len(_to_squash) + (
+                                int(_old_summary.get("compressed_count", 0)) if _old_summary else 0
+                            )
+                            if _old_summary:
+                                # Merge: keep old summary text up front, append fresh squash digest
+                                _merged_text = (str(_old_summary.get("text", "")).strip() + " ‖ " + _new_summary_text).strip(" ‖")
+                                _summary_entry = {
+                                    "role": "summary",
+                                    "text": _merged_text,
+                                    "ts": _to_squash[-1].get("ts", _old_summary.get("ts", "")),
+                                    "compressed_count": _new_compressed_count,
+                                }
+                            else:
+                                _summary_entry = {
+                                    "role": "summary",
+                                    "text": _new_summary_text,
+                                    "ts": _to_squash[-1].get("ts", ""),
+                                    "compressed_count": _new_compressed_count,
+                                }
+                            m["conversation"] = [_summary_entry] + _keep
+                            conv = m["conversation"]
+                            _server_log_action(proj_id, mid, "auto_compress_conv",
+                                               f"squashed={len(_to_squash)} kept={len(_keep)} total_compressed={_new_compressed_count}")
                     # M1050/M1060: verify_flag resets on every chat message (user or claude)
                     if m.get("verify_flag"):
                         m["verify_flag"] = False
@@ -5820,7 +5963,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                                     while _m722_rev_id in _m722_existing_ids:
                                         _m722_rev_id += "x"
                                     _m722_layer = (m.get("layer", 0) or 0) + 1
-                                    _m722_rev_text = _build_review_stone_text(mid, str(m.get("text",""))[:80])
+                                    _m722_rev_text = _build_review_stone_text(mid, str(m.get("text",""))[:80], _stone_completion_summary(m))
                                     milestones.append({
                                         "id": _m722_rev_id,
                                         "text": _m722_rev_text,
@@ -5943,7 +6086,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                                 _vq_rev_id += "x"
                             milestones.append({
                                 "id": _vq_rev_id,
-                                "text": _build_review_stone_text(mid, str(m.get("text",""))[:80]),
+                                "text": _build_review_stone_text(mid, str(m.get("text",""))[:80], _stone_completion_summary(m)),
                                 "layer": (m.get("layer", 0) or 0) + 1,
                                 "parent_id": mid,
                                 "done": False,
@@ -5967,16 +6110,23 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                 m["status"] = "pending_confirmation"
                 m["done"] = False
                 m["pending_confirm_at"] = now_iso  # always update for _isLastTurn green border
-                # M1047: evidence_url validation — warn when visual work has no proof attached
+                # M1047/M1145: evidence_url validation — warn when result-producing work has no proof attached
                 _ev_url = data.get("evidence_url") or m.get("evidence_url") or ""
                 _stone_txt = (m.get("text") or "").lower()
-                _visual_keywords = ("화면", "ui", "스크린샷", "검수", "screenshot", "visual", "proof", "chart", "table", "증거", "증빙")
-                _is_visual = any(kw in _stone_txt for kw in _visual_keywords)
-                if _is_visual and not _ev_url:
+                # M1145: expanded keyword set — catches docs, Excel, analysis, code, UI, screenshots
+                _result_keywords = (
+                    "화면", "ui", "스크린샷", "검수", "screenshot", "visual", "proof", "chart", "table",
+                    "증거", "증빙", "문서", "docx", "excel", "엑셀", "pdf", "분석", "analysis",
+                    "리서치", "research", "보고서", "report", "정리", "결과물", "산출물",
+                    "구현", "기능", "추가", "수정", "개선", "만들", "작성", "생성",
+                    "implement", "create", "build", "design", "develop",
+                )
+                _is_result = any(kw in _stone_txt for kw in _result_keywords)
+                if _is_result and not _ev_url:
                     # Flag missing proof — does not block the PATCH
-                    m.setdefault("_proof_warning", "evidence_url missing — proof badge will not be generated; add screenshot/link via PATCH evidence_url")
+                    m.setdefault("_proof_warning", "evidence_url missing — result badge will not be generated; add screenshot/link via PATCH evidence_url")
                     _server_log_action(proj_id, mid, "warn:evidence_url_missing",
-                                       "pending_confirmation on visual stone without evidence_url — proof badge skipped")
+                                       "pending_confirmation on result stone without evidence_url — proof badge skipped")
                 if "claude_ack" not in data:
                     m["claude_ack"] = now_iso
                 # M549.1: guard — if conversation has no recent claude message, auto-append fallback.
@@ -6259,7 +6409,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
             _brief = (updated_m.get("text") or "")[:50].strip()
             milestones.append({
                 "id": _rev_id,
-                "text": _build_review_stone_text(mid, _brief),
+                "text": _build_review_stone_text(mid, _brief, _stone_completion_summary(updated_m)),
                 "layer": _m_layer + 1, "parent_id": mid, "done": False,
                 "status": "queued", "claude_ack": None,
                 "user_added_at": _dt.datetime.now().strftime("%Y-%m-%dT%H:%M"),
@@ -7149,6 +7299,13 @@ async def execute_project(proj_id: str, request: Request):
                                     _has_prompt = "❯" in _pane
                                     _actively_blocked = "esc to i" in _pane or _modal
                                     if _has_prompt and not _actively_blocked:
+                                        # M1175: auto-compact if transcript too large
+                                        if _transcript_too_large(proj_id):
+                                            subprocess.run(
+                                                ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
+                                                capture_output=True, timeout=2,
+                                            )
+                                            await asyncio.sleep(25)
                                         subprocess.run(
                                             ["tmux", "send-keys", "-t", session_name, _exec_wake_msg(session_name), "Enter"],
                                             capture_output=True, timeout=2,
@@ -7469,6 +7626,7 @@ async def execute_project(proj_id: str, request: Request):
                 f"      • If stone text or USER MSG carries [skill:/name] or [agent:name] OR `skill_refs`/`agent_refs` array → MANDATORY: invoke Skill(skill='name') / Agent(subagent_type='name') as the FIRST tool call BEFORE GET/Edit/anything.\n"
                 f"      • This applies even in REPLY MODE and even when delegating to sub-agents (orchestrator must invoke skill itself, NOT skip because it's reply-only).\n"
                 f"      • Skipping = silent failure. The skill_refs field on user msgs (visible in conversation[]) is the source of truth — re-check every PATCH cycle.\n"
+                f"      • M1121 TOKEN GUARDRAIL: NEVER autonomously invoke deep-research, live, live-inf, or any skill that uses the Workflow tool — these consume millions of tokens. Only invoke skills explicitly listed in skill_refs/agent_refs. If a stone seems research-related but has NO skill_refs, use direct WebSearch tool calls instead.\n"
                 f"  2. GET {hub_api}/api/northstar/{proj_id}/milestones — read full text + conversation[].\n"
                 f"  3. Edit/write files to implement the milestone.\n"
                 f"  4. Append completion-log:\n"
@@ -7479,22 +7637,30 @@ async def execute_project(proj_id: str, request: Request):
                 f"     append_message = MANDATORY — ALWAYS include. Omitting it leaves the stone with no reply\n"
                 f"       visible to the user (server inserts '완료.' as emergency fallback but it is generic).\n"
                 f"       RULE: append_message in the SAME PATCH as status=pending_confirmation. Past tense only.\n"
-                f"  5b. [검수] AUTO-REVIEW (M767): if the stone you just completed involved writing or modifying code,\n"
-                f"      immediately POST a [검수] child stone based on the ACTUAL changes you made:\n"
-                f"      POST {hub_api}/api/northstar/{proj_id}/milestones\n"
-                f"      body: {{\"parent_id\":\"<MID>\",\"text\":\"[검수] <MID>: <1-line change summary> — ①변경파일/함수명 명시+회귀위험(영향 범위) ②의도대로 동작하는지+엣지케이스(null/empty/concurrent) ③OWASP 해당 여부(XSS/SQLi/auth 등) ④성능영향(루프/DB쿼리/렌더) ⑤완성도 0-10점\",\"status\":\"queued\"}}\n"
-                f"      QUALITY RULE: <1-line change summary> must name the SPECIFIC functions/files changed (e.g. '_db_save_single_milestone in server.py').\n"
-                f"                   Each ①-⑤ criterion should be filled with SPECIFIC observations from the diff, not generic placeholders.\n"
+                f"  5 RESULT DELIVERY (M1133): if the stone produced a shareable artifact (image, document, code file,\n"
+                f"     Excel, PDF, analysis, screenshot), you MUST include it in the completion PATCH as evidence_url.\n"
+                f"     This populates the 'result' badge the user clicks to see the output.\n"
+                f"     ① Upload to GDrive: rclone copy <local-file> 'gdrive:claude-shared/{proj_id}/outbox/'\n"
+                f"     ② Get link:         RESULT_URL=$(rclone link 'gdrive:claude-shared/{proj_id}/outbox/<filename>')\n"
+                f"     ③ Add to PATCH:     \"evidence_url\": \"$RESULT_URL\"\n"
+                f"     If result is text/analysis only (no file): include the key summary in append_message instead.\n"
+                f"     evidence_url is shown to the user as the 'result' badge on the stone — always provide it\n"
+                f"     when the user explicitly asked for a document, image, file, or code output.\n"
+                f"  5b. [검수] AUTO-REVIEW (M767/M1137): if the stone you just completed involved writing or modifying code,\n"
+                f"      immediately CREATE a [검수] child stone using the MCP tool (NOT curl/bash):\n"
+                f"      mcp__ns-hub__create_child_stone(parent_id=\"<MID>\", text=\"[검수] <MID>: <1-line change summary>\\n적용내용: <what you actually changed>\\n→ 위 변경이 화면에서 잘 동작하는지만 확인: ①무엇이 바뀌었나 1줄+변경파일 ②화면 실측(의도대로 동작? UI면 스크린샷 1장) ③깨짐/빈값 빠르게 점검 ④판정: 동작 OK / 수정 필요+이유 1줄\", status=\"queued\")\n"
+                f"      QUALITY RULE: <change summary> and 적용내용 must name the SPECIFIC functions/files changed (e.g. '_db_save_single_milestone in server.py') so the reviewer understands the real change.\n"
+                f"                   This is a SCREEN VERIFICATION (does the applied update work?), not a full code audit — keep it concrete and lightweight.\n"
                 f"      Skip if: stone is research/reply/question only, no files edited, or [검수] child already exists.\n"
-                f"  5c. [검수] SCREENSHOT PROOF (M817): if THIS stone IS a [검수] stone (text starts with '[검수]'),\n"
+                f"  5c. [검수] RESULT SCREENSHOT (M817/M1133): if THIS stone IS a [검수] stone (text starts with '[검수]'),\n"
                 f"      after completing the review, capture a Playwright screenshot of the affected UI feature\n"
-                f"      and attach it as evidence:\n"
+                f"      and attach it as the 'result' badge:\n"
                 f"      ① Take screenshot: mcp__playwright-session-1__browser_navigate to http://127.0.0.1:{PORT}/northstar,\n"
                 f"         then mcp__playwright-session-1__browser_take_screenshot with\n"
-                f"         filename='/home/desk-1/Project/Moat/.playwright-mcp/review-<MID>-proof.png'\n"
-                f"      ② Upload: rclone copy /home/desk-1/Project/Moat/.playwright-mcp/review-<MID>-proof.png 'gdrive:claude-shared/Moat/outbox/'\n"
-                f"         GDRIVE_URL=$(rclone link 'gdrive:claude-shared/Moat/outbox/review-<MID>-proof.png')\n"
-                f"      ③ Include in completion PATCH: add \"evidence_url\":\"$GDRIVE_URL\" to the PATCH body.\n"
+                f"         filename='/home/desk-1/Project/Moat/.playwright-mcp/review-<MID>-result.png'\n"
+                f"      ② Upload: rclone copy /home/desk-1/Project/Moat/.playwright-mcp/review-<MID>-result.png 'gdrive:claude-shared/Moat/outbox/'\n"
+                f"         RESULT_URL=$(rclone link 'gdrive:claude-shared/Moat/outbox/review-<MID>-result.png')\n"
+                f"      ③ Include in completion PATCH: add \"evidence_url\":\"$RESULT_URL\" to the PATCH body.\n"
                 f"      Skip if: reviewed stone was research/docs only (no UI to screenshot).\n"
                 f"  6. TaskUpdate(<id>, status='completed')\n\n"
             )
@@ -7638,16 +7804,38 @@ async def execute_project(proj_id: str, request: Request):
             for _k, _v in _get_project_spawn_env(proj_id).items():
                 _tmux_env += ["-e", f"{_k}={_v}"]
             # MCP config for Claude Code sessions — enables structured task dispatch/completion
+            # M1116: openrouter included — LiteLLM-proxied models still use claude CLI so MCP works
             _mcp_args = []
-            if agent in (None, "claude"):
+            if agent in (None, "claude", "openrouter"):
                 _mcp_cfg = _write_mcp_config(proj_id, session_name)
                 if _mcp_cfg:
                     _mcp_args = ["--mcp-config", _mcp_cfg]
+            # M1129: --append-system-prompt bakes the hub MCP call instruction into Claude's
+            # system prompt BEFORE the first user message. Solves the timing race where MCP
+            # tools haven't finished initializing when the "go" wake message arrives.
+            # Only injected when MCP is enabled — avoids confusion on non-MCP spawns.
+            _sys_prompt_args = []
+            if _mcp_args:
+                _sys_prompt_args = [
+                    "--append-system-prompt",
+                    "When the user sends 'go', 'Tasks ready', or any session-start trigger: "
+                    "your FIRST action must be to call mcp__ns-hub__get_pending_task(). "
+                    "Do not ask for direction. Do not summarize prior work. Just call the tool. "
+                    # M1161 v2: faithful-answer template (no strict line cap).
+                    "When you call mcp__ns-hub__reply_to_stone or mcp__ns-hub__report_task_complete "
+                    "after a user comment, your message MUST directly answer the user's LAST comment "
+                    "on line 1 — yes/no/what/where, no filler, no restating the question. "
+                    "Then add evidence (file:line, observed value, or quoted source) and the next action "
+                    "or status. Be as concise as the question allows: short questions get short answers, "
+                    "complex questions get the lines they need (server caps at 12). "
+                    "If you cannot answer, say '[NEED INFO]: <missing>'."
+                ]
             subprocess.Popen([
                 "tmux", "new-session", "-d", "-s", session_name,
                 "-c", spawn_cwd,
                 *_tmux_env,
-                "claude", "--dangerously-skip-permissions", *_get_project_model(proj_id), *_mcp_args, *resume_args,
+                "claude", "--dangerously-skip-permissions", *_get_project_model(proj_id),
+                *_mcp_args, *_sys_prompt_args, *resume_args,
             ])
             import asyncio as _aio
             # Wait for Claude + SessionStart hook to complete
@@ -7687,7 +7875,7 @@ async def execute_project(proj_id: str, request: Request):
                 for _k, _v in _get_project_spawn_env(proj_id).items():
                     _tmux_env += ["-e", f"{_k}={_v}"]
                 _mcp_args_retry = []
-                if agent in (None, "claude"):
+                if agent in (None, "claude", "openrouter"):
                     _mcp_cfg_retry = _write_mcp_config(proj_id, session_name)
                     if _mcp_cfg_retry:
                         _mcp_args_retry = ["--mcp-config", _mcp_cfg_retry]
@@ -7722,13 +7910,38 @@ async def execute_project(proj_id: str, request: Request):
                               ". Likely cause: stale --resume target or rate-limit at boot."),
                 }, status_code=502)
 
-            subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"])
+            # M1129: use _exec_wake_msg (was hardcoded "go") so MCP-enabled sessions receive
+            # the explicit tool-call instruction instead of bare "go".
+            # M1175: auto-compact on spawn if transcript is too large.
+            if _transcript_too_large(proj_id):
+                subprocess.run(["tmux", "send-keys", "-t", session_name, "/compact", "Enter"])
+                await asyncio.sleep(25)
+            subprocess.run(["tmux", "send-keys", "-t", session_name, _exec_wake_msg(session_name), "Enter"])
 
             # M747/M792: spawn per-session sessions after main session is live
             # M792: iterate session_qs (session_key -> stones); session_name IS the key
             if _branch_substars:
                 _ss_tmux_base = list(_tmux_env)  # copy main tmux env
                 _newly_spawned: list = []
+                # M1166: branched sessions should inherit the MOTHER (main) session's actual
+                # running model, not the current project_meta model (which may have been
+                # changed via dropdown between main spawn and branch spawn). Read the
+                # main session's spawn_info ONCE before the branch loop — main was spawned
+                # earlier so its model is what's recorded there. Falls back to project model
+                # when spawn_info is missing or has no model field.
+                _mother_model_args = _get_project_model(proj_id)
+                try:
+                    _msi_file = PROJECTS_DIR / proj_id / ".last-spawn-info.json"
+                    if _msi_file.exists():
+                        import json as _j_m1166
+                        _msi = _j_m1166.loads(_msi_file.read_text())
+                        _mother_model = (_msi.get("model") or "").strip()
+                        if _mother_model:
+                            _mother_model_args = ["--model", _mother_model]
+                            _server_log_action(proj_id, "", "branched_model_inherit",
+                                               f"mother model={_mother_model} (project default would have been {' '.join(_get_project_model(proj_id))})")
+                except Exception:
+                    pass
                 for _skey, _ss_stones in _session_qs.items():
                     _ss_short = _skey[-12:]  # consistent with prompt file naming
                     # _skey is the full tmux session name (assigned_session or _substar_session_name)
@@ -7759,7 +7972,7 @@ async def execute_project(proj_id: str, request: Request):
                         "tmux", "new-session", "-d", "-s", _ss_sname,
                         "-c", spawn_cwd,
                         *_ss_env,
-                        "claude", "--dangerously-skip-permissions", *_get_project_model(proj_id),
+                        "claude", "--dangerously-skip-permissions", *_mother_model_args,  # M1166
                         *_ss_resume_args,
                     ])
                     _newly_spawned.append((_ss_sname, time.time()))
@@ -8186,16 +8399,47 @@ def _get_telegram_config() -> tuple[str, str]:
         chat_id = _TG_CHAT_FILE.read_text().strip()
     return token, chat_id
 
-_notify_last_ts: dict[str, float] = {}  # M389: cooldown removed — Telegram has no rate limits
-_NOTIFY_COOLDOWN_SEC = 0               # no cooldown
+_notify_last_ts: dict[str, float] = {}  # M1171: 60s cooldown
+_NOTIFY_COOLDOWN_SEC = 60              # same title within 60s → drop
+
+def _has_queued_stones(proj_id: str) -> bool:
+    """M1171 v2: True if project still has stones waiting to execute (status='queued', not held).
+    Used to suppress idle notifications when back-to-back stones are running."""
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=2)
+        count = conn.execute(
+            "SELECT COUNT(*) FROM milestones_store WHERE proj_id=? AND status='queued' AND COALESCE(held,0)=0",
+            (proj_id,)
+        ).fetchone()[0]
+        conn.close()
+        return count > 0
+    except Exception:
+        return False  # fail-open: if DB unreachable, allow notification
+
+_TG_COOLDOWN_FILE = _HUB_DATA_DIR / ".tg-last-sent.json"  # M1171 v3: cross-process cooldown
 
 def _send_ntfy_notification(title: str, body: str, priority: str = "default") -> None:
     """Send Telegram push notification for live→idle events. In-page toast handled separately via SSE."""
     now = time.time()
-    last = _notify_last_ts.get(title, 0)
+    # M1171 v3: file-based cooldown so multiple hub processes (dev instances, zombie restarts)
+    # share the same dedup state — prevents 3x fires when extra hub instances are alive.
+    try:
+        _ts_data = json.loads(_TG_COOLDOWN_FILE.read_text()) if _TG_COOLDOWN_FILE.exists() else {}
+    except Exception:
+        _ts_data = {}
+    last_file = float(_ts_data.get(title, 0))
+    last_mem  = _notify_last_ts.get(title, 0)
+    last = max(last_file, last_mem)
     if now - last < _NOTIFY_COOLDOWN_SEC:
         return
     _notify_last_ts[title] = now
+    try:
+        _ts_data[title] = now
+        # Prune entries older than 2x cooldown to keep file small
+        _ts_data = {k: v for k, v in _ts_data.items() if now - v < _NOTIFY_COOLDOWN_SEC * 2}
+        _TG_COOLDOWN_FILE.write_text(json.dumps(_ts_data))
+    except Exception:
+        pass
     tg_token, tg_chat_id = _get_telegram_config()
     if not (tg_token and tg_chat_id):
         return
@@ -8713,12 +8957,15 @@ async def _start_exec_idle_detector():
                     _consec_idle = _exec_idle_count.get(session_name, 0)
                     if _was_running and idle and _consec_idle >= 2:
                         _exec_was_running[session_name] = False
+                        _exec_notified[session_name] = time.time()  # M1171 Fix B: prevent browser-poll duplicate
                         _push_session_idle(session_name, proj_id)  # SSE toast
-                        _send_ntfy_notification(             # Telegram — same condition as toast
-                            f"{proj_id} exec idle",
-                            f"Exec session for {proj_id} just went idle",
-                            priority="default"
-                        )
+                        # M1171 v2: only notify when queue is empty — suppress mid-batch notifications
+                        if not _has_queued_stones(proj_id):
+                            _send_ntfy_notification(
+                                f"{proj_id} exec idle",
+                                f"Exec session for {proj_id} just went idle",
+                                priority="default"
+                            )
                 # Clean up stale entries — M460 fix: notify if session disappears while running
                 for k in list(_exec_was_running.keys()):
                     if k not in alive:
@@ -8733,11 +8980,12 @@ async def _start_exec_idle_detector():
                                     break
                             if _proj:
                                 _push_session_idle(k, _proj)
-                                _send_ntfy_notification(
-                                    f"{_proj} exec idle",
-                                    f"Exec session for {_proj} just went idle",
-                                    priority="default"
-                                )
+                                if not _has_queued_stones(_proj):
+                                    _send_ntfy_notification(
+                                        f"{_proj} exec idle",
+                                        f"Exec session for {_proj} just went idle",
+                                        priority="default"
+                                    )
             except Exception:
                 pass
     # M460 cold-start fix: pre-scan existing exec sessions at startup.
@@ -8867,6 +9115,24 @@ async def get_exec_sessions():
                 spawn_model = ""
         else:
             spawn_model = ""
+        # M1131: when spawn_model is still empty, try two fallbacks in order:
+        # 1. project_meta SQLite — user may have changed the model after last spawn
+        # 2. ~/.claude/settings.json global model (explicit key only)
+        # This ensures _execModel is never blank for a running session.
+        if not spawn_model:
+            try:
+                _proj_meta_model = _get_project_model_value(proj_id) or ""
+                if _proj_meta_model:
+                    spawn_model = _proj_meta_model
+            except Exception:
+                pass
+        if not spawn_model:
+            try:
+                _cc = Path.home() / ".claude" / "settings.json"
+                if _cc.exists():
+                    spawn_model = json.loads(_cc.read_text()).get("model", "") or ""
+            except Exception:
+                pass
         # v0.2.4: single-transition detection with 2-read idle debounce.
         # M378 false-positive fix: user typing "go" shows brief prompt (no spinner) then
         # spinner appears — without debounce this fires session_idle toast immediately.
@@ -8883,7 +9149,9 @@ async def get_exec_sessions():
             _already_notified = session_name in _exec_notified
             if not _already_notified:
                 _push_session_idle(session_name, proj_id)
-                _send_ntfy_notification(f"{proj_id} exec idle", f"Exec session for {proj_id} just went idle", priority="default")
+                # M1171 v2: only notify when queue is empty — suppress mid-batch notifications
+                if not _has_queued_stones(proj_id):
+                    _send_ntfy_notification(f"{proj_id} exec idle", f"Exec session for {proj_id} just went idle", priority="default")
                 _exec_notified[session_name] = time.time()
         elif not idle:
             # session running → reset notified flag so next idle can fire
@@ -8934,7 +9202,18 @@ async def get_exec_sessions():
     for k in list(_exec_notified.keys()):
         if k not in _alive_sessions:
             del _exec_notified[k]
-    return JSONResponse({"ok": True, "sessions": sessions})
+    # M1158: also include all tmux sessions (main, branch, etc.) for sess badge
+    _all_sx = []
+    try:
+        _tmux_out = subprocess.run(
+            ["tmux", "list-sessions", "-F", "#{session_name}"],
+            capture_output=True, text=True, timeout=3,
+        ).stdout.strip()
+        _proj_lower = p.id.lower()
+        _all_sx = [l for l in _tmux_out.splitlines() if _proj_lower in l.lower()]
+    except Exception:
+        pass
+    return JSONResponse({"ok": True, "sessions": sessions, "all_sessions": _all_sx})
 
 
 @app.get("/api/northstar/{proj_id}/session-history")
@@ -10234,6 +10513,30 @@ def main():
     actual_port = _find_free_port(PORT)
     if actual_port != PORT:
         print(f"[hub] Port {PORT} occupied — binding {actual_port} instead.")
+    # M929: first-run startup banner — confirms ALL features active so new users
+    # see the hub came up correctly and know what's enabled (incl. telemetry).
+    try:
+        _ver = _hub_pkg_version()
+    except Exception:
+        _ver = "unknown"
+    _consent_on = bool(_get_consent().get("data_collection", True))
+    _tel_on = "ON (Turso, no PII)" if _consent_on and _TEL_ENABLED else "OFF"
+    _banner_lines = [
+        "",
+        f"  claude-ns-hub v{_ver}",
+        f"  ──────────────────────────────────────────────",
+        f"   Dashboard:   http://localhost:{actual_port}/northstar",
+        f"   Bind:        {HOST}:{actual_port}",
+        f"   Entity corpus:  {'spawned' if corpus_proc else 'disabled'}",
+        f"   Tailscale expose:  attempted (port {actual_port})",
+        f"   Telemetry:   {_tel_on}",
+        f"   Opt-out:     POST /api/hub/consent  body {{\"data_collection\": false}}",
+        f"   Quickstart:  https://github.com/jaytoone/claude-ns-hub#quick-start",
+        f"  ──────────────────────────────────────────────",
+        "",
+    ]
+    for _ln in _banner_lines:
+        print(_ln)
     uvicorn.run(app, host=HOST, port=actual_port, log_level="warning")
 
 
