@@ -3412,6 +3412,30 @@ async def _start_event_cleanup():
                 conn.close()
                 if deleted_updated or deleted_other:
                     print(f"[hub] event cleanup: -{deleted_updated} stone_updated (>3d), -{deleted_other} other (>90d)", file=sys.stderr)
+                # M1179: purge expired blink_state entries (>24h) so _blinkCenterSave NO-OP doesn't leak
+                _blink_hard_ms = 24 * 60 * 60 * 1000
+                _now_ms = int(__import__('time').time() * 1000)
+                _bs_keys = conn.execute(
+                    "SELECT key, value_json FROM user_settings WHERE key LIKE 'blink_state_%'"
+                ).fetchall() if conn else []
+                _blink_cleared = 0
+                for _bk, _bv in _bs_keys:
+                    try:
+                        _bd = json.loads(_bv)
+                        _changed = False
+                        for _sk in list(_bd.keys()):
+                            _entry = _bd[_sk]
+                            if isinstance(_entry, dict) and (_now_ms - _entry.get('ts', 0)) >= _blink_hard_ms:
+                                _bd[_sk] = {'ts': _entry.get('ts', 0), 'mids': []}
+                                _changed = True
+                                _blink_cleared += 1
+                        if _changed:
+                            conn.execute("UPDATE user_settings SET value_json=? WHERE key=?", (json.dumps(_bd), _bk))
+                    except Exception:
+                        pass
+                if _blink_cleared:
+                    conn.commit()
+                    print(f"[hub] blink_state cleanup: cleared {_blink_cleared} expired entries", file=sys.stderr)
             except Exception:
                 pass
             await asyncio.sleep(86400)  # 24h
@@ -4179,7 +4203,7 @@ def _exec_wake_msg(session_name: str) -> str:
     return "go"
 
 
-_COMPACT_THRESHOLD_MB = 10  # M1175: auto-compact when transcript exceeds this
+_COMPACT_THRESHOLD_MB = 4  # M1185: ~80% of 200K window (calibrated: 5MB≈88%, 4MB≈80%)
 
 
 def _transcript_too_large(proj_id: str) -> bool:
@@ -4187,7 +4211,20 @@ def _transcript_too_large(proj_id: str) -> bool:
     Used to decide whether to inject /compact before the next task wake message."""
     try:
         pdir = PROJECTS_DIR / proj_id
-        proj_dir = _hub_config_get(proj_id, "project_dir") or str(pdir)
+        # M1175 fix: prefer explicit config, then case-insensitive dir search, then hub pdir fallback.
+        # _get_project_dir() is case-sensitive; MOAT lives at ~/Project/Moat not ~/Project/MOAT.
+        _cfg_dir = _hub_config_get(proj_id, "project_dir")
+        if not _cfg_dir:
+            _cfg_dir = _get_project_dir(proj_id) or ""
+        if not _cfg_dir:
+            # Case-insensitive fallback — scan common bases
+            for _base in [Path.home() / "Project", Path.home() / "Project" / "VIDraft"]:
+                if _base.exists():
+                    _match = next((str(c) for c in _base.iterdir() if c.name.lower() == proj_id.lower() and c.is_dir()), None)
+                    if _match:
+                        _cfg_dir = _match
+                        break
+        proj_dir = _cfg_dir or str(pdir)
         encoded = _encode_cwd_for_claude(str(proj_dir))
         transcripts_dir = Path.home() / ".claude" / "projects" / encoded
         # Look up the active session ID from history
@@ -7800,7 +7837,12 @@ async def execute_project(proj_id: str, request: Request):
             # ["--continue"], which starts a new conversation. No try/except needed.
             resume_args = _get_resume_args(proj_id, spawn_cwd, explicit_session_id, agent=agent)
             _record_spawn_info(proj_id, resume_args, agent=agent)
-            _tmux_env = ["-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}", "-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}"]
+            _tmux_env = [
+                "-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}",
+                "-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}",
+                # M1184: PCT override only — window defaults to model's context size (no need to set explicitly)
+                "-e", "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80",
+            ]
             for _k, _v in _get_project_spawn_env(proj_id).items():
                 _tmux_env += ["-e", f"{_k}={_v}"]
             # MCP config for Claude Code sessions — enables structured task dispatch/completion
@@ -7828,7 +7870,14 @@ async def execute_project(proj_id: str, request: Request):
                     "Then add evidence (file:line, observed value, or quoted source) and the next action "
                     "or status. Be as concise as the question allows: short questions get short answers, "
                     "complex questions get the lines they need (server caps at 12). "
-                    "If you cannot answer, say '[NEED INFO]: <missing>'."
+                    "If you cannot answer, say '[NEED INFO]: <missing>'. "
+                    # M1114: SKILL INVOCATION PROTOCOL — belt-and-suspenders in system prompt.
+                    # get_pending_task response already carries skill_refs + _skill_instruction,
+                    # but adding here ensures the model registers the rule BEFORE calling the tool.
+                    "SKILL INVOCATION PROTOCOL: after calling mcp__ns-hub__get_pending_task, "
+                    "if the response contains skill_refs (non-empty list), your VERY NEXT action "
+                    "MUST be Skill(skill=skill_refs[0]) — before reading task text or any other tool. "
+                    "Skipping = silent failure."
                 ]
             subprocess.Popen([
                 "tmux", "new-session", "-d", "-s", session_name,
@@ -7912,8 +7961,9 @@ async def execute_project(proj_id: str, request: Request):
 
             # M1129: use _exec_wake_msg (was hardcoded "go") so MCP-enabled sessions receive
             # the explicit tool-call instruction instead of bare "go".
-            # M1175: auto-compact on spawn if transcript is too large.
-            if _transcript_too_large(proj_id):
+            # M1175: auto-compact on spawn only for RESUMED sessions (resume_args non-empty).
+            # Fresh spawns have no transcript yet — compact would fail with "Not enough messages".
+            if resume_args and _transcript_too_large(proj_id):
                 subprocess.run(["tmux", "send-keys", "-t", session_name, "/compact", "Enter"])
                 await asyncio.sleep(25)
             subprocess.run(["tmux", "send-keys", "-t", session_name, _exec_wake_msg(session_name), "Enter"])

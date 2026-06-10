@@ -42,7 +42,11 @@ TOOLS = [
             "Fetch the next queued task (stone) assigned to this exec session from the hub. "
             "Call this at the start of your session to know what to work on. "
             "Returns task_id, text (full task description), conversation history, and metadata. "
-            "If has_task is false, there is nothing to do — report idle and wait."
+            "If has_task is false, there is nothing to do — report idle and wait. "
+            "SKILL INVOCATION PROTOCOL (M1114): If the response contains skill_refs (non-empty list), "
+            "your VERY FIRST action MUST be to call Skill(skill=skill_refs[0]) before ANY other tool. "
+            "This is mandatory — skipping it is a silent failure. "
+            "The skill provides the methodology/framework to use when executing the task."
         ),
         "inputSchema": {
             "type": "object",
@@ -244,6 +248,8 @@ def handle_get_pending_task(proj_id: str, hub_url: str) -> dict:
         # (UI fetches full history from /api/northstar/{proj}/milestones).
         _full_conv = stone.get("conversation") or []
         _llm_conv = _compress_conv_for_llm(_full_conv, threshold=5, keep_last=4)
+        # M1114: surface skill_refs as a structured field (not buried in text annotations)
+        _srefs = stone.get("skill_refs") or ([stone["skill_ref"]] if stone.get("skill_ref") else [])
         result = {
             "has_task": True,
             "task_id": stone.get("id"),
@@ -254,6 +260,12 @@ def handle_get_pending_task(proj_id: str, hub_url: str) -> dict:
             "substar": stone.get("substar_id"),
             "added_at": stone.get("user_added_at"),
         }
+        if _srefs:
+            result["skill_refs"] = _srefs
+            result["_skill_instruction"] = (
+                f"MANDATORY FIRST ACTION: call Skill(skill='{_srefs[0]}') NOW before reading the task text or calling any other tool. "
+                f"This skill provides the methodology for this task. Skipping = silent failure."
+            )
         # M1143: auto-detect decomposition tasks — remind model to call create_child_stone
         _CHILD_KEYWORDS = ["자녀 스톤", "자녀스톤", "child stone", "분해", "sub-task",
                            "subtask", "작업 분해", "작업분해", "하위 스톤", "서브스톤"]
