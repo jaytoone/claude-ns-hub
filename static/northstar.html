@@ -14177,8 +14177,21 @@ async function _blinkCenterHydrate(projId) {
     if (!window._blinkServerConfirmedEmpty) window._blinkServerConfirmedEmpty = {};
     const serverKeys = new Set(Object.keys(bundle));
     let _restoredBlink = false;  // M1000/M1001: did we restore any active blink state?
+    // M1179 root fix: detect expired entries during hydration, skip restoration, clear on server
+    const _HARD_MS = 24 * 60 * 60 * 1000;
+    const _updatedBundle = {};
+    let _needsServerClear = false;
     Object.entries(bundle).forEach(([sKey, entry]) => {
       if (entry && typeof entry === 'object') {
+        const _age = Date.now() - (entry.ts || 0);
+        if (_age >= _HARD_MS) {
+          // Expired — do NOT restore, clear mids on server to prevent re-hydration next load
+          _updatedBundle[sKey] = {ts: entry.ts, mids: []};
+          _needsServerClear = true;
+          window._blinkServerConfirmedEmpty[sKey] = true;  // suppress M942 guard
+          return;  // skip localStorage restore for this entry
+        }
+        _updatedBundle[sKey] = entry;  // valid — keep as-is
         if (entry.ts) localStorage.setItem('_ssBlinkTs_' + sKey, String(entry.ts));
         if (Array.isArray(entry.mids)) {
           localStorage.setItem('_ssBlinkMids_' + sKey, JSON.stringify(entry.mids));
@@ -14193,6 +14206,13 @@ async function _blinkCenterHydrate(projId) {
         }
       }
     });
+    // Async-clear expired entries on server so next hydration doesn't see them again
+    if (_needsServerClear) {
+      fetch(`/api/user-settings/blink_state_${encodeURIComponent(projId)}`, {
+        method: 'PUT', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({value: _updatedBundle})
+      }).catch(()=>{});
+    }
     // M1000/M1001 FIX: hydration is async and resolves AFTER the synchronous first
     // render. On a fresh session localStorage is empty (M955 centralized state to
     // server), so the first render shows no blink and — when the fingerprint is
