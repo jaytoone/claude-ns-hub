@@ -4247,6 +4247,8 @@ def _send_exec_wake(session_name: str, proj_id: str | None = None) -> None:
 _COMPACT_THRESHOLD_MB = 2   # M1175: legacy file-size fallback (kept for reference)
 _COMPACT_THRESHOLD_PCT = 80  # M1175 v2: context % threshold — trigger /compact above this
 _COMPACT_MODEL_MAX_TOKENS = 200_000  # Claude 4.x (sonnet/opus/haiku) all share 200K window
+_COMPACT_COOLDOWN_SEC = 600  # M1191: guard — don't re-inject /compact within 10 min per session
+_compact_last_injected: dict[str, float] = {}  # proj_id → monotonic timestamp of last /compact send
 
 
 def _get_transcript_path(proj_id: str):
@@ -7481,7 +7483,12 @@ async def execute_project(proj_id: str, request: Request):
                                     _actively_blocked = "esc to i" in _pane or _modal
                                     if _has_prompt and not _actively_blocked:
                                         # M1175: auto-compact if transcript too large
-                                        if _transcript_too_large(proj_id):
+                                        # M1191: cooldown guard — skip if /compact was injected recently
+                                        _now_mono = __import__('time').monotonic()
+                                        _last_compact = _compact_last_injected.get(proj_id, 0.0)
+                                        if (_transcript_too_large(proj_id)
+                                                and (_now_mono - _last_compact) > _COMPACT_COOLDOWN_SEC):
+                                            _compact_last_injected[proj_id] = _now_mono
                                             subprocess.run(
                                                 ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
                                                 capture_output=True, timeout=2,
@@ -8105,7 +8112,12 @@ async def execute_project(proj_id: str, request: Request):
             # the explicit tool-call instruction instead of bare "go".
             # M1175: auto-compact on spawn only for RESUMED sessions (resume_args non-empty).
             # Fresh spawns have no transcript yet — compact would fail with "Not enough messages".
-            if resume_args and _transcript_too_large(proj_id):
+            # M1191: cooldown guard shared with IDLE-loop path
+            _now_mono_sp = __import__('time').monotonic()
+            _last_compact_sp = _compact_last_injected.get(proj_id, 0.0)
+            if (resume_args and _transcript_too_large(proj_id)
+                    and (_now_mono_sp - _last_compact_sp) > _COMPACT_COOLDOWN_SEC):
+                _compact_last_injected[proj_id] = _now_mono_sp
                 subprocess.run(["tmux", "send-keys", "-t", session_name, "/compact", "Enter"])
                 await asyncio.sleep(25)
             # M1114: two-step skill pre-inject
