@@ -6188,6 +6188,52 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                 m["status"] = "pending_confirmation"
                 m["done"] = False
                 m["pending_confirm_at"] = now_iso  # always update for _isLastTurn green border
+                # ── M1174 P1: LLM-Independent Validation Layer ──────────────────
+                # P1①: Schema validation — log missing required completion fields.
+                # Non-blocking: warns but does not reject (LLM already has _skill_instruction).
+                _p1_missing = []
+                if not data.get("star_relation") and not m.get("star_relation"):
+                    _p1_missing.append("star_relation")
+                if not data.get("append_message") and not any(
+                    c.get("role") == "claude" for c in (m.get("conversation") or [])[-3:]
+                ):
+                    _p1_missing.append("append_message")
+                if _p1_missing:
+                    _server_log_action(proj_id, mid, "warn:p1_schema_incomplete",
+                                       f"pending_confirmation missing: {', '.join(_p1_missing)}")
+                    m.setdefault("_p1_warnings", []).extend(_p1_missing)
+
+                # P1⑨: Git as Source of Truth — auto-stamp git HEAD hash at completion time.
+                # Provides verifiable evidence of what code state the LLM worked on.
+                # If git HEAD didn't advance since exec_start, may indicate no actual code change.
+                try:
+                    _p1_proj_dir = _get_project_dir(proj_id)
+                    if _p1_proj_dir and Path(_p1_proj_dir).exists():
+                        _p1_git = subprocess.run(
+                            ["git", "-C", str(_p1_proj_dir), "rev-parse", "--short", "HEAD"],
+                            capture_output=True, text=True, timeout=2,
+                        )
+                        _p1_hash = _p1_git.stdout.strip()
+                        if _p1_hash:
+                            import json as _p1_json
+                            _p1_conf = {}
+                            try:
+                                _p1_conf = _p1_json.loads(m.get("confounder") or "{}")
+                            except Exception:
+                                pass
+                            _p1_conf["git_hash_at_completion"] = _p1_hash
+                            # P1③: Observable side effects check.
+                            # Compare HEAD at completion vs at exec start (if captured).
+                            _p1_hash_at_start = _p1_conf.get("git_hash")  # stamped by confounder
+                            if _p1_hash_at_start and _p1_hash_at_start == _p1_hash:
+                                # Same commit: no code changes observed — log as warning
+                                _server_log_action(proj_id, mid, "warn:p1_no_git_advance",
+                                                   f"git HEAD unchanged at completion ({_p1_hash}) — possible no-op")
+                                _p1_conf["p1_side_effect_warning"] = "no_git_advance"
+                            m["confounder"] = _p1_json.dumps(_p1_conf)
+                except Exception:
+                    pass
+                # ── end M1174 P1 ─────────────────────────────────────────────────
                 # M1047/M1145: evidence_url validation — warn when result-producing work has no proof attached
                 _ev_url = data.get("evidence_url") or m.get("evidence_url") or ""
                 _stone_txt = (m.get("text") or "").lower()
