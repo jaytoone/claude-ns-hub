@@ -10064,8 +10064,20 @@ async def corpus_skills_agents():
                             "owner": owner,
                         })
 
-    # M1023: final alphabetical sort so local + plugin skills interleave correctly in UI
-    skills.sort(key=lambda s: s.get("name", "").lower())
+    # M1178: annotate each skill with usage_count from action_log (invoked_skill events).
+    # Sort: most-used first, then alphabetical for ties.
+    try:
+        _alog_conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        _freq_rows = _alog_conn.execute(
+            "SELECT detail, COUNT(*) FROM action_log WHERE action='invoked_skill' GROUP BY detail"
+        ).fetchall()
+        _alog_conn.close()
+        _freq_map = {r[0]: r[1] for r in _freq_rows}
+    except Exception:
+        _freq_map = {}
+    for s in skills:
+        s["usage_count"] = _freq_map.get(s["name"], 0)
+    skills.sort(key=lambda s: (-s.get("usage_count", 0), s.get("name", "").lower()))
 
     agents = []
     if agents_dir.is_dir():

@@ -9359,10 +9359,10 @@ async function _showSkillBadgeModal(projId, mid, currentSkill, currentAgent, com
   };
   const _clearBtn = (!commentMode && (currentSkill||currentAgent)) ? `<button onclick="event.stopPropagation();_sbSelect('${esc(projId)}','${esc(mid)}','clear','')"
       style="margin-left:auto;font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid rgba(192,57,43,.3);background:none;color:var(--red,#c0392b);cursor:pointer">✕ clear</button>` : '';
-  const recent = _sbRecent();
-  // M258: Recent tab always visible; shows "No recent selections" when empty
-  const _recentTab = `<button data-tab="recent" onclick="event.stopPropagation();_sbTab('recent')"
-    style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">★ Recent</button>`;
+  // M1178: top skills = skills sorted by usage_count desc (server annotates from action_log)
+  const topSkills = [...skills].filter(s=>s.usage_count>0).sort((a,b)=>b.usage_count-a.usage_count).slice(0,8);
+  const _topTab = `<button data-tab="top" onclick="event.stopPropagation();_sbTab('top')"
+    style="font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">★ Top</button>`;
   m.innerHTML = `<div style="background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:14px 16px;max-width:360px;width:92%;max-height:85vh;display:flex;flex-direction:column;font-family:var(--mono)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <span style="font-size:10px;font-weight:600;color:var(--text)">Assign Skill / Agent</span>
@@ -9370,14 +9370,14 @@ async function _showSkillBadgeModal(projId, mid, currentSkill, currentAgent, com
         style="background:none;border:1px solid var(--panel-border);border-radius:4px;color:var(--text-dim);cursor:pointer;font-size:12px;padding:1px 7px">✕</button>
     </div>
     <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
-      ${_tab('skill','⚡ Skills',!recent.length)} ${_tab('agent','🤖 Agents',false)} ${_recentTab}
+      ${_tab('skill','⚡ Skills',!topSkills.length)} ${_tab('agent','🤖 Agents',false)} ${_topTab}
       ${_clearBtn}
     </div>
     <input id="sb-search" placeholder="Search or type invocation (e.g. entity -crd)…" oninput="_sbFilter()"
       style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;padding:4px 7px;font-family:var(--mono);font-size:9px;color:var(--text);box-sizing:border-box;margin-bottom:2px">
     <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:6px;opacity:.7">Press Enter to use search text as custom invocation with flags</div>
     <div id="sb-list" style="overflow-y:auto;max-height:58vh;border:1px solid var(--panel-border);border-radius:5px">
-      ${recent.length ? recent.map(x=>`<div class="sb-row" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(projId)}','${esc(mid)}','${esc(x.type)}','${esc(x.name)}')" style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">${x.type==='skill'?'⚡':'🤖'} <span style="font-weight:600">${esc(x.name)}</span></div>`).join('') : skills.map(s=>_row(s.name,'skill',s.source)).join('')}
+      ${topSkills.length ? topSkills.map(s=>`<div class="sb-row" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(projId)}','${esc(mid)}','skill','${esc(s.name)}')" style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">⚡ <span style="font-weight:600">${esc(s.name)}</span><span style="color:var(--text-dim);font-size:8px;margin-left:4px">${s.usage_count}x</span></div>`).join('') : skills.map(s=>_row(s.name,'skill',s.source)).join('')}
     </div>
     <div id="sb-selected-msg" style="display:none;margin-top:6px;padding:4px 8px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font-family:var(--mono);font-size:9px;text-align:center"></div>
   </div>`;
@@ -9466,9 +9466,10 @@ function _sbTab(tab) {
   const m = document.getElementById('skill-badge-modal');
   if (!m) return;
   const list = m.querySelector('#sb-list');
-  if (tab === 'recent') {
-    const recent = (() => { try{return JSON.parse(localStorage.getItem('sb-recent')||'[]');}catch{return[];} })();
-    list.innerHTML = recent.length ? recent.map(x=>`<div class="sb-row" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(m._projId)}','${esc(m._mid)}','${esc(x.type)}','${esc(x.name)}')" style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''">${x.type==='skill'?'⚡':'🤖'} <span style="font-weight:600">${esc(x.name)}</span></div>`).join('') : '<div style="padding:8px;font-family:var(--mono);font-size:9px;color:var(--text-dim)">No recent selections</div>';
+  if (tab === 'top') {
+    // M1178: top = most-used skills from usage_count (annotated by server from action_log)
+    const topItems = (m._skills||[]).filter(s=>s.usage_count>0).sort((a,b)=>b.usage_count-a.usage_count).slice(0,8);
+    list.innerHTML = topItems.length ? topItems.map(s=>`<div class="sb-row" onclick="event.stopPropagation();_sbShowFlagInput(this,'${esc(m._projId)}','${esc(m._mid)}','skill','${esc(s.name)}')" style="padding:5px 8px;border-bottom:1px solid var(--panel-border);cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text)" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="if(!this.querySelector('.sb-flag-wrap'))this.style.background=''>⚡ <span style="font-weight:600">${esc(s.name)}</span><span style="color:var(--text-dim);font-size:8px;margin-left:4px">${s.usage_count}x</span></div>`).join('') : '<div style="padding:8px;font-family:var(--mono);font-size:9px;color:var(--text-dim)">No usage data yet</div>';
     m.querySelectorAll('[data-tab]').forEach(b=>{const a=b.dataset.tab===tab;b.style.border=`1px solid ${a?'var(--accent)':'var(--panel-border)'}`;b.style.background=a?'var(--accent-soft)':'none';b.style.color=a?'var(--accent)':'var(--text-dim)';});
     return;
   }
