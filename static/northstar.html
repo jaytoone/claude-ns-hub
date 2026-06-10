@@ -11165,28 +11165,36 @@ function showCommentPopup(event, comment, projId, mid, currentStatus) {
       if (_stone?.verify_flag) { _verifyChip.textContent='verify ✓'; _verifyChip.style.color='var(--green,#3d8b5e)'; _verifyChip.style.background='rgba(61,139,94,.15)'; _verifyChip.style.borderColor='rgba(61,139,94,.4)'; }
     }
   }
-  // M1154 v9: ∑N badge shows LLM-compressed view (computed client-side, same algo as _compress_conv_for_llm v6).
-  // Fires for ANY stone where compression would occur — not just legacy DB-compressed stones.
+  // M1154 v9 / M1193: ∑N badge — semantic compression (all U turns + C conclusions).
+  // Mirrors _semantic_compress_turns() in hub-mcp-server.py and server.py.
   { const _conv = (_msConversations[mid]||[]); const _badge = popup.querySelector('#comment-summary-badge'); const _detail = popup.querySelector('#comment-summary-detail');
     if (_badge) {
+      // M1193: semantic compression helper — all user requests + per-claude conclusion line
+      const _semCompress = (turns) => {
+        const _tr = (t,n=180) => (t||'').replace(/\n/g,' ').trim().slice(0,n);
+        const _claudeConclusion = (text) => {
+          const paras = (text||'').split(/\n\n+/).map(p=>p.trim()).filter(Boolean);
+          if (!paras.length) return _tr(text);
+          const lines = paras[paras.length-1].split('\n').map(l=>l.trim()).filter(Boolean);
+          return _tr(lines.length ? lines[lines.length-1] : paras[paras.length-1]);
+        };
+        let uIdx=0, cIdx=0; const parts=[];
+        for (const t of turns) {
+          if (t.role==='user')   { uIdx++; parts.push(`U${uIdx}: ${_tr(t.text||t.content||'')}`); }
+          else if (t.role==='claude') { cIdx++; parts.push(`C${cIdx}: ${_claudeConclusion(t.text||t.content||'')}`); }
+        }
+        return parts.join(' | ') || `(${turns.length} turns)`;
+      };
       const _TH=5,_KL=4; const _existSum=_conv.filter(c=>c.role==='summary'); const _raw=_conv.filter(c=>c.role!=='summary');
       const _hasPrior=_existSum.length>0; let _llmSum=null;
       if (_hasPrior && _raw.length>_KL+_TH) { // re-compress
-        const _sq=_raw.slice(0,-_KL); const _ut=_sq.filter(c=>c.role==='user'); const _ct=_sq.filter(c=>c.role==='claude');
-        const _tr=t=>(t||'').replace(/\n/g,' ').slice(0,200); const _ln=[];
-        if(_ut.length) _ln.push('U: '+_tr(_ut[0].text||_ut[0].content||''));
-        if(_ut.length>1) _ln.push('Un: '+_tr(_ut[_ut.length-1].text||_ut[_ut.length-1].content||''));
-        if(_ct.length) _ln.push('C: '+_tr(_ct[_ct.length-1].text||_ct[_ct.length-1].content||''));
-        _llmSum=[{role:'summary',text:_ln.join(' | ')||`(${_sq.length} turns omitted)`,ts:_sq[_sq.length-1]?.ts||'',compressed_count:_sq.length}];
+        const _sq=_raw.slice(0,-_KL);
+        _llmSum=[{role:'summary',text:_semCompress(_sq),ts:_sq[_sq.length-1]?.ts||'',compressed_count:_sq.length}];
       } else if (_hasPrior && _raw.length<=_KL+_TH) { // between compressions — show existing summary
         _llmSum=_existSum;
       } else if (!_hasPrior && _raw.length>_TH) { // first compression
-        const _sq=_raw.slice(0,-_KL); const _ut=_sq.filter(c=>c.role==='user'); const _ct=_sq.filter(c=>c.role==='claude');
-        const _tr=t=>(t||'').replace(/\n/g,' ').slice(0,200); const _ln=[];
-        if(_ut.length) _ln.push('U: '+_tr(_ut[0].text||_ut[0].content||''));
-        if(_ut.length>1) _ln.push('Un: '+_tr(_ut[_ut.length-1].text||_ut[_ut.length-1].content||''));
-        if(_ct.length) _ln.push('C: '+_tr(_ct[_ct.length-1].text||_ct[_ct.length-1].content||''));
-        _llmSum=[{role:'summary',text:_ln.join(' | ')||`(${_sq.length} turns omitted)`,ts:_sq[_sq.length-1]?.ts||'',compressed_count:_sq.length}];
+        const _sq=_raw.slice(0,-_KL);
+        _llmSum=[{role:'summary',text:_semCompress(_sq),ts:_sq[_sq.length-1]?.ts||'',compressed_count:_sq.length}];
       }
       if (_llmSum && _llmSum.length) {
         const _cnt=_llmSum.reduce((a,s)=>a+(s.compressed_count||0),0);

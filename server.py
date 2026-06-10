@@ -4244,6 +4244,39 @@ def _send_exec_wake(session_name: str, proj_id: str | None = None) -> None:
     )
 
 
+def _semantic_compress_turns(turns: list) -> str:
+    """M1193: Semantic compression of conversation turns.
+    Includes ALL user requests (U1, U2, ...) and conclusion line from each claude turn.
+    Claude conclusion = last non-empty paragraph's last line (the most conclusive statement).
+    Each segment trimmed to 180 chars. Output: 'U1: req | C1: result | U2: followup | C2: result'"""
+    import re as _re_sc
+
+    def _tr(t: str, n: int = 180) -> str:
+        return (str(t or "").replace("\n", " ").strip())[:n]
+
+    def _claude_conclusion(text: str) -> str:
+        paras = [p.strip() for p in str(text or "").split("\n\n") if p.strip()]
+        if not paras:
+            return _tr(text)
+        lines = [l.strip() for l in paras[-1].split("\n") if l.strip()]
+        return _tr(lines[-1] if lines else paras[-1])
+
+    u_idx = c_idx = 0
+    parts = []
+    for turn in (turns or []):
+        if not isinstance(turn, dict):
+            continue
+        role = turn.get("role", "")
+        text = turn.get("text") or turn.get("content") or ""
+        if role == "user":
+            u_idx += 1
+            parts.append(f"U{u_idx}: {_tr(text)}")
+        elif role == "claude":
+            c_idx += 1
+            parts.append(f"C{c_idx}: {_claude_conclusion(text)}")
+    return " | ".join(parts) if parts else f"({len(turns)} turns)"
+
+
 _COMPACT_THRESHOLD_MB = 2   # M1175: legacy file-size fallback (kept for reference)
 _COMPACT_THRESHOLD_PCT = 80  # M1175 v2: context % threshold — trigger /compact above this
 _COMPACT_MODEL_MAX_TOKENS = 200_000  # Claude 4.x (sonnet/opus/haiku) all share 200K window
@@ -6468,22 +6501,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                 # the agent / UI a glanceable history without inflating payload.
                 _conv_full = m.get("conversation") or []
                 if _conv_full and not m.get("conversation_summary"):
-                    def _trim(_t):
-                        _t = str(_t or "").replace("\n", " ").strip()
-                        return _t if len(_t) <= 160 else _t[:157] + "..."
-                    _user_msgs = [c for c in _conv_full if c.get("role") == "user"]
-                    _claude_msgs = [c for c in _conv_full if c.get("role") == "claude"]
-                    _first_user = _user_msgs[0] if _user_msgs else None
-                    _last_user = _user_msgs[-1] if _user_msgs else None
-                    _last_claude = _claude_msgs[-1] if _claude_msgs else None
-                    _lines = []
-                    if _first_user:
-                        _lines.append("U1: " + _trim(_first_user.get("text") or _first_user.get("content")))
-                    if _last_user and _last_user is not _first_user:
-                        _lines.append("Un: " + _trim(_last_user.get("text") or _last_user.get("content")))
-                    if _last_claude:
-                        _lines.append("C: " + _trim(_last_claude.get("text") or _last_claude.get("content")))
-                    m["conversation_summary"] = "\n".join(_lines)
+                    m["conversation_summary"] = _semantic_compress_turns(_conv_full)  # M1193
                     m["conversation_turn_count"] = len(_conv_full)
                 # M550 v2: when a [검수] review child reaches done, auto-confirm its mother
                 # IF (a) mother is in pending_confirmation, AND (b) all other children of the
@@ -6534,22 +6552,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                             # to the mother so dashboard/agent can still read history.
                             _par_conv = _par_stone.get("conversation") or []
                             if _par_conv and not _par_stone.get("conversation_summary"):
-                                def _trim_p(_t):
-                                    _t = str(_t or "").replace("\n", " ").strip()
-                                    return _t if len(_t) <= 160 else _t[:157] + "..."
-                                _u_msgs = [c for c in _par_conv if c.get("role") == "user"]
-                                _c_msgs = [c for c in _par_conv if c.get("role") == "claude"]
-                                _f_user = _u_msgs[0] if _u_msgs else None
-                                _l_user = _u_msgs[-1] if _u_msgs else None
-                                _l_claude = _c_msgs[-1] if _c_msgs else None
-                                _ls = []
-                                if _f_user:
-                                    _ls.append("U1: " + _trim_p(_f_user.get("text") or _f_user.get("content")))
-                                if _l_user and _l_user is not _f_user:
-                                    _ls.append("Un: " + _trim_p(_l_user.get("text") or _l_user.get("content")))
-                                if _l_claude:
-                                    _ls.append("C: " + _trim_p(_l_claude.get("text") or _l_claude.get("content")))
-                                _par_stone["conversation_summary"] = "\n".join(_ls)
+                                _par_stone["conversation_summary"] = _semantic_compress_turns(_par_conv)  # M1193
                                 _par_stone["conversation_turn_count"] = len(_par_conv)
                             _server_log_action(proj_id, _par_id, "auto_confirm_after_review",
                                                f"review child {mid} done — mother auto-confirmed")
@@ -6704,14 +6707,7 @@ async def compress_milestone_conv(proj_id: str, mid: str, request: Request):
                 return JSONResponse({"ok": True, "summary_text": None, "kept": len(conv), "compressed": 0})
             old_turns = conv[:-keep_last]
             recent_turns = conv[-keep_last:]
-            _trim = lambda t: (str(t or "").replace("\n", " ").strip())[:150]
-            _u = [c for c in old_turns if c.get("role") == "user"]
-            _c = [c for c in old_turns if c.get("role") == "claude"]
-            lines = []
-            if _u: lines.append("U: " + _trim(_u[0].get("text") or _u[0].get("content", "")))
-            if len(_u) > 1: lines.append("Un: " + _trim(_u[-1].get("text") or _u[-1].get("content", "")))
-            if _c: lines.append("C: " + _trim(_c[-1].get("text") or _c[-1].get("content", "")))
-            summary_text = " | ".join(lines) if lines else f"({len(old_turns)} turns compressed)"
+            summary_text = _semantic_compress_turns(old_turns)  # M1193: semantic not structural
             summary_entry = {"role": "summary", "text": summary_text,
                              "ts": old_turns[-1].get("ts", ""), "compressed_count": len(old_turns)}
             m["conversation"] = [summary_entry] + recent_turns

@@ -183,12 +183,47 @@ TOOLS = [
 ]
 
 
+def _semantic_compress_turns(turns: list) -> str:
+    """M1193: Semantic compression — all user requests + per-claude conclusion lines.
+    Output: U1: <req> | U2: <req> | C1: <conclusion> | C2: <conclusion> ...
+    Each turn trimmed to 180 chars. Claude turns: extract last non-empty paragraph
+    (usually the most conclusive line) rather than raw truncation."""
+    _tr = lambda t, n=180: (str(t or "").replace("\n", " ").strip())[:n]
+
+    def _claude_conclusion(text: str) -> str:
+        """Extract the semantic conclusion from a claude turn: last non-empty paragraph."""
+        paras = [p.strip() for p in str(text or "").split("\n\n") if p.strip()]
+        if not paras:
+            return _tr(text)
+        last_para = paras[-1]
+        lines = [l.strip() for l in last_para.split("\n") if l.strip()]
+        return _tr(lines[-1] if lines else last_para)
+
+    u_idx = 0
+    c_idx = 0
+    parts = []
+    for turn in turns:
+        if not isinstance(turn, dict):
+            continue
+        role = turn.get("role", "")
+        text = turn.get("text") or turn.get("content") or ""
+        if role == "user":
+            u_idx += 1
+            parts.append(f"U{u_idx}: {_tr(text)}")
+        elif role == "claude":
+            c_idx += 1
+            parts.append(f"C{c_idx}: {_claude_conclusion(text)}")
+
+    return " | ".join(parts) if parts else f"({len(turns)} turns)"
+
+
 def _compress_conv_for_llm(conv: list, threshold: int = 5, keep_last: int = 4) -> list:
-    """M1154 v6: Smart ON-THE-FLY compression for LLM context.
+    """M1154 v6 / M1193: Smart ON-THE-FLY compression for LLM context.
     - 1st compression: fires when raw turns > threshold (5).
     - Re-compression: only fires when raw turns > keep_last + threshold (9),
       preventing pointless recompression after every single new turn.
     - Between compressions: return [existing_summary] + raw (preserve history).
+    - Compression uses semantic extraction (all U turns + C conclusions) not first/last truncation.
     DB is never modified; UI fetches full conv from /api/northstar/{proj}/milestones."""
     if not conv or not isinstance(conv, list):
         return conv or []
@@ -203,20 +238,10 @@ def _compress_conv_for_llm(conv: list, threshold: int = 5, keep_last: int = 4) -
     else:
         if len(raw) <= threshold:
             return raw  # first time, not enough turns yet
-    # Build compression (first-time or re-compress)
+    # Build semantic compression
     to_squash = raw[:-keep_last]
     keep = raw[-keep_last:]
-    _trim = lambda t: (str(t or "").replace("\n", " ").strip())[:200]
-    u_turns = [c for c in to_squash if c.get("role") == "user"]
-    c_turns = [c for c in to_squash if c.get("role") == "claude"]
-    sum_lines = []
-    if u_turns:
-        sum_lines.append("U: " + _trim(u_turns[0].get("text") or u_turns[0].get("content", "")))
-    if len(u_turns) > 1:
-        sum_lines.append("Un: " + _trim(u_turns[-1].get("text") or u_turns[-1].get("content", "")))
-    if c_turns:
-        sum_lines.append("C: " + _trim(c_turns[-1].get("text") or c_turns[-1].get("content", "")))
-    summary_text = " | ".join(sum_lines) if sum_lines else f"({len(to_squash)} earlier turns omitted)"
+    summary_text = _semantic_compress_turns(to_squash)
     summary_entry = {
         "role": "summary",
         "text": summary_text,
