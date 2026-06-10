@@ -13703,24 +13703,34 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
       }
       if (window._ssBarPrevHash[_sKey] !== undefined &&
           window._ssBarPrevHash[_sKey] !== _cur) {
-        hTd.classList.add('ss-mg-blink');
-        localStorage.setItem(_lsBlinkKey, String(Date.now())); // persist to localStorage
-        // M782 fix: track which specific stone IDs changed so only they blink
-        const _prevItems = window._ssBarPrevItems[_sKey] || [];
-        const _prevMap = Object.fromEntries(_prevItems.map(x => [x.id, x.st]));
-        const _prevIds = new Set(_prevItems.map(x => x.id));
-        const _changedMids = new Set([
-          ..._curItems.filter(x => _prevMap[x.id] !== undefined && _prevMap[x.id] !== x.st).map(x => x.id),
-          ...(_prevItems.length > 0 ? _curItems.filter(x => !_prevIds.has(x.id)).map(x => x.id) : []),  // M782: skip new-stone detection when no baseline (prevents all-rows-blink on first render)
+        // M1200-v2: only blink on user-attention-required status transitions.
+        // Root cause of phantom blinks: hash includes conv.length + lastRole, so the
+        // auto-reply worker appending role:claude messages every 60s caused hash change
+        // → blink on every autonomous progress update with no user action needed.
+        // Fix: only fire blink when a stone transitions TO pending_confirmation or
+        // needs_clarification (the two states where user MUST act).
+        const _prevItemsC = window._ssBarPrevItems[_sKey] || [];
+        const _prevMapC = Object.fromEntries(_prevItemsC.map(x => [x.id, x.st]));
+        const _prevIdsC = new Set(_prevItemsC.map(x => x.id));
+        const _BLINK_ST = new Set(['pending_confirmation', 'needs_clarification']);
+        const _blinkMids = new Set([
+          ..._curItems.filter(x => {
+            const prev = _prevMapC[x.id];
+            if (!prev || prev === x.st) return false;
+            return _BLINK_ST.has(x.st.split('|')[0]);
+          }).map(x => x.id),
+          ...(_prevItemsC.length > 0 ? _curItems.filter(x => !_prevIdsC.has(x.id) && _BLINK_ST.has(x.st.split('|')[0])).map(x => x.id) : []),
         ]);
-        // M795: merge into existing blink set instead of overwriting so adding a new
-        // stone does NOT clear the previously-blinking rows still within the window.
-        const _existingMids = window._ssBlinkMids[_sKey] || new Set();
-        const _mergedMids = new Set([..._existingMids, ..._changedMids]);
-        window._ssBlinkMids[_sKey] = _mergedMids;
-        // Persist merged mids so row blink survives refresh (same window as header)
-        localStorage.setItem(_lsBlinkMids, JSON.stringify([..._mergedMids]));
-        _blinkCenterSave(_proj);  // M794: mirror to server SQLite
+        if (_blinkMids.size > 0) {
+          hTd.classList.add('ss-mg-blink');
+          localStorage.setItem(_lsBlinkKey, String(Date.now()));
+          // M795: merge into existing blink set
+          const _existingMids = window._ssBlinkMids[_sKey] || new Set();
+          const _mergedMids = new Set([..._existingMids, ..._blinkMids]);
+          window._ssBlinkMids[_sKey] = _mergedMids;
+          localStorage.setItem(_lsBlinkMids, JSON.stringify([..._mergedMids]));
+          _blinkCenterSave(_proj);
+        }
       }
       window._ssBarPrevHash[_sKey]  = _cur;
       window._ssBarPrevItems[_sKey] = _curItems;
