@@ -3807,6 +3807,17 @@ async def _start_queue_continuation_poller():
                     except Exception:
                         pass
 
+                    # M1198-v3: pre-compact gate — inject /compact if context too high before waking
+                    if _compact_guard_check_exec(proj_id):
+                        subprocess.run(
+                            ["tmux", "send-keys", "-t", sname, "/compact", "Enter"],
+                            capture_output=True, timeout=2,
+                        )
+                        _compact_last_injected[proj_id] = time.monotonic()
+                        _last_go_sent[sname] = now  # cooldown so we don't immediately re-wake
+                        logger.info(f"[queue-poll] pre-compact: {proj_id} → /compact injected, deferring wake")
+                        continue  # skip dispatch this cycle, next cycle will re-check
+
                     # Send wake message — MCP sessions get tool-call instruction, others get 'go'
                     # M1114: _send_exec_wake handles skill pre-inject (two-step) when stone has skill_refs
                     _send_exec_wake(sname, proj_id)
@@ -3887,6 +3898,23 @@ async def _start_auto_reply_worker():
                     long_idle = (idle_since > 0 and (now_ts - idle_since) >= IDLE_THRESHOLD)
                     if not file_idle and not long_idle:
                         continue  # session still active
+
+                    # M1198-v3: pre-compact gate — session is idle (at prompt), check context
+                    # before harvesting reply or transitioning stone. This is the most reliable
+                    # moment: we KNOW the session is at the prompt right now.
+                    if _compact_guard_check_exec(proj_id):
+                        _sess_name = _live_exec_session_name(proj_id)
+                        _chk = subprocess.run(
+                            ["tmux", "has-session", "-t", _sess_name], capture_output=True, timeout=2
+                        )
+                        if _chk.returncode == 0:
+                            subprocess.run(
+                                ["tmux", "send-keys", "-t", _sess_name, "/compact", "Enter"],
+                                capture_output=True, timeout=2,
+                            )
+                            _compact_last_injected[proj_id] = time.monotonic()
+                            logger.info(f"[auto-reply] pre-compact gate: {proj_id} → /compact injected at idle, deferring reply")
+                        continue  # skip harvest this cycle — let compact run
 
                     # ─── Get stone status from DB ─────────────────────────────────────────
                     try:
@@ -4029,14 +4057,15 @@ async def _start_compact_monitor():
                         continue
                     if not at_prompt:
                         continue
-                    # Guard check: rising-edge only, resets when context drops below 60%
-                    if _compact_guard_check(proj_id):
+                    # M1198-v3: use exec-aware guard (checks ALL recent transcripts, not just _current)
+                    if _compact_guard_check_exec(proj_id):
                         _compact_last_injected[proj_id] = __import__('time').monotonic()
                         subprocess.run(
                             ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
                             capture_output=True, timeout=2,
                         )
-                        logger.info(f"[compact-monitor] {proj_id} context ≥{_COMPACT_THRESHOLD_PCT}% → /compact injected")
+                        _pct_now = _get_context_pct_max_recent(proj_id)
+                        logger.info(f"[compact-monitor] {proj_id} context={_pct_now}% ≥{_COMPACT_THRESHOLD_PCT}% → /compact injected")
             except Exception as _e:
                 logger.debug(f"[compact-monitor] error: {_e}")
 
@@ -4548,7 +4577,7 @@ def _semantic_compress_turns(turns: list) -> str:
 
 
 _COMPACT_THRESHOLD_MB = 2   # M1175: legacy file-size fallback (kept for reference)
-_COMPACT_THRESHOLD_PCT = 80   # M1175 v2: trigger /compact above this context %
+_COMPACT_THRESHOLD_PCT = 75   # M1198-v3: lowered from 80→75 for extra margin
 _COMPACT_RESET_PCT      = 60  # M1193: clear injected-flag when context drops below this (compaction done)
 _COMPACT_MODEL_MAX_TOKENS = 200_000  # Claude 4.x (sonnet/opus/haiku) all share 200K window
 _COMPACT_COOLDOWN_SEC = 1800  # M1193: safety fallback — force-clear flag after 30min if context never drops
@@ -4636,6 +4665,68 @@ def _get_context_pct(proj_id: str) -> float | None:
     except Exception:
         pass
     return None
+
+
+def _get_context_pct_max_recent(proj_id: str, max_age_secs: int = 7200) -> float | None:
+    """M1198-v3: Return highest context% across ALL recently-modified transcripts.
+
+    Root cause fix: exec sessions create a NEW JSONL distinct from _current (the interactive
+    session). _get_context_pct only reads _current → returns wrong (low) %. This function
+    scans ALL JSONL files modified in the last max_age_secs and returns the MAX %, ensuring
+    the exec session's transcript is always checked regardless of which SID _current points to.
+    """
+    import time as _t_r
+    now_r = _t_r.time()
+    try:
+        _cfg_dir = None
+        try:
+            _cfg_dir = _hub_config_get(proj_id, "project_dir")
+        except Exception:
+            pass
+        if not _cfg_dir:
+            _cfg_dir = _get_project_dir(proj_id)
+        if not _cfg_dir:
+            return _get_context_pct(proj_id)
+        encoded = _encode_cwd_for_claude(str(_cfg_dir))
+        transcripts_dir = Path.home() / ".claude" / "projects" / encoded
+        if not transcripts_dir.exists():
+            return _get_context_pct(proj_id)
+        VALID_CEIL = _COMPACT_MODEL_MAX_TOKENS * 1.2
+        best_pct = None
+        for j in transcripts_dir.glob("*.jsonl"):
+            try:
+                st = j.stat()
+                if st.st_size < 65536:
+                    continue  # skip tiny files (< 64KB — no meaningful context yet)
+                if (now_r - st.st_mtime) > max_age_secs:
+                    continue  # stale file
+                with open(j, "rb") as f:
+                    f.seek(0, 2)
+                    sz = f.tell()
+                    f.seek(max(0, sz - 65536))
+                    tail = f.read().decode("utf-8", errors="replace")
+                for line in tail.splitlines():
+                    if '"usage"' not in line:
+                        continue
+                    try:
+                        d = json.loads(line)
+                        usage = d.get("usage") or (d.get("message") or {}).get("usage") or {}
+                        if "input_tokens" not in usage:
+                            continue
+                        total = (int(usage.get("input_tokens", 0))
+                                 + int(usage.get("cache_creation_input_tokens", 0))
+                                 + int(usage.get("cache_read_input_tokens", 0)))
+                        if 0 < total <= VALID_CEIL:
+                            pct = round(total / _COMPACT_MODEL_MAX_TOKENS * 100, 1)
+                            if best_pct is None or pct > best_pct:
+                                best_pct = pct
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+        return best_pct if best_pct is not None else _get_context_pct(proj_id)
+    except Exception:
+        return _get_context_pct(proj_id)
 
 
 def _get_last_assistant_message(proj_id: str) -> str | None:
@@ -4792,6 +4883,31 @@ def _compact_guard_check(proj_id: str) -> bool:
         elif (_t.monotonic() - _injected_at) > _COMPACT_COOLDOWN_SEC:
             _compact_last_injected.pop(proj_id, None)
     return proj_id not in _compact_last_injected and _transcript_too_large(proj_id)
+
+
+def _compact_guard_check_exec(proj_id: str) -> bool:
+    """M1198-v3: Exec-session-aware compact guard.
+
+    Uses _get_context_pct_max_recent (scans ALL recent transcripts) instead of
+    _get_context_pct (_current only). Fixes the case where exec sessions create
+    a new JSONL not tracked by _current, causing context% to always appear low.
+    """
+    import time as _t_e
+    _injected_at = _compact_last_injected.get(proj_id, 0.0)
+    if _injected_at > 0:
+        _pct = _get_context_pct_max_recent(proj_id)
+        if _pct is not None and _pct < _COMPACT_RESET_PCT:
+            _compact_last_injected.pop(proj_id, None)
+        elif (_t_e.monotonic() - _injected_at) > _COMPACT_COOLDOWN_SEC:
+            _compact_last_injected.pop(proj_id, None)
+    if proj_id in _compact_last_injected:
+        return False
+    _pct2 = _get_context_pct_max_recent(proj_id)
+    if _pct2 is not None:
+        return _pct2 >= _COMPACT_THRESHOLD_PCT
+    # Fallback: file size
+    t, _ = _get_transcript_path(proj_id)
+    return t is not None and t.stat().st_size > _COMPACT_THRESHOLD_MB * 1024 * 1024
 
 
 def _record_spawn_info(proj_id: str, resume_args: list, agent: str = "claude") -> None:
@@ -8046,19 +8162,20 @@ async def execute_project(proj_id: str, request: Request):
                                     _has_prompt = "❯" in _pane
                                     _actively_blocked = "esc to i" in _pane or _modal
                                     if _has_prompt and not _actively_blocked:
-                                        # M1193: state-based guard — inject only on rising edge (clear→injected)
-                                        # clears automatically when context drops below _COMPACT_RESET_PCT
-                                        if _compact_guard_check(proj_id):
+                                        # M1198-v3: exec-aware guard; skip dispatch when compact fires
+                                        if _compact_guard_check_exec(proj_id):
                                             _compact_last_injected[proj_id] = __import__('time').monotonic()
                                             subprocess.run(
                                                 ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
                                                 capture_output=True, timeout=2,
                                             )
-                                            await asyncio.sleep(25)
-                                        # M1114: two-step skill pre-inject if stone has skill_refs
-                                        _send_exec_wake(session_name, proj_id)
-                                        _wake_sent = True
-                                        _ns_push("session_running", proj_id=proj_id, kind="exec")
+                                            logger.info(f"[exec-wake] pre-compact: {proj_id} → /compact injected, deferring dispatch")
+                                            # DON'T dispatch — queue-continuation-poller re-checks in 30s
+                                        else:
+                                            # M1114: two-step skill pre-inject if stone has skill_refs
+                                            _send_exec_wake(session_name, proj_id)
+                                            _wake_sent = True
+                                            _ns_push("session_running", proj_id=proj_id, kind="exec")
                                 except Exception:
                                     pass
                             _trigger_sent = True
@@ -8673,13 +8790,15 @@ async def execute_project(proj_id: str, request: Request):
             # the explicit tool-call instruction instead of bare "go".
             # M1175: auto-compact on spawn only for RESUMED sessions (resume_args non-empty).
             # Fresh spawns have no transcript yet — compact would fail with "Not enough messages".
-            # M1193: state-based guard — same _compact_guard_check as IDLE-loop path
-            if resume_args and _compact_guard_check(proj_id):
+            # M1198-v3: exec-aware guard; skip dispatch this cycle if compact fires (queue-poller re-checks)
+            if resume_args and _compact_guard_check_exec(proj_id):
                 _compact_last_injected[proj_id] = __import__('time').monotonic()
                 subprocess.run(["tmux", "send-keys", "-t", session_name, "/compact", "Enter"])
-                await asyncio.sleep(25)
-            # M1114: two-step skill pre-inject
-            _send_exec_wake(session_name, proj_id)
+                logger.info(f"[exec-spawn] pre-compact: {proj_id} → /compact injected, dispatch deferred to queue-poller")
+                # DON'T dispatch now — queue-continuation-poller (every 30s) will dispatch after compact
+            else:
+                # M1114: two-step skill pre-inject
+                _send_exec_wake(session_name, proj_id)
 
             # M747/M792: spawn per-session sessions after main session is live
             # M792: iterate session_qs (session_key -> stones); session_name IS the key
