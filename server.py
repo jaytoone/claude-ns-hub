@@ -9210,6 +9210,8 @@ async def _start_exec_idle_detector():
             _cs_clean = _re_cs.sub(r'\x1b\[[0-9;]*[mKHJ]', '', _cs_pane)
             if "… (" in _cs_clean or "esc to i" in _cs_clean:
                 _exec_was_running[_cs_sname] = True  # currently running → will detect idle
+            else:
+                _exec_notified[_cs_sname] = time.time()  # M1192: already idle at startup → suppress post-restart re-fire via _consec_idle>=3 fallback
     except Exception:
         pass
     asyncio.create_task(_detect())
