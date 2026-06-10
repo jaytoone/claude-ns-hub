@@ -4394,13 +4394,28 @@ def _get_project_spawn_env(proj_id: str) -> dict:
     return {}
 
 
+def _mcp_disabled() -> bool:
+    """M1174: Returns True when hub is in LLM-independent mode (no MCP for exec sessions).
+    Persisted as user_settings key 'hub_mcp_disabled'."""
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=2)
+        row = conn.execute("SELECT value_json FROM user_settings WHERE key='hub_mcp_disabled'").fetchone()
+        conn.close()
+        return bool(row and json.loads(row[0]))
+    except Exception:
+        return False
+
+
 def _write_mcp_config(proj_id: str, session_name: str) -> str | None:
     """Generate a per-session MCP config file for Claude Code.
-    Returns the config file path, or None if generation fails.
+    Returns the config file path, or None if generation fails or MCP is disabled.
     Applies to claude and openrouter sessions (both use the claude CLI with --mcp-config).
     Not for codex (separate binary) or dsk (Darwin bridge, limited function calling).
     M1116: openrouter added — LiteLLM-proxied models still run through claude CLI.
+    M1174: returns None when hub_mcp_disabled=true (LLM-independent mode).
     """
+    if _mcp_disabled():
+        return None
     try:
         hub_url = f"http://{_tailscale_interface_ip()}:{PORT}"
         mcp_dir = Path("/tmp/hub/mcp")
@@ -11157,6 +11172,32 @@ async def set_consent(request: Request):
     _save_consent(data)
     return JSONResponse(data)
 # ── end M561 ───────────────────────────────────────────────────────────────────
+
+# ── M1174: MCP toggle endpoint ────────────────────────────────────────────────
+@app.get("/api/hub/mcp-mode")
+async def get_mcp_mode():
+    disabled = _mcp_disabled()
+    return JSONResponse({"mcp_enabled": not disabled, "hub_mcp_disabled": disabled})
+
+@app.post("/api/hub/mcp-mode")
+async def set_mcp_mode(request: Request):
+    """M1174: Toggle hub MCP for exec sessions. POST {"enabled": false} → LLM-independent mode."""
+    body = await request.json()
+    enabled = bool(body.get("enabled", True))
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
+        conn.execute(
+            "INSERT OR REPLACE INTO user_settings(key, value_json, updated_at) VALUES(?,?,?)",
+            ("hub_mcp_disabled", json.dumps(not enabled),
+             __import__('datetime').datetime.utcnow().isoformat()),
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    return JSONResponse({"ok": True, "mcp_enabled": enabled,
+                         "note": "New exec sessions will use hook-based dispatch only" if not enabled
+                                 else "New exec sessions will include --mcp-config"})
 
 
 # ── M705: /api/hub/config REST endpoints ──────────────────────────────────────
