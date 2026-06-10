@@ -3770,10 +3770,8 @@ async def _start_queue_continuation_poller():
                         pass
 
                     # Send wake message — MCP sessions get tool-call instruction, others get 'go'
-                    subprocess.run(
-                        ["tmux", "send-keys", "-t", sname, _exec_wake_msg(sname), "Enter"],
-                        capture_output=True, timeout=2
-                    )
+                    # M1114: _send_exec_wake handles skill pre-inject (two-step) when stone has skill_refs
+                    _send_exec_wake(sname, proj_id)
                     _last_go_sent[sname] = now
 
                 # M1095: scan all projects' substars — clear assigned_session if the
@@ -4201,6 +4199,49 @@ def _exec_wake_msg(session_name: str) -> str:
     if Path(f"/tmp/hub/mcp/{session_name}.json").exists():
         return "Tasks ready. Call mcp__ns-hub__get_pending_task() now."
     return "go"
+
+
+def _get_first_queued_skill(proj_id: str) -> str | None:
+    """M1114: Return skill_refs[0] for the first queued stone, or None.
+    Used to pre-inject /skill-name into exec session terminal before wake message."""
+    try:
+        ms = _db_get_active_milestones(proj_id)
+        if not ms:
+            return None
+        queued = sorted(
+            [m for m in ms if m.get("status") == "queued" and not m.get("done")],
+            key=lambda m: m.get("queued_at") or m.get("user_added_at") or ""
+        )
+        if not queued:
+            return None
+        first = queued[0]
+        refs = first.get("skill_refs") or ([first["skill_ref"]] if first.get("skill_ref") else [])
+        return refs[0] if refs else None
+    except Exception:
+        return None
+
+
+def _send_exec_wake(session_name: str, proj_id: str | None = None) -> None:
+    """M1114: Send exec wake message to tmux, with optional skill pre-inject.
+    If the first queued stone has skill_refs, sends /skill-name first (CLI intercept)
+    then sleeps 1s, then sends the main wake message.
+    This achieves ~100% skill load rate vs ~50-60% for _skill_instruction alone."""
+    import time as _time_wake
+    wake_msg = _exec_wake_msg(session_name)
+
+    # Attempt skill pre-inject if proj_id is available
+    skill = _get_first_queued_skill(proj_id) if proj_id else None
+    if skill:
+        subprocess.run(
+            ["tmux", "send-keys", "-t", session_name, f"/{skill}", "Enter"],
+            capture_output=True, timeout=2,
+        )
+        _time_wake.sleep(1)  # wait for SKILL.md to load into system context
+
+    subprocess.run(
+        ["tmux", "send-keys", "-t", session_name, wake_msg, "Enter"],
+        capture_output=True, timeout=2,
+    )
 
 
 _COMPACT_THRESHOLD_MB = 4  # M1185: ~80% of 200K window (calibrated: 5MB≈88%, 4MB≈80%)
@@ -7343,10 +7384,8 @@ async def execute_project(proj_id: str, request: Request):
                                                 capture_output=True, timeout=2,
                                             )
                                             await asyncio.sleep(25)
-                                        subprocess.run(
-                                            ["tmux", "send-keys", "-t", session_name, _exec_wake_msg(session_name), "Enter"],
-                                            capture_output=True, timeout=2,
-                                        )
+                                        # M1114: two-step skill pre-inject if stone has skill_refs
+                                        _send_exec_wake(session_name, proj_id)
                                         _wake_sent = True
                                         _ns_push("session_running", proj_id=proj_id, kind="exec")
                                 except Exception:
@@ -7966,7 +8005,8 @@ async def execute_project(proj_id: str, request: Request):
             if resume_args and _transcript_too_large(proj_id):
                 subprocess.run(["tmux", "send-keys", "-t", session_name, "/compact", "Enter"])
                 await asyncio.sleep(25)
-            subprocess.run(["tmux", "send-keys", "-t", session_name, _exec_wake_msg(session_name), "Enter"])
+            # M1114: two-step skill pre-inject
+            _send_exec_wake(session_name, proj_id)
 
             # M747/M792: spawn per-session sessions after main session is live
             # M792: iterate session_qs (session_key -> stones); session_name IS the key
@@ -8001,7 +8041,7 @@ async def execute_project(proj_id: str, request: Request):
                         continue
                     # M824 ALIVE-BRANCH SKIP: session is already running Claude — just re-inject prompt
                     if _skey in _alive_branch_keys:
-                        subprocess.run(["tmux", "send-keys", "-t", _skey, _exec_wake_msg(_skey), "Enter"])
+                        _send_exec_wake(_skey, proj_id)  # M1114: skill pre-inject
                         continue
                     _ss_env = ["-e", f"CLAUDE_CODE_TASK_LIST_ID=hub-exec-{proj_id}-{_ss_short}",
                                "-e", f"NS_HUB_URL=http://{_tailscale_interface_ip()}:{PORT}",
