@@ -4278,10 +4278,11 @@ def _semantic_compress_turns(turns: list) -> str:
 
 
 _COMPACT_THRESHOLD_MB = 2   # M1175: legacy file-size fallback (kept for reference)
-_COMPACT_THRESHOLD_PCT = 80  # M1175 v2: context % threshold — trigger /compact above this
+_COMPACT_THRESHOLD_PCT = 80   # M1175 v2: trigger /compact above this context %
+_COMPACT_RESET_PCT      = 60  # M1193: clear injected-flag when context drops below this (compaction done)
 _COMPACT_MODEL_MAX_TOKENS = 200_000  # Claude 4.x (sonnet/opus/haiku) all share 200K window
-_COMPACT_COOLDOWN_SEC = 600  # M1191: guard — don't re-inject /compact within 10 min per session
-_compact_last_injected: dict[str, float] = {}  # proj_id → monotonic timestamp of last /compact send
+_COMPACT_COOLDOWN_SEC = 1800  # M1193: safety fallback — force-clear flag after 30min if context never drops
+_compact_last_injected: dict[str, float] = {}  # M1193: proj_id → monotonic ts of last inject (state-based guard)
 
 
 def _get_transcript_path(proj_id: str):
@@ -4382,6 +4383,23 @@ def _transcript_too_large(proj_id: str) -> bool:
     except Exception:
         pass
     return False
+
+
+def _compact_guard_check(proj_id: str) -> bool:
+    """M1193 state-based compact guard: returns True if /compact should be injected.
+    Clears the injected-flag when context % drops below _COMPACT_RESET_PCT (compaction done)
+    or after _COMPACT_COOLDOWN_SEC safety fallback. Only fires on rising-edge: clear→injected."""
+    import time as _t
+    _injected_at = _compact_last_injected.get(proj_id, 0.0)
+    if _injected_at > 0:
+        # Check if compaction succeeded: context dropped below reset threshold
+        _pct = _get_context_pct(proj_id)
+        if _pct is not None and _pct < _COMPACT_RESET_PCT:
+            _compact_last_injected.pop(proj_id, None)  # compaction done — allow next trigger
+        # Safety fallback: force-clear after 30min regardless
+        elif (_t.monotonic() - _injected_at) > _COMPACT_COOLDOWN_SEC:
+            _compact_last_injected.pop(proj_id, None)
+    return proj_id not in _compact_last_injected and _transcript_too_large(proj_id)
 
 
 def _record_spawn_info(proj_id: str, resume_args: list, agent: str = "claude") -> None:
@@ -7478,13 +7496,10 @@ async def execute_project(proj_id: str, request: Request):
                                     _has_prompt = "❯" in _pane
                                     _actively_blocked = "esc to i" in _pane or _modal
                                     if _has_prompt and not _actively_blocked:
-                                        # M1175: auto-compact if transcript too large
-                                        # M1191: cooldown guard — skip if /compact was injected recently
-                                        _now_mono = __import__('time').monotonic()
-                                        _last_compact = _compact_last_injected.get(proj_id, 0.0)
-                                        if (_transcript_too_large(proj_id)
-                                                and (_now_mono - _last_compact) > _COMPACT_COOLDOWN_SEC):
-                                            _compact_last_injected[proj_id] = _now_mono
+                                        # M1193: state-based guard — inject only on rising edge (clear→injected)
+                                        # clears automatically when context drops below _COMPACT_RESET_PCT
+                                        if _compact_guard_check(proj_id):
+                                            _compact_last_injected[proj_id] = __import__('time').monotonic()
                                             subprocess.run(
                                                 ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
                                                 capture_output=True, timeout=2,
@@ -8108,12 +8123,9 @@ async def execute_project(proj_id: str, request: Request):
             # the explicit tool-call instruction instead of bare "go".
             # M1175: auto-compact on spawn only for RESUMED sessions (resume_args non-empty).
             # Fresh spawns have no transcript yet — compact would fail with "Not enough messages".
-            # M1191: cooldown guard shared with IDLE-loop path
-            _now_mono_sp = __import__('time').monotonic()
-            _last_compact_sp = _compact_last_injected.get(proj_id, 0.0)
-            if (resume_args and _transcript_too_large(proj_id)
-                    and (_now_mono_sp - _last_compact_sp) > _COMPACT_COOLDOWN_SEC):
-                _compact_last_injected[proj_id] = _now_mono_sp
+            # M1193: state-based guard — same _compact_guard_check as IDLE-loop path
+            if resume_args and _compact_guard_check(proj_id):
+                _compact_last_injected[proj_id] = __import__('time').monotonic()
                 subprocess.run(["tmux", "send-keys", "-t", session_name, "/compact", "Enter"])
                 await asyncio.sleep(25)
             # M1114: two-step skill pre-inject
