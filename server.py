@@ -9131,9 +9131,61 @@ async def dsk_health():
 
 _exec_was_running: dict[str, bool] = {}  # track exec session busy/idle transitions for ntfy
 _exec_idle_count: dict[str, int] = {}   # M319: debounce — require 2 consecutive idle readings before notifying
-_exec_notified: dict[str, float] = {}   # M998: sessions already notified — reset on running detection
+_exec_notified: dict[str, float] = {}   # M1192: sessions already notified — reset on running detection; PERSISTED to SQLite
 _last_idle_push: dict[str, float] = {}  # M378: dedup — suppress duplicate session_idle SSE within 5s per session
 _IDLE_PUSH_COOLDOWN = 5.0  # seconds — minimum gap between session_idle SSE pushes for same session
+_EXEC_NOTIFIED_TTL = 86400  # 24h — auto-expire persisted notified entries
+
+
+def _exec_notified_load() -> None:
+    """M1192: Load persisted _exec_notified from SQLite on startup. Fills in-memory dict."""
+    try:
+        _now = time.time()
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        rows = conn.execute(
+            "SELECT key, value_json FROM user_settings WHERE key LIKE 'exec_notified_%'"
+        ).fetchall()
+        conn.close()
+        for k, v in rows:
+            try:
+                ts = float(json.loads(v))
+                if _now - ts < _EXEC_NOTIFIED_TTL:
+                    sname = k[len("exec_notified_"):]
+                    _exec_notified[sname] = ts
+                # else: expired — leave out of in-memory dict (will be cleaned by periodic task)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _exec_notified_set(session_name: str) -> None:
+    """M1192: Write _exec_notified[session_name] to both in-memory dict and SQLite."""
+    _now = time.time()
+    _exec_notified[session_name] = _now
+    try:
+        import datetime as _dt_en
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        conn.execute(
+            "INSERT OR REPLACE INTO user_settings(key, value_json, updated_at) VALUES(?,?,?)",
+            (f"exec_notified_{session_name}", json.dumps(_now), _dt_en.datetime.utcnow().isoformat())
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def _exec_notified_clear(session_name: str) -> None:
+    """M1192: Remove _exec_notified entry when session becomes running again."""
+    _exec_notified.pop(session_name, None)
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        conn.execute("DELETE FROM user_settings WHERE key=?", (f"exec_notified_{session_name}",))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 
 # M389 fix: server-side background idle detector — runs independently of client polling
@@ -9194,7 +9246,7 @@ async def _start_exec_idle_detector():
                     _consec_idle = _exec_idle_count.get(session_name, 0)
                     if _was_running and idle and _consec_idle >= 2:
                         _exec_was_running[session_name] = False
-                        _exec_notified[session_name] = time.time()  # M1171 Fix B: prevent browser-poll duplicate
+                        _exec_notified_set(session_name)  # M1192: persist to SQLite (prevents post-restart re-fire)
                         _push_session_idle(session_name, proj_id)  # SSE toast
                         # M1171 v2: only notify when queue is empty — suppress mid-batch notifications
                         if not _has_queued_stones(proj_id):
@@ -9225,9 +9277,11 @@ async def _start_exec_idle_detector():
                                     )
             except Exception:
                 pass
+    # M1192: load persisted _exec_notified from SQLite so post-restart re-fires are suppressed
+    _exec_notified_load()
     # M460 cold-start fix: pre-scan existing exec sessions at startup.
     # Sessions already running → mark _exec_was_running=True so we catch their next idle.
-    # Sessions already idle at startup → skip (we missed the transition, can't go back).
+    # Sessions already idle at startup → _exec_notified already loaded from SQLite above.
     import re as _re_cs
     try:
         _cs_result = subprocess.run(
@@ -9242,8 +9296,7 @@ async def _start_exec_idle_detector():
             _cs_clean = _re_cs.sub(r'\x1b\[[0-9;]*[mKHJ]', '', _cs_pane)
             if "… (" in _cs_clean or "esc to i" in _cs_clean:
                 _exec_was_running[_cs_sname] = True  # currently running → will detect idle
-            else:
-                _exec_notified[_cs_sname] = time.time()  # M1192: already idle at startup → suppress post-restart re-fire via _consec_idle>=3 fallback
+            # else: already idle — _exec_notified already loaded from SQLite by _exec_notified_load()
     except Exception:
         pass
     asyncio.create_task(_detect())
@@ -9383,18 +9436,18 @@ async def get_exec_sessions():
         else:
             _exec_idle_count.pop(session_name, None)
         _consec_idle = _exec_idle_count.get(session_name, 0)
-        if idle and (_was_running and _consec_idle >= 2 or _consec_idle >= 3):
-            # M998 fix: fire for sessions that ran too quickly to be caught (_consec_idle>=3 fallback)
+        # M1192: fire only on _was_running transition (removed _consec_idle>=3 fallback — caused post-restart spam)
+        if idle and _was_running and _consec_idle >= 2:
             _already_notified = session_name in _exec_notified
             if not _already_notified:
                 _push_session_idle(session_name, proj_id)
                 # M1171 v2: only notify when queue is empty — suppress mid-batch notifications
                 if not _has_queued_stones(proj_id):
                     _send_ntfy_notification(f"{proj_id} exec idle", f"Exec session for {proj_id} just went idle", priority="default")
-                _exec_notified[session_name] = time.time()
+                _exec_notified_set(session_name)  # M1192: persist to SQLite
         elif not idle:
             # session running → reset notified flag so next idle can fire
-            _exec_notified.pop(session_name, None)
+            _exec_notified_clear(session_name)  # M1192: clear in SQLite too
         if not _was_running and not idle:
             # idle→running: push SSE so detail-card updates within 3s poll
             _exec_idle_count.pop(session_name, None)  # reset idle count on running
