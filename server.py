@@ -3872,8 +3872,27 @@ async def _start_auto_reply_worker():
     Replaces explicit `reply_to_stone` / `report_task_complete` MCP tool calls.
     """
     import hashlib as _hl
+    import re as _re_ar
     POLL_INTERVAL = 60
     IDLE_THRESHOLD = 180  # 3 min idle before auto-reply fires
+
+    def _extract_evidence_url(text: str) -> str | None:
+        """M1174-fix: extract result URL from last assistant message for evidence_url.
+        Previously done explicitly by LLM via report_task_complete(evidence_url=...).
+        Now auto-extracted: GDrive links take priority, then any https:// URL."""
+        if not text:
+            return None
+        # Priority 1: Google Drive
+        m = _re_ar.search(r'https://drive\.google\.com/\S+', text)
+        if m:
+            return m.group(0).rstrip(')')
+        # Priority 2: any https URL that looks like a result (not localhost/127.0.0.1)
+        for url in _re_ar.findall(r'https://\S+', text):
+            url = url.rstrip(')')
+            if '127.0.0.1' in url or 'localhost' in url:
+                continue
+            return url
+        return None
 
     async def _worker():
         while True:
@@ -3975,11 +3994,15 @@ async def _start_auto_reply_worker():
                                     if not _is_new_commit and stone_status == "queued":
                                         _summary = last_msg[:120].replace("\n", " ").strip()
                                         _done_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
-                                        _done_body = json.dumps({
+                                        _qa_patch: dict = {
                                             "status": "pending_confirmation",
                                             "summary": _summary,
                                             "pending_confirm_at": __import__('datetime').datetime.utcnow().isoformat(),
-                                        }).encode()
+                                        }
+                                        _ev = _extract_evidence_url(last_msg)
+                                        if _ev:
+                                            _qa_patch["evidence_url"] = _ev
+                                        _done_body = json.dumps(_qa_patch).encode()
                                         try:
                                             req2 = _ur.Request(_done_url, data=_done_body, method="PATCH",
                                                                headers={"Content-Type": "application/json"})
@@ -4002,11 +4025,15 @@ async def _start_auto_reply_worker():
                         if not summary:
                             summary = f"Auto-completed: git {current_hash[:8]}"
                         _done_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
-                        _body = json.dumps({
+                        _commit_patch: dict = {
                             "status": "pending_confirmation",
                             "summary": summary,
                             "pending_confirm_at": __import__('datetime').datetime.utcnow().isoformat(),
-                        }).encode()
+                        }
+                        _ev2 = _extract_evidence_url(last_msg or "")
+                        if _ev2:
+                            _commit_patch["evidence_url"] = _ev2
+                        _body = json.dumps(_commit_patch).encode()
                         try:
                             import urllib.request as _ur
                             req = _ur.Request(_done_url, data=_body, method="PATCH",
