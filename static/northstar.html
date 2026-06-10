@@ -829,9 +829,13 @@ header {
   }
   /* iPad: ensure xterm fills container width for proper pty cols */
   #dm-xterm { width: 100% !important; height: calc(78svh - 40px) !important; }
-  /* KEY FIX: pass vertical swipe to viewport scroll — !important overrides xterm.js internal CSS */
-  #dm-xterm .xterm-screen { touch-action: pan-y !important; }
-  #dm-xterm canvas { touch-action: pan-y !important; }
+  /* M1125 v5: touch-action:none so browser does NOT intercept as native pan.
+     pan-y was WRONG — it told iOS to handle pan natively, browser looked for a scrollable
+     ANCESTOR of .xterm-screen but .xterm-viewport is a SIBLING (not ancestor), so iOS
+     scrolled the PAGE. With none, preventDefault() in touchmove is honoured and
+     scrollLines() wins. Desktop is unaffected (mouse wheel bypasses touch-action). */
+  #dm-xterm .xterm-screen { touch-action: none !important; }
+  #dm-xterm canvas { touch-action: none !important; }
   #dm-xterm .xterm-viewport {
     overflow-y: scroll !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important;
     /* M107: visible scrollbar on mobile — thick enough to tap, opaque enough to see */
@@ -842,10 +846,10 @@ header {
   #dm-xterm .xterm-viewport::-webkit-scrollbar-thumb:active { background: rgba(200,180,160,.95); }
   /* Ensure scrollbar space is always reserved so content doesn't jump */
   #dm-xterm .xterm-viewport { scrollbar-gutter: stable; }
-  #dm-xterm { touch-action: pan-y !important; }
+  #dm-xterm { touch-action: none !important; }
   /* Text selection */
   #dm-xterm .xterm-rows span { -webkit-user-select: text !important; user-select: text !important; }
-  #dm-xterm .xterm-rows { touch-action: pan-y !important; -webkit-user-select: text !important; }
+  #dm-xterm .xterm-rows { touch-action: none !important; -webkit-user-select: text !important; }
   /* Paste button visible */
   #ns-terminal-drag-hdr { flex-wrap: wrap; gap: 6px; }
 }
@@ -2187,7 +2191,7 @@ function rowHtml(p, i) {
   const color     = statusColor(p.status);
   // M88: three progress bars — milestone + deadline
   const msPctNum  = (p.milestones && p.milestones.length) ? Math.round((p.milestones.filter(m=>m.done||m.status==='done').length / p.milestones.length) * 100) : 0;
-  const daysLeft  = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : null;
+  const daysLeft  = _dlDays(p.deadline);
   const dlPctNum  = (daysLeft !== null && daysLeft > 0) ? Math.max(0, Math.min(100, Math.round((daysLeft / 7) * 100))) : (daysLeft !== null ? 0 : 0);
   const dlColor   = daysLeft !== null ? (daysLeft <= 3 ? 'var(--red)' : daysLeft <= 7 ? 'var(--accent)' : 'var(--green)') : 'var(--text-dim)';
   const active    = i === activeIdx ? 'active' : '';
@@ -2657,7 +2661,7 @@ function renderMilestoneCreator(projId, milestones) {
   const _p88 = projects.find(x => (x.id||x.name) === projId) || {};
   const starPct88 = Math.round(projectPct(_p88) * 100);
   const dl88 = _p88.deadline ? deadlineBadge(_p88.deadline) : null;
-  const daysLeft88 = _p88.deadline ? Math.ceil((new Date(_p88.deadline) - new Date()) / 86400000) : null;
+  const daysLeft88 = _dlDays(_p88.deadline);
   // M83: weekly progress bar — design candidates:
   //
   // Option A — Weekly Velocity Bar (recommended for cards):
@@ -6786,12 +6790,24 @@ function sessCell(projId) {
 
 // ── SWIMLANE RENDER ──────────────────────────────────────────────────────────
 
+function _dlDays(deadline) {
+  // M1196: parse as local midnight (not UTC) so D-day transitions at local midnight, not 09:00 KST
+  if (!deadline) return null;
+  const dlStr = deadline.includes('T') ? deadline : deadline + 'T00:00:00';
+  const dl = new Date(dlStr);
+  if (isNaN(dl)) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dlDay = new Date(dl.getFullYear(), dl.getMonth(), dl.getDate());
+  return Math.round((dlDay - today) / 86400000);
+}
 function deadlineBadge(deadline) {
   if (!deadline) return { text: '—', color: 'var(--text-dim)' };
-  const dl = new Date(deadline);
+  const dlStr = deadline.includes('T') ? deadline : deadline + 'T00:00:00';
+  const dl = new Date(dlStr);
   if (isNaN(dl)) return { text: deadline, color: 'var(--text-dim)' };
-  const now = new Date();
-  const days = Math.ceil((dl - now) / 86400000);
+  const days = _dlDays(deadline);
+  if (days === null) return { text: deadline, color: 'var(--text-dim)' };
   if (days < 0) return { text: `D+${-days}`, color: 'var(--red)' };
   if (days === 0) return { text: 'D-0', color: 'var(--red)' };
   if (days <= 7) return { text: `D-${days}`, color: 'var(--red)' };
@@ -6811,7 +6827,7 @@ function nodeCard(p, idx) {
   let gapColor = p.status === 'behind' ? 'var(--red)' : p.status === 'on-track' ? 'var(--green)' : 'var(--text-dim)';
   // M161: calculate three progress bar percentages (star-arc, milestone, deadline)
   const msPctNum = (p.milestones && p.milestones.length) ? Math.round((p.milestones.filter(m=>m.done||m.status==='done').length / p.milestones.length) * 100) : 0;
-  const daysLeft = p.deadline ? Math.ceil((new Date(p.deadline) - new Date()) / 86400000) : null;
+  const daysLeft = _dlDays(p.deadline);
   const dlPctNum = (daysLeft !== null && daysLeft > 0) ? Math.max(0, Math.min(100, Math.round((daysLeft / 7) * 100))) : (daysLeft !== null ? 0 : 0);
   const dlColor = daysLeft !== null ? (daysLeft <= 3 ? 'var(--red)' : daysLeft <= 7 ? 'var(--accent)' : 'var(--green)') : 'var(--text-dim)';
   // M178: badge = exec state, button = PTY state (independent)
@@ -6912,16 +6928,21 @@ function nodeCard(p, idx) {
       + `<div class="avatar-fallback" style="display:none">${esc(_initials)}</div>`
     : `<div class="avatar-fallback">${esc(_initials)}</div>`;
   // 3 arc rings: outer=deadline(r=54), mid=star(r=47), inner=milestone(r=40)
+  // M1197: N = segment count matching detail card progress bar slots (deadline=7, star/ms=10)
   const _rings = [
-    {r:54, pct:dlPctNum, cls:'arc-deadline', warn: dlPctNum > 80},
-    {r:47, pct:pct,       cls:'arc-star',     warn: pct < 50},
-    {r:40, pct:msPctNum,  cls:'arc-milestone', warn: msPctNum < 30},
-  ].map(({r, pct:rPct, cls, warn}) => {
+    {r:54, pct:dlPctNum, cls:'arc-deadline', warn: dlPctNum > 80, N:7},
+    {r:47, pct:pct,       cls:'arc-star',     warn: pct < 50,       N:10},
+    {r:40, pct:msPctNum,  cls:'arc-milestone', warn: msPctNum < 30,  N:10},
+  ].map(({r, pct:rPct, cls, warn, N}) => {
     const circ = 2 * Math.PI * r;
     const offset = circ - circ * (rPct / 100);
     const sw = 3.5;
+    const _gapW = 2.0;
+    const _segLen = circ / N;
+    const _divider = `<circle cx="58" cy="58" r="${r}" fill="none" stroke="var(--bg-deep)" stroke-width="${sw + 1.5}" stroke-linecap="butt" stroke-dasharray="${_gapW.toFixed(1)} ${(_segLen - _gapW).toFixed(1)}" />`;
     return `<circle class="arc-bg" cx="58" cy="58" r="${r}" stroke-width="${sw}" stroke-dasharray="${circ.toFixed(1)}" />`
-          +`<circle class="arc-fill ${cls}${warn?' warn':''}" cx="58" cy="58" r="${r}" stroke-width="${sw}" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" />`;
+          +`<circle class="arc-fill ${cls}${warn?' warn':''}" cx="58" cy="58" r="${r}" stroke-width="${sw}" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" />`
+          +_divider;
   }).join('');
   const _dLabel = dl.text && dl.text !== '—' ? dl.text : '';
   const _rawModel = (window._execModel||{})[p.id||p.name];
@@ -7614,14 +7635,14 @@ function drawParentLines() {
     const bxCenter = cO.x + cO.w / 2;
     const by = cO.y;          // top edge of child card
 
-    // M1132 v3 (restored): staggered center routing — no card-bypass.
-    // Sibling edges depart from slightly different x-positions (X_STEP apart) so
-    // parallel vertical segments don't overlap, then cascade down via junction.
-    // M1162: widened X_STEP 7→14 so parallel water lines have visible breathing room
-    const X_STEP = 14;
-    const sibOffset = sibIdx - (sibCount - 1) / 2;
-    const ax = axCenter + sibOffset * X_STEP;  // staggered start x on parent bottom
-    const bx = bxCenter + sibOffset * X_STEP;  // staggered arrive x on child top
+    // M1195: global x-slot stagger — each edge gets a unique slot index across ALL
+    // edges (not just same-parent siblings) so no two parallel vertical segments
+    // ever share the same x position regardless of which parent they depart from.
+    const X_STEP = 10;
+    const totalEdges = edges.length;
+    const globalOffset = edgeIdx - (totalEdges - 1) / 2;
+    const ax = axCenter + globalOffset * X_STEP;
+    const bx = bxCenter + globalOffset * X_STEP;
 
     const BASE_FRAC = 0.35;
     const STAGGER_PX = 18;
@@ -9826,9 +9847,8 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
         // M1125 v2: bind to #dm-xterm (parent) instead of .xterm-screen so the whole
         // visible terminal area captures vertical swipes — .xterm-screen is sometimes
         // smaller than the visible region, leaving dead zones that swallowed swipes.
-        const vp = document.querySelector('#dm-xterm .xterm-viewport');
         const host = document.getElementById('dm-xterm');
-        if (!vp || !host || host._touchScrollAttached) return;
+        if (!host || host._touchScrollAttached) return;
         host._touchScrollAttached = true;
         let lastY = 0;
         host.addEventListener('touchstart', e => { lastY = e.touches[0].clientY; }, { passive: true });
@@ -9837,14 +9857,11 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
           const y = e.touches[0].clientY;
           const dy = lastY - y;
           lastY = y;
-          if (_term) {
-            const lineH = (_term._core?._charSizeService?.height) || 17;
-            const lines = dy / lineH;
-            const stepped = Math.round(lines) || (lines > 0 ? 1 : -1);
-            if (Math.abs(lines) >= 0.1) _term.scrollLines(stepped);
-          } else {
-            vp.scrollTop += dy;
-          }
+          // M1125 v6: use xterm-viewport.scrollTop directly — scrollLines() on DOM renderer
+          // updates buffer state but may not repaint if _currentRowHeight isn't measured yet.
+          // Direct scrollTop always works; xterm.js picks up the scroll event and syncs state.
+          const vp2 = document.querySelector('#dm-xterm .xterm-viewport');
+          if (vp2) vp2.scrollTop += dy;
         }, { passive: false });
       };
       patchVP();
@@ -9984,14 +10001,13 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
         const maxTop = trackH - thumbH;
         const newTop = Math.max(0, Math.min(maxTop, _dragTop0 + dy));
         _thumb.style.top = newTop + 'px';
-        // Map thumb position → buffer scroll line
+        // M1125 v6: map thumb → viewport scrollTop directly (avoids scrollLines() DOM-renderer bug)
         try {
-          const buf = _term.buffer.active;
-          const total = buf.length;
-          const view = _term.rows;
-          const targetTop = Math.round((total - view) * newTop / Math.max(1, maxTop));
-          const curTop = buf.viewportY;
-          _term.scrollLines(targetTop - curTop);
+          const vp3 = document.querySelector('#dm-xterm .xterm-viewport');
+          if (vp3) {
+            const maxScroll = vp3.scrollHeight - vp3.clientHeight;
+            vp3.scrollTop = (newTop / Math.max(1, maxTop)) * maxScroll;
+          }
         } catch(_) {}
         e.preventDefault();
         e.stopPropagation();
@@ -10004,16 +10020,17 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
       _thumb.addEventListener('touchend', _dragEnd, { passive: true });
       _thumb.addEventListener('touchcancel', _dragEnd, { passive: true });
 
-      // Tap on track (not thumb) → page up/down
+      // Tap on track (not thumb) → page up/down via scrollTop
       _track.addEventListener('touchstart', e => {
         if (e.target === _thumb) return;
         const rect = _track.getBoundingClientRect();
         const y = e.touches[0].clientY - rect.top;
         const thumbTop = parseInt(_thumb.style.top || '0', 10);
         const thumbH = _thumb.clientHeight;
-        if (_term) {
-          if (y < thumbTop) _term.scrollLines(-_term.rows);  // tap above → page up
-          else if (y > thumbTop + thumbH) _term.scrollLines(_term.rows);  // tap below → page down
+        const vp4 = document.querySelector('#dm-xterm .xterm-viewport');
+        if (vp4) {
+          if (y < thumbTop) vp4.scrollTop -= vp4.clientHeight;  // tap above → page up
+          else if (y > thumbTop + thumbH) vp4.scrollTop += vp4.clientHeight;  // tap below → page down
         }
         e.preventDefault();
       }, { passive: false });
@@ -10649,11 +10666,17 @@ function renderHierarchy(p) {
           >${esc(p.metric || 'North Star')}</span>
       </div>
       <!-- M172: manual current/target/unit pane removed — percentage auto-computed from milestone done/total via projectPct(). Metric (label) stays editable above. -->
-      <!-- Compact summary bar: ◎ stones → ☆ % | deadline | count -->
+      <!-- Compact summary bar: ◎ stones → ☆ % | D+age | deadline | count -->
       <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;margin-top:4px;background:var(--panel-soft);border-radius:6px;font-family:var(--mono);font-size:11px;flex-wrap:wrap">
         <span style="color:var(--text-dim);opacity:.7">◎ →</span>
         <span style="color:${color};font-weight:600">${Math.round(pct*100)}%</span>
         <span style="opacity:.3">·</span>
+        ${/* M1196: D+N days since project start (git first commit / proj_dir ctime) */
+          (p.proj_started_ts ? (() => {
+            const _age = Math.floor((Date.now() / 1000 - p.proj_started_ts) / 86400);
+            return `<span style="color:var(--text-dim);font-weight:500" title="Days since project started">D+${_age}</span><span style="opacity:.3">·</span>`;
+          })() : '')
+        }
         <label id="dm-deadline-row" style="position:relative;display:inline-flex;align-items:center;cursor:pointer;font-family:var(--mono);font-size:11px;color:${p.deadline ? deadlineBadge(p.deadline).color : 'var(--text-dim)'}" title="Tap to change deadline"
           onclick="const _di=document.getElementById('dm-deadline-input');if(_di){try{_di.showPicker();}catch(_){_di.click();}return false;}">
           ${p.deadline ? esc(deadlineBadge(p.deadline).text) : '+ deadline'}
@@ -13697,6 +13720,34 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
       window._ssBarPrevItems[_sKey] = _curItems;
     }
 
+    // M1200: dismiss button — clears local blink state so user can acknowledge "no update" blinks
+    if (hTd.classList.contains('ss-mg-blink')) {
+      const _dimBtn = document.createElement('span');
+      _dimBtn.textContent = '×';
+      _dimBtn.title = 'Dismiss blink';
+      _dimBtn.style.cssText = 'font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-dim);cursor:pointer;margin-left:6px;padding:0 4px;border-radius:2px;user-select:none;opacity:.7;float:right';
+      _dimBtn.onmouseenter = () => { _dimBtn.style.opacity = '1'; _dimBtn.style.color = 'var(--accent)'; };
+      _dimBtn.onmouseleave = () => { _dimBtn.style.opacity = '.7'; _dimBtn.style.color = 'var(--text-dim)'; };
+      _dimBtn.onclick = e => {
+        e.stopPropagation();
+        localStorage.removeItem(_lsBlinkKey);
+        localStorage.removeItem(_lsBlinkMids);
+        if (window._ssBlinkMids) delete window._ssBlinkMids[_sKey];
+        hTd.classList.remove('ss-mg-blink');
+        _dimBtn.remove();
+        // Remove row blinks in this section
+        const _hTb2 = hTd.closest('tbody');
+        if (_hTb2) {
+          let _sib2 = _hTb2.nextElementSibling;
+          while (_sib2 && !_sib2.classList.contains('ss-mg-header-tbody')) {
+            _sib2.querySelectorAll('tr.ss-row-blink').forEach(r => r.classList.remove('ss-row-blink'));
+            _sib2 = _sib2.nextElementSibling;
+          }
+        }
+      };
+      hTd.insertBefore(_dimBtn, hTd.firstChild);
+    }
+
     // M675: default agent badge (inline, after count); M692: click→view SKILL.md content
     if (ns && ns.default_agent) {
       const agentBadge = document.createElement('span');
@@ -13883,6 +13934,42 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
         };
         picker.appendChild(row);
       });
+      // M1199: Move to project section — separator + project list
+      const _otherProjects = (window.projects || []).filter(p => (p.id || p.name) !== _proj);
+      if (_otherProjects.length > 0) {
+        const sep = document.createElement('div');
+        sep.style.cssText = 'border-top:1px solid var(--panel-border);margin:3px 0;';
+        picker.appendChild(sep);
+        const sepLabel = document.createElement('div');
+        sepLabel.style.cssText = 'padding:2px 10px;color:var(--text-dim);font-size:9px;';
+        sepLabel.textContent = 'Move to project';
+        picker.appendChild(sepLabel);
+        _otherProjects.forEach(p => {
+          const pId = p.id || p.name;
+          const pRow = document.createElement('div');
+          pRow.style.cssText = 'padding:5px 10px;cursor:pointer;color:var(--text);';
+          pRow.textContent = `→ ${pId}`;
+          pRow.onmouseenter = () => { pRow.style.background = 'var(--panel-soft)'; };
+          pRow.onmouseleave = () => { pRow.style.background = ''; };
+          pRow.onclick = async ev => {
+            ev.stopPropagation();
+            picker.remove();
+            chip.dataset.pickerOpen = '';
+            const r = await fetch(`/api/northstar/${encodeURIComponent(_proj)}/milestones/${encodeURIComponent(mid)}/move-to-project`, {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ target_proj_id: pId }),
+            });
+            const d = await r.json();
+            if (d.ok) {
+              delete _msRenderFingerprint[_proj];
+              loadMilestones(_proj);
+            } else {
+              alert('Move failed: ' + (d.error || 'unknown'));
+            }
+          };
+          picker.appendChild(pRow);
+        });
+      }
       document.body.appendChild(picker);
       const _closePicker = ev => { if (!picker.contains(ev.target)) { picker.remove(); chip.dataset.pickerOpen = ''; document.removeEventListener('click', _closePicker); } };
       setTimeout(() => document.addEventListener('click', _closePicker), 10);
@@ -13892,6 +13979,21 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
     const _tspan = idCell.querySelector('.nt-time-span');
     if (_tspan) idCell.insertBefore(chip, _tspan);
     else idCell.insertBefore(chip, idCell.firstChild); // M919: prepend so chip appears above action buttons
+
+    // M1199: moved_from badge — show origin project for stones moved cross-project
+    const _rowMs = _msCacheByProject[_proj] || [];
+    const _thisMsData = _rowMs.find ? _rowMs.find(m => m.id === mid) : null;
+    if (_thisMsData && _thisMsData.moved_from) {
+      const _srcProj = (_thisMsData.moved_from || '').split('/')[0];
+      if (_srcProj && _srcProj !== _proj) {
+        const mvBadge = document.createElement('span');
+        mvBadge.title = `Moved from ${_thisMsData.moved_from}`;
+        mvBadge.style.cssText = 'font-family:var(--mono);font-size:8px;color:var(--yellow,#c7a628);padding:1px 4px;border-radius:3px;border:1px solid var(--yellow,#c7a628);opacity:.8;';
+        mvBadge.textContent = `from:${_srcProj}`;
+        if (_tspan) idCell.insertBefore(mvBadge, _tspan);
+        else idCell.appendChild(mvBadge);
+      }
+    }
   });
 
   // M782 fix: propagate ss-mg-blink only to stone rows that caused the section blink

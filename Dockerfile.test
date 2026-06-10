@@ -1,0 +1,30 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install runtime deps
+RUN pip install --no-cache-dir httpx fastapi uvicorn[standard] pyyaml scikit-learn numpy python-multipart
+
+# Copy hub source (local dev build — not PyPI)
+COPY server.py /root/.hub/server.py
+COPY static /root/.hub/static
+COPY __init__.py /root/.hub/__init__.py
+
+# Minimal stub so hub can start without full project setup
+RUN mkdir -p /root/.hub/projects
+
+# Port
+EXPOSE 9001
+
+# Telemetry env (hardcoded in server.py, no TURSO_ needed for hub_usage)
+ENV NS_HUB_PORT=9001
+ENV HOME=/root
+
+CMD ["python3", "-c", "\
+import sys, os\n\
+sys.path.insert(0, '/root/.hub')\n\
+os.chdir('/root/.hub')\n\
+import uvicorn\n\
+from server import app\n\
+uvicorn.run(app, host='0.0.0.0', port=9001)\n\
+"]

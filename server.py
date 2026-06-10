@@ -1188,6 +1188,31 @@ def _parse_md_frontmatter(path: Path) -> dict:
 # always-on write path that would re-introduce the ~350ms full-file rewrite hot-path cost.
 
 
+_proj_started_cache: dict[str, int] = {}
+
+def _get_proj_started_ts(proj_id: str, repo_path: str | None, proj_dir: "Path") -> int:
+    """Return Unix timestamp of project start — git first commit if available, else proj_dir ctime."""
+    if proj_id in _proj_started_cache:
+        return _proj_started_cache[proj_id]
+    ts: int | None = None
+    if repo_path:
+        _rp = Path(repo_path)
+        if _rp.is_dir():
+            try:
+                _r = subprocess.run(
+                    ["git", "-C", str(_rp), "log", "--reverse", "--format=%at"],
+                    capture_output=True, text=True, timeout=3
+                )
+                if _r.returncode == 0 and _r.stdout.strip():
+                    ts = int(_r.stdout.strip().split("\n")[0])
+            except Exception:
+                pass
+    if ts is None:
+        ts = int(proj_dir.stat().st_ctime)
+    _proj_started_cache[proj_id] = ts
+    return ts
+
+
 def _load_projects() -> list:
     """Load all projects from projects/*/north-star.md."""
     projects = []
@@ -1303,6 +1328,10 @@ def _load_projects() -> list:
                     mtime = md.stat().st_mtime
                     data["last_updated"] = mtime
                     data["stale"] = (time.time() - mtime) > (14 * 86400)
+                    # M1196: project age in days (git first commit → fallback proj_dir ctime)
+                    data["proj_started_ts"] = _get_proj_started_ts(
+                        proj_dir.name, data.get("repo_path"), proj_dir
+                    )
                     projects.append(data)
     return projects
 
@@ -1593,6 +1622,15 @@ def _ns_primary_init():
     """M287: Add milestones_store and project_meta tables to ns-events.db."""
     try:
         conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        # M1174: active_stones — tracks which stone is being worked on per project session
+        conn.execute("""CREATE TABLE IF NOT EXISTS active_stones (
+            proj_id TEXT PRIMARY KEY,
+            stone_id TEXT NOT NULL,
+            dispatched_at TEXT NOT NULL,
+            git_hash_at_dispatch TEXT,
+            last_auto_reply_hash TEXT,
+            updated_at TEXT NOT NULL
+        )""")
         conn.execute("""CREATE TABLE IF NOT EXISTS milestones_store (
             proj_id TEXT NOT NULL,
             stone_id TEXT NOT NULL,
@@ -3812,6 +3850,199 @@ async def _start_queue_continuation_poller():
     asyncio.create_task(_poll_queue_continuation())
 
 
+@app.on_event("startup")
+async def _start_auto_reply_worker():
+    """M1174: LLM-independent stone reply + completion.
+
+    Every 60s, for each project with an active stone:
+    ① Auto-reply: if session is idle AND last assistant message is new → PATCH append_message
+    ② Auto-complete: if session is idle AND new git commit exists → PATCH pending_confirmation
+
+    Replaces explicit `reply_to_stone` / `report_task_complete` MCP tool calls.
+    """
+    import hashlib as _hl
+    POLL_INTERVAL = 60
+    IDLE_THRESHOLD = 180  # 3 min idle before auto-reply fires
+
+    async def _worker():
+        while True:
+            await asyncio.sleep(POLL_INTERVAL)
+            try:
+                conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
+                rows = conn.execute(
+                    "SELECT proj_id, stone_id, dispatched_at, git_hash_at_dispatch, last_auto_reply_hash "
+                    "FROM active_stones"
+                ).fetchall()
+                conn.close()
+            except Exception:
+                continue
+
+            for (proj_id, stone_id, dispatched_at, git_hash_dispatch, last_reply_hash) in rows:
+                try:
+                    # ─── Idle check: .exec-idle file + _session_idle_since ───────────────
+                    idle_file = _exec_idle_file(proj_id)
+                    file_idle = idle_file.exists()
+                    idle_since = _session_idle_since.get(proj_id, 0)
+                    now_ts = time.time()
+                    long_idle = (idle_since > 0 and (now_ts - idle_since) >= IDLE_THRESHOLD)
+                    if not file_idle and not long_idle:
+                        continue  # session still active
+
+                    # ─── Get stone status from DB ─────────────────────────────────────────
+                    try:
+                        _sc = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
+                        _row = _sc.execute(
+                            "SELECT status, data_json FROM milestones_store "
+                            "WHERE proj_id=? AND stone_id=?", (proj_id, stone_id)
+                        ).fetchone()
+                        _sc.close()
+                    except Exception:
+                        continue
+                    if not _row:
+                        _active_stone_clear(proj_id)
+                        continue
+                    stone_status, stone_json = _row
+                    stone_data = json.loads(stone_json) if stone_json else {}
+
+                    # Fetch git hash once — used by both ① and ②
+                    _proj_list = [p for p in _load_projects() if p.get("id") == proj_id]
+                    _repo = _proj_list[0].get("repo_path") if _proj_list else None
+                    current_hash = await asyncio.get_event_loop().run_in_executor(
+                        None, _get_current_git_hash, _repo
+                    )
+                    _is_new_commit = bool(current_hash and git_hash_dispatch
+                                         and current_hash != git_hash_dispatch)
+                    _stone_cleared = False
+
+                    # ─── ① Auto-reply to pending_replies / Q&A ───────────────────────────
+                    conv = stone_data.get("conversation") or []
+                    last_conv_role = conv[-1].get("role") if conv else None
+                    if last_conv_role == "user":
+                        last_msg = await asyncio.get_event_loop().run_in_executor(
+                            None, _get_last_assistant_message, proj_id
+                        )
+                        if last_msg:
+                            msg_hash = _hl.md5(last_msg.encode("utf-8", "replace")).hexdigest()[:12]
+                            if msg_hash != last_reply_hash:
+                                import urllib.request as _ur
+                                _append_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
+                                _body = json.dumps({
+                                    "append_message": {"role": "claude", "text": last_msg}
+                                }).encode()
+                                try:
+                                    req = _ur.Request(_append_url, data=_body, method="PATCH",
+                                                      headers={"Content-Type": "application/json"})
+                                    _ur.urlopen(req, timeout=5)
+                                    _active_stone_update_reply_hash(proj_id, msg_hash)
+                                    logger.info(f"[auto-reply] {proj_id}/{stone_id} → posted ({len(last_msg)} chars)")
+                                    # M1174: Q&A auto-complete — no new commit = reply-only stone
+                                    if not _is_new_commit and stone_status == "queued":
+                                        _summary = last_msg[:120].replace("\n", " ").strip()
+                                        _done_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
+                                        _done_body = json.dumps({
+                                            "status": "pending_confirmation",
+                                            "summary": _summary,
+                                            "pending_confirm_at": __import__('datetime').datetime.utcnow().isoformat(),
+                                        }).encode()
+                                        try:
+                                            req2 = _ur.Request(_done_url, data=_done_body, method="PATCH",
+                                                               headers={"Content-Type": "application/json"})
+                                            _ur.urlopen(req2, timeout=5)
+                                            _active_stone_clear(proj_id)
+                                            _stone_cleared = True
+                                            logger.info(f"[auto-complete/qa] {proj_id}/{stone_id} → pending_confirmation (no-commit reply)")
+                                        except Exception as _e2:
+                                            logger.warning(f"[auto-complete/qa] {proj_id}/{stone_id} PATCH failed: {_e2}")
+                                except Exception as _e:
+                                    logger.warning(f"[auto-reply] {proj_id}/{stone_id} PATCH failed: {_e}")
+
+                    # ─── ② Auto-complete on new git commit ───────────────────────────────
+                    if not _stone_cleared and stone_status == "queued" and _is_new_commit:
+                        # New commit exists — auto-transition to pending_confirmation
+                        last_msg = await asyncio.get_event_loop().run_in_executor(
+                            None, _get_last_assistant_message, proj_id
+                        )
+                        summary = (last_msg or "")[:100].replace("\n", " ").strip()
+                        if not summary:
+                            summary = f"Auto-completed: git {current_hash[:8]}"
+                        _done_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
+                        _body = json.dumps({
+                            "status": "pending_confirmation",
+                            "summary": summary,
+                            "pending_confirm_at": __import__('datetime').datetime.utcnow().isoformat(),
+                        }).encode()
+                        try:
+                            import urllib.request as _ur
+                            req = _ur.Request(_done_url, data=_body, method="PATCH",
+                                              headers={"Content-Type": "application/json"})
+                            _ur.urlopen(req, timeout=5)
+                            _active_stone_clear(proj_id)
+                            logger.info(f"[auto-complete] {proj_id}/{stone_id} → pending_confirmation (commit {current_hash[:8]})")
+                        except Exception as _e:
+                            logger.warning(f"[auto-complete] {proj_id}/{stone_id} PATCH failed: {_e}")
+                except Exception:
+                    pass  # worker must never crash
+
+    asyncio.create_task(_worker())
+
+
+@app.on_event("startup")
+async def _start_compact_monitor():
+    """M1198: Background compact monitor — checks context % every 5min for ALL running sessions.
+    Injects /compact when context > _COMPACT_THRESHOLD_PCT WITHOUT waiting for user interaction.
+    Fixes: compact only firing at reply-sync wake points (user messages) → autonomous sessions hit 99%.
+    """
+    _POLL_INTERVAL = 300  # 5 minutes
+
+    _hub_active_last_sent = {"ts": 0.0}  # throttle hub_active to once per hour
+
+    async def _monitor():
+        while True:
+            await asyncio.sleep(_POLL_INTERVAL)
+            try:
+                # M929: hub_active heartbeat — DAU signal, once per hour per install
+                import time as _time_mon
+                if _time_mon.monotonic() - _hub_active_last_sent["ts"] >= 3600:
+                    try:
+                        _record_usage_event("hub_active")
+                        _hub_active_last_sent["ts"] = _time_mon.monotonic()
+                    except Exception:
+                        pass
+                for proj in _load_projects():
+                    proj_id = proj.get("id")
+                    if not proj_id:
+                        continue
+                    # Only check active sessions
+                    session_name = _live_exec_session_name(proj_id)
+                    check = subprocess.run(["tmux", "has-session", "-t", session_name],
+                                           capture_output=True, timeout=2)
+                    if check.returncode != 0:
+                        continue
+                    # Check pane state: only inject if at prompt (not mid-response)
+                    try:
+                        pane = subprocess.run(
+                            ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-8"],
+                            capture_output=True, text=True, timeout=2,
+                        ).stdout
+                        at_prompt = "❯" in pane and "esc to i" not in pane and "… (" not in pane
+                    except Exception:
+                        continue
+                    if not at_prompt:
+                        continue
+                    # Guard check: rising-edge only, resets when context drops below 60%
+                    if _compact_guard_check(proj_id):
+                        _compact_last_injected[proj_id] = __import__('time').monotonic()
+                        subprocess.run(
+                            ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
+                            capture_output=True, timeout=2,
+                        )
+                        logger.info(f"[compact-monitor] {proj_id} context ≥{_COMPACT_THRESHOLD_PCT}% → /compact injected")
+            except Exception as _e:
+                logger.debug(f"[compact-monitor] error: {_e}")
+
+    asyncio.create_task(_monitor())
+
+
 def _encode_cwd_for_claude(cwd: str) -> str:
     """Replicate Claude Code's transcript-dir encoding: every non-alphanumeric
     character is replaced with `-`. Source: research/20260513-tmux-claude-session-resume-design.md FACT-3.
@@ -4390,6 +4621,128 @@ def _get_context_pct(proj_id: str) -> float | None:
     except Exception:
         pass
     return None
+
+
+def _get_last_assistant_message(proj_id: str) -> str | None:
+    """M1174: Extract the last substantive assistant text from the transcript.
+    Used by auto-reply worker to post to stone when session goes idle.
+    Reads last 128KB; skips short acks (≤40 chars) and tool-only turns."""
+    t, _ = _get_transcript_path(proj_id)
+    if not t:
+        return None
+    try:
+        with open(t, "rb") as f:
+            f.seek(0, 2)
+            size = f.tell()
+            f.seek(max(0, size - 131072))
+            tail = f.read().decode("utf-8", errors="replace")
+        last_text: str | None = None
+        for line in tail.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                d = json.loads(line)
+                if d.get("type") != "assistant":
+                    continue
+                msg = d.get("message") or {}
+                if msg.get("type") != "message":
+                    continue
+                content = msg.get("content", [])
+                if isinstance(content, list):
+                    text_parts = [
+                        c.get("text", "").strip()
+                        for c in content
+                        if isinstance(c, dict) and c.get("type") == "text"
+                    ]
+                    full_text = "\n".join(p for p in text_parts if p)
+                elif isinstance(content, str):
+                    full_text = content.strip()
+                else:
+                    continue
+                if len(full_text) > 40:
+                    last_text = full_text
+            except Exception:
+                continue
+        return last_text
+    except Exception:
+        return None
+
+
+def _active_stone_get(proj_id: str) -> dict | None:
+    """M1174: Return the active stone record for a project, or None."""
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
+        row = conn.execute(
+            "SELECT stone_id, dispatched_at, git_hash_at_dispatch, last_auto_reply_hash "
+            "FROM active_stones WHERE proj_id=?", (proj_id,)
+        ).fetchone()
+        conn.close()
+        if not row:
+            return None
+        return {"stone_id": row[0], "dispatched_at": row[1],
+                "git_hash_at_dispatch": row[2], "last_auto_reply_hash": row[3]}
+    except Exception:
+        return None
+
+
+def _active_stone_set(proj_id: str, stone_id: str, git_hash: str | None = None):
+    """M1174: Mark a stone as the active one being worked on for this project."""
+    from datetime import datetime as _dt
+    now = _dt.utcnow().isoformat()
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
+        conn.execute(
+            "INSERT OR REPLACE INTO active_stones "
+            "(proj_id, stone_id, dispatched_at, git_hash_at_dispatch, updated_at) "
+            "VALUES (?,?,?,?,?)",
+            (proj_id, stone_id, now, git_hash, now)
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def _active_stone_clear(proj_id: str):
+    """M1174: Clear the active stone for a project (after completion)."""
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
+        conn.execute("DELETE FROM active_stones WHERE proj_id=?", (proj_id,))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def _active_stone_update_reply_hash(proj_id: str, reply_hash: str):
+    """M1174: Record hash of last auto-posted reply to avoid duplicates."""
+    from datetime import datetime as _dt
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
+        conn.execute(
+            "UPDATE active_stones SET last_auto_reply_hash=?, updated_at=? WHERE proj_id=?",
+            (reply_hash, _dt.utcnow().isoformat(), proj_id)
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+def _get_current_git_hash(repo_path: str | None) -> str | None:
+    """M1174: Return the current HEAD commit hash for a repo, or None."""
+    if not repo_path:
+        return None
+    try:
+        r = subprocess.run(
+            ["git", "-C", repo_path, "rev-parse", "HEAD"],
+            capture_output=True, text=True, timeout=3
+        )
+        h = r.stdout.strip()
+        return h if h and len(h) > 6 else None
+    except Exception:
+        return None
 
 
 def _transcript_too_large(proj_id: str) -> bool:
@@ -6142,6 +6495,28 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                             m["done"] = False
                             m["pending_confirm_at"] = now_iso  # always update so _isLastTurn detects re-completions
                             m.setdefault("claude_ack", now_iso)
+                            # M929: stone_complete telemetry on implicit queued→pending_confirmation
+                            try:
+                                import hashlib as _hlib, datetime as _dts
+                                _es = m.get("exec_start") or m.get("queued_at")
+                                _ee = now_iso
+                                _dur = None
+                                if _es and _ee:
+                                    try:
+                                        _ds = _dts.datetime.fromisoformat(_es[:16])
+                                        _de = _dts.datetime.fromisoformat(_ee[:16])
+                                        _dur = max(0, int((_de - _ds).total_seconds()))
+                                    except Exception:
+                                        pass
+                                _record_usage_event("stone_complete", {
+                                    "model_used": m.get("model_used"),
+                                    "total_tokens": m.get("total_tokens"),
+                                    "exec_time_sec": _dur,
+                                    "layer": m.get("layer", 0),
+                                    "proj_hash": _hlib.sha256(proj_id.encode()).hexdigest()[:8],
+                                })
+                            except Exception:
+                                pass
                     # M722: server-side keyword-detection fallback for [검수] auto-trigger.
                     # Fires on claude append_message when status was NOT "queued" before this PATCH
                     # (queued→pending_confirmation path already handled by exec-agent's M767 inline
@@ -6319,15 +6694,38 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                     m["clarification_answered_at"] = now_iso
             elif new_status == "pending_confirmation":
                 # Stop hook: waiting for user to confirm within 24h
+                _prev_pc_status = m.get("status")
                 m["status"] = "pending_confirmation"
                 m["done"] = False
                 m["pending_confirm_at"] = now_iso  # always update for _isLastTurn green border
+                # M929: stone_complete telemetry — fire when first transitioning to pending_confirmation
+                if _prev_pc_status == "queued":
+                    try:
+                        import hashlib as _hlib2, datetime as _dts2
+                        _es2 = m.get("exec_start") or m.get("queued_at")
+                        _ee2 = now_iso
+                        _dur2 = None
+                        if _es2 and _ee2:
+                            try:
+                                _ds2 = _dts2.datetime.fromisoformat(_es2[:16])
+                                _de2 = _dts2.datetime.fromisoformat(_ee2[:16])
+                                _dur2 = max(0, int((_de2 - _ds2).total_seconds()))
+                            except Exception:
+                                pass
+                        _record_usage_event("stone_complete", {
+                            "model_used": m.get("model_used") or data.get("model_used"),
+                            "total_tokens": m.get("total_tokens") or data.get("total_tokens"),
+                            "exec_time_sec": _dur2,
+                            "layer": m.get("layer", 0),
+                            "proj_hash": _hlib2.sha256(proj_id.encode()).hexdigest()[:8],
+                        })
+                    except Exception:
+                        pass
                 # ── M1174 P1: LLM-Independent Validation Layer ──────────────────
                 # P1①: Schema validation — log missing required completion fields.
                 # Non-blocking: warns but does not reject (LLM already has _skill_instruction).
+                # M1174: star_relation removed (feature being deprecated).
                 _p1_missing = []
-                if not data.get("star_relation") and not m.get("star_relation"):
-                    _p1_missing.append("star_relation")
                 if not data.get("append_message") and not any(
                     c.get("role") == "claude" for c in (m.get("conversation") or [])[-3:]
                 ):
@@ -6646,14 +7044,14 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
             _server_log_action(proj_id, _rev_id, "auto_review_created", f"review sub-stone for {mid}")
         # M749: e2e auto-creation removed — was creating pairs ([검수]+[e2e]) per completion
     proj["milestones"] = milestones
-    # M1007 v2: server-side blink trigger — SERVER is the single source of truth for
-    # blink state (client _blinkCenterSave is now read-only/no-op to end the clobber
-    # race). Fire on ANY change the client count-delta would have detected: a status
-    # transition OR a new conversation message (append_message). This covers the full
-    # client hash (status|convLen|lastRole), so removing the client writer loses nothing.
+    # M1200 fix: only stamp server blink on status transitions that require user attention
+    # (pending_confirmation = user must review). append_message alone caused phantom blinks
+    # every time Claude auto-wrote to a stone during exec sessions — not user-relevant.
     try:
-        _blink_changed = (updated_m and updated_m.get("status") != _blink_old_status) \
-                         or ("append_message" in data)
+        _new_s = updated_m.get("status") if updated_m else None
+        _status_changed = updated_m and _new_s != _blink_old_status
+        # Only user-review-required status transitions trigger blink
+        _blink_changed = _status_changed and _new_s in ("pending_confirmation",)
         if updated_m and _blink_changed:
             _blink_skey = updated_m.get("substar_id") or "__ungrouped__"
             _mark_blink_server(proj_id, _blink_skey, updated_m.get("id") or mid)
@@ -6724,6 +7122,88 @@ async def delete_milestone(proj_id: str, mid: str, background_tasks: BackgroundT
     return JSONResponse({"ok": True, "removed": removed})
 
 
+@app.post("/api/northstar/{proj_id}/milestones/{mid}/move-to-project")
+async def move_stone_to_project(proj_id: str, mid: str, request: Request, background_tasks: BackgroundTasks):
+    """M1199: Move a stone (and its children) to another project's ungrouped section.
+    Target stone gets a new ID. Source stone is deleted. Origin tracked in moved_from field.
+    """
+    data = await request.json()
+    target_proj_id = (data.get("target_proj_id") or "").strip()
+    if not target_proj_id or target_proj_id == proj_id:
+        return JSONResponse({"ok": False, "error": "invalid or same-project target"}, status_code=400)
+    if not (PROJECTS_DIR / target_proj_id).is_dir():
+        return JSONResponse({"ok": False, "error": "target project not found"}, status_code=404)
+
+    # Load both projects
+    src_proj = _db_load_project(proj_id) or {}
+    tgt_proj = _db_load_project(target_proj_id) or {}
+    src_ms = src_proj.get("milestones", [])
+    tgt_ms = tgt_proj.get("milestones", [])
+
+    # Find stone + its children
+    stone = next((m for m in src_ms if isinstance(m, dict) and m.get("id") == mid), None)
+    if not stone:
+        return JSONResponse({"ok": False, "error": "stone not found"}, status_code=404)
+    children = [m for m in src_ms if isinstance(m, dict) and m.get("parent_id") == mid]
+
+    # Generate new top-level ID in target project
+    import re as _re_mv
+    tgt_existing = {m.get("id", "") for m in tgt_ms if isinstance(m, dict)}
+    nums = [int(x[1:]) for x in tgt_existing if _re_mv.match(r'^M\d+$', x)]
+    n = (max(nums) if nums else 0) + 1
+    while f"M{n}" in tgt_existing:
+        n += 1
+    new_id = f"M{n}"
+
+    # Clone root stone into target — ungrouped (layer=0, no substar, no parent)
+    from datetime import datetime as _dt_mv
+    import copy as _cp_mv
+    new_stone = _cp_mv.deepcopy(stone)
+    new_stone["id"] = new_id
+    new_stone["layer"] = 0
+    new_stone["parent_id"] = None
+    new_stone["substar_id"] = None
+    new_stone["moved_from"] = f"{proj_id}/{mid}"
+    new_stone["user_added_at"] = _dt_mv.now().strftime("%Y-%m-%dT%H:%M")
+
+    tgt_ms.insert(0, new_stone)
+    tgt_existing.add(new_id)
+
+    # Clone children with renumbered IDs
+    child_id_map = {}
+    for child in children:
+        c_nums = [int(x[1:]) for x in tgt_existing if _re_mv.match(r'^M\d+$', x)]
+        c_n = (max(c_nums) if c_nums else 0) + 1
+        while f"M{c_n}" in tgt_existing:
+            c_n += 1
+        c_new_id = f"M{c_n}"
+        child_id_map[child["id"]] = c_new_id
+        new_child = _cp_mv.deepcopy(child)
+        new_child["id"] = c_new_id
+        new_child["parent_id"] = new_id
+        new_child["substar_id"] = None
+        new_child["moved_from"] = f"{proj_id}/{child['id']}"
+        tgt_ms.insert(0, new_child)
+        tgt_existing.add(c_new_id)
+
+    # Remove stone + children from source
+    remove_ids = {mid} | set(child_id_map.keys())
+    src_proj["milestones"] = [m for m in src_ms
+                               if isinstance(m, dict) and m.get("id") not in remove_ids]
+
+    tgt_proj["milestones"] = tgt_ms
+    import copy as _cp_mv2
+    _db_save_project(proj_id, src_proj)
+    _db_save_project(target_proj_id, tgt_proj)
+    background_tasks.add_task(_save_project, proj_id, _cp_mv2.deepcopy(src_proj))
+    background_tasks.add_task(_save_project, target_proj_id, _cp_mv2.deepcopy(tgt_proj))
+
+    return JSONResponse({
+        "ok": True,
+        "new_id": new_id,
+        "target_proj_id": target_proj_id,
+        "children_moved": len(child_id_map),
+    })
 
 
 
@@ -6842,6 +7322,37 @@ async def get_milestone_commits(proj_id: str, mid: str):
         ]})
     except Exception as e:
         return JSONResponse({"ok": False, "commits": [], "error": str(e)})
+
+
+@app.get("/api/northstar/{proj_id}/active-stone")
+async def get_active_stone(proj_id: str):
+    """M1174: Return the active stone being worked on for this project."""
+    rec = _active_stone_get(proj_id)
+    if rec:
+        return JSONResponse({"ok": True, "active_stone": rec})
+    return JSONResponse({"ok": True, "active_stone": None})
+
+
+@app.post("/api/northstar/{proj_id}/active-stone")
+async def set_active_stone(proj_id: str, request: Request):
+    """M1174: Set the active stone for this project session (called by session-start hook)."""
+    body = await request.json()
+    stone_id = body.get("stone_id", "").strip()
+    if not stone_id:
+        return JSONResponse({"ok": False, "error": "stone_id required"}, status_code=400)
+    # Get current git hash for the project repo
+    _pl = [p for p in _load_projects() if p.get("id") == proj_id]
+    _repo = _pl[0].get("repo_path") if _pl else None
+    git_hash = _get_current_git_hash(_repo)
+    _active_stone_set(proj_id, stone_id, git_hash)
+    return JSONResponse({"ok": True, "stone_id": stone_id, "git_hash": git_hash})
+
+
+@app.delete("/api/northstar/{proj_id}/active-stone")
+async def clear_active_stone(proj_id: str):
+    """M1174: Clear the active stone for this project (after completion or manual reset)."""
+    _active_stone_clear(proj_id)
+    return JSONResponse({"ok": True})
 
 
 @app.get("/api/northstar/{proj_id}/decisions")
@@ -10545,7 +11056,9 @@ def _hub_pkg_version() -> str:
         return "unknown"
 
 def _record_usage_event(event: str, extra: dict = None):
-    """M929: Record usage event locally + centrally via Turso (consent-gated, no PII)."""
+    """M929: Record usage event locally + centrally via Turso (consent-gated, no PII).
+    For stone_complete events, extra may include model_used (str) and total_tokens (int).
+    """
     if not _get_consent().get("data_collection", True):
         return
     import hashlib, platform, time
@@ -10569,12 +11082,45 @@ def _record_usage_event(event: str, extra: dict = None):
         def _send_telemetry():
             try:
                 import urllib.request as _ur2, json as _j2
+                _model = str(entry.get("model_used") or "")
+                _tokens = entry.get("total_tokens")
+                _tokens_val = str(int(_tokens)) if _tokens is not None else None
+                _exec_t = entry.get("exec_time_sec")
+                _exec_t_val = str(int(_exec_t)) if _exec_t is not None else None
+                _layer = entry.get("layer")
+                _layer_val = str(int(_layer)) if _layer is not None else None
+                _proj_h = str(entry.get("proj_hash") or "")
                 payload = _j2.dumps({"requests": [
-                    {"type": "execute", "stmt": {"sql": "CREATE TABLE IF NOT EXISTS hub_usage (ts INTEGER, event TEXT, install_id TEXT, version TEXT, os TEXT)"}},
-                    {"type": "execute", "stmt": {"sql": "INSERT INTO hub_usage (ts, event, install_id, version, os) VALUES (?, ?, ?, ?, ?)",
-                        "args": [{"type": "integer", "value": str(entry["ts"])}, {"type": "text", "value": entry["event"]},
-                                 {"type": "text", "value": entry["install_id"]}, {"type": "text", "value": entry["version"]},
-                                 {"type": "text", "value": entry["os"]}]}},
+                    {"type": "execute", "stmt": {"sql": (
+                        "CREATE TABLE IF NOT EXISTS hub_usage "
+                        "(ts INTEGER, event TEXT, install_id TEXT, version TEXT, os TEXT)"
+                    )}},
+                    # Idempotent migrations — pipeline continues even if column already exists
+                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN model_used TEXT"}},
+                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN total_tokens INTEGER"}},
+                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN exec_time_sec INTEGER"}},
+                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN layer INTEGER"}},
+                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN proj_hash TEXT"}},
+                    {"type": "execute", "stmt": {
+                        "sql": (
+                            "INSERT INTO hub_usage "
+                            "(ts, event, install_id, version, os, model_used, total_tokens, "
+                            "exec_time_sec, layer, proj_hash) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        ),
+                        "args": [
+                            {"type": "integer", "value": str(entry["ts"])},
+                            {"type": "text",    "value": entry["event"]},
+                            {"type": "text",    "value": entry["install_id"]},
+                            {"type": "text",    "value": entry["version"]},
+                            {"type": "text",    "value": entry["os"]},
+                            {"type": "text",    "value": _model} if _model else {"type": "null"},
+                            {"type": "integer", "value": _tokens_val} if _tokens_val else {"type": "null"},
+                            {"type": "integer", "value": _exec_t_val} if _exec_t_val else {"type": "null"},
+                            {"type": "integer", "value": _layer_val} if _layer_val else {"type": "null"},
+                            {"type": "text",    "value": _proj_h} if _proj_h else {"type": "null"},
+                        ],
+                    }},
                 ]}).encode()
                 req = _ur2.Request(f"{_HUB_TELEMETRY_URL}/v2/pipeline", data=payload,
                     headers={"Authorization": f"Bearer {_HUB_TELEMETRY_TOKEN}", "Content-Type": "application/json"})
