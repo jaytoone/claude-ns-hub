@@ -886,23 +886,8 @@ header {
 #ns-vkbd-toggle { background:none; border:1px solid #555; border-radius:4px; color:#cc785c;
   font-family:var(--mono); font-size:11px; padding:2px 8px; cursor:pointer; }
 #ns-vkbd-toggle.active { background:#3a3431; border-color:#cc785c; }
-/* M1065 v3: Termius-style input bar — type here → forwarded to PTY WS */
-#ns-term-input-bar { display:flex; align-items:center; gap:6px; padding:5px 8px;
-  background:#141210; border-bottom:1px solid #333; }
-#ns-term-input-bar input { flex:1; background:#2a2522; border:1px solid #555; border-radius:4px;
-  color:#d4cfc8; font-family:var(--mono); font-size:12px; padding:5px 8px; outline:none;
-  caret-color:#cc785c; -webkit-appearance:none; }
-#ns-term-input-bar input:focus { border-color:#cc785c; }
-#ns-term-input-bar input::placeholder { color:#555; }
 
-/* M80: minimized terminal — class-based beats media-query specificity */
-#ns-terminal-float.ns-term-minimized {
-  height: 40px !important;
-  overflow: hidden !important;
-}
-#ns-terminal-float.ns-term-minimized #dm-xterm {
-  display: none !important;
-}
+
 /* M361: prevent double scrollbar — suppress outer container scrollbar, only xterm-viewport scrolls */
 #ns-terminal-float { overflow: hidden !important; scrollbar-width: none; }
 #ns-terminal-float::-webkit-scrollbar { display: none; }
@@ -1638,17 +1623,15 @@ header {
     flex-shrink:0;position:sticky;top:0;z-index:1">
     <div style="flex:1;font-family:var(--mono);font-size:11px;color:#aaa">
       claude @ <span id="ns-term-proj" style="color:#cc785c">—</span>
-      <!-- M178: live activity indicator visible when minimized so user knows work is ongoing -->
-      <span id="ns-term-live-dot" style="display:none;width:6px;height:6px;border-radius:50%;background:#3d8b5e;margin-left:6px;vertical-align:middle;animation:sess-pulse 1.2s ease-in-out infinite" title="Terminal active (output streaming)"></span>
-      <span id="ns-term-min-counter" style="display:none;font-size:9px;color:#888;margin-left:4px" title="lines received while minimized"></span>
       <!-- M804: scroll buffer size indicator -->
       <span id="ns-term-buf-info" style="font-size:9px;color:#666;margin-left:8px" title="Scrollback buffer usage"></span>
     </div>
     <!-- M208 v2: explicit Paste button for mobile (no paste key on phone keyboards) -->
-    <button onclick="pasteToPty()" style="background:none;border:1px solid #555;border-radius:4px;color:#cc785c;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Paste clipboard into terminal">paste</button>
+    <!-- M1229: font-size:16px prevents iOS auto-zoom on tap (iOS zooms when font-size<16px) -->
+    <button onclick="pasteToPty()" style="background:none;border:1px solid #555;border-radius:4px;color:#cc785c;font-family:var(--mono);font-size:16px;padding:2px 7px;cursor:pointer;touch-action:manipulation" title="Paste clipboard into terminal">paste</button>
     <!-- M1014 v2: virtual keyboard toggle (Termius-style panel below terminal) -->
     <button id="ns-vkbd-toggle" onclick="_toggleVkbd()" title="Virtual keyboard">⌨ keys</button>
-    <button onclick="minimizeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" id="ns-term-min-btn" title="Minimize">—</button>
+
     <button onclick="closeTerminal()" style="background:none;border:1px solid #555;border-radius:4px;color:#888;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Close">✕</button>
     <button onclick="killSession()" style="background:none;border:1px solid #c0392b;border-radius:4px;color:#e05252;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Kill session">⬛</button>
   </div>
@@ -1657,17 +1640,10 @@ header {
        M1014 v4: each row sets --vkbd-cols to its own key count so the row evenly
        distributes ALL keys with NO wrap (CSS @media shrinks key padding on phones). -->
   <div id="ns-vkbd">
-    <!-- M1065 v3: direct text input bar — mobile keyboard types here, each char forwarded to PTY -->
-    <!-- M1065 v4: esc/tab moved into input bar so they're always visible above iOS keyboard -->
-    <div id="ns-term-input-bar">
-      <button class="vkbd-key" style="flex-shrink:0;min-width:38px;font-size:11px;padding:5px 4px" onclick="event.preventDefault();event.stopPropagation();_sendKey('\x1b')" title="Escape">esc</button>
-      <button class="vkbd-key" style="flex-shrink:0;min-width:38px;font-size:11px;padding:5px 4px" onclick="event.preventDefault();event.stopPropagation();_sendKey('\t')" title="Tab">tab</button>
-      <input id="ns-term-input" type="text" placeholder="type here…"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        inputmode="text">
-    </div>
-    <div class="vkbd-row" style="--vkbd-cols:8">
-      <!-- esc/tab moved to input bar above; remaining 8 nav keys -->
+    <div class="vkbd-row" style="--vkbd-cols:10">
+      <!-- esc/tab restored to nav row (M1228: input bar removed) -->
+      <button class="vkbd-key" onclick="_sendKey('\x1b')" title="Escape">esc</button>
+      <button class="vkbd-key" onclick="_sendKey('\t')" title="Tab">tab</button>
       <button class="vkbd-key" onclick="_sendKey('\x1b[A')" title="Up arrow">↑</button>
       <button class="vkbd-key" onclick="_sendKey('\x1b[B')" title="Down arrow">↓</button>
       <button class="vkbd-key" onclick="_sendKey('\x1b[D')" title="Left arrow">←</button>
@@ -3041,23 +3017,7 @@ function renderMilestoneCreator(projId, milestones) {
     </colgroup>
     ${l0.map((m, idx) => {
       // M393: gap+rel LEFT cells (hidden by default, shown when toggle slid)
-      const _gapCells = (stone) => {
-        const sr = stone.star_relation ? String(stone.star_relation) : '';
-        if (!sr) return `<td class="ms-td-gap"></td><td class="ms-td-rel"></td>`;
-        const srL = sr.toLowerCase();
-        // Only show % when star_relation contains an explicit percentage
-        const pctM = srL.match(/(\d+)%/);
-        const gapCell = pctM ? (() => {
-          const score = Math.min(100, parseInt(pctM[1]));
-          const bw = Math.round(score * 0.75);
-          const bc = score >= 70 ? 'var(--green)' : score >= 40 ? 'var(--accent)' : 'var(--text-dim)';
-          return `<td class="ms-td-gap"><div style="display:flex;align-items:center;gap:3px">` +
-            `<div style="width:${bw}px;height:5px;border-radius:2px;background:${bc};flex-shrink:0;min-width:3px"></div>` +
-            `<span style="font-family:var(--mono);font-size:8px;color:${bc};flex-shrink:0">${score}%</span></div></td>`;
-        })() : `<td class="ms-td-gap"></td>`;  // no fake % when none in text
-        return gapCell +
-          `<td class="ms-td-rel"><span class="ms-star-chip" title="${esc(sr)}" style="max-width:none;white-space:normal;word-break:break-word">${esc(sr)}</span></td>`;
-      };
+      const _gapCells = () => `<td class="ms-td-gap"></td><td class="ms-td-rel"></td>`;
       // Multi-line pasted text (M26 case) was breaking inline single-quoted JS strings
       // with literal newlines → SyntaxError on click → button no-ops silently.
       const escJs = s => esc(s)
@@ -3657,17 +3617,14 @@ function renderMilestoneCreator(projId, milestones) {
   el.querySelectorAll('.nt-table tr.nt-draggable-row').forEach(tr => {
     const mid = tr.dataset.mid;
     const m = _msMap[mid] || {};
-    // M301: compute ext fingerprint — tree hierarchy + gap-impact bars
-    // M368: coerce star_relation to string — it can be a dict/object in some milestones
-    const _srStr = typeof m.star_relation === 'string' ? m.star_relation : (m.star_relation ? JSON.stringify(m.star_relation) : '');
-    const _extFp = `${m.layer||0}|${m.parent_id||''}|${_srStr.slice(0,30)}|${m.status||''}`;
+    // M301: compute ext fingerprint — tree hierarchy
+    const _extFp = `${m.layer||0}|${m.parent_id||''}|${m.status||''}`;
     if (_msExtFingerprint[mid] === _extFp && tr.querySelector('.ms-td-ext')) return; // no change
     _msExtFingerprint[mid] = _extFp;
     const layer = Math.min(parseInt(m.layer) || 0, 2);
     // M301: tree connector — indent by layer, show parent label
     const _indent = '';
     const _parentLabel = (layer > 0 && m.parent_id) ? `<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);opacity:.7">${esc(m.parent_id)}</span>` : '';
-    // M1165: gap-impact 점수/세그먼트바/프리뷰 비활성화 — 빈 cell로 대체. star_relation 데이터는 그대로 보존.
     const _gapBar = '';
     // Status chip for col 3: uses stone status color
     const _statusChipColor = {queued:'var(--accent)',pending_confirmation:'var(--green)',done:'var(--text-dim)',needs_clarification:'#7b9fd4'}[m.status||'']||'var(--text-dim)';
@@ -5911,9 +5868,12 @@ async function executeProject(projId, btn) {
     // appears at once — before the execute POST returns (which can take 12s waiting for Claude).
     // Server canonically writes assigned_session synchronously before tmux spawn; we just
     // mirror that write client-side so the UI doesn't lag by the full startup wait time.
+    // M1225: only apply optimistic write when queued stones exist — prevents main→sess flicker
+    // on idle dispatch (0 queued) where server won't write assigned_session.
+    const _optHasQueued = (_msCacheByProject[projId] || []).some(m => m.status === 'queued' && !m.held && (m.text||'').trim());
     const _optSessName = `${agent}-exec-${projId}`;
     // M1148 fix: use _nsStarsCache directly (const in script scope) not window._nsStarsCache (always undefined)
-    const _optStars = _nsStarsCache[projId] || [];
+    const _optStars = _optHasQueued ? (_nsStarsCache[projId] || []) : [];
     let _optChanged = false;
     const _optExecPat = new RegExp(`-exec-${projId}$`);
     const _optIsMain = _optExecPat.test(_optSessName);
@@ -5939,6 +5899,8 @@ async function executeProject(projId, btn) {
     if (_optChanged && typeof _renderSubStarsPaneFromCache === 'function') {
       _renderSubStarsPaneFromCache(projId);
     }
+    // M1220: guard against hub-refresh overwriting optimistic assigned_session during POST window
+    window._dispatchOptimisticUntil = Date.now() + 20000;
 
     // Persist choices so the server reads them on spawn
     if (agent !== (window.curAgent || 'claude')) {
@@ -6145,8 +6107,7 @@ async function addMilestone(projId, layer, parentId, nsId = null) {
       _newStonePinUntil = Date.now() + 8000; // 8s window (extended from 5s for typing time)
       _logAction(projId, _createdMid, 'pin_set', 'addMilestone:M686');
     }
-    // M615: if created from a substar group button, PATCH star_relation = substar name so
-    // _computeBestSubstarIdx can match it after reload (star_relation included in _stoneFullText)
+    // M615: if created from a substar group button, PATCH substar_id
     if (nsId) {
       const _rd = _createdData || await _resp.json().catch(() => null);
       const _newMid = _rd?.milestone?.id;
@@ -6156,10 +6117,9 @@ async function addMilestone(projId, layer, parentId, nsId = null) {
         // Without this guard, empty-cache → _nsEntry undefined → PATCH skipped →
         // substar_id unset → _computeBestSubstarIdx returns -1 for empty text → UNGROUPED.
         const _ssAgentPatch = _nsEntry?.default_agent ? { agent_ref: _nsEntry.default_agent } : {};
-        const _srPatch = _nsEntry?.name ? { star_relation: _nsEntry.name } : {};
         await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones/${encodeURIComponent(_newMid)}`, {
           method: 'PATCH', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ substar_id: nsId, ..._srPatch, ..._ssAgentPatch }),
+          body: JSON.stringify({ substar_id: nsId, ..._ssAgentPatch }),
         });
       }
     }
@@ -8802,7 +8762,6 @@ function _mmNodeClick(mid, projId, evt) {
           style="margin-left:auto;background:none;border:1px solid var(--panel-border);border-radius:4px;color:var(--text-dim);cursor:pointer;font-family:var(--mono);font-size:12px;padding:1px 8px">✕</button>
       </div>
       <div style="font-size:12px;color:var(--text);line-height:1.55;margin-bottom:12px">${esc(m.text||'(no text)')}</div>
-      ${m.star_relation ? `<div style="font-size:10px;color:var(--text-dim);border-top:1px solid var(--panel-border);padding-top:8px;line-height:1.4">★ ${esc(m.star_relation)}</div>` : ''}
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
@@ -8967,6 +8926,11 @@ async function loadSubStars(projId) {
   try {
     const d = await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars`).then(r=>r.json());
     const nsList = d.north_stars || [];
+    // M1220: preserve optimistic assigned_session if within dispatch window
+    if (window._dispatchOptimisticUntil && Date.now() < window._dispatchOptimisticUntil) {
+      const _prevById = Object.fromEntries((_nsStarsCache[projId]||[]).filter(n=>n.id).map(n=>[n.id,n]));
+      nsList.forEach(ns => { if (!(ns.assigned_session||'').trim() && (_prevById[ns.id]?.assigned_session||'').trim()) ns.assigned_session = _prevById[ns.id].assigned_session; });
+    }
     // M608: always update cache so milestone grouping stays current
     _nsStarsCache[projId] = nsList;
     // M649: substar list changed → invalidate grouping + similarity cache so re-grouping runs fresh
@@ -9762,10 +9726,6 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
   const bd = document.getElementById('ns-term-backdrop');
   if (bd) bd.style.display = 'block';
   document.getElementById('ns-term-proj').textContent = projId;
-  _termMinimized = false;
-  float.classList.remove('ns-term-minimized'); // reset if reopened while minimized
-  document.getElementById('dm-xterm').style.display = '';
-  document.getElementById('ns-term-min-btn').textContent = '—';
   float.style.height = float.dataset.lastH || '680px';
 
   // Init xterm once
@@ -9776,7 +9736,7 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
       fontFamily: '"JetBrains Mono", ui-monospace, monospace',
       fontSize: _isMobile ? 12 : 13,
       lineHeight: 1.4,
-      scrollback: 10000,  // M1125 v4: raised 5000→10000 to match server-side 10000-line replay
+      scrollback: 5000,
       fastScrollSensitivity: 8,
       scrollSensitivity: 3,
       allowTransparency: false,
@@ -10108,15 +10068,6 @@ function openTerminal(projId, sessionId, _unused, tmuxSession) {
         }
       }
     });
-    // M178: when minimized, increment line-count indicator so user sees activity
-    if (_termMinimized && typeof e.data === 'string') {
-      const newlines = (e.data.match(/\n/g) || []).length;
-      if (newlines > 0) {
-        _termMinCounter = (_termMinCounter || 0) + newlines;
-        const cEl = document.getElementById('ns-term-min-counter');
-        if (cEl) cEl.textContent = `+${_termMinCounter}`;
-      }
-    }
   };
   // M155: optimistic status update so the >claude button flips to "live" the
   // instant the WS connects (previously the user waited up to 10 s for the
@@ -10216,8 +10167,7 @@ function _setupTermScrollbar() {
   _updateSB();
 }
 
-let _termMinimized = false;
-let _termMinCounter = 0; // M178: lines received while minimized
+
 
 // M208 v2: explicit paste button — reads clipboard via async API and pipes the
 // text directly into the WebSocket. Bypasses xterm.js onData entirely.
@@ -10275,54 +10225,9 @@ function _sendKey(seq) {
     return;
   }
   _termWs.send(seq);
-  // M1065 v3: re-focus mobile input bar if vkbd is open, otherwise xterm
-  const _mInp = document.getElementById('ns-term-input');
-  if (_mInp && document.getElementById('ns-vkbd')?.classList.contains('open')) {
-    setTimeout(() => _mInp.focus(), 0);
-  } else { try { if (_term) _term.focus(); } catch (_) {} }
+  try { if (_term) _term.focus(); } catch (_) {}
 }
 
-// M1014 v2: Termius-style virtual keyboard panel — open/close toggle
-// M1065 v3: Termius-style input bar — intercepts mobile keyboard, forwards chars to PTY WS
-function _initTermMobileInput() {
-  const inp = document.getElementById('ns-term-input');
-  if (!inp || inp._mobileInited) return;
-  inp._mobileInited = true;
-  let _composing = false;
-  inp.addEventListener('compositionstart', () => { _composing = true; });
-  inp.addEventListener('compositionend', (e) => {
-    _composing = false;
-    if (_termWs && _termWs.readyState === 1 && e.data) _termWs.send(e.data);
-    inp.value = '';
-  });
-  inp.addEventListener('keydown', (e) => {
-    if (_composing) return;
-    const map = {
-      'Enter': '\r', 'Backspace': '\x7f', 'Delete': '\x1b[3~', 'Escape': '\x1b',
-      'ArrowUp': '\x1b[A', 'ArrowDown': '\x1b[B', 'ArrowLeft': '\x1b[D', 'ArrowRight': '\x1b[C',
-      'Home': '\x1b[H', 'End': '\x1b[F', 'PageUp': '\x1b[5~', 'PageDown': '\x1b[6~',
-    };
-    const ctrlMap = {
-      'c': '\x03', 'd': '\x04', 'z': '\x1a', 'l': '\x0c', 'r': '\x12',
-      'a': '\x01', 'e': '\x05', 'k': '\x0b', 'w': '\x17', 'u': '\x15',
-    };
-    let seq = null;
-    if (e.key === 'Tab') { seq = '\t'; e.preventDefault(); }
-    else if (map[e.key]) { seq = map[e.key]; e.preventDefault(); }
-    else if (e.ctrlKey && ctrlMap[e.key.toLowerCase()]) { seq = ctrlMap[e.key.toLowerCase()]; e.preventDefault(); }
-    if (seq !== null) {
-      if (_termWs && _termWs.readyState === 1) _termWs.send(seq);
-      inp.value = '';
-    }
-  });
-  inp.addEventListener('input', () => {
-    if (_composing) return;
-    const val = inp.value;
-    if (!val) return;
-    if (_termWs && _termWs.readyState === 1) _termWs.send(val);
-    inp.value = '';
-  });
-}
 
 // M1065 v4: adjust terminal float bottom when iOS keyboard appears/disappears
 function _initVkbdViewportFix() {
@@ -10345,9 +10250,7 @@ function _toggleVkbd() {
   const open = panel.classList.toggle('open');
   if (btn) btn.classList.toggle('active', open);
   if (open) {
-    _initTermMobileInput();
     _initVkbdViewportFix();
-    setTimeout(() => document.getElementById('ns-term-input')?.focus(), 100);
   } else {
     // keyboard closed — restore float position
     const float = document.getElementById('ns-terminal-float');
@@ -10399,45 +10302,6 @@ function closeTerminal() {
     if (typeof refreshSessionStatus === 'function') {
       setTimeout(() => refreshSessionStatus().then(() => render()), 1500);
     }
-  }
-}
-
-function minimizeTerminal() {
-  const float = document.getElementById('ns-terminal-float');
-  const btn = document.getElementById('ns-term-min-btn');
-  _termMinimized = !_termMinimized;
-  // M178: live activity indicator + line counter shown only while minimized
-  const liveDot = document.getElementById('ns-term-live-dot');
-  const counter = document.getElementById('ns-term-min-counter');
-  if (_termMinimized) {
-    float.dataset.lastH = float.style.height || float.offsetHeight + 'px' || '680px';
-    float.style.removeProperty('height'); // clear any !important inline height so CSS class wins
-    float.classList.add('ns-term-minimized');
-    btn.textContent = '□';
-    _termMinCounter = 0;
-    if (liveDot) liveDot.style.display = 'inline-block';
-    if (counter) { counter.style.display = 'inline'; counter.textContent = '+0'; }
-  } else {
-    float.classList.remove('ns-term-minimized');
-    float.style.height = float.dataset.lastH || '680px';
-    btn.textContent = '—';
-    if (liveDot) liveDot.style.display = 'none';
-    if (counter) counter.style.display = 'none';
-    _termMinCounter = 0;
-    // M127: fit at 80ms, 200ms, 400ms — CSS transition takes time, single call is too early
-    // M157: also refresh xterm renderer + scroll to bottom — on mobile, hiding via
-    // display:none leaves the renderer in a 0-row state and incoming PTY data renders
-    // as broken text until a full repaint is triggered.
-    [80, 200, 400].forEach(d => setTimeout(() => {
-      try {
-        _termFit?.fit();
-        if (_term) {
-          _term.refresh(0, _term.rows - 1);
-          _term.scrollToBottom();
-          if (_termWs && _termWs.readyState === 1) _sendResize(_termWs);
-        }
-      } catch (_) {}
-    }, d));
   }
 }
 
@@ -10588,12 +10452,11 @@ async function openDetail(idx) {
   // M633/M652: reset substar collapse state on every card open → all groups start expanded (default = open)
   Object.keys(localStorage).filter(k => k.startsWith(`ss_mg_${p.id}_`)).forEach(k => localStorage.removeItem(k));
 
-  // Load milestones immediately — don't wait for OKR/CTX/doc
-  loadMilestones(p.id);
-  loadSubStars(p.id);
-
-  // Fetch OKRs + CTX in parallel
-  const [okrData, ctxData] = await Promise.all([
+  // M1220-v2: fetch north-stars FIRST so _nsStarsCache is populated before loadMilestones runs.
+  // Previously: loadMilestones fired with empty cache → sess badge showed 'sess' (unassigned) for
+  // 100-500ms until loadSubStars completed. On mobile with slow connections this was several seconds.
+  const [nsRespEarly, okrData, ctxData] = await Promise.all([
+    fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]})),
     fetch(`/api/northstar/${esc(p.id)}/okrs`).then(r=>r.json()).catch(()=>({ok:false,okrs:[]})),
     fetch('/api/ctx-pulse').then(r=>r.json()).catch(()=>({ok:false,topics:[]})),
   ]);
@@ -10603,6 +10466,13 @@ async function openDetail(idx) {
 
   // M137: abort if another project was opened while we were waiting
   if (_activeDetailProjId !== myProjId) return;
+
+  const nsList = nsRespEarly.north_stars || [];
+  _nsStarsCache[p.id] = nsList; // M541: cache populated before loadMilestones — sess badge correct on first render
+
+  // Load milestones + substars now that cache is populated
+  loadMilestones(p.id);
+  loadSubStars(p.id);
 
   if (ctxData.ok) ctxTopics = ctxData.topics || [];
 
@@ -10615,12 +10485,7 @@ async function openDetail(idx) {
   _loadActivityLog(p.id);
   // M120: do NOT auto-open live session on card click — user must explicitly click the session row
 
-  // Multi-NS: full left-panel pagination (arc + milestones per NS page)
-  const nsResp = await fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]}));
-  const nsList = nsResp.north_stars || [];
-  _nsStarsCache[p.id] = nsList; // M541: cache for auto-priority
-  // M652: safety net — ensures grouping is applied after _nsStarsCache is guaranteed populated,
-  // covers race where both loadMilestones and loadSubStars finished before this point without applying grouping.
+  // M652: safety net — ensures grouping is applied after _nsStarsCache is guaranteed populated.
   if (nsList.length > 0) _fastReapplyGrouping(p.id);
   if (nsList.length > 1) {
     renderMultiNSLeftPanel(p, nsList, okrData);
@@ -12828,6 +12693,11 @@ async function _refreshDetailCard(projId) {
   try {
     const nsResp = await fetch(`/api/northstar/${encodeURIComponent(projId)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]}));
     const nsList = nsResp.north_stars || [];
+    // M1220: preserve optimistic assigned_session if within dispatch window
+    if (window._dispatchOptimisticUntil && Date.now() < window._dispatchOptimisticUntil) {
+      const _prevById2 = Object.fromEntries((_nsStarsCache[projId]||[]).filter(n=>n.id).map(n=>[n.id,n]));
+      nsList.forEach(ns => { if (!(ns.assigned_session||'').trim() && (_prevById2[ns.id]?.assigned_session||'').trim()) ns.assigned_session = _prevById2[ns.id].assigned_session; });
+    }
     _nsStarsCache[projId] = nsList; // M541: cache for auto-priority
     if (nsList.length > 1) {
       // Multi-NS: update the stored list and re-render the left panel
@@ -12899,9 +12769,7 @@ function _tokenSim(a, b) {
 }
 
 function _stoneFullText(m) {
-  // Combine stone title + star_relation + recent conversation for richer relevance scoring
   let txt = m.text || '';
-  if (m.star_relation) txt += ' ' + m.star_relation; // M615: include substar assignment hint
   const conv = m.conversation || [];
   if (conv.length) {
     const recent = conv.slice(-6).map(c => c.text || '').filter(Boolean);
@@ -12955,8 +12823,8 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
   if (typeof _blinkCenterHydrate === 'function') _blinkCenterHydrate(projId);
 
   // M649/M683: fingerprint includes status+watching so count badges update in real-time.
-  // Previously only tracked substar_id/group order — status changes bypassed count update.
-  const _fp = nsList.map(n=>n.id+(n.default_agent?':'+n.default_agent:'')).join(',') + '|' + l0.map(m=>m.id+':'+(m.substar_id||m.star_relation||'')+':'+(m.status||'')+(m.watching?'w':'')).join(',');
+  // M1215: also include assigned_session so sess badge rebuilds when assignment changes.
+  const _fp = nsList.map(n=>n.id+(n.default_agent?':'+n.default_agent:'')+(n.assigned_session?'@'+n.assigned_session:'')).join(',') + '|' + l0.map(m=>m.id+':'+(m.substar_id||'')+':'+(m.status||'')+(m.watching?'w':'')).join(',');
   if (_groupingFingerprint[projId] === _fp && table.querySelector('.ss-mg-header-tbody')) return;
   _groupingFingerprint[projId] = _fp;
 
@@ -12974,17 +12842,14 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
   table.style.tableLayout = 'auto';
 
   // Map l0 mid → best substar index
-  // M627: substar_id (stable UUID) takes highest priority — immune to star_relation rationale overwrites
-  // M618: exact star_relation name match is fallback — prevents auto-move when stone text changes
+  // M627: substar_id (stable UUID) takes highest priority
   const midToGroup = {};
   l0.forEach(m => {
     const sid = m.substar_id || '';
     if (sid === '__ungrouped__') { midToGroup[m.id] = -1; return; } // M644: explicit ungrouped sentinel
     const idxById = sid ? nsList.findIndex(ns => ns.id === sid) : -1;
     if (idxById >= 0) { midToGroup[m.id] = idxById; return; }
-    const sr = m.star_relation ? String(m.star_relation).trim() : ''; // M368: coerce — star_relation can be object
-    const exactIdx = sr ? nsList.findIndex(ns => (ns.name||'').trim() === sr) : -1;
-    midToGroup[m.id] = exactIdx >= 0 ? exactIdx : _computeBestSubstarIdx(_stoneFullText(m), projId);
+    midToGroup[m.id] = _computeBestSubstarIdx(_stoneFullText(m), projId);
   });
 
   // Collect all existing stone tbodys (each l0 is its own tbody.ms-group)
@@ -13132,6 +12997,16 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
           _mainLastSessId = d.main_last_session_id || '';
           // M806: count substar assignments; M792: map branch origins
           _allNs = nsD.north_stars || nsD || [];
+          // M1215: sync fresh server data back into _nsStarsCache so M1158 poll + fingerprint gate
+          // see the correct assigned_session without waiting for next _refreshDetailCard cycle.
+          if (_allNs.length > 0 && (_nsStarsCache[_sessBtnProj] || []).length > 0) {
+            const _freshMap = Object.fromEntries(_allNs.map(n => [n.id, n]));
+            for (const _cns of _nsStarsCache[_sessBtnProj]) {
+              if (_freshMap[_cns.id]) _cns.assigned_session = _freshMap[_cns.id].assigned_session || '';
+            }
+            // Invalidate fingerprint so _applySubstarGrouping rebuilds sess buttons
+            delete _groupingFingerprint[_sessBtnProj];
+          }
           _allNs.forEach(ns => {
             if (ns.assigned_session) {
               _sessSubstarCounts[ns.assigned_session] = (_sessSubstarCounts[ns.assigned_session] || 0) + 1;
@@ -13168,7 +13043,9 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
         header.appendChild(_hdrClose);
         popup.appendChild(header);
         // M792: branch-from-main button — visible only when this substar has an assigned session
-        if (ns && ns.assigned_session) {
+        // M1215: also check _allNs fresh data in case closure ns is stale
+        const _freshNsForBranch = _allNs.find(n => n.id === ns?.id);
+        if (ns && (_freshNsForBranch?.assigned_session || ns.assigned_session)) {
           const branchRow = document.createElement('div');
           branchRow.style.cssText = 'padding:7px 10px;border-bottom:1px solid var(--panel-border);display:flex;align-items:center;gap:8px';
           const branchBtn = document.createElement('button');
@@ -13276,7 +13153,9 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
           branchRow.appendChild(branchHint);
           popup.appendChild(branchRow);
         }
-        const _assignedSess = ns?.assigned_session || null;
+        // M1215: prefer fresh server data (_allNs) over stale closure ns for assignment display
+        const _freshThisNs = _allNs.find(n => n.id === ns?.id);
+        const _assignedSess = (_freshThisNs?.assigned_session || ns?.assigned_session || null);
         // M784: identify the project's main session (no substar suffix). Matches
         // claude-exec-{proj}, codex-exec-{proj}, openrouter-exec-{proj}, dsk-exec-{proj}.
         const _mainSessRe = new RegExp(`^(claude|codex|openrouter|dsk)-exec-${_sessBtnProj.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}$`);
@@ -13346,6 +13225,14 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
                 // Optimistic local update so next render shows assignment immediately
                 ns.assigned_session = s.name;
                 if (window._nsMap && window._nsMap[ns.id]) window._nsMap[ns.id].assigned_session = s.name;
+                // M1215-v2: also update current _nsStarsCache by ID — ns closure ref may be detached
+                // if _refreshDetailCard replaced the array with fresh objects since sessBtn was built.
+                { const _cn = (_nsStarsCache[_sessBtnProj] || []).find(n => n.id === ns.id);
+                  if (_cn) _cn.assigned_session = s.name; }
+                // M1215-v2: invalidate fingerprint + immediate rebuild so badge reflects assignment
+                // before the next loadMilestones poll completes (which can take 1-2s on slow networks).
+                delete _groupingFingerprint[_sessBtnProj];
+                if (typeof _fastReapplyGrouping === 'function') try { _fastReapplyGrouping(_sessBtnProj); } catch(_) {}
                 // M811-modal: immediate sess button DOM update (no waiting for loadMilestones)
                 { const _sb = document.querySelector(`[data-ns-sess-btn="${ns.id}"]`);
                   if (_sb) {
@@ -13364,7 +13251,7 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
                     _sb.style.background = _btnBg;
                   }
                 }
-                // Trigger immediate poll to refresh section bar
+                // Trigger server-synced refresh for final confirmation
                 if (typeof loadMilestones === 'function') { try { loadMilestones(_sessBtnProj); } catch(_) {} }
                 // M792: success toast — auto-dismiss 2.5s, distinct from sticky push toasts
                 try {
@@ -13655,12 +13542,11 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
       const _sKey = ns ? (ns.id || '__ungrouped__') : '__ungrouped__';
       const _lsBlinkKey  = '_ssBlinkTs_'   + _sKey;
       const _lsBlinkMids = '_ssBlinkMids_' + _sKey;
-      // M937: hash includes status + conv length + last role — any stone change triggers blink
-      const _curItems = _allStones.map(s => {
-        const _conv = s.conversation || [];
-        const _lastRole = _conv.length ? (_conv[_conv.length-1].role||'')[0] : '';
-        return { id: s.id, st: `${s.status||'p'}|${_conv.length}|${_lastRole}` };
-      });
+      // M1213: hash is status-only — conv.length/lastRole caused phantom blinks every 60s
+      // when the auto-reply worker appended role:claude messages (M1200-v2 root cause).
+      // Status-only means the hash only changes on real status transitions → safe to blink
+      // on any change, not just pending_confirmation/needs_clarification.
+      const _curItems = _allStones.map(s => ({ id: s.id, st: s.status || 'p' }));
       const _cur = _curItems.map(x => x.st).join(',');
       // Read blink timestamp from localStorage (persists across refresh)
       const _storedTs = parseInt(localStorage.getItem(_lsBlinkKey) || '0');
@@ -13703,23 +13589,22 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
       }
       if (window._ssBarPrevHash[_sKey] !== undefined &&
           window._ssBarPrevHash[_sKey] !== _cur) {
-        // M1200-v2: only blink on user-attention-required status transitions.
-        // Root cause of phantom blinks: hash includes conv.length + lastRole, so the
-        // auto-reply worker appending role:claude messages every 60s caused hash change
-        // → blink on every autonomous progress update with no user action needed.
-        // Fix: only fire blink when a stone transitions TO pending_confirmation or
-        // needs_clarification (the two states where user MUST act).
+        // M1213: blink on any stone status change or new stone (except done/skipped).
+        // Replaced M1200-v2 _BLINK_ST restriction — phantom blink root cause (conv.length
+        // hash) is now eliminated by status-only hash above, so the restriction is no longer
+        // needed. Also removed _prevItemsC.length>0 guard so first stone in empty section blinks.
         const _prevItemsC = window._ssBarPrevItems[_sKey] || [];
         const _prevMapC = Object.fromEntries(_prevItemsC.map(x => [x.id, x.st]));
         const _prevIdsC = new Set(_prevItemsC.map(x => x.id));
-        const _BLINK_ST = new Set(['pending_confirmation', 'needs_clarification']);
+        const _DONE_ST = new Set(['done', 'skipped', 'pending_confirmation']); // M1222: pending_confirmation = work done, no new blink
         const _blinkMids = new Set([
+          // existing stones that changed status (to non-done/skipped)
           ..._curItems.filter(x => {
             const prev = _prevMapC[x.id];
-            if (!prev || prev === x.st) return false;
-            return _BLINK_ST.has(x.st.split('|')[0]);
+            return prev && prev !== x.st && !_DONE_ST.has(x.st);
           }).map(x => x.id),
-          ...(_prevItemsC.length > 0 ? _curItems.filter(x => !_prevIdsC.has(x.id) && _BLINK_ST.has(x.st.split('|')[0])).map(x => x.id) : []),
+          // new stones in section (including first stone in previously empty section)
+          ..._curItems.filter(x => !_prevIdsC.has(x.id) && !_DONE_ST.has(x.st)).map(x => x.id),
         ]);
         if (_blinkMids.size > 0) {
           hTd.classList.add('ss-mg-blink');
@@ -13734,34 +13619,6 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
       }
       window._ssBarPrevHash[_sKey]  = _cur;
       window._ssBarPrevItems[_sKey] = _curItems;
-    }
-
-    // M1200: dismiss button — clears local blink state so user can acknowledge "no update" blinks
-    if (hTd.classList.contains('ss-mg-blink')) {
-      const _dimBtn = document.createElement('span');
-      _dimBtn.textContent = '×';
-      _dimBtn.title = 'Dismiss blink';
-      _dimBtn.style.cssText = 'font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text-dim);cursor:pointer;margin-left:6px;padding:0 4px;border-radius:2px;user-select:none;opacity:.7;float:right';
-      _dimBtn.onmouseenter = () => { _dimBtn.style.opacity = '1'; _dimBtn.style.color = 'var(--accent)'; };
-      _dimBtn.onmouseleave = () => { _dimBtn.style.opacity = '.7'; _dimBtn.style.color = 'var(--text-dim)'; };
-      _dimBtn.onclick = e => {
-        e.stopPropagation();
-        localStorage.removeItem(_lsBlinkKey);
-        localStorage.removeItem(_lsBlinkMids);
-        if (window._ssBlinkMids) delete window._ssBlinkMids[_sKey];
-        hTd.classList.remove('ss-mg-blink');
-        _dimBtn.remove();
-        // Remove row blinks in this section
-        const _hTb2 = hTd.closest('tbody');
-        if (_hTb2) {
-          let _sib2 = _hTb2.nextElementSibling;
-          while (_sib2 && !_sib2.classList.contains('ss-mg-header-tbody')) {
-            _sib2.querySelectorAll('tr.ss-row-blink').forEach(r => r.classList.remove('ss-row-blink'));
-            _sib2 = _sib2.nextElementSibling;
-          }
-        }
-      };
-      hTd.insertBefore(_dimBtn, hTd.firstChild);
     }
 
     // M675: default agent badge (inline, after count); M692: click→view SKILL.md content
@@ -13923,9 +13780,16 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
       const rect = chip.getBoundingClientRect();
       const picker = document.createElement('div');
       picker.className = 'ss-grp-picker';
-      // M645: scroll only when 5+ options
-      const _pickerScroll = _allNsOptions.length >= 5 ? 'max-height:120px;overflow-y:auto' : 'overflow:visible';
-      picker.style.cssText = `position:fixed;z-index:9800;left:${rect.left}px;top:${rect.bottom+2}px;background:var(--panel);border:1px solid var(--panel-border);border-radius:5px;box-shadow:0 4px 12px rgba(0,0,0,.2);font-family:var(--mono);font-size:10px;min-width:140px;${_pickerScroll}`;
+      // M1212: flip-above when space below < 220px to prevent picker extending off-screen.
+      // Root cause of scroll-not-working: _pickerMaxH was forced to 180px minimum but top was
+      // kept at rect.bottom+2, pushing content below the viewport where scrollbar is unreachable.
+      const _vpH = window.innerHeight;
+      const _spaceBelow = _vpH - rect.bottom - 8;
+      const _spaceAbove = rect.top - 8;
+      const _flipAbove = _spaceBelow < 220 && _spaceAbove >= _spaceBelow;
+      const _pickerMaxH = Math.min(_flipAbove ? Math.max(_spaceAbove, 120) : Math.max(_spaceBelow, 120), 440);
+      const _pickerTop = _flipAbove ? rect.top - _pickerMaxH - 2 : rect.bottom + 2;
+      picker.style.cssText = `position:fixed;z-index:9800;left:${rect.left}px;top:${_pickerTop}px;background:var(--panel);border:1px solid var(--panel-border);border-radius:5px;box-shadow:0 4px 12px rgba(0,0,0,.2);font-family:var(--mono);font-size:10px;min-width:140px;max-height:${_pickerMaxH}px;overflow-y:auto;-webkit-overflow-scrolling:touch`;
       _allNsOptions.forEach(opt => {
         const row = document.createElement('div');
         row.style.cssText = 'padding:5px 10px;cursor:pointer;color:var(--text);';
@@ -13937,12 +13801,11 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
           ev.stopPropagation();
           picker.remove();
           chip.dataset.pickerOpen = '';
-          const newSrVal = opt.id ? (opt.name) : '';
           // M644: use '__ungrouped__' sentinel so auto-compute doesn't re-assign after explicit Ungrouped selection
           const newSubstarId = opt.id || '__ungrouped__';
           await fetch(`/api/northstar/${encodeURIComponent(_proj)}/milestones/${encodeURIComponent(mid)}`, {
             method: 'PATCH', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ substar_id: newSubstarId, star_relation: newSrVal }),
+            body: JSON.stringify({ substar_id: newSubstarId }),
           });
           delete _msRenderFingerprint[_proj];
           delete _groupingFingerprint[_proj]; // M649: group assignment changed → force re-group
@@ -13996,20 +13859,7 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
     if (_tspan) idCell.insertBefore(chip, _tspan);
     else idCell.insertBefore(chip, idCell.firstChild); // M919: prepend so chip appears above action buttons
 
-    // M1199: moved_from badge — show origin project for stones moved cross-project
-    const _rowMs = _msCacheByProject[_proj] || [];
-    const _thisMsData = _rowMs.find ? _rowMs.find(m => m.id === mid) : null;
-    if (_thisMsData && _thisMsData.moved_from) {
-      const _srcProj = (_thisMsData.moved_from || '').split('/')[0];
-      if (_srcProj && _srcProj !== _proj) {
-        const mvBadge = document.createElement('span');
-        mvBadge.title = `Moved from ${_thisMsData.moved_from}`;
-        mvBadge.style.cssText = 'font-family:var(--mono);font-size:8px;color:var(--yellow,#c7a628);padding:1px 4px;border-radius:3px;border:1px solid var(--yellow,#c7a628);opacity:.8;';
-        mvBadge.textContent = `from:${_srcProj}`;
-        if (_tspan) idCell.insertBefore(mvBadge, _tspan);
-        else idCell.appendChild(mvBadge);
-      }
-    }
+    // M1226: moved_from badge removed per user request
   });
 
   // M782 fix: propagate ss-mg-blink only to stone rows that caused the section blink

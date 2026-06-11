@@ -6,7 +6,9 @@ Exposes hub task dispatch/completion tools to Claude Code sessions.
 Usage (all args optional — auto-detected from env/CWD):
   python3 hub-mcp-server.py [--proj PROJ_ID] [--hub-url http://HOST:PORT]
 
-Priority: --arg → NS_HUB_PROJ/NS_HUB_URL env → SQLite repo_path CWD match → CWD basename
+Priority order:
+  --proj      → NS_HUB_PROJ env → SQLite repo_path match → CWD basename
+  --hub-url   → NS_HUB_URL env  → http://localhost:9001
 """
 import argparse
 import json
@@ -36,38 +38,66 @@ def _hub_request(url: str, method: str = "GET", body: dict = None, timeout: int 
     raise last_err
 
 
-# M1212: P3/P4 tool description compression — keep Purpose component, trim Examples/redundant prose.
-# Total savings: ~235 tokens fixed overhead per session (prompt-cached after first call).
+# M1115: improved tool descriptions for cross-model compatibility (Claude, Gemini, DeepSeek, Kimi via OpenRouter/LiteLLM)
 TOOLS = [
     {
         "name": "get_pending_task",
         "description": (
-            "Fetch the next queued task for this exec session (returns exactly 1 task). "
-            "Returns: has_task, task_id, text, conversation (compressed), queued_count. "
-            "has_task=false → idle, nothing to do. "
-            "SKILL PROTOCOL: skill_refs non-empty → call Skill(skill=skill_refs[0]) FIRST before any other tool. "
-            "_child_stone_required=true → call create_child_stone() for each sub-task FIRST."
+            "Fetch the next queued task (stone) assigned to this exec session from the hub. "
+            "Call this at the start of your session to know what to work on. "
+            "Returns task_id, text (full task description), conversation history, and metadata. "
+            "If has_task is false, there is nothing to do — report idle and wait. "
+            "SKILL INVOCATION PROTOCOL (M1114): If the response contains skill_refs (non-empty list), "
+            "your VERY FIRST action MUST be to call Skill(skill=skill_refs[0]) before ANY other tool. "
+            "This is mandatory — skipping it is a silent failure. "
+            "The skill provides the methodology/framework to use when executing the task."
         ),
-        "inputSchema": {"type": "object", "properties": {}, "required": []},
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
     },
     {
         "name": "report_task_complete",
         "description": (
-            "CLOSE/COMPLETE a task (changes status). "
-            "Mark task done and notify user. "
-            "LANGUAGE RULE: summary must match the language of the user's stone input (Korean if user wrote Korean, English if English) — it appears as a stone comment. "
-            "CHILD STONE PRE-CHECK: decomposition tasks (자녀 스톤/분해/sub-task) → call create_child_stone() for each sub-task FIRST. "
-            "RESULT RULE: produced a file/image/doc/Excel? Upload first: "
-            "rclone copy <file> 'gdrive:claude-shared/<proj>/outbox/' && rclone link → pass URL as evidence_url. "
-            "Omitting evidence_url for result-producing tasks is a failure."
+            "Report that you have completed a task (stone). "
+            "Call this after finishing work on a task to mark it done and notify the user. "
+            "task_id must match the ID returned by get_pending_task (e.g. 'M1090'). "
+            "summary must be a one-line past-tense description of what you did (max 120 chars). "
+            "status should be 'pending_confirmation' for completed work. "
+            "CHILD STONE PRE-CHECK: If the task involved decomposing work into sub-tasks (자녀 스톤, 분해, etc.), "
+            "you MUST have already called create_child_stone() for each sub-task before calling this. "
+            "Do NOT use this tool's summary field to claim child stones exist — they only exist if create_child_stone() was called. "
+            "M1133 RESULT RULE: if the task produced a shareable result (image, document, Excel, PDF, "
+            "code file, analysis), FIRST upload it: "
+            "rclone copy <file> 'gdrive:claude-shared/<proj>/outbox/' && "
+            "rclone link 'gdrive:claude-shared/<proj>/outbox/<filename>' → then pass the URL as evidence_url. "
+            "This URL appears as the 'result' badge on the stone. Omitting it for result-producing tasks is a failure."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "task_id": {"type": "string"},
-                "summary": {"type": "string", "description": "One-line past-tense summary, max 120 chars — match user's stone input language"},
-                "status": {"type": "string", "enum": ["pending_confirmation", "skipped"], "description": "default: pending_confirmation"},
-                "evidence_url": {"type": "string", "description": "GDrive URL of result artifact — shows as 'result' badge on the stone."},
+                "task_id": {
+                    "type": "string",
+                    "description": "The milestone ID returned by get_pending_task (e.g. 'M1090')",
+                },
+                "summary": {
+                    "type": "string",
+                    "description": "One-line past-tense summary of what was done (max 120 chars)",
+                },
+                "star_relation": {
+                    "type": "string",
+                    "description": "One sentence describing how this completion advances the parent goal (optional)",
+                },
+                "status": {
+                    "type": "string",
+                    "description": "Use 'pending_confirmation' for completed work, 'skipped' if not actionable. Default: pending_confirmation",
+                },
+                "evidence_url": {
+                    "type": "string",
+                    "description": "M1133: GDrive URL of the result artifact (image, doc, file). Upload via rclone first, then pass the link here. Shows as 'result' badge on the stone.",
+                },
             },
             "required": ["task_id", "summary"],
         },
@@ -75,51 +105,81 @@ TOOLS = [
     {
         "name": "reply_to_stone",
         "description": (
-            "REPLY without closing (no status change). "
-            "Post a reply comment to a stone in Q&A mode — answer user question without changing status. "
-            "DO NOT USE to mark work done — use report_task_complete for that. "
-            "LANGUAGE: reply must match the language of the user's stone input."
+            "Post a reply comment to a task (stone) in Q&A mode. "
+            "Use this when the task conversation ends with a user question — answer it here without changing task status. "
+            "message must be ≤3 lines of plain text answering the user's question."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "task_id": {"type": "string"},
-                "message": {"type": "string", "description": "Reply text, max 3 lines"},
+                "task_id": {"type": "string", "description": "Milestone/stone ID (e.g. 'M1090')"},
+                "message": {"type": "string", "description": "Reply text answering the user's question, max 3 lines"},
             },
             "required": ["task_id", "message"],
         },
     },
     {
         "name": "get_task_details",
-        "description": "Get full details + conversation history for a specific task. Use when more context is needed. Returns error key if task_id not found.",
+        "description": (
+            "Get full details of a specific task including conversation history and sub-stones. "
+            "Use when you need more context about a task before working on it."
+        ),
         "inputSchema": {
             "type": "object",
-            "properties": {"task_id": {"type": "string"}},
+            "properties": {
+                "task_id": {"type": "string", "description": "Milestone/stone ID (e.g. 'M1090')"},
+            },
             "required": ["task_id"],
         },
     },
     {
         "name": "create_child_stone",
         "description": (
-            "Register a child sub-stone in the hub. "
-            "CALL WHEN: task has 자녀 스톤/분해/sub-task/child stone keywords, or _child_stone_required=true. "
-            "CRITICAL: reply_to_stone claiming stones exist ≠ calling this. Only THIS tool creates them. "
-            "N sub-tasks → call N times. WORKFLOW: create_child_stone × N → implement → report_task_complete."
+            "MANDATORY tool to register a child (sub) stone in the hub database. "
+            "WHEN YOU MUST CALL THIS: "
+            "(1) Task text contains '자녀 스톤', '분해', 'sub-task', 'child stone', '작업 분해', or similar decomposition keywords. "
+            "(2) User message asks to 'register child stones', '자녀 스톤 등록', or 'create sub-stones'. "
+            "(3) get_pending_task returns _child_stone_required=true. "
+            "CRITICAL: Writing 'M19.1 done, M19.2 done' in a reply_to_stone message is NOT the same as calling this tool. "
+            "Child stones only appear in the hub table when THIS tool is called — not from summary text. "
+            "For N child stones → call this tool N times (once per stone). "
+            "WORKFLOW: call create_child_stone() for each child FIRST, then do the implementation work, then report_task_complete(). "
+            "parent_id: the parent stone ID (e.g. 'M19'). "
+            "text: full description of the child task. "
+            "status: 'queued' to enter work queue immediately. "
+            "For [검수] review stones format: '[검수] <MID>: <summary>\\n적용내용: <what changed>\\n→ ...'."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "parent_id": {"type": "string"},
-                "text": {"type": "string", "description": "Full text of the child stone"},
-                "status": {"type": "string", "enum": ["queued", "pending", "needs_clarification"], "description": "queued=ready to execute (default), pending=blocked/waiting, needs_clarification=missing info"},
+                "parent_id": {
+                    "type": "string",
+                    "description": "ID of the parent stone (e.g. 'M1090')",
+                },
+                "text": {
+                    "type": "string",
+                    "description": "Full text of the new child stone",
+                },
+                "status": {
+                    "type": "string",
+                    "description": "Initial status: 'queued' (default) to enter work queue, or 'pending' for informational",
+                },
             },
             "required": ["parent_id", "text"],
         },
     },
     {
         "name": "get_session_overview",
-        "description": "Overview of ALL tasks at once: queued, pending reply, clarifications needed. Use this to survey the full landscape; use get_pending_task to fetch exactly 1 task to work on.",
-        "inputSchema": {"type": "object", "properties": {}, "required": []},
+        "description": (
+            "Get a full status overview for this session: queued tasks, stones awaiting your reply, "
+            "stones needing clarification, and paused stones. "
+            "Call this at session start to understand the complete landscape of work before fetching a specific task."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
     },
     # M1149 v2 CTX tools (get_recent_chats, search_decision_history, search_codespace, search_memory)
     # DISABLED — moved back to PUSH-injection via UserPromptSubmit hooks (hub_ctx hooks restored).
@@ -252,31 +312,22 @@ def handle_get_pending_task(proj_id: str, hub_url: str) -> dict:
         _llm_conv = _compress_conv_for_llm(_full_conv, threshold=5, keep_last=4)
         # M1114: surface skill_refs as a structured field (not buried in text annotations)
         _srefs = stone.get("skill_refs") or ([stone["skill_ref"]] if stone.get("skill_ref") else [])
-        # M1212 P1a: sparse response — drop low-value fields (substar, added_at, conversation_full_count)
-        # to reduce per-call token cost (dominant context cost driver per expert-research plan).
         result = {
             "has_task": True,
             "task_id": stone.get("id"),
             "text": stone.get("text", ""),
             "conversation": _llm_conv,
+            "conversation_full_count": len(_full_conv),
             "queued_count": len(queued),
+            "substar": stone.get("substar_id"),
+            "added_at": stone.get("user_added_at"),
         }
         if _srefs:
             result["skill_refs"] = _srefs
-            # Compact skill instruction (was ~40 tokens, now ~15)
-            result["_skill_instruction"] = f"SKILL: call Skill(skill='{_srefs[0]}') FIRST."
-            # M1221: record invocation server-side — works from any device, no client hook needed
-            try:
-                _body = {
-                    "proj_id": proj_id,
-                    "stone_id": stone.get("id", ""),
-                    "action": "invoked_skill",
-                    "detail": _srefs[0],
-                    "session_id": os.environ.get("CLAUDE_CODE_SESSION_ID", ""),
-                }
-                _hub_request(f"{hub_url}/api/action-log", method="POST", body=_body, timeout=3)
-            except Exception:
-                pass
+            result["_skill_instruction"] = (
+                f"MANDATORY FIRST ACTION: call Skill(skill='{_srefs[0]}') NOW before reading the task text or calling any other tool. "
+                f"This skill provides the methodology for this task. Skipping = silent failure."
+            )
         # M1143: auto-detect decomposition tasks — remind model to call create_child_stone
         _CHILD_KEYWORDS = ["자녀 스톤", "자녀스톤", "child stone", "분해", "sub-task",
                            "subtask", "작업 분해", "작업분해", "하위 스톤", "서브스톤"]
@@ -297,7 +348,7 @@ def handle_get_pending_task(proj_id: str, hub_url: str) -> dict:
 def handle_report_task_complete(
     proj_id: str, hub_url: str,
     task_id: str, summary: str,
-    status: str = "pending_confirmation",
+    star_relation: str = "", status: str = "pending_confirmation",
     evidence_url: str = "",
 ) -> dict:
     try:
@@ -307,6 +358,8 @@ def handle_report_task_complete(
             "pending_confirm_at": datetime.datetime.now().isoformat(),
             "append_message": {"role": "claude", "text": summary},  # M1117: no client-side truncation — server enforces 3-line limit
         }
+        if star_relation:
+            patch["star_relation"] = star_relation
         # M1133: pass evidence_url so the 'result' badge appears on the stone
         if evidence_url:
             patch["evidence_url"] = evidence_url
@@ -359,23 +412,24 @@ def handle_get_session_overview(proj_id: str, hub_url: str) -> dict:
         ]
 
         def _stone_summary(m):
-            # M1212 P2: sparse projection — drop is_qa (redundant), trim text_preview, include last_user only when present
             conv = m.get("conversation") or []
-            last_user = next((e.get("text", "")[:80] for e in reversed(conv) if e.get("role") == "user"), "")
-            s = {"id": m.get("id"), "text": (m.get("text") or "")[:80]}
-            if last_user:
-                s["last_user"] = last_user
-            return s
+            last_user = next((e.get("text", "")[:100] for e in reversed(conv) if e.get("role") == "user"), "")
+            return {
+                "task_id": m.get("id"),
+                "text_preview": (m.get("text") or "")[:120],
+                "is_qa": _awaits_user(m),
+                "last_user_message": last_user or None,
+            }
 
-        # M1212 P2: compact summary-first response
         return {
-            "summary": f"{len(queued)} queued, {len(pending_replies)} pending reply, {len(clarifications)} clarification(s)",
             "queued": [_stone_summary(m) for m in queued],
             "pending_replies": [_stone_summary(m) for m in pending_replies],
             "clarifications": [
-                {"id": m.get("id"), "q": (m.get("clarification_question") or "")[:80]}
+                {"task_id": m.get("id"), "question": (m.get("clarification_question") or "")[:120]}
                 for m in clarifications
             ],
+            "paused_count": len(paused),
+            "summary": f"{len(queued)} queued, {len(pending_replies)} pending reply, {len(clarifications)} clarification(s)",
         }
     except Exception as e:
         return {"error": str(e)}
@@ -403,11 +457,6 @@ def handle_get_task_details(proj_id: str, hub_url: str, task_id: str) -> dict:
         stone = next((m for m in milestones if m.get("id") == task_id), None)
         if not stone:
             return {"error": f"Task {task_id} not found"}
-        # M1228: compress conversation for LLM (same as get_pending_task) — raw conv is token-wasteful
-        _full_conv = stone.get("conversation") or []
-        stone = dict(stone)
-        stone["conversation"] = _compress_conv_for_llm(_full_conv, threshold=5, keep_last=4)
-        stone["conversation_full_count"] = len(_full_conv)
         return stone
     except Exception as e:
         return {"error": str(e)}
@@ -586,8 +635,10 @@ def send(obj: dict):
 
 
 def _detect_proj_id() -> str:
+    """Detect project ID by matching CWD against repo_path in hub SQLite, or CWD basename."""
     cwd = Path.cwd().resolve()
-    db_path = Path(os.environ.get("HUB_DATA_DIR", str(Path.home() / ".hub"))) / "ns-events.db"
+    hub_data_dir = Path(os.environ.get("HUB_DATA_DIR", Path.home() / ".hub"))
+    db_path = hub_data_dir / "ns-events.db"
     if db_path.exists():
         try:
             conn = sqlite3.connect(str(db_path))
@@ -596,7 +647,8 @@ def _detect_proj_id() -> str:
             for proj_id, meta_json in rows:
                 if meta_json:
                     meta = json.loads(meta_json)
-                    if meta.get("repo_path") and Path(meta["repo_path"]).resolve() == cwd:
+                    rp = meta.get("repo_path", "")
+                    if rp and Path(rp).resolve() == cwd:
                         return proj_id
         except Exception:
             pass
@@ -665,6 +717,7 @@ def main():
                         proj_id, hub_url,
                         task_id=tool_args.get("task_id", ""),
                         summary=tool_args.get("summary", ""),
+                        star_relation=tool_args.get("star_relation", ""),
                         status=raw_status,
                         evidence_url=tool_args.get("evidence_url", ""),
                     )

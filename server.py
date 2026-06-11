@@ -331,14 +331,15 @@ async def user_settings_put(key: str, req: Request):
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
-def _mark_blink_server(proj_id: str, s_key: str, mid: str):
+def _mark_blink_server(proj_id: str, s_key: str, mid: str, remove: bool = False):
     """M1007: server-side blink trigger. When a stone's status changes via the
     PATCH path (incl. exec-session API completions where no browser is watching),
     stamp the affected substar's blink mids+ts into user_settings.blink_state_{proj}
     with ts=now so the client's _blinkCenterHydrate restores a fresh, in-window blink
     on the next board open. Mirrors the client-side _blinkCenterSave bundle shape
     ({sKey: {ts, mids:[...]}}). Root cause of M1007: blink was client-detected only,
-    so API-driven changes never produced hydratable blink state."""
+    so API-driven changes never produced hydratable blink state.
+    M1216: remove=True removes mid from blink_state (called on done/skipped transition)."""
     import time as _t_blink
     key = f"blink_state_{proj_id}"
     try:
@@ -361,9 +362,31 @@ def _mark_blink_server(proj_id: str, s_key: str, mid: str):
                   if isinstance(e, dict) and (e.get("ts") or 0) >= _prune_cutoff}
         entry = bundle.get(s_key) if isinstance(bundle.get(s_key), dict) else {}
         mids = entry.get("mids") if isinstance(entry.get("mids"), list) else []
-        if mid not in mids:
-            mids = mids + [mid]
-        bundle[s_key] = {"ts": _now_ms, "mids": mids}
+        # M1222: purge done/skipped mids that accumulated before M1216 (or from any race).
+        # On every write, cross-check existing mids against milestones_store and drop
+        # any that are now done/skipped — prevents indefinite blink from stale mids.
+        try:
+            _done_st = {"done", "skipped"}
+            _rows_ms = conn.execute(
+                "SELECT stone_id, status FROM milestones_store WHERE proj_id=?", (proj_id,)
+            ).fetchall()
+            _status_map = {r[0]: (r[1] or "") for r in _rows_ms}
+            # Also remove mids not found in project (deleted/moved stones)
+            _clear_st = _done_st | {"pending_confirmation"}
+            mids = [m for m in mids if m in _status_map and _status_map[m] not in _clear_st]
+        except Exception:
+            pass
+        if remove:
+            # M1216: stone done/skipped — remove from blink mids; delete entry if empty
+            mids = [m for m in mids if m != mid]
+            if mids:
+                bundle[s_key] = {"ts": entry.get("ts", _now_ms), "mids": mids}
+            elif s_key in bundle:
+                del bundle[s_key]
+        else:
+            if mid not in mids:
+                mids = mids + [mid]
+            bundle[s_key] = {"ts": _now_ms, "mids": mids}
         conn.execute(
             "INSERT OR REPLACE INTO user_settings(key, value_json, updated_at) VALUES(?,?,?)",
             (key, json.dumps(bundle, ensure_ascii=False), __import__('datetime').datetime.utcnow().isoformat()),
@@ -1188,31 +1211,6 @@ def _parse_md_frontmatter(path: Path) -> dict:
 # always-on write path that would re-introduce the ~350ms full-file rewrite hot-path cost.
 
 
-_proj_started_cache: dict[str, int] = {}
-
-def _get_proj_started_ts(proj_id: str, repo_path: str | None, proj_dir: "Path") -> int:
-    """Return Unix timestamp of project start — git first commit if available, else proj_dir ctime."""
-    if proj_id in _proj_started_cache:
-        return _proj_started_cache[proj_id]
-    ts: int | None = None
-    if repo_path:
-        _rp = Path(repo_path)
-        if _rp.is_dir():
-            try:
-                _r = subprocess.run(
-                    ["git", "-C", str(_rp), "log", "--reverse", "--format=%at"],
-                    capture_output=True, text=True, timeout=3
-                )
-                if _r.returncode == 0 and _r.stdout.strip():
-                    ts = int(_r.stdout.strip().split("\n")[0])
-            except Exception:
-                pass
-    if ts is None:
-        ts = int(proj_dir.stat().st_ctime)
-    _proj_started_cache[proj_id] = ts
-    return ts
-
-
 def _load_projects() -> list:
     """Load all projects from projects/*/north-star.md."""
     projects = []
@@ -1258,7 +1256,6 @@ def _load_projects() -> list:
                                 "clarification_answered_at": m.get("clarification_answered_at") or None,
                                 "claude_comment": m.get("claude_comment") or None,
                                 "conversation": m.get("conversation") or None,
-                                "star_relation": m.get("star_relation") or None,
                                 "star_target_at_completion": m.get("star_target_at_completion") or None,  # M266: stale-flag basis
                                 "held": bool(m.get("held")),  # M216: user-paused flag, surfaced to UI
                                 "user_added_at": m.get("user_added_at") or None,  # M223: creation timestamp shown in stone pane
@@ -1328,10 +1325,6 @@ def _load_projects() -> list:
                     mtime = md.stat().st_mtime
                     data["last_updated"] = mtime
                     data["stale"] = (time.time() - mtime) > (14 * 86400)
-                    # M1196: project age in days (git first commit → fallback proj_dir ctime)
-                    data["proj_started_ts"] = _get_proj_started_ts(
-                        proj_dir.name, data.get("repo_path"), proj_dir
-                    )
                     projects.append(data)
     return projects
 
@@ -1423,9 +1416,6 @@ def _export_milestone_decision(proj_id: str, m: dict) -> None:
             )
             if last_claude:
                 entry += f"**Decision**: {last_claude[:300]}\n"
-            star_rel = (m.get("star_relation") or "").strip()
-            if star_rel:
-                entry += f"**Context**: {star_rel}\n"
             entry += "---\n"
             with open(out_file, "a", encoding="utf-8") as f:
                 f.write(entry)
@@ -1453,17 +1443,16 @@ def _extract_knowledge_object(proj_id: str, m: dict) -> None:
             mid = m.get("id", "?")
             text = (m.get("text") or m.get("content") or "").strip()
             status = m.get("status", "")
-            star_rel = (m.get("star_relation") or "").strip()
             conv = m.get("conversation") or []
 
-            # Build full corpus: stone text + star_relation + last claude message
+            # Build full corpus: stone text + last claude message
             last_claude_text = next(
                 (c.get("text") or c.get("content") or ""
                  for c in reversed(conv)
                  if c.get("role") == "claude"),
                 ""
             )
-            full_corpus = " ".join(filter(None, [text, star_rel, last_claude_text]))
+            full_corpus = " ".join(filter(None, [text, last_claude_text]))
 
             # Extract file paths via regex (any path with / or . that looks like a file)
             _FILE_RE = _re.compile(
@@ -1485,10 +1474,8 @@ def _extract_knowledge_object(proj_id: str, m: dict) -> None:
             else:
                 predicate = f"status:{status}"
 
-            # Build object: star_relation if set, else last claude reply, else truncated text
-            if star_rel:
-                obj = star_rel[:300]
-            elif last_claude_text:
+            # Build object: last claude reply, else truncated text
+            if last_claude_text:
                 obj = last_claude_text[:300]
             else:
                 obj = text[100:300].strip() if len(text) > 100 else ""
@@ -1622,15 +1609,6 @@ def _ns_primary_init():
     """M287: Add milestones_store and project_meta tables to ns-events.db."""
     try:
         conn = sqlite3.connect(str(_NS_EVENTS_DB))
-        # M1174: active_stones — tracks which stone is being worked on per project session
-        conn.execute("""CREATE TABLE IF NOT EXISTS active_stones (
-            proj_id TEXT PRIMARY KEY,
-            stone_id TEXT NOT NULL,
-            dispatched_at TEXT NOT NULL,
-            git_hash_at_dispatch TEXT,
-            last_auto_reply_hash TEXT,
-            updated_at TEXT NOT NULL
-        )""")
         conn.execute("""CREATE TABLE IF NOT EXISTS milestones_store (
             proj_id TEXT NOT NULL,
             stone_id TEXT NOT NULL,
@@ -2063,7 +2041,7 @@ def _record_stone_events(proj_id: str, milestones: list, prev_milestones: list |
                 ev_type = "stone_updated"
             # Record event — include status_before for transition visibility (M486)
             payload_data = {k: m.get(k) for k in
-                ["status","text","claude_ack","held","layer","parent_id","star_relation","user_added_at"]
+                ["status","text","claude_ack","held","layer","parent_id","user_added_at"]
                 if m.get(k) is not None}
             if ev_type == "status_changed" and prev:
                 payload_data["status_before"] = prev.get("status", "")
@@ -2071,7 +2049,7 @@ def _record_stone_events(proj_id: str, milestones: list, prev_milestones: list |
             # Skip stone_updated if content unchanged vs prev (prevents event spam)
             if ev_type == "stone_updated" and prev is not None:
                 prev_payload = json.dumps({k: prev.get(k) for k in
-                    ["status","text","claude_ack","held","layer","parent_id","star_relation","user_added_at"]
+                    ["status","text","claude_ack","held","layer","parent_id","user_added_at"]
                     if prev.get(k) is not None}, sort_keys=True)
                 if payload == prev_payload:
                     # Only update snapshot, skip event insert
@@ -3807,17 +3785,6 @@ async def _start_queue_continuation_poller():
                     except Exception:
                         pass
 
-                    # M1198-v3: pre-compact gate — inject /compact if context too high before waking
-                    if _compact_guard_check_exec(proj_id):
-                        subprocess.run(
-                            ["tmux", "send-keys", "-t", sname, "/compact", "Enter"],
-                            capture_output=True, timeout=2,
-                        )
-                        _compact_last_injected[proj_id] = time.monotonic()
-                        _last_go_sent[sname] = now  # cooldown so we don't immediately re-wake
-                        logger.info(f"[queue-poll] pre-compact: {proj_id} → /compact injected, deferring wake")
-                        continue  # skip dispatch this cycle, next cycle will re-check
-
                     # Send wake message — MCP sessions get tool-call instruction, others get 'go'
                     # M1114: _send_exec_wake handles skill pre-inject (two-step) when stone has skill_refs
                     _send_exec_wake(sname, proj_id)
@@ -3859,252 +3826,6 @@ async def _start_queue_continuation_poller():
                 pass  # poller must never crash
 
     asyncio.create_task(_poll_queue_continuation())
-
-
-@app.on_event("startup")
-async def _start_auto_reply_worker():
-    """M1174: LLM-independent stone reply + completion.
-
-    Every 60s, for each project with an active stone:
-    ① Auto-reply: if session is idle AND last assistant message is new → PATCH append_message
-    ② Auto-complete: if session is idle AND new git commit exists → PATCH pending_confirmation
-
-    Replaces explicit `reply_to_stone` / `report_task_complete` MCP tool calls.
-    """
-    import hashlib as _hl
-    import re as _re_ar
-    POLL_INTERVAL = 60
-    IDLE_THRESHOLD = 180  # 3 min idle before auto-reply fires
-
-    def _extract_evidence_url(text: str) -> str | None:
-        """M1174-fix: extract result URL from last assistant message for evidence_url.
-        Previously done explicitly by LLM via report_task_complete(evidence_url=...).
-        Now auto-extracted: GDrive links take priority, then any https:// URL."""
-        if not text:
-            return None
-        # Priority 1: Google Drive
-        m = _re_ar.search(r'https://drive\.google\.com/\S+', text)
-        if m:
-            return m.group(0).rstrip(')')
-        # Priority 2: any https URL that looks like a result (not localhost/127.0.0.1)
-        for url in _re_ar.findall(r'https://\S+', text):
-            url = url.rstrip(')')
-            if '127.0.0.1' in url or 'localhost' in url:
-                continue
-            return url
-        return None
-
-    async def _worker():
-        while True:
-            await asyncio.sleep(POLL_INTERVAL)
-            try:
-                conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
-                rows = conn.execute(
-                    "SELECT proj_id, stone_id, dispatched_at, git_hash_at_dispatch, last_auto_reply_hash "
-                    "FROM active_stones"
-                ).fetchall()
-                conn.close()
-            except Exception:
-                continue
-
-            for (proj_id, stone_id, dispatched_at, git_hash_dispatch, last_reply_hash) in rows:
-                try:
-                    # ─── Idle check: .exec-idle file + _session_idle_since ───────────────
-                    idle_file = _exec_idle_file(proj_id)
-                    file_idle = idle_file.exists()
-                    idle_since = _session_idle_since.get(proj_id, 0)
-                    now_ts = time.time()
-                    long_idle = (idle_since > 0 and (now_ts - idle_since) >= IDLE_THRESHOLD)
-                    if not file_idle and not long_idle:
-                        continue  # session still active
-
-                    # M1198-v3: pre-compact gate — session is idle (at prompt), check context
-                    # before harvesting reply or transitioning stone. This is the most reliable
-                    # moment: we KNOW the session is at the prompt right now.
-                    if _compact_guard_check_exec(proj_id):
-                        _sess_name = _live_exec_session_name(proj_id)
-                        _chk = subprocess.run(
-                            ["tmux", "has-session", "-t", _sess_name], capture_output=True, timeout=2
-                        )
-                        if _chk.returncode == 0:
-                            subprocess.run(
-                                ["tmux", "send-keys", "-t", _sess_name, "/compact", "Enter"],
-                                capture_output=True, timeout=2,
-                            )
-                            _compact_last_injected[proj_id] = time.monotonic()
-                            logger.info(f"[auto-reply] pre-compact gate: {proj_id} → /compact injected at idle, deferring reply")
-                        continue  # skip harvest this cycle — let compact run
-
-                    # ─── Get stone status from DB ─────────────────────────────────────────
-                    try:
-                        _sc = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
-                        _row = _sc.execute(
-                            "SELECT status, data_json FROM milestones_store "
-                            "WHERE proj_id=? AND stone_id=?", (proj_id, stone_id)
-                        ).fetchone()
-                        _sc.close()
-                    except Exception:
-                        continue
-                    if not _row:
-                        _active_stone_clear(proj_id)
-                        continue
-                    stone_status, stone_json = _row
-                    stone_data = json.loads(stone_json) if stone_json else {}
-
-                    # M1174-fix: stale eviction — stone was transitioned externally
-                    # (MCP call, user click, prev session reply_to_stone).
-                    # Worker has no PATCH path for non-queued status → entry never cleared.
-                    if stone_status != "queued":
-                        _active_stone_clear(proj_id)
-                        logger.info(f"[auto-reply] {proj_id}/{stone_id} status={stone_status} — cleared stale active_stone")
-                        continue
-
-                    # Fetch git hash once — used by both ① and ②
-                    _proj_list = [p for p in _load_projects() if p.get("id") == proj_id]
-                    _repo = _proj_list[0].get("repo_path") if _proj_list else None
-                    current_hash = await asyncio.get_event_loop().run_in_executor(
-                        None, _get_current_git_hash, _repo
-                    )
-                    _is_new_commit = bool(current_hash and git_hash_dispatch
-                                         and current_hash != git_hash_dispatch)
-                    _stone_cleared = False
-
-                    # ─── ① Auto-reply to pending_replies / Q&A ───────────────────────────
-                    conv = stone_data.get("conversation") or []
-                    last_conv_role = conv[-1].get("role") if conv else None
-                    if last_conv_role == "user":
-                        last_msg = await asyncio.get_event_loop().run_in_executor(
-                            None, _get_last_assistant_message, proj_id
-                        )
-                        if last_msg:
-                            msg_hash = _hl.md5(last_msg.encode("utf-8", "replace")).hexdigest()[:12]
-                            if msg_hash != last_reply_hash:
-                                import urllib.request as _ur
-                                _append_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
-                                _body = json.dumps({
-                                    "append_message": {"role": "claude", "text": last_msg}
-                                }).encode()
-                                try:
-                                    req = _ur.Request(_append_url, data=_body, method="PATCH",
-                                                      headers={"Content-Type": "application/json"})
-                                    _ur.urlopen(req, timeout=5)
-                                    _active_stone_update_reply_hash(proj_id, msg_hash)
-                                    logger.info(f"[auto-reply] {proj_id}/{stone_id} → posted ({len(last_msg)} chars)")
-                                    # M1174: Q&A auto-complete — no new commit = reply-only stone
-                                    if not _is_new_commit and stone_status == "queued":
-                                        _summary = last_msg[:120].replace("\n", " ").strip()
-                                        _done_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
-                                        _qa_patch: dict = {
-                                            "status": "pending_confirmation",
-                                            "summary": _summary,
-                                            "pending_confirm_at": __import__('datetime').datetime.utcnow().isoformat(),
-                                        }
-                                        _ev = _extract_evidence_url(last_msg)
-                                        if _ev:
-                                            _qa_patch["evidence_url"] = _ev
-                                        _done_body = json.dumps(_qa_patch).encode()
-                                        try:
-                                            req2 = _ur.Request(_done_url, data=_done_body, method="PATCH",
-                                                               headers={"Content-Type": "application/json"})
-                                            _ur.urlopen(req2, timeout=5)
-                                            _active_stone_clear(proj_id)
-                                            _stone_cleared = True
-                                            logger.info(f"[auto-complete/qa] {proj_id}/{stone_id} → pending_confirmation (no-commit reply)")
-                                        except Exception as _e2:
-                                            logger.warning(f"[auto-complete/qa] {proj_id}/{stone_id} PATCH failed: {_e2}")
-                                except Exception as _e:
-                                    logger.warning(f"[auto-reply] {proj_id}/{stone_id} PATCH failed: {_e}")
-
-                    # ─── ② Auto-complete on new git commit ───────────────────────────────
-                    if not _stone_cleared and stone_status == "queued" and _is_new_commit:
-                        # New commit exists — auto-transition to pending_confirmation
-                        last_msg = await asyncio.get_event_loop().run_in_executor(
-                            None, _get_last_assistant_message, proj_id
-                        )
-                        summary = (last_msg or "")[:100].replace("\n", " ").strip()
-                        if not summary:
-                            summary = f"Auto-completed: git {current_hash[:8]}"
-                        _done_url = f"http://127.0.0.1:9001/api/northstar/{proj_id}/milestones/{stone_id}"
-                        _commit_patch: dict = {
-                            "status": "pending_confirmation",
-                            "summary": summary,
-                            "pending_confirm_at": __import__('datetime').datetime.utcnow().isoformat(),
-                        }
-                        _ev2 = _extract_evidence_url(last_msg or "")
-                        if _ev2:
-                            _commit_patch["evidence_url"] = _ev2
-                        _body = json.dumps(_commit_patch).encode()
-                        try:
-                            import urllib.request as _ur
-                            req = _ur.Request(_done_url, data=_body, method="PATCH",
-                                              headers={"Content-Type": "application/json"})
-                            _ur.urlopen(req, timeout=5)
-                            _active_stone_clear(proj_id)
-                            logger.info(f"[auto-complete] {proj_id}/{stone_id} → pending_confirmation (commit {current_hash[:8]})")
-                        except Exception as _e:
-                            logger.warning(f"[auto-complete] {proj_id}/{stone_id} PATCH failed: {_e}")
-                except Exception:
-                    pass  # worker must never crash
-
-    asyncio.create_task(_worker())
-
-
-@app.on_event("startup")
-async def _start_compact_monitor():
-    """M1198: Background compact monitor — checks context % every 5min for ALL running sessions.
-    Injects /compact when context > _COMPACT_THRESHOLD_PCT WITHOUT waiting for user interaction.
-    Fixes: compact only firing at reply-sync wake points (user messages) → autonomous sessions hit 99%.
-    """
-    _POLL_INTERVAL = 300  # 5 minutes
-
-    _hub_active_last_sent = {"ts": 0.0}  # throttle hub_active to once per hour
-
-    async def _monitor():
-        while True:
-            await asyncio.sleep(_POLL_INTERVAL)
-            try:
-                # M929: hub_active heartbeat — DAU signal, once per hour per install
-                import time as _time_mon
-                if _time_mon.monotonic() - _hub_active_last_sent["ts"] >= 3600:
-                    try:
-                        _record_usage_event("hub_active")
-                        _hub_active_last_sent["ts"] = _time_mon.monotonic()
-                    except Exception:
-                        pass
-                for proj in _load_projects():
-                    proj_id = proj.get("id")
-                    if not proj_id:
-                        continue
-                    # Only check active sessions
-                    session_name = _live_exec_session_name(proj_id)
-                    check = subprocess.run(["tmux", "has-session", "-t", session_name],
-                                           capture_output=True, timeout=2)
-                    if check.returncode != 0:
-                        continue
-                    # Check pane state: only inject if at prompt (not mid-response)
-                    try:
-                        pane = subprocess.run(
-                            ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-8"],
-                            capture_output=True, text=True, timeout=2,
-                        ).stdout
-                        at_prompt = "❯" in pane and "esc to i" not in pane and "… (" not in pane
-                    except Exception:
-                        continue
-                    if not at_prompt:
-                        continue
-                    # M1198-v3: use exec-aware guard (checks ALL recent transcripts, not just _current)
-                    if _compact_guard_check_exec(proj_id):
-                        _compact_last_injected[proj_id] = __import__('time').monotonic()
-                        subprocess.run(
-                            ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
-                            capture_output=True, timeout=2,
-                        )
-                        _pct_now = _get_context_pct_max_recent(proj_id)
-                        logger.info(f"[compact-monitor] {proj_id} context={_pct_now}% ≥{_COMPACT_THRESHOLD_PCT}% → /compact injected")
-            except Exception as _e:
-                logger.debug(f"[compact-monitor] error: {_e}")
-
-    asyncio.create_task(_monitor())
 
 
 def _encode_cwd_for_claude(cwd: str) -> str:
@@ -4458,28 +4179,13 @@ def _get_project_spawn_env(proj_id: str) -> dict:
     return {}
 
 
-def _mcp_disabled() -> bool:
-    """M1174: Returns True when hub is in LLM-independent mode (no MCP for exec sessions).
-    Persisted as user_settings key 'hub_mcp_disabled'."""
-    try:
-        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=2)
-        row = conn.execute("SELECT value_json FROM user_settings WHERE key='hub_mcp_disabled'").fetchone()
-        conn.close()
-        return bool(row and json.loads(row[0]))
-    except Exception:
-        return False
-
-
 def _write_mcp_config(proj_id: str, session_name: str) -> str | None:
     """Generate a per-session MCP config file for Claude Code.
-    Returns the config file path, or None if generation fails or MCP is disabled.
+    Returns the config file path, or None if generation fails.
     Applies to claude and openrouter sessions (both use the claude CLI with --mcp-config).
     Not for codex (separate binary) or dsk (Darwin bridge, limited function calling).
     M1116: openrouter added — LiteLLM-proxied models still run through claude CLI.
-    M1174: returns None when hub_mcp_disabled=true (LLM-independent mode).
     """
-    if _mcp_disabled():
-        return None
     try:
         hub_url = f"http://{_tailscale_interface_ip()}:{PORT}"
         mcp_dir = Path("/tmp/hub/mcp")
@@ -4554,79 +4260,21 @@ def _send_exec_wake(session_name: str, proj_id: str | None = None) -> None:
     )
 
 
-def _score_sentence(sent: str, role: str) -> float:
-    """M1193 v2: Non-LLM sentence importance scoring (decision-anchored extractive)."""
-    import re as _re_ss
-    s = sent.strip()
-    if not s:
-        return 0.0
-    score = 1.0
-    if _re_ss.search(r'\b(완료|수정|해결|적용|구현|commit|fix[ed]?|done|implemented|added|removed|replaced)\b', s, _re_ss.I):
-        score += 4.0
-    if _re_ss.search(r'(```|\.py|\.ts|\.html|\.md|server\.py|northstar\.html|:\d+|commit [0-9a-f]{5,})', s):
-        score += 3.0
-    if _re_ss.search(r'\b(error|bug|fail|warn|exception|traceback|오류|버그|경고|실패)\b', s, _re_ss.I):
-        score += 2.5
-    if s.endswith('?') or s.endswith('？') or _re_ss.search(r'\b(왜|어떻게|무엇|어디|언제|why|how|what|where|when)\b', s, _re_ss.I):
-        score += 2.0
-    if _re_ss.search(r'\b(원인|이유|because|caused|→|therefore|결론|핵심)\b', s, _re_ss.I):
-        score += 1.5
-    if len(s) < 25:
-        score -= 2.0
-    if s.startswith('#') or s.startswith('**') or s.startswith('- '):
-        score += 0.5
-    return max(0.0, score)
+_COMPACT_THRESHOLD_MB = 4  # M1185: ~80% of 200K window (calibrated: 5MB≈88%, 4MB≈80%)
 
 
-def _extract_key_sentence(text: str, role: str, max_chars: int = 200) -> str:
-    """M1193 v2: Extract the single most important sentence using importance scoring."""
-    import re as _re_eks
-    sentences = [s.strip() for s in _re_eks.split(r'(?<=[.!?。])\s+|\n', str(text or "")) if s.strip()]
-    if not sentences:
-        return (str(text or "").replace("\n", " ").strip())[:max_chars]
-    scored = [(s, _score_sentence(s, role)) for s in sentences if len(s) > 5]
-    if not scored:
-        return sentences[0][:max_chars]
-    return max(scored, key=lambda x: x[1])[0][:max_chars]
-
-
-def _semantic_compress_turns(turns: list) -> str:
-    """M1193 v2: Decision-anchored extractive compression (non-LLM SOTA).
-    Scores every sentence in each turn by signal density (decisions > code > errors > questions),
-    extracts the single most important sentence per turn.
-    Output: 'U1: <key-sentence> | C1: <key-sentence> | ...'"""
-    u_idx = c_idx = 0
-    parts = []
-    for turn in (turns or []):
-        if not isinstance(turn, dict):
-            continue
-        role = turn.get("role", "")
-        text = turn.get("text") or turn.get("content") or ""
-        if role == "user":
-            u_idx += 1
-            parts.append(f"U{u_idx}: {_extract_key_sentence(text, role)}")
-        elif role == "claude":
-            c_idx += 1
-            parts.append(f"C{c_idx}: {_extract_key_sentence(text, role)}")
-    return " | ".join(parts) if parts else f"({len(turns)} turns)"
-
-
-_COMPACT_THRESHOLD_MB = 2   # M1175: legacy file-size fallback (kept for reference)
-_COMPACT_THRESHOLD_PCT = 75   # M1198-v3: lowered from 80→75 for extra margin
-_COMPACT_RESET_PCT      = 60  # M1193: clear injected-flag when context drops below this (compaction done)
-_COMPACT_MODEL_MAX_TOKENS = 200_000  # Claude 4.x (sonnet/opus/haiku) all share 200K window
-_COMPACT_COOLDOWN_SEC = 1800  # M1193: safety fallback — force-clear flag after 30min if context never drops
-_compact_last_injected: dict[str, float] = {}  # M1193: proj_id → monotonic ts of last inject (state-based guard)
-
-
-def _get_transcript_path(proj_id: str):
-    """Return (transcript_path, sid) for the project's active session, or (None, '') on failure."""
+def _transcript_too_large(proj_id: str) -> bool:
+    """M1175: Return True when the current session transcript exceeds COMPACT_THRESHOLD_MB.
+    Used to decide whether to inject /compact before the next task wake message."""
     try:
         pdir = PROJECTS_DIR / proj_id
+        # M1175 fix: prefer explicit config, then case-insensitive dir search, then hub pdir fallback.
+        # _get_project_dir() is case-sensitive; MOAT lives at ~/Project/Moat not ~/Project/MOAT.
         _cfg_dir = _hub_config_get(proj_id, "project_dir")
         if not _cfg_dir:
             _cfg_dir = _get_project_dir(proj_id) or ""
         if not _cfg_dir:
+            # Case-insensitive fallback — scan common bases
             for _base in [Path.home() / "Project", Path.home() / "Project" / "VIDraft"]:
                 if _base.exists():
                     _match = next((str(c) for c in _base.iterdir() if c.name.lower() == proj_id.lower() and c.is_dir()), None)
@@ -4636,6 +4284,7 @@ def _get_transcript_path(proj_id: str):
         proj_dir = _cfg_dir or str(pdir)
         encoded = _encode_cwd_for_claude(str(proj_dir))
         transcripts_dir = Path.home() / ".claude" / "projects" / encoded
+        # Look up the active session ID from history
         hist_file = pdir / ".session-history.json"
         sid = ""
         if hist_file.exists():
@@ -4650,299 +4299,13 @@ def _get_transcript_path(proj_id: str):
             if last_id_file.exists():
                 sid = last_id_file.read_text().strip()
         if not sid:
-            return None, ""
+            return False
         t = transcripts_dir / f"{sid}.jsonl"
-        return (t if t.exists() else None), sid
-    except Exception:
-        return None, ""
-
-
-def _get_context_pct(proj_id: str) -> float | None:
-    """M1175 v2: Estimate actual context usage % by parsing the transcript JSONL.
-    Returns 0..100 float, or None if unable to determine.
-    Formula: (input_tokens + cache_creation_input_tokens + cache_read_input_tokens) / MODEL_MAX * 100
-
-    Reads last 64KB of file. Filters out post-compaction cache artifacts (> 120% of MODEL_MAX)
-    which arise when a session re-reads a large cache from a previous compacted turn.
-    Takes the highest VALID (≤ 120%) entry in the tail — i.e., the pre-compaction peak."""
-    _VALID_CEIL = _COMPACT_MODEL_MAX_TOKENS * 1.2  # 240K — above this = cache artifact, skip
-    try:
-        t, _ = _get_transcript_path(proj_id)
-        if t is None:
-            return None
-        with open(t, "rb") as f:
-            f.seek(0, 2)
-            size = f.tell()
-            f.seek(max(0, size - 65536))  # last 64KB
-            tail = f.read().decode("utf-8", errors="replace")
-        best_pct = None
-        for line in tail.splitlines():
-            line = line.strip()
-            if not line or '"usage"' not in line:
-                continue
-            try:
-                d = json.loads(line)
-                usage = d.get("usage") or (d.get("message") or {}).get("usage") or {}
-                if "input_tokens" not in usage:
-                    continue
-                total = (
-                    int(usage.get("input_tokens", 0))
-                    + int(usage.get("cache_creation_input_tokens", 0))
-                    + int(usage.get("cache_read_input_tokens", 0))
-                )
-                if 0 < total <= _VALID_CEIL:
-                    pct = round(total / _COMPACT_MODEL_MAX_TOKENS * 100, 1)
-                    if best_pct is None or pct > best_pct:
-                        best_pct = pct
-            except Exception:
-                continue
-        return best_pct
-    except Exception:
-        pass
-    return None
-
-
-def _get_context_pct_max_recent(proj_id: str, max_age_secs: int = 7200) -> float | None:
-    """M1198-v3: Return highest context% across ALL recently-modified transcripts.
-
-    Root cause fix: exec sessions create a NEW JSONL distinct from _current (the interactive
-    session). _get_context_pct only reads _current → returns wrong (low) %. This function
-    scans ALL JSONL files modified in the last max_age_secs and returns the MAX %, ensuring
-    the exec session's transcript is always checked regardless of which SID _current points to.
-    """
-    import time as _t_r
-    now_r = _t_r.time()
-    try:
-        _cfg_dir = None
-        try:
-            _cfg_dir = _hub_config_get(proj_id, "project_dir")
-        except Exception:
-            pass
-        if not _cfg_dir:
-            _cfg_dir = _get_project_dir(proj_id)
-        if not _cfg_dir:
-            return _get_context_pct(proj_id)
-        encoded = _encode_cwd_for_claude(str(_cfg_dir))
-        transcripts_dir = Path.home() / ".claude" / "projects" / encoded
-        if not transcripts_dir.exists():
-            return _get_context_pct(proj_id)
-        VALID_CEIL = _COMPACT_MODEL_MAX_TOKENS * 1.2
-        best_pct = None
-        for j in transcripts_dir.glob("*.jsonl"):
-            try:
-                st = j.stat()
-                if st.st_size < 65536:
-                    continue  # skip tiny files (< 64KB — no meaningful context yet)
-                if (now_r - st.st_mtime) > max_age_secs:
-                    continue  # stale file
-                with open(j, "rb") as f:
-                    f.seek(0, 2)
-                    sz = f.tell()
-                    f.seek(max(0, sz - 65536))
-                    tail = f.read().decode("utf-8", errors="replace")
-                for line in tail.splitlines():
-                    if '"usage"' not in line:
-                        continue
-                    try:
-                        d = json.loads(line)
-                        usage = d.get("usage") or (d.get("message") or {}).get("usage") or {}
-                        if "input_tokens" not in usage:
-                            continue
-                        total = (int(usage.get("input_tokens", 0))
-                                 + int(usage.get("cache_creation_input_tokens", 0))
-                                 + int(usage.get("cache_read_input_tokens", 0)))
-                        if 0 < total <= VALID_CEIL:
-                            pct = round(total / _COMPACT_MODEL_MAX_TOKENS * 100, 1)
-                            if best_pct is None or pct > best_pct:
-                                best_pct = pct
-                    except Exception:
-                        continue
-            except Exception:
-                continue
-        return best_pct if best_pct is not None else _get_context_pct(proj_id)
-    except Exception:
-        return _get_context_pct(proj_id)
-
-
-def _get_last_assistant_message(proj_id: str) -> str | None:
-    """M1174: Extract the last substantive assistant text from the transcript.
-    Used by auto-reply worker to post to stone when session goes idle.
-    Reads last 128KB; skips short acks (≤40 chars) and tool-only turns."""
-    t, _ = _get_transcript_path(proj_id)
-    if not t:
-        return None
-    try:
-        with open(t, "rb") as f:
-            f.seek(0, 2)
-            size = f.tell()
-            f.seek(max(0, size - 131072))
-            tail = f.read().decode("utf-8", errors="replace")
-        last_text: str | None = None
-        for line in tail.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                d = json.loads(line)
-                if d.get("type") != "assistant":
-                    continue
-                msg = d.get("message") or {}
-                if msg.get("type") != "message":
-                    continue
-                content = msg.get("content", [])
-                if isinstance(content, list):
-                    text_parts = [
-                        c.get("text", "").strip()
-                        for c in content
-                        if isinstance(c, dict) and c.get("type") == "text"
-                    ]
-                    full_text = "\n".join(p for p in text_parts if p)
-                elif isinstance(content, str):
-                    full_text = content.strip()
-                else:
-                    continue
-                if len(full_text) > 40:
-                    last_text = full_text
-            except Exception:
-                continue
-        return last_text
-    except Exception:
-        return None
-
-
-def _active_stone_get(proj_id: str) -> dict | None:
-    """M1174: Return the active stone record for a project, or None."""
-    try:
-        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
-        row = conn.execute(
-            "SELECT stone_id, dispatched_at, git_hash_at_dispatch, last_auto_reply_hash "
-            "FROM active_stones WHERE proj_id=?", (proj_id,)
-        ).fetchone()
-        conn.close()
-        if not row:
-            return None
-        return {"stone_id": row[0], "dispatched_at": row[1],
-                "git_hash_at_dispatch": row[2], "last_auto_reply_hash": row[3]}
-    except Exception:
-        return None
-
-
-def _active_stone_set(proj_id: str, stone_id: str, git_hash: str | None = None):
-    """M1174: Mark a stone as the active one being worked on for this project."""
-    from datetime import datetime as _dt
-    now = _dt.utcnow().isoformat()
-    try:
-        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
-        conn.execute(
-            "INSERT OR REPLACE INTO active_stones "
-            "(proj_id, stone_id, dispatched_at, git_hash_at_dispatch, updated_at) "
-            "VALUES (?,?,?,?,?)",
-            (proj_id, stone_id, now, git_hash, now)
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
-
-
-def _active_stone_clear(proj_id: str):
-    """M1174: Clear the active stone for a project (after completion)."""
-    try:
-        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
-        conn.execute("DELETE FROM active_stones WHERE proj_id=?", (proj_id,))
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
-
-
-def _active_stone_update_reply_hash(proj_id: str, reply_hash: str):
-    """M1174: Record hash of last auto-posted reply to avoid duplicates."""
-    from datetime import datetime as _dt
-    try:
-        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
-        conn.execute(
-            "UPDATE active_stones SET last_auto_reply_hash=?, updated_at=? WHERE proj_id=?",
-            (reply_hash, _dt.utcnow().isoformat(), proj_id)
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
-
-
-def _get_current_git_hash(repo_path: str | None) -> str | None:
-    """M1174: Return the current HEAD commit hash for a repo, or None."""
-    if not repo_path:
-        return None
-    try:
-        r = subprocess.run(
-            ["git", "-C", repo_path, "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=3
-        )
-        h = r.stdout.strip()
-        return h if h and len(h) > 6 else None
-    except Exception:
-        return None
-
-
-def _transcript_too_large(proj_id: str) -> bool:
-    """M1175 v2: Return True when context usage exceeds _COMPACT_THRESHOLD_PCT.
-    Primary: parse JSONL usage.input_tokens for precise % measurement.
-    Fallback: file size > _COMPACT_THRESHOLD_MB (when JSONL parsing fails)."""
-    try:
-        pct = _get_context_pct(proj_id)
-        if pct is not None:
-            return pct >= _COMPACT_THRESHOLD_PCT
-        # Fallback: file-size heuristic
-        t, _ = _get_transcript_path(proj_id)
-        if t is not None:
+        if t.exists():
             return t.stat().st_size > _COMPACT_THRESHOLD_MB * 1024 * 1024
     except Exception:
         pass
     return False
-
-
-def _compact_guard_check(proj_id: str) -> bool:
-    """M1193 state-based compact guard: returns True if /compact should be injected.
-    Clears the injected-flag when context % drops below _COMPACT_RESET_PCT (compaction done)
-    or after _COMPACT_COOLDOWN_SEC safety fallback. Only fires on rising-edge: clear→injected."""
-    import time as _t
-    _injected_at = _compact_last_injected.get(proj_id, 0.0)
-    if _injected_at > 0:
-        # Check if compaction succeeded: context dropped below reset threshold
-        _pct = _get_context_pct(proj_id)
-        if _pct is not None and _pct < _COMPACT_RESET_PCT:
-            _compact_last_injected.pop(proj_id, None)  # compaction done — allow next trigger
-        # Safety fallback: force-clear after 30min regardless
-        elif (_t.monotonic() - _injected_at) > _COMPACT_COOLDOWN_SEC:
-            _compact_last_injected.pop(proj_id, None)
-    return proj_id not in _compact_last_injected and _transcript_too_large(proj_id)
-
-
-def _compact_guard_check_exec(proj_id: str) -> bool:
-    """M1198-v3: Exec-session-aware compact guard.
-
-    Uses _get_context_pct_max_recent (scans ALL recent transcripts) instead of
-    _get_context_pct (_current only). Fixes the case where exec sessions create
-    a new JSONL not tracked by _current, causing context% to always appear low.
-    """
-    import time as _t_e
-    _injected_at = _compact_last_injected.get(proj_id, 0.0)
-    if _injected_at > 0:
-        _pct = _get_context_pct_max_recent(proj_id)
-        if _pct is not None and _pct < _COMPACT_RESET_PCT:
-            _compact_last_injected.pop(proj_id, None)
-        elif (_t_e.monotonic() - _injected_at) > _COMPACT_COOLDOWN_SEC:
-            _compact_last_injected.pop(proj_id, None)
-    if proj_id in _compact_last_injected:
-        return False
-    _pct2 = _get_context_pct_max_recent(proj_id)
-    if _pct2 is not None:
-        return _pct2 >= _COMPACT_THRESHOLD_PCT
-    # Fallback: file size
-    t, _ = _get_transcript_path(proj_id)
-    return t is not None and t.stat().st_size > _COMPACT_THRESHOLD_MB * 1024 * 1024
 
 
 def _record_spawn_info(proj_id: str, resume_args: list, agent: str = "claude") -> None:
@@ -5264,13 +4627,12 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
     if tmux_session_name and _HAS_PTY:
         import ptyprocess as _pty_mod
         try:
-            # M1125: replay up to 10000 lines of tmux scrollback (was 2000) so mobile
-            # users can scroll back through long exec sessions. tmux history-limit is 50000
-            # globally so the source has room; xterm.js scrollback is 5000 client-side which
-            # bounds the upper end. Timeout 3→8s to give large pane dumps room.
+            # M1125: replay up to 2000 lines of tmux scrollback on connect.
+            # history-limit is set to 2000 per session (set-option after new-session),
+            # so -S -2000 captures all available history; xterm.js scrollback is 5000.
             import subprocess as _sp
             _cap = _sp.run(
-                ["tmux", "capture-pane", "-p", "-J", "-S", "-10000", "-t", tmux_session_name],
+                ["tmux", "capture-pane", "-p", "-J", "-S", "-2000", "-t", tmux_session_name],
                 capture_output=True, text=True, timeout=8
             )
             if _cap.returncode == 0 and _cap.stdout.strip():
@@ -5534,7 +4896,10 @@ async def add_north_star(proj_id: str, request: Request):
     ns_list.append(new_ns)
     proj["north_stars"] = ns_list
     _save_project(proj_id, proj)  # M289: was _write_md_frontmatter — bypassed SQLite project_meta
-    _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
+    try:
+        _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
+    except Exception:
+        pass
     return JSONResponse({"ok": True, "north_star": new_ns})
 
 
@@ -5556,7 +4921,10 @@ async def delete_north_star(proj_id: str, ns_id: str):
         ns_list = [ns for ns in ns_list if ns.get("id") != ns_id]
         proj["north_stars"] = ns_list
     _save_project(proj_id, proj)  # M289: was _write_md_frontmatter — bypassed SQLite project_meta
-    _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
+    try:
+        _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
+    except Exception:
+        pass
     return JSONResponse({"ok": True})
 
 
@@ -5577,7 +4945,10 @@ async def update_north_star(proj_id: str, ns_id: str, request: Request):
             ns[field] = data[field] or None if field in ("default_agent", "assigned_session", "branch_from_session_id") else data[field]
     proj["north_stars"] = ns_list
     _save_project(proj_id, proj)  # M289: was _write_md_frontmatter — bypassed SQLite project_meta
-    _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
+    try:
+        _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
+    except Exception:
+        pass  # PermissionError or missing CLAUDE.md must not abort the primary SQLite save
     return JSONResponse({"ok": True, "north_star": ns})
 
 
@@ -5651,7 +5022,7 @@ async def generate_substar_agent(proj_id: str, ns_id: str, request: Request):
 
     # Collect related stone texts for context
     milestones = proj.get("milestones") or []
-    related = [m for m in milestones if m.get("substar_id") == ns_id or m.get("star_relation") == ns_id]
+    related = [m for m in milestones if m.get("substar_id") == ns_id]
     stone_texts = [m.get("text", "")[:120] for m in related[:8] if m.get("text")]
 
     import re as _re_local
@@ -5712,7 +5083,6 @@ async def generate_substar_agent(proj_id: str, ns_id: str, request: Request):
             f"PATCH /api/northstar/{{proj_id}}/milestones/{{mid}}",
             f"{{",
             f'  "status": "pending_confirmation",',
-            f'  "star_relation": "<one-line summary of what was done>",',
             f'  "model_used": "<model-id>",',
             f'  "exec_start": "<ISO timestamp>",',
             f'  "exec_end": "<ISO timestamp>",',
@@ -5746,7 +5116,7 @@ async def generate_substar_agent(proj_id: str, ns_id: str, request: Request):
             f"1. Read the full stone text before acting.",
             f"2. Implement the task completely.",
             f"3. PATCH `status=pending_confirmation` with `append_message` (<=1 line, past tense).",
-            f"4. Include `star_relation`, `model_used`, `exec_start`, `exec_end` in the same PATCH.",
+            f"4. Include `model_used`, `exec_start`, `exec_end` in the same PATCH.",
         ]
 
     skills_dir = Path.home() / ".claude" / "skills" / slug
@@ -6252,6 +5622,9 @@ async def create_milestone(proj_id: str, request: Request, background_tasks: Bac
     # in real time. Previously POST /milestones was invisible to the log panel.
     _server_log_action(proj_id, new_id, "stone_create",
                        f"L{layer} parent:{parent_id or '-'} status:{new_ms.get('status','')} text:{(new_ms.get('text') or '')[:80]}")
+    # M1211: stamp server blink on creation — new stone needs user attention
+    _blink_skey_create = new_ms.get("substar_id") or "__ungrouped__"
+    _mark_blink_server(proj_id, _blink_skey_create, new_id)
     return JSONResponse({"ok": True, "milestone": new_ms})
 
 
@@ -6334,8 +5707,8 @@ def _detect_code_change_signals(text: str) -> "dict | None":
 # to verify and attach a screenshot+counted observations as evidence.
 def _stone_completion_summary(m: dict) -> str:
     """M1126: extract 'what was ACTUALLY done' from a completed stone — the last
-    claude completion message (report_task_complete append_message), falling back
-    to star_relation. Fed into the review stone so the reviewer understands the
+    claude completion message (report_task_complete append_message).
+    Fed into the review stone so the reviewer understands the
     real change instead of re-deriving it from the original request text."""
     if not isinstance(m, dict):
         return ""
@@ -6343,7 +5716,7 @@ def _stone_completion_summary(m: dict) -> str:
     for e in reversed(conv):
         if isinstance(e, dict) and e.get("role") == "claude" and str(e.get("text", "")).strip():
             return str(e.get("text", "")).strip()[:240]
-    return str(m.get("star_relation", "") or "").strip()[:240]
+    return ""
 
 
 def _build_review_stone_text(mid: str, brief: str, change_summary: str = "") -> str:
@@ -6404,7 +5777,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
             _blink_old_status = m.get("status")  # M1007: capture pre-mutation status for server-side blink trigger
             # User-settable fields: text, layer, parent_id, claude_ack, status=queued/pending only
             # M216: `held` = user-paused stone, excluded from EXECUTE/REPLY SYNC queues until released.
-            for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id", "claude_comment", "star_relation", "substar_id", "held", "verify_flag",  # M964: verify toggle
+            for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id", "claude_comment", "substar_id", "held", "verify_flag",  # M964: verify toggle
                       "skill_ref", "agent_ref", "skill_refs", "agent_refs",
                       "total_tokens", "model_used", "exec_start", "exec_end",  # M287 monetization fields
                       "watching",   # M514: user-toggleable watch badge
@@ -6428,14 +5801,6 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                       "counterfactual_pair_id"):  # peer child stone ID at branch points
                 if k in data:
                     m[k] = data[k] if data[k] is not None else None
-                    # M118: clear stale star_relation when milestone text changes
-                    if k == "text" and data[k]:
-                        m.pop("star_relation", None)
-                    # M266: when star_relation is (re)set, snapshot the current project
-                    # target so the UI can later flag the rationale as stale (⚠ overlay)
-                    # if the user moves the goalpost. Zero token cost — purely server-side.
-                    if k == "star_relation" and data[k]:
-                        m["star_target_at_completion"] = proj.get("target") or None
                     # M511: auto-stamp evidence_updated_at when evidence_url changes
                     if k == "evidence_url" and data[k]:
                         m["evidence_updated_at"] = now_iso
@@ -6572,24 +5937,13 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                                 _q_tokens = _toks(_q_text)
                                 if _q_tokens:
                                     _scored = []
-                                    _n_lines = len(_non_empty)
                                     for _idx, _ln in enumerate(_non_empty):
                                         _ov = len(_q_tokens & _toks(_ln))
-                                        # M1161 v3: first-line bias raised 1→8 so the direct
-                                        # answer (almost always line 0) survives compression.
-                                        # Last-line bias stays at 1 (summary/next-action).
-                                        _bias = (8 if _idx == 0 else 0) + (1 if _idx == _n_lines - 1 else 0)
+                                        _bias = (1 if _idx == 0 else 0) + (1 if _idx == len(_non_empty) - 1 else 0)
                                         _scored.append((_idx, _ln, _ov * 10 + _bias))
                                     _top = sorted(_scored, key=lambda x: -x[2])[:_MAX_LINES]
                                     _top_ordered = sorted(_top, key=lambda x: x[0])
                                     _chosen = [t[1] for t in _top_ordered]
-                                    # Faithfulness gate: if line 0 of the response was dropped
-                                    # (scored below threshold) and no Q-token in any chosen line,
-                                    # prepend line 0 as the direct-answer anchor.
-                                    _chosen_set = set(t[0] for t in _top)
-                                    _has_q_hit = any(len(_q_tokens & _toks(_ln)) > 0 for _ln in _chosen)
-                                    if 0 not in _chosen_set and not _has_q_hit:
-                                        _chosen = [_non_empty[0]] + _chosen[: _MAX_LINES - 1]
                         if _chosen is None:
                             # Fallback: head + tail (preserve flow when no Q-anchor)
                             _chosen = _non_empty[: _MAX_LINES // 2] + _non_empty[-(_MAX_LINES - _MAX_LINES // 2):]
@@ -6672,28 +6026,6 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                             m["done"] = False
                             m["pending_confirm_at"] = now_iso  # always update so _isLastTurn detects re-completions
                             m.setdefault("claude_ack", now_iso)
-                            # M929: stone_complete telemetry on implicit queued→pending_confirmation
-                            try:
-                                import hashlib as _hlib, datetime as _dts
-                                _es = m.get("exec_start") or m.get("queued_at")
-                                _ee = now_iso
-                                _dur = None
-                                if _es and _ee:
-                                    try:
-                                        _ds = _dts.datetime.fromisoformat(_es[:16])
-                                        _de = _dts.datetime.fromisoformat(_ee[:16])
-                                        _dur = max(0, int((_de - _ds).total_seconds()))
-                                    except Exception:
-                                        pass
-                                _record_usage_event("stone_complete", {
-                                    "model_used": m.get("model_used"),
-                                    "total_tokens": m.get("total_tokens"),
-                                    "exec_time_sec": _dur,
-                                    "layer": m.get("layer", 0),
-                                    "proj_hash": _hlib.sha256(proj_id.encode()).hexdigest()[:8],
-                                })
-                            except Exception:
-                                pass
                     # M722: server-side keyword-detection fallback for [검수] auto-trigger.
                     # Fires on claude append_message when status was NOT "queued" before this PATCH
                     # (queued→pending_confirmation path already handled by exec-agent's M767 inline
@@ -6871,81 +6203,15 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                     m["clarification_answered_at"] = now_iso
             elif new_status == "pending_confirmation":
                 # Stop hook: waiting for user to confirm within 24h
-                _prev_pc_status = m.get("status")
                 m["status"] = "pending_confirmation"
                 m["done"] = False
                 m["pending_confirm_at"] = now_iso  # always update for _isLastTurn green border
-                # M929: stone_complete telemetry — fire when first transitioning to pending_confirmation
-                if _prev_pc_status == "queued":
-                    try:
-                        import hashlib as _hlib2, datetime as _dts2
-                        _es2 = m.get("exec_start") or m.get("queued_at")
-                        _ee2 = now_iso
-                        _dur2 = None
-                        if _es2 and _ee2:
-                            try:
-                                _ds2 = _dts2.datetime.fromisoformat(_es2[:16])
-                                _de2 = _dts2.datetime.fromisoformat(_ee2[:16])
-                                _dur2 = max(0, int((_de2 - _ds2).total_seconds()))
-                            except Exception:
-                                pass
-                        _record_usage_event("stone_complete", {
-                            "model_used": m.get("model_used") or data.get("model_used"),
-                            "total_tokens": m.get("total_tokens") or data.get("total_tokens"),
-                            "exec_time_sec": _dur2,
-                            "layer": m.get("layer", 0),
-                            "proj_hash": _hlib2.sha256(proj_id.encode()).hexdigest()[:8],
-                        })
-                    except Exception:
-                        pass
-                # ── M1174 P1: LLM-Independent Validation Layer ──────────────────
-                # P1①: Schema validation — log missing required completion fields.
-                # Non-blocking: warns but does not reject (LLM already has _skill_instruction).
-                # M1174: star_relation removed (feature being deprecated).
-                _p1_missing = []
-                if not data.get("append_message") and not any(
-                    c.get("role") == "claude" for c in (m.get("conversation") or [])[-3:]
-                ):
-                    _p1_missing.append("append_message")
-                if _p1_missing:
-                    _server_log_action(proj_id, mid, "warn:p1_schema_incomplete",
-                                       f"pending_confirmation missing: {', '.join(_p1_missing)}")
-                    m.setdefault("_p1_warnings", []).extend(_p1_missing)
-
-                # P1⑨: Git as Source of Truth — auto-stamp git HEAD hash at completion time.
-                # Provides verifiable evidence of what code state the LLM worked on.
-                # If git HEAD didn't advance since exec_start, may indicate no actual code change.
-                try:
-                    _p1_proj_dir = _get_project_dir(proj_id)
-                    if _p1_proj_dir and Path(_p1_proj_dir).exists():
-                        _p1_git = subprocess.run(
-                            ["git", "-C", str(_p1_proj_dir), "rev-parse", "--short", "HEAD"],
-                            capture_output=True, text=True, timeout=2,
-                        )
-                        _p1_hash = _p1_git.stdout.strip()
-                        if _p1_hash:
-                            import json as _p1_json
-                            _p1_conf = {}
-                            try:
-                                _p1_conf = _p1_json.loads(m.get("confounder") or "{}")
-                            except Exception:
-                                pass
-                            _p1_conf["git_hash_at_completion"] = _p1_hash
-                            # P1③: Observable side effects check.
-                            # Compare HEAD at completion vs at exec start (if captured).
-                            _p1_hash_at_start = _p1_conf.get("git_hash")  # stamped by confounder
-                            if _p1_hash_at_start and _p1_hash_at_start == _p1_hash:
-                                # Same commit: no code changes observed — log as warning
-                                _server_log_action(proj_id, mid, "warn:p1_no_git_advance",
-                                                   f"git HEAD unchanged at completion ({_p1_hash}) — possible no-op")
-                                _p1_conf["p1_side_effect_warning"] = "no_git_advance"
-                            m["confounder"] = _p1_json.dumps(_p1_conf)
-                except Exception:
-                    pass
-                # ── end M1174 P1 ─────────────────────────────────────────────────
                 # M1047/M1145: evidence_url validation — warn when result-producing work has no proof attached
                 _ev_url = data.get("evidence_url") or m.get("evidence_url") or ""
-                _stone_txt = (m.get("text") or "").lower()
+                # Strip PASTE attachment paths before keyword check — filenames like
+                # "스크린샷_....png" inside PASTE/.../PASTE blocks would falsely trigger.
+                import re as _re_ev
+                _stone_txt = _re_ev.sub(r'PASTE/\S+/PASTE', '', (m.get("text") or "")).lower()
                 # M1145: expanded keyword set — catches docs, Excel, analysis, code, UI, screenshots
                 _result_keywords = (
                     "화면", "ui", "스크린샷", "검수", "screenshot", "visual", "proof", "chart", "table",
@@ -6970,12 +6236,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                 if _last_msg_role != "claude" and not data.get("append_message"):
                     # Build fallback text from stone context
                     _stone_text = (m.get("text") or m.get("content") or "")[:60].strip()
-                    _rel = (m.get("star_relation") or "").strip()
-                    _fallback_text = (
-                        f"완료. ({_rel})" if _rel
-                        else f"완료. ({_stone_text})" if _stone_text
-                        else "완료."
-                    )
+                    _fallback_text = f"완료. ({_stone_text})" if _stone_text else "완료."
                     _fb_msg = {"role": "claude", "text": _fallback_text,
                                "ts": _dt.datetime.now().isoformat(),
                                "_auto_fallback": True}
@@ -7118,7 +6379,22 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                 # the agent / UI a glanceable history without inflating payload.
                 _conv_full = m.get("conversation") or []
                 if _conv_full and not m.get("conversation_summary"):
-                    m["conversation_summary"] = _semantic_compress_turns(_conv_full)  # M1193
+                    def _trim(_t):
+                        _t = str(_t or "").replace("\n", " ").strip()
+                        return _t if len(_t) <= 160 else _t[:157] + "..."
+                    _user_msgs = [c for c in _conv_full if c.get("role") == "user"]
+                    _claude_msgs = [c for c in _conv_full if c.get("role") == "claude"]
+                    _first_user = _user_msgs[0] if _user_msgs else None
+                    _last_user = _user_msgs[-1] if _user_msgs else None
+                    _last_claude = _claude_msgs[-1] if _claude_msgs else None
+                    _lines = []
+                    if _first_user:
+                        _lines.append("U1: " + _trim(_first_user.get("text") or _first_user.get("content")))
+                    if _last_user and _last_user is not _first_user:
+                        _lines.append("Un: " + _trim(_last_user.get("text") or _last_user.get("content")))
+                    if _last_claude:
+                        _lines.append("C: " + _trim(_last_claude.get("text") or _last_claude.get("content")))
+                    m["conversation_summary"] = "\n".join(_lines)
                     m["conversation_turn_count"] = len(_conv_full)
                 # M550 v2: when a [검수] review child reaches done, auto-confirm its mother
                 # IF (a) mother is in pending_confirmation, AND (b) all other children of the
@@ -7169,7 +6445,22 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                             # to the mother so dashboard/agent can still read history.
                             _par_conv = _par_stone.get("conversation") or []
                             if _par_conv and not _par_stone.get("conversation_summary"):
-                                _par_stone["conversation_summary"] = _semantic_compress_turns(_par_conv)  # M1193
+                                def _trim_p(_t):
+                                    _t = str(_t or "").replace("\n", " ").strip()
+                                    return _t if len(_t) <= 160 else _t[:157] + "..."
+                                _u_msgs = [c for c in _par_conv if c.get("role") == "user"]
+                                _c_msgs = [c for c in _par_conv if c.get("role") == "claude"]
+                                _f_user = _u_msgs[0] if _u_msgs else None
+                                _l_user = _u_msgs[-1] if _u_msgs else None
+                                _l_claude = _c_msgs[-1] if _c_msgs else None
+                                _ls = []
+                                if _f_user:
+                                    _ls.append("U1: " + _trim_p(_f_user.get("text") or _f_user.get("content")))
+                                if _l_user and _l_user is not _f_user:
+                                    _ls.append("Un: " + _trim_p(_l_user.get("text") or _l_user.get("content")))
+                                if _l_claude:
+                                    _ls.append("C: " + _trim_p(_l_claude.get("text") or _l_claude.get("content")))
+                                _par_stone["conversation_summary"] = "\n".join(_ls)
                                 _par_stone["conversation_turn_count"] = len(_par_conv)
                             _server_log_action(proj_id, _par_id, "auto_confirm_after_review",
                                                f"review child {mid} done — mother auto-confirmed")
@@ -7221,17 +6512,21 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
             _server_log_action(proj_id, _rev_id, "auto_review_created", f"review sub-stone for {mid}")
         # M749: e2e auto-creation removed — was creating pairs ([검수]+[e2e]) per completion
     proj["milestones"] = milestones
-    # M1200 fix: only stamp server blink on status transitions that require user attention
-    # (pending_confirmation = user must review). append_message alone caused phantom blinks
-    # every time Claude auto-wrote to a stone during exec sessions — not user-relevant.
+    # M1007 v2 / M1213: server-side blink trigger — fire ONLY on status transitions.
+    # Removed `or ("append_message" in data)`: exec sessions append messages every ~60s
+    # which refreshed blink_state ts continuously, causing stones like M1016 to blink
+    # indefinitely despite being unchanged in status for days. Client hash is now
+    # status-only (M1213), server aligns: blink = status change only.
+    # M1216: done/skipped transitions REMOVE the mid from blink_state (not add) so
+    # section bars don't blink indefinitely after all stones are completed.
     try:
-        _new_s = updated_m.get("status") if updated_m else None
-        _status_changed = updated_m and _new_s != _blink_old_status
-        # Only user-review-required status transitions trigger blink
-        _blink_changed = _status_changed and _new_s in ("pending_confirmation",)
+        _BLINK_DONE_ST = {"done", "skipped", "pending_confirmation"}  # M1222: pending_confirmation = Claude finished, no blink needed
+        _new_status = updated_m.get("status") if updated_m else None
+        _blink_changed = (updated_m and _new_status != _blink_old_status)
         if updated_m and _blink_changed:
             _blink_skey = updated_m.get("substar_id") or "__ungrouped__"
-            _mark_blink_server(proj_id, _blink_skey, updated_m.get("id") or mid)
+            _mid_id = updated_m.get("id") or mid
+            _mark_blink_server(proj_id, _blink_skey, _mid_id, remove=(_new_status in _BLINK_DONE_ST))
     except Exception:
         pass
     # M288: save synchronously when queuing so /execute sees the updated status immediately
@@ -7296,93 +6591,93 @@ async def delete_milestone(proj_id: str, mid: str, background_tasks: BackgroundT
     _parse_cache.pop(str(md), None)
     import copy as _c278d
     background_tasks.add_task(_save_project, proj_id, _c278d.deepcopy(proj))
+    # M1219: remove deleted stone from blink_state so stale blink doesn't persist
+    if removed > 0 and deleted_stone:
+        try:
+            _blink_skey_del = (deleted_stone.get("substar_id") or "__ungrouped__")
+            _mark_blink_server(proj_id, _blink_skey_del, mid, remove=True)
+        except Exception:
+            pass
     return JSONResponse({"ok": True, "removed": removed})
 
 
+
+
+
+
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/move-to-project")
-async def move_stone_to_project(proj_id: str, mid: str, request: Request, background_tasks: BackgroundTasks):
-    """M1199: Move a stone (and its children) to another project's ungrouped section.
-    Target stone gets a new ID. Source stone is deleted. Origin tracked in moved_from field.
-    """
+async def move_milestone_to_project(proj_id: str, mid: str, request: Request, background_tasks: BackgroundTasks):
+    """M1226: Move a stone from proj_id to target_proj_id. Assigns new ID in target, preserves content + conversation."""
     data = await request.json()
     target_proj_id = (data.get("target_proj_id") or "").strip()
-    if not target_proj_id or target_proj_id == proj_id:
-        return JSONResponse({"ok": False, "error": "invalid or same-project target"}, status_code=400)
-    if not (PROJECTS_DIR / target_proj_id).is_dir():
-        return JSONResponse({"ok": False, "error": "target project not found"}, status_code=404)
+    if not target_proj_id:
+        return JSONResponse({"ok": False, "error": "target_proj_id required"}, status_code=400)
+    if target_proj_id == proj_id:
+        return JSONResponse({"ok": False, "error": "source and target project are the same"}, status_code=400)
 
-    # Load both projects
+    # Verify both projects exist
+    src_dir = PROJECTS_DIR / proj_id
+    tgt_dir = PROJECTS_DIR / target_proj_id
+    if not src_dir.is_dir():
+        return JSONResponse({"ok": False, "error": f"source project {proj_id} not found"}, status_code=404)
+    if not tgt_dir.is_dir():
+        return JSONResponse({"ok": False, "error": f"target project {target_proj_id} not found"}, status_code=404)
+
+    # Load source project, find stone
     src_proj = _db_load_project(proj_id) or {}
-    tgt_proj = _db_load_project(target_proj_id) or {}
     src_ms = src_proj.get("milestones", [])
-    tgt_ms = tgt_proj.get("milestones", [])
-
-    # Find stone + its children
     stone = next((m for m in src_ms if isinstance(m, dict) and m.get("id") == mid), None)
     if not stone:
-        return JSONResponse({"ok": False, "error": "stone not found"}, status_code=404)
-    children = [m for m in src_ms if isinstance(m, dict) and m.get("parent_id") == mid]
+        return JSONResponse({"ok": False, "error": f"stone {mid} not found in {proj_id}"}, status_code=404)
 
-    # Generate new top-level ID in target project
-    import re as _re_mv
-    tgt_existing = {m.get("id", "") for m in tgt_ms if isinstance(m, dict)}
-    nums = [int(x[1:]) for x in tgt_existing if _re_mv.match(r'^M\d+$', x)]
+    # Load target project, generate new ID
+    tgt_proj = _db_load_project(target_proj_id) or {}
+    tgt_ms = tgt_proj.get("milestones", [])
+    existing_ids = {m.get("id", "") for m in tgt_ms if isinstance(m, dict)}
+    nums = [int(m.get("id", "M0")[1:]) for m in tgt_ms
+            if isinstance(m, dict) and str(m.get("id", "")).startswith("M")
+            and str(m.get("id", ""))[1:].isdigit()]
     n = (max(nums) if nums else 0) + 1
-    while f"M{n}" in tgt_existing:
-        n += 1
     new_id = f"M{n}"
+    while new_id in existing_ids:
+        n += 1
+        new_id = f"M{n}"
 
-    # Clone root stone into target — ungrouped (layer=0, no substar, no parent)
-    from datetime import datetime as _dt_mv
-    import copy as _cp_mv
-    new_stone = _cp_mv.deepcopy(stone)
-    new_stone["id"] = new_id
-    new_stone["layer"] = 0
-    new_stone["parent_id"] = None
-    new_stone["substar_id"] = None
-    new_stone["moved_from"] = f"{proj_id}/{mid}"
-    new_stone["user_added_at"] = _dt_mv.now().strftime("%Y-%m-%dT%H:%M")
+    # Build moved stone — copy all fields, assign new ID, record moved_from
+    import copy as _cp_move
+    moved = _cp_move.deepcopy(stone)
+    moved["id"] = new_id
+    moved["moved_from"] = f"{proj_id}/{mid}"
+    moved["substar_id"] = None  # ungrouped in target — user can reassign
+    moved["layer"] = 0
+    moved["parent_id"] = None
 
-    tgt_ms.insert(0, new_stone)
-    tgt_existing.add(new_id)
-
-    # Clone children with renumbered IDs
-    child_id_map = {}
-    for child in children:
-        c_nums = [int(x[1:]) for x in tgt_existing if _re_mv.match(r'^M\d+$', x)]
-        c_n = (max(c_nums) if c_nums else 0) + 1
-        while f"M{c_n}" in tgt_existing:
-            c_n += 1
-        c_new_id = f"M{c_n}"
-        child_id_map[child["id"]] = c_new_id
-        new_child = _cp_mv.deepcopy(child)
-        new_child["id"] = c_new_id
-        new_child["parent_id"] = new_id
-        new_child["substar_id"] = None
-        new_child["moved_from"] = f"{proj_id}/{child['id']}"
-        tgt_ms.insert(0, new_child)
-        tgt_existing.add(c_new_id)
-
-    # Remove stone + children from source
-    remove_ids = {mid} | set(child_id_map.keys())
-    src_proj["milestones"] = [m for m in src_ms
-                               if isinstance(m, dict) and m.get("id") not in remove_ids]
-
+    # Insert at top of target project
+    tgt_ms.insert(0, moved)
     tgt_proj["milestones"] = tgt_ms
-    import copy as _cp_mv2
-    _db_save_project(proj_id, src_proj)
     _db_save_project(target_proj_id, tgt_proj)
-    background_tasks.add_task(_save_project, proj_id, _cp_mv2.deepcopy(src_proj))
-    background_tasks.add_task(_save_project, target_proj_id, _cp_mv2.deepcopy(tgt_proj))
+    import copy as _cp_move2
+    background_tasks.add_task(_save_project, target_proj_id, _cp_move2.deepcopy(tgt_proj))
 
-    return JSONResponse({
-        "ok": True,
-        "new_id": new_id,
-        "target_proj_id": target_proj_id,
-        "children_moved": len(child_id_map),
-    })
+    # Remove from source project (and its children)
+    src_proj["milestones"] = [m for m in src_ms
+                               if isinstance(m, dict) and m.get("id") != mid
+                               and m.get("parent_id") != mid]
+    _db_save_project(proj_id, src_proj)
+    _parse_cache.pop(str(src_dir / "north-star.md"), None)
+    import copy as _cp_move3
+    background_tasks.add_task(_save_project, proj_id, _cp_move3.deepcopy(src_proj))
 
+    # Remove stale blink entry from source
+    try:
+        _blink_skey_mv = stone.get("substar_id") or "__ungrouped__"
+        _mark_blink_server(proj_id, _blink_skey_mv, mid, remove=True)
+    except Exception:
+        pass
 
+    _server_log_action(proj_id, mid, "stone_move",
+                       f"moved to {target_proj_id} as {new_id}")
+    return JSONResponse({"ok": True, "new_id": new_id, "target_proj_id": target_proj_id})
 
 
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/compress-conv")
@@ -7406,7 +6701,14 @@ async def compress_milestone_conv(proj_id: str, mid: str, request: Request):
                 return JSONResponse({"ok": True, "summary_text": None, "kept": len(conv), "compressed": 0})
             old_turns = conv[:-keep_last]
             recent_turns = conv[-keep_last:]
-            summary_text = _semantic_compress_turns(old_turns)  # M1193: semantic not structural
+            _trim = lambda t: (str(t or "").replace("\n", " ").strip())[:150]
+            _u = [c for c in old_turns if c.get("role") == "user"]
+            _c = [c for c in old_turns if c.get("role") == "claude"]
+            lines = []
+            if _u: lines.append("U: " + _trim(_u[0].get("text") or _u[0].get("content", "")))
+            if len(_u) > 1: lines.append("Un: " + _trim(_u[-1].get("text") or _u[-1].get("content", "")))
+            if _c: lines.append("C: " + _trim(_c[-1].get("text") or _c[-1].get("content", "")))
+            summary_text = " | ".join(lines) if lines else f"({len(old_turns)} turns compressed)"
             summary_entry = {"role": "summary", "text": summary_text,
                              "ts": old_turns[-1].get("ts", ""), "compressed_count": len(old_turns)}
             m["conversation"] = [summary_entry] + recent_turns
@@ -7431,7 +6733,6 @@ async def milestone_rationale(proj_id: str, mid: str):
     ms_text    = str(ms.get("text", ""))
     gap_str = f" ({ns_current} → {ns_target})" if ns_current and ns_target else ""
     rationale = f"Closes the {ns_metric}{gap_str} gap by: {ms_text}"
-    ms["star_relation"] = rationale
     _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "rationale": rationale})
 
@@ -7499,37 +6800,6 @@ async def get_milestone_commits(proj_id: str, mid: str):
         ]})
     except Exception as e:
         return JSONResponse({"ok": False, "commits": [], "error": str(e)})
-
-
-@app.get("/api/northstar/{proj_id}/active-stone")
-async def get_active_stone(proj_id: str):
-    """M1174: Return the active stone being worked on for this project."""
-    rec = _active_stone_get(proj_id)
-    if rec:
-        return JSONResponse({"ok": True, "active_stone": rec})
-    return JSONResponse({"ok": True, "active_stone": None})
-
-
-@app.post("/api/northstar/{proj_id}/active-stone")
-async def set_active_stone(proj_id: str, request: Request):
-    """M1174: Set the active stone for this project session (called by session-start hook)."""
-    body = await request.json()
-    stone_id = body.get("stone_id", "").strip()
-    if not stone_id:
-        return JSONResponse({"ok": False, "error": "stone_id required"}, status_code=400)
-    # Get current git hash for the project repo
-    _pl = [p for p in _load_projects() if p.get("id") == proj_id]
-    _repo = _pl[0].get("repo_path") if _pl else None
-    git_hash = _get_current_git_hash(_repo)
-    _active_stone_set(proj_id, stone_id, git_hash)
-    return JSONResponse({"ok": True, "stone_id": stone_id, "git_hash": git_hash})
-
-
-@app.delete("/api/northstar/{proj_id}/active-stone")
-async def clear_active_stone(proj_id: str):
-    """M1174: Clear the active stone for this project (after completion or manual reset)."""
-    _active_stone_clear(proj_id)
-    return JSONResponse({"ok": True})
 
 
 @app.get("/api/northstar/{proj_id}/decisions")
@@ -8138,12 +7408,11 @@ async def execute_project(proj_id: str, request: Request):
                                     + f"PARALLEL SUB-AGENT STEPS — each sub-agent:\n"
                                     f"  1) mcp__ns-hub__get_task_details(task_id='<MID>') for full stone\n"
                                     f"  2) implement (Edit/Bash/Skill/Agent as needed)\n"
-                                    f"  3) mcp__ns-hub__report_task_complete(task_id, summary, star_relation)\n\n"
+                                    f"  3) mcp__ns-hub__report_task_complete(task_id, summary)\n\n"
                                     f"COMPLETION — when each stone is done:\n"
                                     f"  mcp__ns-hub__report_task_complete(\n"
                                     f"    task_id='<MID>',\n"
-                                    f"    summary='<1-line past-tense>',\n"
-                                    f"    star_relation='<how this closes the goal>'\n"
+                                    f"    summary='<1-line past-tense>'\n"
                                     f"  )\n"
                                     f"  Q&A reply: mcp__ns-hub__reply_to_stone(task_id='<MID>', message='<≤3 lines>')\n"
                                     f"  No-op: mcp__ns-hub__reply_to_stone(task_id='<MID>', message='<1-line reason>') — silent skip forbidden.\n\n"
@@ -8176,10 +7445,10 @@ async def execute_project(proj_id: str, request: Request):
                                     + f"PARALLEL SUB-AGENT STEPS — each sub-agent:\n"
                                     f"  1) GET {hub_api}/api/northstar/{proj_id}/milestones for full stone\n"
                                     f"  2) implement (Edit/Bash/Skill/Agent as needed)\n"
-                                    f"  3) PATCH status=pending_confirmation + append_message + star_relation + model_used + exec_start + exec_end\n\n"
+                                    f"  3) PATCH status=pending_confirmation + append_message + model_used + exec_start + exec_end\n\n"
                                     f"COMPLETION PROTOCOL — PATCH status=pending_confirmation with ALL of:\n"
                                     f"  append_message: {{\"role\":\"claude\",\"text\":\"<1-line PAST TENSE summary>\"}}\n"
-                                    f"  star_relation, model_used, exec_start, exec_end\n"
+                                    f"  model_used, exec_start, exec_end\n"
                                     f"  NO-OP: POST 1-line append_message with reason — silent skip forbidden.\n\n"
                                     + _waves_section
                                     + f"Newly queued:\n{_ms_snap}"
@@ -8208,20 +7477,11 @@ async def execute_project(proj_id: str, request: Request):
                                     _has_prompt = "❯" in _pane
                                     _actively_blocked = "esc to i" in _pane or _modal
                                     if _has_prompt and not _actively_blocked:
-                                        # M1198-v3: exec-aware guard; skip dispatch when compact fires
-                                        if _compact_guard_check_exec(proj_id):
-                                            _compact_last_injected[proj_id] = __import__('time').monotonic()
-                                            subprocess.run(
-                                                ["tmux", "send-keys", "-t", session_name, "/compact", "Enter"],
-                                                capture_output=True, timeout=2,
-                                            )
-                                            logger.info(f"[exec-wake] pre-compact: {proj_id} → /compact injected, deferring dispatch")
-                                            # DON'T dispatch — queue-continuation-poller re-checks in 30s
-                                        else:
-                                            # M1114: two-step skill pre-inject if stone has skill_refs
-                                            _send_exec_wake(session_name, proj_id)
-                                            _wake_sent = True
-                                            _ns_push("session_running", proj_id=proj_id, kind="exec")
+                                        # M1230: auto-compact disabled by user request
+                                        # M1114: two-step skill pre-inject if stone has skill_refs
+                                        _send_exec_wake(session_name, proj_id)
+                                        _wake_sent = True
+                                        _ns_push("session_running", proj_id=proj_id, kind="exec")
                                 except Exception:
                                     pass
                             _trigger_sent = True
@@ -8273,6 +7533,7 @@ async def execute_project(proj_id: str, request: Request):
                                             ["tmux", "new-session", "-d", "-s", _br_sess, "-c", _br_spawn_cwd]
                                             + _br_env + _br_claude_cmd
                                         )
+                                        subprocess.run(["tmux", "set-option", "-t", _br_sess, "history-limit", "2000"], capture_output=True, timeout=2)
                                         subprocess.run(["tmux", "send-keys", "-t", _br_sess, "go", "Enter"], capture_output=True, timeout=2)
                                         _branched_spawned.append(_br_sess)
                                         _server_log_action(proj_id, "", "exec:branch_spawned", _br_sess)
@@ -8343,7 +7604,7 @@ async def execute_project(proj_id: str, request: Request):
                     f"  2. Edit/write files to implement the milestone.\n"
                     f"  3. Append completion-log:\n"
                     f'     echo \'{{\"session_id\":\"exec\",\"milestone_id\":\"<MID>\",\"evidence\":\"<one-line summary>\",\"timestamp\":\"\'$(date -Iseconds)\'\"}}\' >> ~/.hub/projects/{proj_id}/completion-log.jsonl\n'
-                    f"  4. PATCH {hub_api}/api/northstar/{proj_id}/milestones/<MID> body {{\"status\":\"pending_confirmation\", \"star_relation\":\"<1-line gap closure>\", \"model_used\":\"<model name>\", \"session_id\":\"$CLAUDE_CODE_SESSION_ID\", \"exec_start\":\"<ISO start>\", \"exec_end\":\"<ISO now>\", \"append_message\":{{\"role\":\"claude\",\"text\":\"<1-line PAST TENSE: what was completed and its outcome — NOT what to do>\"}}}}\n"
+                    f"  4. PATCH {hub_api}/api/northstar/{proj_id}/milestones/<MID> body {{\"status\":\"pending_confirmation\", \"model_used\":\"<model name>\", \"session_id\":\"$CLAUDE_CODE_SESSION_ID\", \"exec_start\":\"<ISO start>\", \"exec_end\":\"<ISO now>\", \"append_message\":{{\"role\":\"claude\",\"text\":\"<1-line PAST TENSE: what was completed and its outcome — NOT what to do>\"}}}}\n"
                     f"  5. Mark the item completed in your plan.\n\n"
                     f"If a milestone is ambiguous, mark it `needs_clarification` and ask for the missing detail.\n"
                 )
@@ -8368,6 +7629,7 @@ async def execute_project(proj_id: str, request: Request):
                     *_get_agent_spawn_cmd(proj_id),
                     *resume_args,
                 ])
+                subprocess.run(["tmux", "set-option", "-t", session_name, "history-limit", "2000"], capture_output=True, timeout=2)
                 _exec_idle_file(proj_id).unlink(missing_ok=True)  # M536: clear idle flag on spawn
                 _server_log_action(proj_id, "", "exec:spawn", f"session:{session_name} resume:{resume_args[-1] if resume_args else 'fresh'}")
                 # M366: immediately push running status so ns-card shows green border without waiting for poller
@@ -8542,8 +7804,7 @@ async def execute_project(proj_id: str, request: Request):
                 f"  4. Append completion-log:\n"
                 f'     echo \'{{\"session_id\":\"exec\",\"milestone_id\":\"<MID>\",\"evidence\":\"<one-line summary>\",\"timestamp\":\"\'$(date -Iseconds)\'\"}}\' >> ~/.hub/projects/{proj_id}/completion-log.jsonl\n'
                 f"  5. PATCH {hub_api}/api/northstar/{proj_id}/milestones/<MID> body:\n"
-                f'     {{"status":"pending_confirmation","star_relation":"<1-line gap closure>","model_used":"claude-sonnet-4-6","session_id":"$CLAUDE_CODE_SESSION_ID","exec_start":"<ISO start>","exec_end":"$(date -Iseconds)","append_message":{{"role":"claude","text":"<1-line English PAST TENSE result>"}}}}\n'
-                f"     star_relation = HOW this completion reduced the star gap (concrete, 1 line).\n"
+                f'     {{"status":"pending_confirmation","model_used":"claude-sonnet-4-6","session_id":"$CLAUDE_CODE_SESSION_ID","exec_start":"<ISO start>","exec_end":"$(date -Iseconds)","append_message":{{"role":"claude","text":"<1-line English PAST TENSE result>"}}}}\n'
                 f"     append_message = MANDATORY — ALWAYS include. Omitting it leaves the stone with no reply\n"
                 f"       visible to the user (server inserts '완료.' as emergency fallback but it is generic).\n"
                 f"       RULE: append_message in the SAME PATCH as status=pending_confirmation. Past tense only.\n"
@@ -8736,16 +7997,14 @@ async def execute_project(proj_id: str, request: Request):
                     "When the user sends 'go', 'Tasks ready', or any session-start trigger: "
                     "your FIRST action must be to call mcp__ns-hub__get_pending_task(). "
                     "Do not ask for direction. Do not summarize prior work. Just call the tool. "
-                    # M1161 v3: faithful-answer template — stronger intent-first rule.
-                    "STONE REPLY RULE (enforced): When replying to a stone after a user comment, "
-                    "classify the user's intent FIRST (question / request / correction / clarification), "
-                    "then structure your reply as: "
-                    "LINE 1 = direct answer to user's exact question (yes/no/value/action-taken — no preamble). "
-                    "LINE 2 = evidence (file:line, observed value, or quoted source). "
-                    "LINE 3+ = context or next step if needed (omit if simple Q). "
-                    "NEVER start with 'I', summary, or restatement. "
-                    "If you cannot answer, write '[NEED INFO]: <what is missing>' on line 1. "
-                    "Server-side Q-anchor compression preserves line 1 with high priority (bias=8). "
+                    # M1161 v2: faithful-answer template (no strict line cap).
+                    "When you call mcp__ns-hub__reply_to_stone or mcp__ns-hub__report_task_complete "
+                    "after a user comment, your message MUST directly answer the user's LAST comment "
+                    "on line 1 — yes/no/what/where, no filler, no restating the question. "
+                    "Then add evidence (file:line, observed value, or quoted source) and the next action "
+                    "or status. Be as concise as the question allows: short questions get short answers, "
+                    "complex questions get the lines they need (server caps at 12). "
+                    "If you cannot answer, say '[NEED INFO]: <missing>'. "
                     # M1114: SKILL INVOCATION PROTOCOL — belt-and-suspenders in system prompt.
                     # get_pending_task response already carries skill_refs + _skill_instruction,
                     # but adding here ensures the model registers the rule BEFORE calling the tool.
@@ -8761,6 +8020,7 @@ async def execute_project(proj_id: str, request: Request):
                 "claude", "--dangerously-skip-permissions", *_get_project_model(proj_id),
                 *_mcp_args, *_sys_prompt_args, *resume_args,
             ])
+            subprocess.run(["tmux", "set-option", "-t", session_name, "history-limit", "2000"], capture_output=True, timeout=2)
             import asyncio as _aio
             # Wait for Claude + SessionStart hook to complete
             # Hook deletes the prompt file when injected — use file deletion as ready signal
@@ -8809,6 +8069,7 @@ async def execute_project(proj_id: str, request: Request):
                     *_tmux_env,
                     "claude", "--dangerously-skip-permissions", *_get_project_model(proj_id), *_mcp_args_retry,
                 ])
+                subprocess.run(["tmux", "set-option", "-t", session_name, "history-limit", "2000"], capture_output=True, timeout=2)
                 elapsed = 0
                 while elapsed < deadline:
                     await _aio.sleep(1)
@@ -8836,17 +8097,9 @@ async def execute_project(proj_id: str, request: Request):
 
             # M1129: use _exec_wake_msg (was hardcoded "go") so MCP-enabled sessions receive
             # the explicit tool-call instruction instead of bare "go".
-            # M1175: auto-compact on spawn only for RESUMED sessions (resume_args non-empty).
-            # Fresh spawns have no transcript yet — compact would fail with "Not enough messages".
-            # M1198-v3: exec-aware guard; skip dispatch this cycle if compact fires (queue-poller re-checks)
-            if resume_args and _compact_guard_check_exec(proj_id):
-                _compact_last_injected[proj_id] = __import__('time').monotonic()
-                subprocess.run(["tmux", "send-keys", "-t", session_name, "/compact", "Enter"])
-                logger.info(f"[exec-spawn] pre-compact: {proj_id} → /compact injected, dispatch deferred to queue-poller")
-                # DON'T dispatch now — queue-continuation-poller (every 30s) will dispatch after compact
-            else:
-                # M1114: two-step skill pre-inject
-                _send_exec_wake(session_name, proj_id)
+            # M1230: auto-compact disabled by user request
+            # M1114: two-step skill pre-inject
+            _send_exec_wake(session_name, proj_id)
 
             # M747/M792: spawn per-session sessions after main session is live
             # M792: iterate session_qs (session_key -> stones); session_name IS the key
@@ -8905,6 +8158,7 @@ async def execute_project(proj_id: str, request: Request):
                         "claude", "--dangerously-skip-permissions", *_mother_model_args,  # M1166
                         *_ss_resume_args,
                     ])
+                    subprocess.run(["tmux", "set-option", "-t", _ss_sname, "history-limit", "2000"], capture_output=True, timeout=2)
                     _newly_spawned.append((_ss_sname, time.time()))
                 _server_log_action(proj_id, "", "exec:substar_branch",
                                    f"spawned {len(_newly_spawned)} new + {len(_alive_branch_keys)} reused sessions: "
@@ -9824,61 +9078,9 @@ async def dsk_health():
 
 _exec_was_running: dict[str, bool] = {}  # track exec session busy/idle transitions for ntfy
 _exec_idle_count: dict[str, int] = {}   # M319: debounce — require 2 consecutive idle readings before notifying
-_exec_notified: dict[str, float] = {}   # M1192: sessions already notified — reset on running detection; PERSISTED to SQLite
+_exec_notified: dict[str, float] = {}   # M998: sessions already notified — reset on running detection
 _last_idle_push: dict[str, float] = {}  # M378: dedup — suppress duplicate session_idle SSE within 5s per session
 _IDLE_PUSH_COOLDOWN = 5.0  # seconds — minimum gap between session_idle SSE pushes for same session
-_EXEC_NOTIFIED_TTL = 86400  # 24h — auto-expire persisted notified entries
-
-
-def _exec_notified_load() -> None:
-    """M1192: Load persisted _exec_notified from SQLite on startup. Fills in-memory dict."""
-    try:
-        _now = time.time()
-        conn = sqlite3.connect(str(_NS_EVENTS_DB))
-        rows = conn.execute(
-            "SELECT key, value_json FROM user_settings WHERE key LIKE 'exec_notified_%'"
-        ).fetchall()
-        conn.close()
-        for k, v in rows:
-            try:
-                ts = float(json.loads(v))
-                if _now - ts < _EXEC_NOTIFIED_TTL:
-                    sname = k[len("exec_notified_"):]
-                    _exec_notified[sname] = ts
-                # else: expired — leave out of in-memory dict (will be cleaned by periodic task)
-            except Exception:
-                pass
-    except Exception:
-        pass
-
-
-def _exec_notified_set(session_name: str) -> None:
-    """M1192: Write _exec_notified[session_name] to both in-memory dict and SQLite."""
-    _now = time.time()
-    _exec_notified[session_name] = _now
-    try:
-        import datetime as _dt_en
-        conn = sqlite3.connect(str(_NS_EVENTS_DB))
-        conn.execute(
-            "INSERT OR REPLACE INTO user_settings(key, value_json, updated_at) VALUES(?,?,?)",
-            (f"exec_notified_{session_name}", json.dumps(_now), _dt_en.datetime.utcnow().isoformat())
-        )
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
-
-
-def _exec_notified_clear(session_name: str) -> None:
-    """M1192: Remove _exec_notified entry when session becomes running again."""
-    _exec_notified.pop(session_name, None)
-    try:
-        conn = sqlite3.connect(str(_NS_EVENTS_DB))
-        conn.execute("DELETE FROM user_settings WHERE key=?", (f"exec_notified_{session_name}",))
-        conn.commit()
-        conn.close()
-    except Exception:
-        pass
 
 
 # M389 fix: server-side background idle detector — runs independently of client polling
@@ -9939,7 +9141,7 @@ async def _start_exec_idle_detector():
                     _consec_idle = _exec_idle_count.get(session_name, 0)
                     if _was_running and idle and _consec_idle >= 2:
                         _exec_was_running[session_name] = False
-                        _exec_notified_set(session_name)  # M1192: persist to SQLite (prevents post-restart re-fire)
+                        _exec_notified[session_name] = time.time()  # M1171 Fix B: prevent browser-poll duplicate
                         _push_session_idle(session_name, proj_id)  # SSE toast
                         # M1171 v2: only notify when queue is empty — suppress mid-batch notifications
                         if not _has_queued_stones(proj_id):
@@ -9970,11 +9172,9 @@ async def _start_exec_idle_detector():
                                     )
             except Exception:
                 pass
-    # M1192: load persisted _exec_notified from SQLite so post-restart re-fires are suppressed
-    _exec_notified_load()
     # M460 cold-start fix: pre-scan existing exec sessions at startup.
     # Sessions already running → mark _exec_was_running=True so we catch their next idle.
-    # Sessions already idle at startup → _exec_notified already loaded from SQLite above.
+    # Sessions already idle at startup → skip (we missed the transition, can't go back).
     import re as _re_cs
     try:
         _cs_result = subprocess.run(
@@ -9989,7 +9189,6 @@ async def _start_exec_idle_detector():
             _cs_clean = _re_cs.sub(r'\x1b\[[0-9;]*[mKHJ]', '', _cs_pane)
             if "… (" in _cs_clean or "esc to i" in _cs_clean:
                 _exec_was_running[_cs_sname] = True  # currently running → will detect idle
-            # else: already idle — _exec_notified already loaded from SQLite by _exec_notified_load()
     except Exception:
         pass
     asyncio.create_task(_detect())
@@ -10129,18 +9328,18 @@ async def get_exec_sessions():
         else:
             _exec_idle_count.pop(session_name, None)
         _consec_idle = _exec_idle_count.get(session_name, 0)
-        # M1192: fire only on _was_running transition (removed _consec_idle>=3 fallback — caused post-restart spam)
-        if idle and _was_running and _consec_idle >= 2:
+        if idle and (_was_running and _consec_idle >= 2 or _consec_idle >= 3):
+            # M998 fix: fire for sessions that ran too quickly to be caught (_consec_idle>=3 fallback)
             _already_notified = session_name in _exec_notified
             if not _already_notified:
                 _push_session_idle(session_name, proj_id)
                 # M1171 v2: only notify when queue is empty — suppress mid-batch notifications
                 if not _has_queued_stones(proj_id):
                     _send_ntfy_notification(f"{proj_id} exec idle", f"Exec session for {proj_id} just went idle", priority="default")
-                _exec_notified_set(session_name)  # M1192: persist to SQLite
+                _exec_notified[session_name] = time.time()
         elif not idle:
             # session running → reset notified flag so next idle can fire
-            _exec_notified_clear(session_name)  # M1192: clear in SQLite too
+            _exec_notified.pop(session_name, None)
         if not _was_running and not idle:
             # idle→running: push SSE so detail-card updates within 3s poll
             _exec_idle_count.pop(session_name, None)  # reset idle count on running
@@ -10856,20 +10055,22 @@ async def corpus_skills_agents():
                             "owner": owner,
                         })
 
-    # M1178: annotate each skill with usage_count from action_log (invoked_skill events).
-    # Sort: most-used first, then alphabetical for ties.
+    # M1023: final alphabetical sort so local + plugin skills interleave correctly in UI
+    skills.sort(key=lambda s: s.get("name", "").lower())
+
+    # M1221: annotate usage_count from action_log (invoked_skill events, all-time)
     try:
-        _alog_conn = sqlite3.connect(str(_NS_EVENTS_DB))
-        _freq_rows = _alog_conn.execute(
-            "SELECT detail, COUNT(*) FROM action_log WHERE action='invoked_skill' GROUP BY detail"
-        ).fetchall()
-        _alog_conn.close()
-        _freq_map = {r[0]: r[1] for r in _freq_rows}
+        _conn_uc = sqlite3.connect(str(_NS_EVENTS_DB))
+        _rows_uc = list(_conn_uc.execute(
+            "SELECT detail AS skill, COUNT(*) AS n FROM action_log "
+            "WHERE action='invoked_skill' GROUP BY detail"
+        ))
+        _conn_uc.close()
+        _usage_map = {r[0]: r[1] for r in _rows_uc}
     except Exception:
-        _freq_map = {}
+        _usage_map = {}
     for s in skills:
-        s["usage_count"] = _freq_map.get(s["name"], 0)
-    skills.sort(key=lambda s: (-s.get("usage_count", 0), s.get("name", "").lower()))
+        s["usage_count"] = _usage_map.get(s["name"], 0)
 
     agents = []
     if agents_dir.is_dir():
@@ -11075,7 +10276,7 @@ _HUB_GLOBAL_BLOCK = """\
 ## NS Hub Protocol (auto-injected by hub install-global)
 <!-- NS_HUB_GLOBAL_START -->
 Stone lifecycle: queued → pending_confirmation → done.
-COMPLETION PROTOCOL: PATCH status=pending_confirmation + append_message.role=claude + star_relation + exec_start + exec_end + model_used (all in one PATCH).
+COMPLETION PROTOCOL: PATCH status=pending_confirmation + append_message.role=claude + exec_start + exec_end + model_used (all in one PATCH).
 COMMENT RULE: append_message ≤3 lines. Longer detail → docs/ns-replies/<DATE>-<MID>.md then reference link in comment.
 PARALLEL DISPATCH: 2+ independent queued stones → emit multiple Agent calls in ONE message.
 NO-OP PROTOCOL: if skipping a stone, post 1-line reason via append_message. Silent skip forbidden.
@@ -11089,7 +10290,7 @@ _HUB_PROJECT_BLOCK_TEMPLATE = """\
 Hub URL: {hub_url}
 Project ID: {proj_id}
 API base: {hub_url}/api/northstar/{proj_id}
-Exec: GET /milestones  →  implement  →  PATCH /{{mid}} {{status,append_message,star_relation,exec_start,exec_end,model_used}}
+Exec: GET /milestones  →  implement  →  PATCH /{{mid}} {{status,append_message,exec_start,exec_end,model_used}}
 Log completion: append to {proj_dir}/completion-log.jsonl {{"mid":..., "summary":..., "ts":...}}
 <!-- NS_HUB_PROJECT_END -->
 """
@@ -11159,6 +10360,8 @@ _HUB_SETTINGS_HOOKS = {
 def _hub_deploy_hooks():
     """M842.4: Register hub hook scripts in ~/.claude/settings.json.
     All hooks (NS + CTX) live in static/hooks/ — packaged with hub, no external ctx-retriever needed."""
+    # Disabled — hook injection migrated to MCP (hooks managed manually in settings.json)
+    return
     # Register in settings.json if not already present
     settings_path = Path.home() / ".claude" / "settings.json"
     try:
@@ -11238,9 +10441,7 @@ def _hub_pkg_version() -> str:
         return "unknown"
 
 def _record_usage_event(event: str, extra: dict = None):
-    """M929: Record usage event locally + centrally via Turso (consent-gated, no PII).
-    For stone_complete events, extra may include model_used (str) and total_tokens (int).
-    """
+    """M929: Record usage event locally + centrally via Turso (consent-gated, no PII)."""
     if not _get_consent().get("data_collection", True):
         return
     import hashlib, platform, time
@@ -11264,45 +10465,12 @@ def _record_usage_event(event: str, extra: dict = None):
         def _send_telemetry():
             try:
                 import urllib.request as _ur2, json as _j2
-                _model = str(entry.get("model_used") or "")
-                _tokens = entry.get("total_tokens")
-                _tokens_val = str(int(_tokens)) if _tokens is not None else None
-                _exec_t = entry.get("exec_time_sec")
-                _exec_t_val = str(int(_exec_t)) if _exec_t is not None else None
-                _layer = entry.get("layer")
-                _layer_val = str(int(_layer)) if _layer is not None else None
-                _proj_h = str(entry.get("proj_hash") or "")
                 payload = _j2.dumps({"requests": [
-                    {"type": "execute", "stmt": {"sql": (
-                        "CREATE TABLE IF NOT EXISTS hub_usage "
-                        "(ts INTEGER, event TEXT, install_id TEXT, version TEXT, os TEXT)"
-                    )}},
-                    # Idempotent migrations — pipeline continues even if column already exists
-                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN model_used TEXT"}},
-                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN total_tokens INTEGER"}},
-                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN exec_time_sec INTEGER"}},
-                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN layer INTEGER"}},
-                    {"type": "execute", "stmt": {"sql": "ALTER TABLE hub_usage ADD COLUMN proj_hash TEXT"}},
-                    {"type": "execute", "stmt": {
-                        "sql": (
-                            "INSERT INTO hub_usage "
-                            "(ts, event, install_id, version, os, model_used, total_tokens, "
-                            "exec_time_sec, layer, proj_hash) "
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                        ),
-                        "args": [
-                            {"type": "integer", "value": str(entry["ts"])},
-                            {"type": "text",    "value": entry["event"]},
-                            {"type": "text",    "value": entry["install_id"]},
-                            {"type": "text",    "value": entry["version"]},
-                            {"type": "text",    "value": entry["os"]},
-                            {"type": "text",    "value": _model} if _model else {"type": "null"},
-                            {"type": "integer", "value": _tokens_val} if _tokens_val else {"type": "null"},
-                            {"type": "integer", "value": _exec_t_val} if _exec_t_val else {"type": "null"},
-                            {"type": "integer", "value": _layer_val} if _layer_val else {"type": "null"},
-                            {"type": "text",    "value": _proj_h} if _proj_h else {"type": "null"},
-                        ],
-                    }},
+                    {"type": "execute", "stmt": {"sql": "CREATE TABLE IF NOT EXISTS hub_usage (ts INTEGER, event TEXT, install_id TEXT, version TEXT, os TEXT)"}},
+                    {"type": "execute", "stmt": {"sql": "INSERT INTO hub_usage (ts, event, install_id, version, os) VALUES (?, ?, ?, ?, ?)",
+                        "args": [{"type": "integer", "value": str(entry["ts"])}, {"type": "text", "value": entry["event"]},
+                                 {"type": "text", "value": entry["install_id"]}, {"type": "text", "value": entry["version"]},
+                                 {"type": "text", "value": entry["os"]}]}},
                 ]}).encode()
                 req = _ur2.Request(f"{_HUB_TELEMETRY_URL}/v2/pipeline", data=payload,
                     headers={"Authorization": f"Bearer {_HUB_TELEMETRY_TOKEN}", "Content-Type": "application/json"})
@@ -11339,32 +10507,6 @@ async def set_consent(request: Request):
     _save_consent(data)
     return JSONResponse(data)
 # ── end M561 ───────────────────────────────────────────────────────────────────
-
-# ── M1174: MCP toggle endpoint ────────────────────────────────────────────────
-@app.get("/api/hub/mcp-mode")
-async def get_mcp_mode():
-    disabled = _mcp_disabled()
-    return JSONResponse({"mcp_enabled": not disabled, "hub_mcp_disabled": disabled})
-
-@app.post("/api/hub/mcp-mode")
-async def set_mcp_mode(request: Request):
-    """M1174: Toggle hub MCP for exec sessions. POST {"enabled": false} → LLM-independent mode."""
-    body = await request.json()
-    enabled = bool(body.get("enabled", True))
-    try:
-        conn = sqlite3.connect(str(_NS_EVENTS_DB), timeout=3)
-        conn.execute(
-            "INSERT OR REPLACE INTO user_settings(key, value_json, updated_at) VALUES(?,?,?)",
-            ("hub_mcp_disabled", json.dumps(not enabled),
-             __import__('datetime').datetime.utcnow().isoformat()),
-        )
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
-    return JSONResponse({"ok": True, "mcp_enabled": enabled,
-                         "note": "New exec sessions will use hook-based dispatch only" if not enabled
-                                 else "New exec sessions will include --mcp-config"})
 
 
 # ── M705: /api/hub/config REST endpoints ──────────────────────────────────────
