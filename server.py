@@ -6572,13 +6572,24 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                                 _q_tokens = _toks(_q_text)
                                 if _q_tokens:
                                     _scored = []
+                                    _n_lines = len(_non_empty)
                                     for _idx, _ln in enumerate(_non_empty):
                                         _ov = len(_q_tokens & _toks(_ln))
-                                        _bias = (1 if _idx == 0 else 0) + (1 if _idx == len(_non_empty) - 1 else 0)
+                                        # M1161 v3: first-line bias raised 1→8 so the direct
+                                        # answer (almost always line 0) survives compression.
+                                        # Last-line bias stays at 1 (summary/next-action).
+                                        _bias = (8 if _idx == 0 else 0) + (1 if _idx == _n_lines - 1 else 0)
                                         _scored.append((_idx, _ln, _ov * 10 + _bias))
                                     _top = sorted(_scored, key=lambda x: -x[2])[:_MAX_LINES]
                                     _top_ordered = sorted(_top, key=lambda x: x[0])
                                     _chosen = [t[1] for t in _top_ordered]
+                                    # Faithfulness gate: if line 0 of the response was dropped
+                                    # (scored below threshold) and no Q-token in any chosen line,
+                                    # prepend line 0 as the direct-answer anchor.
+                                    _chosen_set = set(t[0] for t in _top)
+                                    _has_q_hit = any(len(_q_tokens & _toks(_ln)) > 0 for _ln in _chosen)
+                                    if 0 not in _chosen_set and not _has_q_hit:
+                                        _chosen = [_non_empty[0]] + _chosen[: _MAX_LINES - 1]
                         if _chosen is None:
                             # Fallback: head + tail (preserve flow when no Q-anchor)
                             _chosen = _non_empty[: _MAX_LINES // 2] + _non_empty[-(_MAX_LINES - _MAX_LINES // 2):]
@@ -8725,14 +8736,16 @@ async def execute_project(proj_id: str, request: Request):
                     "When the user sends 'go', 'Tasks ready', or any session-start trigger: "
                     "your FIRST action must be to call mcp__ns-hub__get_pending_task(). "
                     "Do not ask for direction. Do not summarize prior work. Just call the tool. "
-                    # M1161 v2: faithful-answer template (no strict line cap).
-                    "When you call mcp__ns-hub__reply_to_stone or mcp__ns-hub__report_task_complete "
-                    "after a user comment, your message MUST directly answer the user's LAST comment "
-                    "on line 1 — yes/no/what/where, no filler, no restating the question. "
-                    "Then add evidence (file:line, observed value, or quoted source) and the next action "
-                    "or status. Be as concise as the question allows: short questions get short answers, "
-                    "complex questions get the lines they need (server caps at 12). "
-                    "If you cannot answer, say '[NEED INFO]: <missing>'. "
+                    # M1161 v3: faithful-answer template — stronger intent-first rule.
+                    "STONE REPLY RULE (enforced): When replying to a stone after a user comment, "
+                    "classify the user's intent FIRST (question / request / correction / clarification), "
+                    "then structure your reply as: "
+                    "LINE 1 = direct answer to user's exact question (yes/no/value/action-taken — no preamble). "
+                    "LINE 2 = evidence (file:line, observed value, or quoted source). "
+                    "LINE 3+ = context or next step if needed (omit if simple Q). "
+                    "NEVER start with 'I', summary, or restatement. "
+                    "If you cannot answer, write '[NEED INFO]: <what is missing>' on line 1. "
+                    "Server-side Q-anchor compression preserves line 1 with high priority (bias=8). "
                     # M1114: SKILL INVOCATION PROTOCOL — belt-and-suspenders in system prompt.
                     # get_pending_task response already carries skill_refs + _skill_instruction,
                     # but adding here ensures the model registers the rule BEFORE calling the tool.
