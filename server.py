@@ -1325,6 +1325,26 @@ def _load_projects() -> list:
                     mtime = md.stat().st_mtime
                     data["last_updated"] = mtime
                     data["stale"] = (time.time() - mtime) > (14 * 86400)
+                    # M1196: project start timestamp (epoch) — used by frontend D+N display.
+                    # Try git first-commit on repo_path (actual project dir), fall back to ctime.
+                    _proj_started_ts = None
+                    _git_target = data.get("repo_path") or None
+                    if _git_target and Path(_git_target).is_dir():
+                        try:
+                            _git_res = subprocess.run(
+                                ["git", "-C", _git_target, "log", "--reverse", "--format=%ct", "--max-count=1"],
+                                capture_output=True, text=True, timeout=2
+                            )
+                            if _git_res.returncode == 0 and _git_res.stdout.strip().isdigit():
+                                _proj_started_ts = int(_git_res.stdout.strip())
+                        except Exception:
+                            pass
+                    if not _proj_started_ts:
+                        try:
+                            _proj_started_ts = int(proj_dir.stat().st_ctime)
+                        except Exception:
+                            pass
+                    data["proj_started_ts"] = _proj_started_ts
                     projects.append(data)
     return projects
 
