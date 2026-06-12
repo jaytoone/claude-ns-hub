@@ -213,24 +213,8 @@ app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 # M60: hub-ctx fully integrated — mount CTX dashboard directly (no separate port)
 def _mount_ctx_dashboard():
-    """Mount CTX dashboard as a sub-app at /ctx. No subprocess, no port 8787."""
-    candidates = [
-        Path.home() / ".hub" / "ctx-dashboard" / "server.py",
-        Path.home() / ".claude" / "hooks" / "ctx-dashboard" / "server.py",
-        Path("/home/desk-1/Project/CTX/src/dashboard/server.py"),
-    ]
-    server_path = next((p for p in candidates if p.exists()), None)
-    if not server_path:
-        return
-    import importlib.util as _ilu
-    spec = _ilu.spec_from_file_location("ctx_dashboard", server_path)
-    mod = _ilu.module_from_spec(spec)
-    try:
-        spec.loader.exec_module(mod)
-        app.mount("/ctx", mod.app)
-        print(f"[hub] CTX dashboard mounted at /ctx from {server_path}", file=sys.stderr)
-    except Exception as e:
-        print(f"[hub] CTX dashboard mount failed: {e}", file=sys.stderr)
+    """M1235: CTX integration disabled — skipping mount."""
+    print("[hub] CTX dashboard: disabled (M1235)", file=sys.stderr)
 
 _mount_ctx_dashboard()
 
@@ -2423,57 +2407,20 @@ async def northstar_doc(proj_id: str):
 
 @app.get("/api/ctx/state")
 async def ctx_state():
-    """M562: surface live CTX session state from ~/.claude/ctx-session-state.json.
-    Hub-embedded CTX integration so the same data shows up alongside milestones."""
-    try:
-        p = Path.home() / ".claude" / "ctx-session-state.json"
-        if not p.exists():
-            return JSONResponse({"ok": False, "error": "ctx-session-state.json missing"}, status_code=404)
-        return JSONResponse({"ok": True, "state": json.loads(p.read_text(encoding="utf-8"))})
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    """M1235: CTX disabled."""
+    return JSONResponse({"ok": False, "error": "CTX disabled (M1235)"}, status_code=404)
 
 
 @app.get("/api/ctx/recent-retrievals")
 async def ctx_recent_retrievals(limit: int = 50):
-    """M562: tail of ~/.claude/ctx-retrieval-events.jsonl — latest CTX hits."""
-    try:
-        p = Path.home() / ".claude" / "ctx-retrieval-events.jsonl"
-        if not p.exists():
-            return JSONResponse({"ok": False, "error": "ctx-retrieval-events.jsonl missing"}, status_code=404)
-        # Tail efficiently — read last ~64KB only
-        size = p.stat().st_size
-        with open(p, "rb") as f:
-            seek_pos = max(0, size - 64 * 1024)
-            f.seek(seek_pos)
-            tail = f.read().decode("utf-8", errors="ignore")
-        lines = tail.splitlines()[-limit:]
-        events = []
-        for ln in lines:
-            try:
-                events.append(json.loads(ln))
-            except Exception:
-                pass
-        return JSONResponse({"ok": True, "count": len(events), "events": events})
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    """M1235: CTX disabled."""
+    return JSONResponse({"ok": False, "error": "CTX disabled (M1235)", "events": []})
 
 
 @app.get("/api/ctx-pulse")
 async def ctx_pulse():
-    """Pull recent work focus from CTX graph — hot nodes = actual work direction."""
-    ctx_url = _ctx_url()
-    try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            r = await client.get(f"{ctx_url}/api/graph")
-            d = r.json()
-        nodes = d.get("nodes", [])
-        hot = sorted(nodes, key=lambda n: n.get("utility_heat_raw", 0), reverse=True)[:15]
-        topics = [{"type": n.get("type","?"), "label": n.get("label",""), "heat": round(n.get("utility_heat_raw",0),2)} for n in hot]
-        stats = d.get("stats", {})
-        return JSONResponse({"topics": topics, "stats": stats, "ok": True})
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e), "topics": []})
+    """M1235: CTX disabled."""
+    return JSONResponse({"ok": False, "topics": [], "error": "CTX disabled (M1235)"})
 
 
 @app.post("/api/northstar/align")
@@ -3529,81 +3476,14 @@ async def _auto_start_ctx_dashboard():
 
 @app.api_route("/ctx/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"])
 async def _ctx_proxy(request: Request, path: str):
-    """M55: transparent reverse-proxy to ctx-dashboard (127.0.0.1:8787).
-    Makes CTX tab same-origin — no CORS, no cross-origin postMessage needed.
-    SSE (/stream) is forwarded as a true streaming response.
-    """
-    target = f"http://127.0.0.1:8787/{path}"
-    params = str(request.url.query)
-    if params:
-        target += f"?{params}"
-    is_sse = path == "stream" or "text/event-stream" in request.headers.get("accept", "")
-    try:
-        body = await request.body()
-        fwd_headers = {k: v for k, v in request.headers.items()
-                       if k.lower() not in ("host", "content-length")}
-        if is_sse:
-            # True streaming: keep httpx connection open, yield chunks as they arrive
-            client = httpx.AsyncClient(timeout=None)
-            async def _sse_generator():
-                try:
-                    async with client.stream(request.method, target,
-                                             headers=fwd_headers, content=body) as r:
-                        async for chunk in r.aiter_bytes(chunk_size=256):
-                            yield chunk
-                finally:
-                    await client.aclose()
-            return StreamingResponse(_sse_generator(), media_type="text/event-stream",
-                                     headers={"Cache-Control": "no-cache",
-                                              "X-Accel-Buffering": "no"})
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            r = await client.request(method=request.method, url=target,
-                                     headers=fwd_headers, content=body)
-            ct = r.headers.get("content-type", "")
-            content = r.content
-            # Rewrite absolute API paths so browser fetches go through /ctx/ proxy,
-            # not directly to hub's own /api/* or /stream endpoints.
-            if "text/html" in ct or "javascript" in ct:
-                try:
-                    text = content.decode("utf-8")
-                    text = text.replace('"/api/', '"/ctx/api/')
-                    text = text.replace("'/api/", "'/ctx/api/")
-                    text = text.replace('"/stream"', '"/ctx/stream"')
-                    text = text.replace("'/stream'", "'/ctx/stream'")
-                    text = text.replace('"/static/', '"/ctx/static/')
-                    # Cache-bust: append version query to app.js in HTML so browsers
-                    # never serve stale cached JS even without hard-refresh
-                    if "text/html" in ct:
-                        import time as _t_cb
-                        _cbv = str(int(_t_cb.time()) // 3600)  # changes every hour
-                        text = text.replace('src="/ctx/static/app.js"',
-                                            f'src="/ctx/static/app.js?v={_cbv}"')
-                        text = text.replace("src='/ctx/static/app.js'",
-                                            f"src='/ctx/static/app.js?v={_cbv}'")
-                    content = text.encode("utf-8")
-                except Exception:
-                    pass
-            # Strip hop-by-hop / size headers — FastAPI sets correct content-length
-            _skip_headers = {"content-length", "transfer-encoding", "content-encoding",
-                             "connection", "keep-alive", "te", "trailers", "upgrade",
-                             "etag", "last-modified", "cache-control"}
-            fwd_resp_headers = {k: v for k, v in r.headers.items()
-                                if k.lower() not in _skip_headers}
-            # Force no-cache for rewritten HTML/JS so browsers never serve stale paths
-            if "text/html" in ct or "javascript" in ct:
-                fwd_resp_headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
-                fwd_resp_headers["Pragma"] = "no-cache"
-            return Response(content=content, status_code=r.status_code,
-                            headers=fwd_resp_headers,
-                            media_type=ct)
-    except Exception:
-        return JSONResponse({"ok": False, "error": "ctx-dashboard not running"}, status_code=502)
+    """M1235: CTX disabled."""
+    return JSONResponse({"ok": False, "error": "CTX disabled (M1235)"}, status_code=404)
 
 
 @app.get("/ctx")
 async def _ctx_proxy_root(request: Request):
-    """Root redirect: /ctx → /ctx/ so relative assets resolve correctly."""
-    return Response(status_code=307, headers={"Location": "/ctx/"})
+    """M1235: CTX disabled."""
+    return JSONResponse({"ok": False, "error": "CTX disabled (M1235)"}, status_code=404)
 
 
 @app.on_event("startup")

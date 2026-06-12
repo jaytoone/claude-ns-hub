@@ -1863,16 +1863,15 @@ async function loadData() {
   try {
     // M1037: _initGlobalLaneLabels in parallel so getLaneLabels() never falls back
     // to DEFAULT_LABELS on the first render() call below.
-    const [projRes, ctxRes] = await Promise.all([
+    // M1235: ctx-pulse fetch removed (CTX disabled)
+    const [projRes] = await Promise.all([
       fetch('/api/northstar'),
-      fetch('/api/ctx-pulse').catch(() => ({ json: () => ({ ok: false, topics: [] }) })),
       refreshSessionStatus(),
       _initGlobalLaneLabels(),
     ]);
     projects = await projRes.json();
     window.projects = projects;  // M1199: expose globally for move-to-project picker
-    const ctxData = await ctxRes.json();
-    ctxTopics = ctxData.ok ? (ctxData.topics || []) : [];
+    ctxTopics = [];
 
     projects.forEach(p => {
       p.milestones = p.milestones || [];
@@ -10455,10 +10454,10 @@ async function openDetail(idx) {
   // M1220-v2: fetch north-stars FIRST so _nsStarsCache is populated before loadMilestones runs.
   // Previously: loadMilestones fired with empty cache → sess badge showed 'sess' (unassigned) for
   // 100-500ms until loadSubStars completed. On mobile with slow connections this was several seconds.
-  const [nsRespEarly, okrData, ctxData] = await Promise.all([
+  // M1235: ctx-pulse removed (CTX disabled)
+  const [nsRespEarly, okrData] = await Promise.all([
     fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]})),
     fetch(`/api/northstar/${esc(p.id)}/okrs`).then(r=>r.json()).catch(()=>({ok:false,okrs:[]})),
-    fetch('/api/ctx-pulse').then(r=>r.json()).catch(()=>({ok:false,topics:[]})),
   ]);
 
   // M215: first batch resolved — drop the full-card loading overlay.
@@ -10474,10 +10473,10 @@ async function openDetail(idx) {
   loadMilestones(p.id);
   loadSubStars(p.id);
 
-  if (ctxData.ok) ctxTopics = ctxData.topics || [];
+  ctxTopics = [];
 
   // Render right column then load milestones
-  renderRight(p, ctxData.topics || []);
+  renderRight(p, []);
   loadTaskBoard(p.id);
   // M168: poll task-board every 4s so live session work surfaces without manual refresh
   startTaskBoardPoll(p.id);
@@ -12242,26 +12241,9 @@ function renderAlignResult(align) {
 
 
 async function refreshAlignment() {
-  if (activeIdx === null) return;
-  const btn = document.getElementById('dm-pulse-btn');
-  if (btn) { btn.textContent = '◌ Checking…'; btn.disabled = true; }
+  // M1235: CTX disabled — alignment check not available
   const el = document.getElementById('dm-align-result');
-  if (el) el.innerHTML = '<div class="align-loading"><span style="animation:blink 1s infinite">◌</span> Fetching…</div>';
-  try {
-    const pulse = await fetch('/api/ctx-pulse').then(r=>r.json());
-    if (!pulse.ok) throw new Error('CTX offline');
-    ctxTopics = pulse.topics || [];
-    // Refresh CTX strip
-    const strip = document.querySelector('.ctx-strip');
-    if (strip) strip.innerHTML = ctxTopics.slice(0,7).map(t =>
-      `<div class="ctx-item"><div class="ctx-heat"><div class="ctx-heat-fill" style="width:${Math.round(t.heat*100)}%"></div></div><span class="ctx-label">[${esc(t.type)}] ${esc(t.label)}</span></div>`
-    ).join('');
-    await autoRunAlignment(projects[activeIdx], ctxTopics);
-  } catch(e) {
-    if (el) el.innerHTML = `<div style="font-size:11px;color:var(--red)">${esc(e.message)}</div>`;
-  } finally {
-    if (btn) { btn.textContent = '↻ Refresh'; btn.disabled = false; }
-  }
+  if (el) el.innerHTML = '<div style="font-size:11px;color:var(--text-dim)">CTX disabled</div>';
 }
 
 async function renderDrawer_DEPRECATED() {
