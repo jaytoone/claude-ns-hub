@@ -5266,7 +5266,7 @@ function _hubPrompt(message, defaultValue) {
     box.style.cssText = 'background:var(--panel-bg,var(--panel));border:1px solid var(--panel-border);border-radius:8px;padding:24px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)';
     const safeMsg = message.replace(/\n/g,'<br>').replace(/</g,'&lt;').replace(/&lt;br&gt;/g,'<br>');
     box.innerHTML = `<p style="color:var(--text);margin:0 0 12px;font-size:13px;line-height:1.5">${safeMsg}</p>
-      <input id="hp-input" type="text" value="${(defaultValue||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:6px 10px;border-radius:4px;border:1px solid var(--panel-border);background:var(--input-bg,rgba(255,255,255,.05));color:var(--text);font-size:12px;font-family:var(--mono);margin-bottom:16px">
+      <input id="hp-input" type="text" value="${(defaultValue||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:6px 10px;border-radius:4px;border:1px solid var(--panel-border);background:var(--input-bg,rgba(255,255,255,.05));color:var(--text);font-size:16px;font-family:var(--mono);margin-bottom:16px">
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button id="hp-cancel" style="padding:6px 16px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-size:12px">Cancel</button>
         <button id="hp-ok" style="padding:6px 16px;border-radius:4px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600">OK</button>
@@ -9216,10 +9216,10 @@ async function _ssAgtGenerate(projId, nsId) {
     <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px;line-height:1.5">Describe the agent you want to create. Be specific about role, expertise, style, and constraints — the more detail, the higher quality the generated agent.</div>
     <div style="font-size:9px;color:var(--text-soft);margin-bottom:4px">Role &amp; specialization:</div>
     <textarea id="ss-agt-role-input" rows="3" placeholder="e.g. Senior growth marketing strategist focused on B2B SaaS — specializes in LinkedIn content, demand gen funnels, and conversion copy. Writes in a direct, data-driven tone."
-      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:9px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
+      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:16px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
     <div style="font-size:9px;color:var(--text-soft);margin-top:8px;margin-bottom:4px">Key behaviors &amp; constraints (optional):</div>
     <textarea id="ss-agt-constraints-input" rows="2" placeholder="e.g. Always validates claims with data. Never generates clickbait. Prefers frameworks over raw tactics."
-      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:9px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
+      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:16px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
       <button onclick="document.getElementById('ss-agt-interview-modal').remove()"
         style="font-family:var(--mono);font-size:9px;padding:4px 12px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">Cancel</button>
@@ -10927,7 +10927,7 @@ function showCommentPopup(event, comment, projId, mid, currentStatus) {
       <input id="comment-reply-input" type="text" placeholder="Reply… (or drop text/file here)"
         value="${esc(_savedDraft)}"
         style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;
-          padding:4px 7px;font-family:var(--mono);font-size:10px;color:var(--text);box-sizing:border-box;transition:border-color .15s,background .15s"
+          padding:4px 7px;font-family:var(--mono);font-size:16px;color:var(--text);box-sizing:border-box;transition:border-color .15s,background .15s"
         oninput="sessionStorage.setItem('${_draftKey}',this.value)"
         onkeydown="if(event.key==='Enter'){event.stopPropagation();_doCommentReply('${esc(projId)}','${esc(mid)}',this,'${esc(currentStatus||'')}')}"
         onclick="event.stopPropagation()"
