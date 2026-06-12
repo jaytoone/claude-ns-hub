@@ -1339,10 +1339,6 @@ header {
 .hub-pro-cancel { width: 100%; padding: 6px; background: none; border: 1px solid var(--panel-border);
   border-radius: 6px; font-size: 12px; color: var(--text-dim); cursor: pointer; font-family: var(--mono); }
 .hub-pro-cancel:hover { color: var(--text); }
-/* M774 fix: blink interval number input — hide spinner arrows globally (not inside template) */
-#blink-window-input::-webkit-outer-spin-button,
-#blink-window-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-#blink-window-input { -moz-appearance:textfield; }
 
 /* M939: circle card styles (ns-test2 format) */
 .circle-card { width:116px; display:flex; flex-direction:column; align-items:center; gap:0; cursor:pointer; position:relative; transition:transform .15s; padding-bottom:4px; }
@@ -1627,8 +1623,7 @@ header {
       <span id="ns-term-buf-info" style="font-size:9px;color:#666;margin-left:8px" title="Scrollback buffer usage"></span>
     </div>
     <!-- M208 v2: explicit Paste button for mobile (no paste key on phone keyboards) -->
-    <!-- M1229: font-size:16px prevents iOS auto-zoom on tap (iOS zooms when font-size<16px) -->
-    <button onclick="pasteToPty()" style="background:none;border:1px solid #555;border-radius:4px;color:#cc785c;font-family:var(--mono);font-size:16px;padding:2px 7px;cursor:pointer;touch-action:manipulation" title="Paste clipboard into terminal">paste</button>
+    <button onclick="pasteToPty()" style="background:none;border:1px solid #555;border-radius:4px;color:#cc785c;font-family:var(--mono);font-size:10px;padding:2px 7px;cursor:pointer" title="Paste clipboard into terminal">paste</button>
     <!-- M1014 v2: virtual keyboard toggle (Termius-style panel below terminal) -->
     <button id="ns-vkbd-toggle" onclick="_toggleVkbd()" title="Virtual keyboard">⌨ keys</button>
 
@@ -2272,13 +2267,25 @@ async function loadMilestones(projId) {
     // M327: skip re-render if a stone text field is actively focused (unsaved paste chip)
     const focused = document.activeElement;
     const isStoneFocused = focused && focused.classList.contains('nt-text') && focused.isContentEditable;
-    const r2 = await fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`, {cache: 'no-store'});
+    // M1227: fetch blink state in parallel with milestones (server = single source of truth)
+    const [r2, rBlink] = await Promise.all([
+      fetch(`/api/northstar/${encodeURIComponent(projId)}/milestones`, {cache: 'no-store'}),
+      fetch(`/api/user-settings/blink_state_${encodeURIComponent(projId)}`, {cache: 'no-store'}),
+    ]);
     if (_activeDetailProjId && _activeDetailProjId !== projId) return;
     if (isStoneFocused) return; // don't overwrite active editing session (pre-fetch focus)
     // M566: re-check focus POST-await — user may have focused a stone text field during the fetch
     const _focusedPost = document.activeElement;
     if (_focusedPost && _focusedPost.classList.contains('nt-text') && _focusedPost.isContentEditable) return;
     const d2 = await r2.json();
+    // M1227: update in-memory blink state from server
+    if (rBlink.ok) {
+      try {
+        const bd = await rBlink.json();
+        window._blinkState = window._blinkState || {};
+        window._blinkState[projId] = (bd && typeof bd.value === 'object' && bd.value) ? bd.value : {};
+      } catch(_) {}
+    }
     // M593: preserve in-flight text — don't overwrite with stale server empty text
     if (_textSavingMids.size > 0) {
       (d2.milestones || []).forEach(m => {
@@ -2956,9 +2963,6 @@ function renderMilestoneCreator(projId, milestones) {
     .ss-mg-header-td:hover { background:var(--panel); }
 
     .ss-mg-header-tbody + tbody.ms-group:first-of-type td { border-top:none; }
-    /* M732: hide number input spinner arrows (webkit) */
-    #blink-window-input::-webkit-outer-spin-button,
-    #blink-window-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
     /* M718: blink section bar when all queued work in section is complete */
     @keyframes ss-mg-blink-anim {
       0%, 100% { background: var(--panel-soft); }
@@ -5265,7 +5269,7 @@ function _hubPrompt(message, defaultValue) {
     box.style.cssText = 'background:var(--panel-bg,var(--panel));border:1px solid var(--panel-border);border-radius:8px;padding:24px;max-width:420px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)';
     const safeMsg = message.replace(/\n/g,'<br>').replace(/</g,'&lt;').replace(/&lt;br&gt;/g,'<br>');
     box.innerHTML = `<p style="color:var(--text);margin:0 0 12px;font-size:13px;line-height:1.5">${safeMsg}</p>
-      <input id="hp-input" type="text" value="${(defaultValue||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:6px 10px;border-radius:4px;border:1px solid var(--panel-border);background:var(--input-bg,rgba(255,255,255,.05));color:var(--text);font-size:16px;font-family:var(--mono);margin-bottom:16px">
+      <input id="hp-input" type="text" value="${(defaultValue||'').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;padding:6px 10px;border-radius:4px;border:1px solid var(--panel-border);background:var(--input-bg,rgba(255,255,255,.05));color:var(--text);font-size:12px;font-family:var(--mono);margin-bottom:16px">
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button id="hp-cancel" style="padding:6px 16px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-size:12px">Cancel</button>
         <button id="hp-ok" style="padding:6px 16px;border-radius:4px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;font-weight:600">OK</button>
@@ -6606,17 +6610,6 @@ async function _loadClaudeUsage(force) {
 document.addEventListener('DOMContentLoaded', () => {
   _loadClaudeUsage();
   setInterval(() => _loadClaudeUsage(), 5 * 60 * 1000);
-});
-document.addEventListener('DOMContentLoaded', () => {
-  // M955/M987: load blink_window_min from server (M955 centralization)
-  fetch('/api/user-settings/blink_window_min', {cache:'no-store'}).then(r=>r.json()).then(d => {
-    const v = d && d.value ? parseInt(d.value) : null;
-    if (v && v >= 1 && v <= 1440) {
-      localStorage.setItem('_blinkWindowMin', v);
-      const inp = document.getElementById('blink-window-input');
-      if (inp) inp.value = v;
-    }
-  }).catch(()=>{});
 });
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/telegram/status').then(r=>r.json()).then(d => {
@@ -8824,12 +8817,6 @@ function _resetSwimlaneZoom() {
   } catch(_) {}
 }
 
-function _blinkWindowChanged(projId) {
-  if (!projId) return;
-  delete _groupingFingerprint[projId];
-  delete _msRenderFingerprint[projId];
-  _fastReapplyGrouping(projId);
-}
 
 function _fastReapplyGrouping(projId) {
   // M982: guard against stale async from previous card — dm-ms-creator belongs to current project only
@@ -9215,10 +9202,10 @@ async function _ssAgtGenerate(projId, nsId) {
     <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px;line-height:1.5">Describe the agent you want to create. Be specific about role, expertise, style, and constraints — the more detail, the higher quality the generated agent.</div>
     <div style="font-size:9px;color:var(--text-soft);margin-bottom:4px">Role &amp; specialization:</div>
     <textarea id="ss-agt-role-input" rows="3" placeholder="e.g. Senior growth marketing strategist focused on B2B SaaS — specializes in LinkedIn content, demand gen funnels, and conversion copy. Writes in a direct, data-driven tone."
-      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:16px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
+      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:9px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
     <div style="font-size:9px;color:var(--text-soft);margin-top:8px;margin-bottom:4px">Key behaviors &amp; constraints (optional):</div>
     <textarea id="ss-agt-constraints-input" rows="2" placeholder="e.g. Always validates claims with data. Never generates clickbait. Prefers frameworks over raw tactics."
-      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:16px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
+      style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:5px;padding:7px 9px;font-family:var(--mono);font-size:9px;color:var(--text);box-sizing:border-box;resize:vertical;line-height:1.5;outline:none"></textarea>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
       <button onclick="document.getElementById('ss-agt-interview-modal').remove()"
         style="font-family:var(--mono);font-size:9px;padding:4px 12px;border-radius:4px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer">Cancel</button>
@@ -9637,10 +9624,8 @@ function closeDetail() {
   window.__multiNSActive = null;  // clear multi-NS lock
   window.__nsLPCur = 0;           // reset NS page for next open
   window._m267Synced = {};        // M423: reset per-project sync flag so next open re-syncs fresh
-  // M1007 v2: reset blink hydration guard so reopening the detail card re-reads fresh
-  // server blink_state (server is authoritative; client only reads). Without this the
-  // once-per-session guard would hide blinks stamped while the card was closed.
-  try { window._blinkCenterHydrated = {}; } catch(_) {}
+  // M1227: reset in-memory blink state cache so next loadMilestones re-fetches from server
+  window._blinkState = {};
   document.getElementById('detail-overlay').classList.remove('show');
   _hideColToggleBtn(); // M282: hide floating col-toggle when detail closes
   const _ssFab = document.getElementById('ms-ss-toggle-btn'); // M657: hide substar toggle FAB
@@ -10615,17 +10600,6 @@ function renderHierarchy(p) {
         <span class="dm-layer-title">Milestones</span>
         <span class="dm-layer-count" id="dm-ms-ack-badge"></span>
         <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
-          <!-- M732/M1058: blink window time picker — 'min' is now a confirm button -->
-          <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px 2px 6px;border:1px solid var(--panel-border);border-radius:10px;background:var(--panel-bg);opacity:.8;transition:opacity .15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='.8'" title="Section bar blink window (minutes) — click 'min' or press Enter to apply" onclick="event.stopPropagation()">
-            <span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);letter-spacing:.03em">blink</span>
-            <input id="blink-window-input" type="number" min="1" max="1440" step="1" value="${parseInt(localStorage.getItem('_blinkWindowMin')) || 60}"
-              style="width:36px;font-size:11px;font-weight:600;padding:0;border:none;background:transparent;color:var(--accent);text-align:center;font-family:var(--mono);outline:none;-moz-appearance:textfield;appearance:textfield;-webkit-appearance:none"
-              title="Type value then click 'min' or press Enter to apply"
-              onkeydown="if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault()}if(event.key==='Enter'){event.preventDefault();(function(v){const n=parseInt(v);if(n>=1&&n<=1440){localStorage.setItem('_blinkWindowMin',n);fetch('/api/user-settings/blink_window_min',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:n})}).catch(()=>{});_blinkWindowChanged(window._openDetailProjId);}}) (this.value);}"
-              onclick="event.stopPropagation()">
-            <button onclick="event.stopPropagation();(function(){const inp=document.getElementById('blink-window-input');const n=parseInt(inp.value);if(n>=1&&n<=1440){localStorage.setItem('_blinkWindowMin',n);fetch('/api/user-settings/blink_window_min',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:n})}).catch(()=>{});_blinkWindowChanged(window._openDetailProjId);}else{inp.style.outline='1px solid var(--red)';setTimeout(()=>inp.style.outline='',800);}})();"
-              style="font-size:9px;color:var(--accent);font-family:var(--mono);background:none;border:none;padding:0;cursor:pointer;font-weight:700" title="Apply blink interval">min</button>
-          </span>
           <!-- M658: Compute semantic scores button -->
           <button id="dm-semantic-score-btn" title="Compute semantic proximity scores for each stone (sentence-transformers)" onclick="event.stopPropagation();_triggerSemanticScore()" style="font-size:8px;padding:2px 7px;border-radius:3px;border:1px solid var(--panel-border);background:none;color:var(--text-dim);cursor:pointer;font-family:var(--mono);display:none">⊛ score</button>
         </div>
@@ -10926,7 +10900,7 @@ function showCommentPopup(event, comment, projId, mid, currentStatus) {
       <input id="comment-reply-input" type="text" placeholder="Reply… (or drop text/file here)"
         value="${esc(_savedDraft)}"
         style="width:100%;background:var(--panel-soft);border:1px solid var(--panel-border);border-radius:4px;
-          padding:4px 7px;font-family:var(--mono);font-size:16px;color:var(--text);box-sizing:border-box;transition:border-color .15s,background .15s"
+          padding:4px 7px;font-family:var(--mono);font-size:10px;color:var(--text);box-sizing:border-box;transition:border-color .15s,background .15s"
         oninput="sessionStorage.setItem('${_draftKey}',this.value)"
         onkeydown="if(event.key==='Enter'){event.stopPropagation();_doCommentReply('${esc(projId)}','${esc(mid)}',this,'${esc(currentStatus||'')}')}"
         onclick="event.stopPropagation()"
@@ -12554,7 +12528,7 @@ document.getElementById('detail-overlay').addEventListener('click', e => {
   let _backoff = 1000;
   function _connect() {
     const es = new EventSource('/api/notifications/stream');
-    es.onopen = () => { _backoff = 1000; window._blinkCenterHydrated = {}; }; // M912: re-hydrate blink from SQLite after hub restart
+    es.onopen = () => { _backoff = 1000; window._blinkState = {}; }; // M1227: reset blink cache on reconnect so next poll re-fetches
     es.addEventListener('hello', () => {});
     // M162: stone_created/user_commented no longer render sticky toasts.
     // Only idle→live transitions (via _notifyTransition) show sticky popups.
@@ -12799,10 +12773,7 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
   const table = tableWrap.querySelector('.nt-table');
   if (!table) return;
 
-  // M794: hydrate central blink state from server (once per project per session).
-  // Fire-and-forget — first render uses whatever localStorage has, then on the
-  // next render the freshly-hydrated state appears (within ~100ms typically).
-  if (typeof _blinkCenterHydrate === 'function') _blinkCenterHydrate(projId);
+
 
   // M649/M683: fingerprint includes status+watching so count badges update in real-time.
   // M1215: also include assigned_session so sess badge rebuilds when assignment changes.
@@ -13513,94 +13484,21 @@ function _applySubstarGrouping(container, projId, l0, doneList = []) {
 
     // M777: session badge removed — use sess button for session assignment
 
-    // M732 v3: blink when section stone count changes vs previous poll cycle.
-    // v2 was: timestamp-window — any stone status-ts within user-set N minutes → blink, auto-clears after N min.
-    // v3 is: count-delta — total stones in section changed since last render → blink, cleared on click or after window.
-    // M748: blink state persisted in localStorage so it survives page refresh + server restart
+    // M1227: simplified blink — server SQLite is single source of truth.
+    // Server stamps blink_state on every stone status change; client reads it
+    // each poll cycle (fetched in loadMilestones). No localStorage, no count-delta,
+    // no soft window. Server prunes entries older than 48h.
     {
-      window._ssBarPrevHash  = window._ssBarPrevHash  || {};
-      window._ssBarPrevItems = window._ssBarPrevItems || {};
-      window._ssBlinkMids    = window._ssBlinkMids    || {};
+      window._ssBlinkMids = window._ssBlinkMids || {};
       const _sKey = ns ? (ns.id || '__ungrouped__') : '__ungrouped__';
-      const _lsBlinkKey  = '_ssBlinkTs_'   + _sKey;
-      const _lsBlinkMids = '_ssBlinkMids_' + _sKey;
-      // M1213: hash is status-only — conv.length/lastRole caused phantom blinks every 60s
-      // when the auto-reply worker appended role:claude messages (M1200-v2 root cause).
-      // Status-only means the hash only changes on real status transitions → safe to blink
-      // on any change, not just pending_confirmation/needs_clarification.
-      const _curItems = _allStones.map(s => ({ id: s.id, st: s.status || 'p' }));
-      const _cur = _curItems.map(x => x.st).join(',');
-      // Read blink timestamp from localStorage (persists across refresh)
-      const _storedTs = parseInt(localStorage.getItem(_lsBlinkKey) || '0');
-      const _winMs = (parseInt(localStorage.getItem('_blinkWindowMin')) || 60) * 60 * 1000;
-      const _HARD_MAX_MS = 24 * 60 * 60 * 1000; // M1058: hard 24h expiry; soft window only hides blink
-      // Hard-clear only after 24h — soft window controls display so increasing window restores blink
-      if (_storedTs && (Date.now() - _storedTs) >= _HARD_MAX_MS) {
-        localStorage.removeItem(_lsBlinkKey);
-        localStorage.removeItem(_lsBlinkMids);
-        delete window._ssBlinkMids[_sKey];
-        _blinkCenterSave(_proj);
+      const _serverEntry = (window._blinkState && window._blinkState[_proj] && window._blinkState[_proj][_sKey]);
+      const _blinkMidsArr = (_serverEntry && Array.isArray(_serverEntry.mids)) ? _serverEntry.mids : [];
+      if (_blinkMidsArr.length > 0) {
+        hTd.classList.add('ss-mg-blink');
+        window._ssBlinkMids[_sKey] = new Set(_blinkMidsArr);
+      } else {
+        window._ssBlinkMids[_sKey] = new Set();
       }
-      // Soft-expire: within hard max but outside window — just hide, keep timestamp
-      if (_storedTs && (Date.now() - _storedTs) < _HARD_MAX_MS) {
-        if ((Date.now() - _storedTs) >= _winMs) {
-          // Outside soft window — don't show blink, don't delete
-        } else {
-          // M782: restore row blink mids from localStorage on page refresh
-          if (!window._ssBlinkMids[_sKey]) {
-            const _stored = localStorage.getItem(_lsBlinkMids);
-            if (_stored) try { window._ssBlinkMids[_sKey] = new Set(JSON.parse(_stored)); } catch(_) {}
-          }
-          // M794: header blinks only when there is at least one mid to highlight
-          // M920/M942 fix: protect blink during page load — only clear when hydration confirmed empty + server echoed empty
-          if ((window._ssBlinkMids[_sKey] || new Set()).size > 0) {
-            hTd.classList.add('ss-mg-blink');
-          } else if (!window._blinkCenterHydrated[_proj]) {
-            // Hydration not complete yet — keep header blink, mids will be restored
-            hTd.classList.add('ss-mg-blink');
-          } else if (!window._blinkServerConfirmedEmpty || !window._blinkServerConfirmedEmpty[_sKey]) {
-            // M942: hydration ran but server never confirmed empty — keep blink (race guard)
-            hTd.classList.add('ss-mg-blink');
-          } else {
-            // Hydration complete + server confirmed empty → safe to clear
-            localStorage.removeItem(_lsBlinkKey);
-            localStorage.removeItem(_lsBlinkMids);
-            _blinkCenterSave(_proj);  // M794
-          }
-        }
-      }
-      if (window._ssBarPrevHash[_sKey] !== undefined &&
-          window._ssBarPrevHash[_sKey] !== _cur) {
-        // M1213: blink on any stone status change or new stone (except done/skipped).
-        // Replaced M1200-v2 _BLINK_ST restriction — phantom blink root cause (conv.length
-        // hash) is now eliminated by status-only hash above, so the restriction is no longer
-        // needed. Also removed _prevItemsC.length>0 guard so first stone in empty section blinks.
-        const _prevItemsC = window._ssBarPrevItems[_sKey] || [];
-        const _prevMapC = Object.fromEntries(_prevItemsC.map(x => [x.id, x.st]));
-        const _prevIdsC = new Set(_prevItemsC.map(x => x.id));
-        const _DONE_ST = new Set(['done', 'skipped', 'pending_confirmation']); // M1222: pending_confirmation = work done, no new blink
-        const _blinkMids = new Set([
-          // existing stones that changed status (to non-done/skipped)
-          ..._curItems.filter(x => {
-            const prev = _prevMapC[x.id];
-            return prev && prev !== x.st && !_DONE_ST.has(x.st);
-          }).map(x => x.id),
-          // new stones in section (including first stone in previously empty section)
-          ..._curItems.filter(x => !_prevIdsC.has(x.id) && !_DONE_ST.has(x.st)).map(x => x.id),
-        ]);
-        if (_blinkMids.size > 0) {
-          hTd.classList.add('ss-mg-blink');
-          localStorage.setItem(_lsBlinkKey, String(Date.now()));
-          // M795: merge into existing blink set
-          const _existingMids = window._ssBlinkMids[_sKey] || new Set();
-          const _mergedMids = new Set([..._existingMids, ..._blinkMids]);
-          window._ssBlinkMids[_sKey] = _mergedMids;
-          localStorage.setItem(_lsBlinkMids, JSON.stringify([..._mergedMids]));
-          _blinkCenterSave(_proj);
-        }
-      }
-      window._ssBarPrevHash[_sKey]  = _cur;
-      window._ssBarPrevItems[_sKey] = _curItems;
     }
 
     // M675: default agent badge (inline, after count); M692: click→view SKILL.md content
@@ -14107,100 +14005,12 @@ document.getElementById('hub-pro-modal').addEventListener('click', e => {
 document.addEventListener('DOMContentLoaded', _hubConsentInit);
 // ── end M561 ──────────────────────────────────────────────────────────────────
 
-// ── M794: centralised blink state (per-project, follows user across peers) ────
-// Mirrors localStorage `_ssBlinkTs_*` + `_ssBlinkMids_*` to server SQLite via
-// the user_settings table (key = blink_state_{projId}). Hydrate on detail open;
-// debounce-save on every blink mutation so all peers see the same blinks.
-window._blinkCenterHydrated = window._blinkCenterHydrated || {};
-window._blinkCenterSaveTimer = window._blinkCenterSaveTimer || null;
-
-async function _blinkCenterHydrate(projId) {
-  if (!projId || window._blinkCenterHydrated[projId]) return;
-  window._blinkCenterHydrated[projId] = true;
-  try {
-    const r = await fetch(`/api/user-settings/blink_state_${encodeURIComponent(projId)}`, {cache:'no-store'});
-    if (!r.ok) return;
-    const d = await r.json();
-    const bundle = d && d.value || null;
-    if (!bundle || typeof bundle !== 'object') return;
-    // M942: track which sKeys the server confirmed as non-empty
-    if (!window._blinkServerConfirmedEmpty) window._blinkServerConfirmedEmpty = {};
-    const serverKeys = new Set(Object.keys(bundle));
-    let _restoredBlink = false;  // M1000/M1001: did we restore any active blink state?
-    // M1179 root fix: detect expired entries during hydration, skip restoration, clear on server
-    const _HARD_MS = 24 * 60 * 60 * 1000;
-    const _updatedBundle = {};
-    let _needsServerClear = false;
-    Object.entries(bundle).forEach(([sKey, entry]) => {
-      if (entry && typeof entry === 'object') {
-        const _age = Date.now() - (entry.ts || 0);
-        if (_age >= _HARD_MS) {
-          // Expired — do NOT restore, clear mids on server to prevent re-hydration next load
-          _updatedBundle[sKey] = {ts: entry.ts, mids: []};
-          _needsServerClear = true;
-          window._blinkServerConfirmedEmpty[sKey] = true;  // suppress M942 guard
-          return;  // skip localStorage restore for this entry
-        }
-        _updatedBundle[sKey] = entry;  // valid — keep as-is
-        if (entry.ts) localStorage.setItem('_ssBlinkTs_' + sKey, String(entry.ts));
-        if (Array.isArray(entry.mids)) {
-          localStorage.setItem('_ssBlinkMids_' + sKey, JSON.stringify(entry.mids));
-          if (entry.mids.length > 0 && window._ssBlinkMids) {
-            window._ssBlinkMids[sKey] = new Set(entry.mids); // restore in-memory
-            _restoredBlink = true;
-          }
-        }
-        // Only mark as "server confirmed empty" when server explicitly returned empty mids
-        if (Array.isArray(entry.mids) && entry.mids.length === 0) {
-          window._blinkServerConfirmedEmpty[sKey] = true;
-        }
-      }
-    });
-    // Async-clear expired entries on server so next hydration doesn't see them again
-    if (_needsServerClear) {
-      fetch(`/api/user-settings/blink_state_${encodeURIComponent(projId)}`, {
-        method: 'PUT', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({value: _updatedBundle})
-      }).catch(()=>{});
-    }
-    // M1000/M1001 FIX: hydration is async and resolves AFTER the synchronous first
-    // render. On a fresh session localStorage is empty (M955 centralized state to
-    // server), so the first render shows no blink and — when the fingerprint is
-    // unchanged (e.g. FromScratch with no poll-cycle delta) — _applySubstarGrouping
-    // never re-runs, so blink never appears until reopen. Force a fingerprint-
-    // invalidated re-apply once hydration lands, mirroring the M992 _blinkWindowChanged
-    // pattern, so blink shows on first card open.
-    if (_restoredBlink && (!_activeDetailProjId || _activeDetailProjId === projId)) {
-      if (typeof _blinkWindowChanged === 'function') _blinkWindowChanged(projId);
-    }
-  } catch(_) {}
-}
-
-function _blinkCenterCollectBundle() {
-  const bundle = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k && k.startsWith('_ssBlinkTs_')) {
-      const sKey = k.slice('_ssBlinkTs_'.length);
-      const ts = parseInt(localStorage.getItem(k) || '0');
-      let mids = [];
-      try { mids = JSON.parse(localStorage.getItem('_ssBlinkMids_' + sKey) || '[]'); } catch(_){}
-      bundle[sKey] = { ts, mids };
-    }
-  }
-  return bundle;
-}
-
-function _blinkCenterSave(projId) {
-  // M1007 v2: NO-OP. The server is now the single source of truth for blink state
-  // (every stone change stamps it via _mark_blink_server in _update_milestone_locked).
-  // The old client-side full-bundle PUT here clobbered fresh server stamps with the
-  // browser's stale localStorage view (INSERT OR REPLACE = full overwrite) — that race
-  // is exactly why server-stamped blinks vanished. Client is now read-only: it hydrates
-  // + renders (count-delta still drives immediate local blink), but never writes back.
-  return;
-}
-// ── end M794 ──────────────────────────────────────────────────────────────────
+// ── M1227: blink state — server SQLite is single source of truth ─────────────
+// window._blinkState[projId][sKey] = {ts, mids[]} — populated per poll cycle
+// in loadMilestones(). No localStorage. Server prunes entries older than 48h.
+// _mark_blink_server() on status change stamps; done/skip/pending_confirmation removes.
+window._blinkState = window._blinkState || {};
+// ── end M1227 ─────────────────────────────────────────────────────────────────
 
 // ── M685/M785/M1045: per-model avatar helpers ──
 // M1045: server = source of truth. sessionStorage = fast-load cache (tab-scoped, no cross-device bleed).
