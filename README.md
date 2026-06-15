@@ -193,4 +193,44 @@ ENTITY_CORPUS_SERVER=~/my-corpus/server.py claude-ns-hub
 
 ---
 
+## Data schema & portability (P2)
+
+Stone and project data live in a local SQLite database (`~/.hub/hub.db`). The core tables:
+
+```sql
+-- milestones (stones)
+CREATE TABLE milestones (
+  id TEXT PRIMARY KEY,          -- e.g. "M1301"
+  project TEXT,                 -- e.g. "MOAT"
+  text TEXT,                    -- stone task description
+  status TEXT,                  -- queued | in_progress | pending_confirmation | done | skipped
+  done INTEGER DEFAULT 0,
+  exec_start TEXT,              -- ISO timestamp
+  exec_end TEXT,
+  model_used TEXT,
+  evidence_url TEXT,            -- GDrive link or external URL
+  evidence_filename TEXT,
+  append_message TEXT,          -- latest Claude summary
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- projects
+CREATE TABLE projects (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  northstar_goal TEXT,
+  cwd TEXT                      -- local working directory path
+);
+```
+
+Migration: export via `sqlite3 ~/.hub/hub.db .dump > backup.sql`. Import on new machine with `sqlite3 ~/.hub/hub.db < backup.sql`. Stone history, evidence URLs, and session logs are fully portable — no vendor lock-in.
+
+---
+
 **pip install claude-ns-hub** — because you should know what Claude is doing right now.
+
+---
+
+## License
+
+Currently **MIT**. If commercial redistribution becomes an issue, we may adopt [Elastic License v2 (ELv2)](https://www.elastic.co/licensing/elastic-license) — source-available, free for personal/internal use, restricted for managed-service resale only. Community PRs and personal deployments will always remain free.

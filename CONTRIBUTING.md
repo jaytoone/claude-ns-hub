@@ -5,7 +5,7 @@ Thank you for your interest in contributing! claude-ns-hub is a personal AI proj
 ## Quick start (2 minutes)
 
 ```bash
-git clone https://github.com/be2jay67/claude-ns-hub  # replace with actual repo URL
+git clone https://github.com/jaytoone/claude-ns-hub
 cd claude-ns-hub
 pip install -e ".[dev]"
 hub   # starts hub at http://localhost:9001
@@ -35,7 +35,7 @@ hub/
 
 ## Good first issues
 
-Look for issues labeled [`good first issue`](https://github.com/be2jay67/claude-ns-hub/issues?q=label%3A%22good+first+issue%22) on GitHub.
+Look for issues labeled [`good first issue`](https://github.com/jaytoone/claude-ns-hub/issues?q=label%3A%22good+first+issue%22) on GitHub.
 
 Typical beginner-friendly tasks:
 - Add a missing tooltip / UI label
