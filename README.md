@@ -9,7 +9,7 @@
 
 > One command. Your whole AI workflow, visible from any device.
 
-![Hub Dashboard — North Star swimlane with live exec sessions](https://i.imgur.com/nM5naaI.png)
+![NS-Hub — Why you keep losing your ideas, and how to fix it](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/ns-hub-banner-v9.png)
 
 ## Why you need this
 
