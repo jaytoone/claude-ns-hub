@@ -1,0 +1,7 @@
+name = "hub-telemetry-relay"
+main = "worker.js"
+compatibility_date = "2026-06-01"
+
+# Set via: wrangler secret put TURSO_URL
+# Set via: wrangler secret put TURSO_TOKEN
+# Set via: wrangler secret put RELAY_SECRET   (optional — enables X-Relay-Secret header check)

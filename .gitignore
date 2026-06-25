@@ -80,3 +80,4 @@ ttyd-ports/
 
 # ── Private/internal ──────────────────────────────────────────────────────
 .omc/
+relay/.relay-secret

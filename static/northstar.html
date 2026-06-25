@@ -1081,7 +1081,10 @@ header {
   display: none; position: absolute; inset: 0; z-index: 9500;
   background: rgba(26,24,22,.55); border-radius: 12px;
   align-items: center; justify-content: center;
-  pointer-events: all;
+  /* M1538 v2: pointer-events:none → wheel/touch pass through to underlying dm-left.
+     Overlay is visual feedback only; preventing UI clicks during in-flight ops is
+     redundant (the underlying async handlers already guard against concurrent edits). */
+  pointer-events: none;
 }
 .dm-op-overlay.show { display: flex; }
 .dm-op-spinner {
@@ -1533,6 +1536,15 @@ header {
 /* M1099: bang-cell phase flipped to match sess-pulse bright (0%/100%) — all blinks now in sync */
 @keyframes bang-cell-blink { 0%,100% { background:rgba(192,57,43,.30); } 50% { background:transparent; } }
 .ns-node.circle-card.has-bang { border-radius:12px; animation:bang-cell-blink 3s ease-in-out infinite; }
+/* M1527 v7: moved from JS template literal at L3169/L3173 into this global head style block.
+   Previously the rule lived inside a const toggleHtml backtick string with an embedded style
+   tag, which only got injected when detail card opened. CG-first path therefore had no
+   animation because the rule literally did not exist in any stylesheet until detail open. */
+@keyframes ss-cnt-blink-anim {
+  0%, 100% { transform: scale(1.05); filter: brightness(1.35) drop-shadow(0 0 3px currentColor); }
+  40%, 60% { transform: scale(1.35); filter: brightness(1.7) drop-shadow(0 0 8px currentColor); }
+}
+.ss-cnt-blink { display: inline-block; animation: ss-cnt-blink-anim 1.4s ease-in-out infinite; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -2434,9 +2446,11 @@ async function loadMilestones(projId) {
     } catch(e) { _msCollapsedParents[projId] = new Set(); }
   }
   const el = document.getElementById('dm-ms-creator');
-  if (!el) return;
-  // Skip if renderMultiNSLeftPanel already owns the panel for this project
-  if (window.__multiNSActive === projId) return;
+  // M1527 v5: do NOT early-exit when dm-ms-creator missing — fetch+cache writes still needed
+  // for CG-first canonical hydration path. renderMilestoneCreator at the bottom is no-op if
+  // el is null (its own L2734 guard) but cache writes happen unconditionally.
+  // Skip only if renderMultiNSLeftPanel already owns the panel for this project.
+  if (el && window.__multiNSActive === projId) return;
   try {
     // M307: always use main /milestones endpoint for execution milestones table.
     // North-star goal milestones (inside north-stars entries) are shown in the sub-stars pane,
@@ -2493,6 +2507,11 @@ async function loadMilestones(projId) {
         try { localStorage.setItem(`ms-collapsed-${projId}`, JSON.stringify([..._msCollapsedParents[projId]])); } catch(_e) {}
       }
     }
+    // M1527 v5: always populate _msCacheByProject (even when detail card not open).
+    // renderMilestoneCreator early-exits when dm-ms-creator is absent (CG-first flow), so
+    // its internal L2755 cache write would be skipped — moving it out ensures CG path also
+    // has flat milestones available for any downstream consumer.
+    _msCacheByProject[projId] = d2.milestones || [];
     renderMilestoneCreator(projId, d2.milestones || []);
     // M1435 v6: re-apply elapsed display after panel DOM is ready (per-project)
     _updateBlinkLastElapsed(window._lastBlinkData || null, projId);
@@ -9709,6 +9728,16 @@ function _applyBlinkWindow(hours) {
         for (const k of Object.keys(_swimlaneLaneFp)) delete _swimlaneLaneFp[k];
       }
       if (typeof render === 'function') render();
+      // M1539: also re-render CG board if open, and detail card substar grouping if open.
+      // Stone count blink/badge depends on _bWin which is now updated per project.
+      if (typeof _cgProjId !== 'undefined' && _cgProjId && typeof _cgRenderBoard === 'function') {
+        _cgRenderBoard();
+      }
+      if (window._openDetailProjId) {
+        delete _groupingFingerprint[window._openDetailProjId];
+        delete _msRenderFingerprint[window._openDetailProjId];
+        _fastReapplyGrouping(window._openDetailProjId);
+      }
     });
   } catch (e) {}
 }
@@ -11629,18 +11658,12 @@ async function openDetail(idx) {
   // M374: track which proj_id's detail card is open so SSE handlers can target it for instant refresh
   window._detailModalOpenProjId = p.id;
   window._openDetailProjId = p.id; // M658: used by semantic score button
-  // M1520 v7/v8: refresh effective window scoped to THIS project — write to per-project map
-  // so other projects (CG/swimlane) keep their own values.
-  fetch(`/api/blink-effective-window?proj_id=${encodeURIComponent(p.id)}`, {cache:'no-store'})
-    .then(r=>r.json()).then(d => {
-      if (d && d.window_min && d.window_min >= 1) {
-        const v = parseInt(d.window_min);
-        window._blinkWindowMin = v;
-        window._blinkWindowMinByProject[p.id] = v;
-      }
-      window._lastBlinkData = d;
-      _updateBlinkLastElapsed(d, p.id);
-    }).catch(()=>{});
+  // M1527 v5: route through shared hydration (CG-first canonical path). Background fire-then —
+  // openDetail UI rendering doesn't block on this; downstream loadMilestones/loadSubStars will
+  // see populated caches if user previously visited CG, otherwise hydrates afresh.
+  ensureProjectHydrated(p.id).then(() => {
+    if (window._lastBlinkData) _updateBlinkLastElapsed(window._lastBlinkData, p.id);
+  }).catch(()=>{});
   const _scoreBtn = document.getElementById('dm-semantic-score-btn');
   if (_scoreBtn) _scoreBtn.style.display = '';
   // M732/M739: blink window input value read directly from localStorage in the dm-left template
@@ -11720,12 +11743,14 @@ async function openDetail(idx) {
   const _cgProtectKey = window._cgActiveNodeFilter ? `ss_mg_${p.id}_cg_${window._cgActiveNodeFilter.nodeId}` : null;
   Object.keys(localStorage).filter(k => k.startsWith(`ss_mg_${p.id}_`) && k !== _cgProtectKey).forEach(k => localStorage.removeItem(k));
 
-  // M1220-v2: fetch north-stars FIRST so _nsStarsCache is populated before loadMilestones runs.
-  // Previously: loadMilestones fired with empty cache → sess badge showed 'sess' (unassigned) for
-  // 100-500ms until loadSubStars completed. On mobile with slow connections this was several seconds.
-  // M1235: ctx-pulse removed (CTX disabled)
+  // M1220-v2 / M1527 v5: north-stars now hydrated via ensureProjectHydrated when needed.
+  // Detail card still needs OKRs (not in shared hydration). Reuse _nsStarsCache when hot —
+  // ensureProjectHydrated above has either populated it or has it in-flight; we await both here.
+  await (window._hydrationInFlight?.[p.id] || Promise.resolve());
   const [nsRespEarly, okrData] = await Promise.all([
-    fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]})),
+    (window._nsStarsCache?.[p.id]?.length
+      ? Promise.resolve({north_stars: window._nsStarsCache[p.id]})
+      : fetch(`/api/northstar/${esc(p.id)}/north-stars`).then(r=>r.json()).catch(()=>({ok:false,north_stars:[]}))),
     fetch(`/api/northstar/${esc(p.id)}/okrs`).then(r=>r.json()).catch(()=>({ok:false,okrs:[]})),
   ]);
 
@@ -11865,7 +11890,7 @@ function renderHierarchy(p) {
         <span class="dm-layer-count" id="dm-ms-ack-badge"></span>
         <div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
           <!-- M732/M1227: blink window — client-side age filter on server blink_state -->
-          <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px 2px 6px;border:1px solid var(--panel-border);border-radius:10px;background:var(--panel-bg);opacity:.8;transition:opacity .15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='.8'" title="Blink visibility window (hours) — blinks older than this are hidden" onclick="event.stopPropagation()">
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px 2px 6px;border:1px solid var(--panel-border);border-radius:10px;background:var(--panel-bg);opacity:.8;transition:opacity .15s" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity='.8'" title="Blink visibility window (hours) — base value. Server auto-extends per project to cover the last 2 activity clusters (last-2-clusters algorithm). Effective window = max(base, gap-to-prior-cluster + 1min), capped at 7 days. So if you set 1h but your prior cluster is 5h ago, the effective window becomes 5h to surface that cluster." onclick="event.stopPropagation()">
             <span style="font-size:9px;color:var(--text-dim);font-family:var(--mono);letter-spacing:.03em">blink</span>
             <input id="blink-window-input" type="number" min="0.1" max="24" step="0.1" value="1"
               style="width:38px;font-size:11px;font-weight:600;padding:0;border:none;background:transparent;color:var(--accent);text-align:center;font-family:var(--mono);outline:none;-moz-appearance:textfield;appearance:textfield;-webkit-appearance:none"
@@ -13631,9 +13656,13 @@ document.getElementById('detail-overlay').addEventListener('click', e => {
     if (xtermRoot) return;  // let xterm.js handle its own wheel internally
     const scrollEl = findScrollableAncestor(e.target);
     if (scrollEl) return;  // genuine scroll target — let it through
+    // M1538: target inside dm-left but content not yet tall enough to scroll (first open) —
+    // allow native wheel so as soon as content fills dm-left, scroll engages without lag.
+    // Mirrors M1536 touchmove exemption for desktop wheel path.
+    const dmLeft = document.getElementById('dm-left');
+    if (dmLeft && dmLeft.contains(e.target)) return;
     // No scrollable ancestor — check if target is inside detail-overlay (header/FAB area)
     const ov = getOverlay();
-    const dmLeft = document.getElementById('dm-left');
     if (ov && dmLeft && ov.contains(e.target)) {
       // M1522 v5: redirect wheel into dm-left so user can scroll body from header area
       dmLeft.scrollTop += e.deltaY;
@@ -13856,6 +13885,22 @@ document.addEventListener('input', e => {
         const d = JSON.parse(e.data);
         if (d.proj_id) {
           _notifyTransition(d.proj_id, d.kind || 'pty');
+          // M1537: avatar opacity 즉시 반영 — exec→idle 전환을 SSE 시점에 처리 (8s poll 대기 X).
+          // session_running과 대칭. M388 grace는 spawn time 기반이라 idle 전환에는 영향 없음.
+          if ((d.kind || 'exec') === 'exec' && _execStatus[d.proj_id] !== 'idle') {
+            _execStatus[d.proj_id] = 'idle';
+            // M388 v2: idle 전환되면 spawn time 클리어 — 다음 spawn 전까지 grace 적용 안 되도록
+            if (window._execSpawnTime) delete window._execSpawnTime[d.proj_id];
+            // direct DOM update (parity with session_running L13880-84)
+            const cardNode = document.querySelector(`.ns-node[data-pid="${CSS.escape(d.proj_id)}"]`);
+            if (cardNode) {
+              cardNode.classList.remove('exec-live');
+              cardNode.classList.add('exec-idle');
+            }
+            // re-render swimlane to update avatar opacity + model label color
+            Object.keys(_swimlaneLaneFp).forEach(k => delete _swimlaneLaneFp[k]);
+            if (typeof render === 'function') render();
+          }
           // M374: if detail card open for this proj_id, refresh exec pane immediately (<500ms vs 8s poll)
           if (d.proj_id === window._detailModalOpenProjId && typeof window._refreshExecState === 'function') {
             window._refreshExecState();
@@ -16226,12 +16271,10 @@ async function _openConceptGraphFor(projId) {
   if (!window._blinkWindowMinByProject[projId] && window._blinkBaseWindowMin) {
     window._blinkWindowMinByProject[projId] = window._blinkBaseWindowMin;
   }
-  // M1527 v4: AWAIT loadMilestones before _cgReload so _msCacheByProject + _blinkState
-  // are populated first (matches detail-card path). Fire-and-forget left blink race window
-  // where _cgRenderBoard fired before loadMilestones hydrated cache.
-  if (typeof loadMilestones === 'function' && !_msCacheByProject[projId]) {
-    try { await loadMilestones(projId); } catch (_) {}
-  }
+  // M1527 v5: CG-first canonical hydration. Single source of truth — all 4 caches loaded
+  // through shared helper. Detail-card-open also uses this, so opening either path first
+  // produces identical state for the other.
+  try { await ensureProjectHydrated(projId); } catch (_) {}
   // M1503: close detail card before opening graph — prevents semi-transparent overlay bleed-through
   if (typeof closeDetail === 'function') closeDetail();
   const ov = document.getElementById('cg-overlay');
@@ -16246,6 +16289,62 @@ async function _openConceptGraphFor(projId) {
     _cgRenderBoard();
   }
   _cgReload();
+}
+
+// M1527 v5: shared project hydration — CG-first canonical path.
+// Both _openConceptGraphFor and openDetail call this to ensure all 4 caches are populated
+// for projId before downstream renders. Idempotent (cache-guards) + in-flight dedup.
+// Performs raw fetches independent of loadMilestones to avoid its DOM-coupled early-exits
+// (loadMilestones early-returns when dm-ms-creator/_activeDetailProjId mismatch).
+window._hydrationInFlight = window._hydrationInFlight || {};
+async function ensureProjectHydrated(projId, {force = false} = {}) {
+  if (!projId) return;
+  // M1527 v6 (research-driven): empty-object `{}` from a failed/empty blink-state fetch
+  // is truthy → previous cache-hot guard treated it as "hydrated" → subsequent fetches
+  // skipped → blink renders inactive. Require non-empty blink state to count as hydrated.
+  const _bsHot = window._blinkState?.[projId] && Object.keys(window._blinkState[projId]).length > 0;
+  if (!force
+      && (window._msCacheByProject?.[projId]||[]).length
+      && _bsHot
+      && window._blinkWindowMinByProject?.[projId]
+      && (window._nsStarsCache?.[projId]||[]).length) {
+    return;
+  }
+  if (window._hydrationInFlight[projId]) return window._hydrationInFlight[projId];
+  const _p = (async () => {
+    const enc = encodeURIComponent(projId);
+    const fetches = [
+      // /milestones → _msCacheByProject
+      (force || !(window._msCacheByProject?.[projId]||[]).length) ?
+        fetch(`/api/northstar/${enc}/milestones`, {cache:'no-store'}).then(r => r.ok ? r.json() : null).then(d => {
+          if (d) { window._msCacheByProject = window._msCacheByProject || {}; window._msCacheByProject[projId] = d.milestones || []; }
+        }).catch(()=>{}) : Promise.resolve(),
+      // /user-settings/blink_state_{proj} → _blinkState
+      // M1527 v6: gate on empty-state too (empty {} = "fetch again", not "hot cache").
+      (force || !window._blinkState?.[projId] || Object.keys(window._blinkState[projId]).length === 0) ?
+        fetch(`/api/user-settings/blink_state_${enc}`, {cache:'no-store'}).then(r => r.ok ? r.json() : null).then(d => {
+          window._blinkState = window._blinkState || {};
+          window._blinkState[projId] = (d && typeof d.value === 'object' && d.value) ? d.value : {};
+        }).catch(()=>{}) : Promise.resolve(),
+      // /north-stars → _nsStarsCache
+      (force || !(window._nsStarsCache?.[projId]||[]).length) ?
+        fetch(`/api/northstar/${enc}/north-stars`).then(r => r.ok ? r.json() : null).then(d => {
+          if (d) { window._nsStarsCache = window._nsStarsCache || {}; window._nsStarsCache[projId] = d.north_stars || []; }
+        }).catch(()=>{}) : Promise.resolve(),
+      // /blink-effective-window → _blinkWindowMinByProject
+      (force || !window._blinkWindowMinByProject?.[projId]) ?
+        fetch(`/api/blink-effective-window?proj_id=${enc}`, {cache:'no-store'}).then(r => r.ok ? r.json() : null).then(d => {
+          if (d && d.window_min) {
+            window._blinkWindowMinByProject = window._blinkWindowMinByProject || {};
+            window._blinkWindowMinByProject[projId] = parseInt(d.window_min);
+            window._lastBlinkData = d;
+          }
+        }).catch(()=>{}) : Promise.resolve(),
+    ];
+    await Promise.all(fetches);
+  })();
+  window._hydrationInFlight[projId] = _p;
+  try { await _p; } finally { delete window._hydrationInFlight[projId]; }
 }
 
 // close on backdrop
@@ -16267,7 +16366,10 @@ async function _cgReload() {
   // M1523: also fetch blink-effective-window in same Promise.all so first render has correct
   // per-project effective window (otherwise: render fires with baseline 60min → old blinks hidden →
   // effective-window fetch arrives later but second render race-loses to nothing).
-  const needBlink = !window._blinkState?.[_reloadProjId];
+  // M1527 v6: empty-object `{}` from a prior failed/empty fetch was truthy → guard skipped
+  // re-fetch → render saw empty mids → no blink classes applied. Also re-fetch on empty.
+  const _bsExisting = window._blinkState?.[_reloadProjId];
+  const needBlink = !_bsExisting || Object.keys(_bsExisting).length === 0;
   const fetches = [
     fetch('/api/northstar/' + encodeURIComponent(_reloadProjId) + '/concept-graph').then(r => r.json()).catch(() => ({})),
     fetch('/api/northstar/' + encodeURIComponent(_reloadProjId) + '/north-stars').then(r => r.json()).catch(() => ({})),

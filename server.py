@@ -65,17 +65,12 @@ _TURSO_TOKEN = (
 )
 _TURSO_ENABLED = bool(_TURSO_URL and _TURSO_TOKEN)
 
-# Telemetry-only path: hub_usage events sent to central DB (INSERT only, no stone data).
-# M929: Default token hardcoded (same pattern as CTX telemetry.py). rw token — acceptable
-# risk: external users can insert fake stats but cannot read data (no sensitive stone data here).
-_HUB_TELEMETRY_URL = os.environ.get(
-    "HUB_TELEMETRY_URL",
-    "https://hub-jaytoone.aws-us-west-2.turso.io"  # hub-dedicated DB, no Restrict
-)
-_HUB_TELEMETRY_TOKEN = os.environ.get(
-    "HUB_TELEMETRY_TOKEN",
-    "REDACTED_HUB_TURSO_TOKEN_M1517"
-)
+# M1517: Direct-to-Turso hardcoded credentials REMOVED. Telemetry now flows through
+# Cloudflare Worker relay (HUB_RELAY_URL / HUB_RELAY_SECRET, defined at L11802-11803).
+# Legacy env vars HUB_TELEMETRY_URL/TOKEN kept as null fallback so old self-hosters can
+# still configure direct Turso writes if they want — but no default credential is shipped.
+_HUB_TELEMETRY_URL = os.environ.get("HUB_TELEMETRY_URL", "")
+_HUB_TELEMETRY_TOKEN = os.environ.get("HUB_TELEMETRY_TOKEN", "")
 _TEL_ENABLED = bool(_HUB_TELEMETRY_URL and _HUB_TELEMETRY_TOKEN)
 
 def _turso_execute(sql: str, args: list = None) -> bool:
@@ -608,6 +603,115 @@ async def hub_network_info():
     has_tailscale = ts_ip != "127.0.0.1"
     hub_url = f"http://{ts_ip}:{PORT}" if has_tailscale else f"http://127.0.0.1:{PORT}"
     return JSONResponse({"hub_url": hub_url, "tailscale_ip": ts_ip if has_tailscale else None, "port": PORT})
+
+# M1533 v3: OOB agent-busy channel — wrappers POST their own busy/idle state
+# (replaces brittle tmux pane-scrape + substring match).
+# M1479-P2: persisted to user_settings on every change so hub restart preserves state.
+_agent_busy_state: dict[str, dict] = {}  # proj_id → {"busy": bool, "reason": str, "ts": float}
+
+
+def _agent_busy_load_from_db():
+    """Hydrate _agent_busy_state from SQLite user_settings on startup."""
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        row = conn.execute("SELECT value_json FROM user_settings WHERE key='_agent_busy_state'").fetchone()
+        conn.close()
+        if row and row[0]:
+            data = json.loads(row[0])
+            if isinstance(data, dict):
+                _agent_busy_state.update(data)
+    except Exception:
+        pass
+
+
+def _agent_busy_persist():
+    """Write current _agent_busy_state to SQLite. Fire-and-forget."""
+    try:
+        import datetime as _dt
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        conn.execute(
+            "INSERT OR REPLACE INTO user_settings(key, value_json, updated_at) VALUES(?, ?, ?)",
+            ("_agent_busy_state", json.dumps(_agent_busy_state, ensure_ascii=False),
+             _dt.datetime.utcnow().isoformat()),
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+
+# Restore on startup event (after _NS_EVENTS_DB is set, around L1667).
+@app.on_event("startup")
+async def _agent_busy_load_startup():
+    _agent_busy_load_from_db()
+
+
+@app.post("/api/agent-busy")
+async def agent_busy(request: Request):
+    """M1533 v3: agent-wrapper reports busy/idle. Hub uses this to gate queue-continuation poller.
+    M1533 v4: on busy=false transition with queued stones present, trigger immediate dispatch
+    (no wait for next 10s poll cycle) — avatar flicker and queue idle time both eliminated."""
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"ok": False, "error": "invalid json"}, status_code=400)
+    proj_id = (body.get("proj_id") or "").strip()
+    if not proj_id:
+        return JSONResponse({"ok": False, "error": "missing proj_id"}, status_code=400)
+    new_busy = bool(body.get("busy", False))
+    prev = _agent_busy_state.get(proj_id) or {}
+    prev_busy = bool(prev.get("busy", True))
+    _agent_busy_state[proj_id] = {
+        "busy": new_busy,
+        "reason": str(body.get("reason") or "")[:200],
+        "ts": time.time(),
+    }
+    _agent_busy_persist()  # M1479-P2: durable across hub restart
+    dispatched = False
+    # M1533 v4: busy→idle transition + queued stones present → immediate go-injection.
+    # M1533 v5 audit: tmux subprocess + _send_exec_wake offloaded to thread so this POST
+    # handler returns within ~50ms even if tmux send-keys blocks briefly.
+    if prev_busy and not new_busy:
+        try:
+            _qdb = sqlite3.connect(str(_NS_EVENTS_DB))
+            try:
+                queued_count = _qdb.execute(
+                    "SELECT COUNT(*) FROM milestones_store WHERE proj_id=? AND status='queued' AND COALESCE(held,0)=0",
+                    (proj_id,)
+                ).fetchone()[0]
+            finally:
+                _qdb.close()
+            if queued_count > 0:
+                def _dispatch_blocking():
+                    try:
+                        ls = subprocess.run(["tmux", "list-sessions", "-F", "#{session_name}"], capture_output=True, text=True, timeout=2)
+                    except Exception:
+                        return False
+                    for sn in (ls.stdout or "").splitlines():
+                        sn = sn.strip()
+                        for prefix in ("claude-exec-", "openrouter-exec-", "codex-exec-", "dsk-exec-"):
+                            if sn.startswith(prefix) and sn[len(prefix):] == proj_id:
+                                try:
+                                    return bool(_send_exec_wake(sn, proj_id))
+                                except Exception:
+                                    return False
+                    return False
+                try:
+                    dispatched = await asyncio.to_thread(_dispatch_blocking)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    return JSONResponse({"ok": True, "proj_id": proj_id, "busy": new_busy, "immediate_dispatch": dispatched})
+
+
+@app.get("/api/agent-busy")
+async def agent_busy_get(proj_id: str = ""):
+    """Read agent busy state. Returns null when wrapper hasn't reported (poller falls back to pane scrape)."""
+    if proj_id:
+        return JSONResponse(_agent_busy_state.get(proj_id) or {})
+    return JSONResponse(_agent_busy_state)
+
 
 @app.post("/api/hub/restart")
 async def hub_restart():
@@ -4054,14 +4158,16 @@ async def _start_queue_continuation_poller():
                     clean = _re.sub(r'\x1b\[[0-9;]*[mKHJ]', '', pane_out)
                     # M1322 v3: 10→30 lines — long tool output pushes spinner "… (" off the bottom 10 lines
                     clean_tail = "\n".join(clean.splitlines()[-30:])
-                    # M1370: "esc to interrupt" appears in claude's status bar even when idle
-                    # so we only use the spinner pattern "… (" for busy detection.
-                    # M1322 v2: also treat compaction-in-progress as busy.
-                    # M1533 v2 fix: previous markers ("/compact", lowercase "compacting") false-positive
-                    # on idle panes that show Claude's "Use /compact now" status warning or any chat text
-                    # mentioning the slash command. Require unambiguous progress markers only.
-                    _compacting = any(s in clean_tail for s in ("Compacting…", "Compacting...", "Compact conversation"))
-                    busy = "… (" in clean_tail or _compacting
+                    # M1533 v3 OOB: agent-wrapper authoritative busy state (when available) takes priority.
+                    # Falls back to legacy pane-scrape only when wrapper hasn't reported recently.
+                    _oob = _agent_busy_state.get(proj_id)
+                    _OOB_STALE_SECS = 600  # 10min — wrapper restart shouldn't lock forever
+                    if _oob and (now - _oob.get("ts", 0)) < _OOB_STALE_SECS:
+                        busy = bool(_oob.get("busy", False))
+                    else:
+                        # M1370 / M1322 v2 / M1533 v2: fallback pane-scrape — spinner + unambiguous compaction markers.
+                        _compacting = any(s in clean_tail for s in ("Compacting…", "Compacting...", "Compact conversation"))
+                        busy = "… (" in clean_tail or _compacting
                     if busy:
                         # Session is actively running — clear stale idle file if present
                         _exec_idle_file(proj_id).unlink(missing_ok=True)
@@ -4572,6 +4678,8 @@ def _send_exec_wake(session_name: str, proj_id: str | None = None) -> bool:
     then sleeps 1s, then sends the main wake message.
     This achieves ~100% skill load rate vs ~50-60% for _skill_instruction alone.
     M1322: dedup guard prevents duplicate injection within _WAKE_DEDUP_SECS seconds.
+    M1533 v5b: also push session_running SSE so NS-card avatar updates instantly without
+    waiting for next 5s exec-sessions poll (the gap user observed).
     Returns True if wake was sent, False if suppressed by dedup."""
     import time as _time_wake
     now = _time_wake.time()
@@ -4594,6 +4702,10 @@ def _send_exec_wake(session_name: str, proj_id: str | None = None) -> bool:
         ["tmux", "send-keys", "-t", session_name, wake_msg, "Enter"],
         capture_output=True, timeout=2,
     )
+    # M1533 v5b: emit session_running SSE so swimlane avatar opacity updates without 5s poll lag.
+    if proj_id:
+        try: _ns_push("session_running", proj_id=proj_id, kind="exec")
+        except Exception: pass
     return True
 
 
@@ -11560,26 +11672,28 @@ def _record_usage_event(event: str, extra: dict = None):
             f.write(json.dumps(entry) + "\n")
     except Exception:
         pass
-    # Central telemetry — async, non-blocking
-    if _TEL_ENABLED:
+    # M1517: Central telemetry via Cloudflare Worker relay. Async, fire-and-forget.
+    # Relay proxies to Turso server-side so credentials never live in client code.
+    if _HUB_RELAY_URL:
         import threading
-        def _send_telemetry():
+        def _send_telemetry_via_relay():
             try:
                 import urllib.request as _ur2, json as _j2
-                extra_json = _j2.dumps({k: v for k, v in (extra or {}).items()})
-                payload = _j2.dumps({"requests": [
-                    {"type": "execute", "stmt": {"sql": "CREATE TABLE IF NOT EXISTS hub_usage (ts INTEGER, event TEXT, install_id TEXT, version TEXT, os TEXT, extra_json TEXT)"}},
-                    {"type": "execute", "stmt": {"sql": "INSERT INTO hub_usage (ts, event, install_id, version, os, extra_json) VALUES (?, ?, ?, ?, ?, ?)",
-                        "args": [{"type": "integer", "value": str(entry["ts"])}, {"type": "text", "value": entry["event"]},
-                                 {"type": "text", "value": entry["install_id"]}, {"type": "text", "value": entry["version"]},
-                                 {"type": "text", "value": entry["os"]}, {"type": "text", "value": extra_json}]}},
-                ]}).encode()
-                req = _ur2.Request(f"{_HUB_TELEMETRY_URL}/v2/pipeline", data=payload,
-                    headers={"Authorization": f"Bearer {_HUB_TELEMETRY_TOKEN}", "Content-Type": "application/json"})
+                payload = {
+                    "kind": "hub_usage",  # tells relay which table to write
+                    "ts": entry["ts"], "event": entry["event"],
+                    "install_id": entry["install_id"], "version": entry["version"],
+                    "os": entry["os"], "extra_json": _j2.dumps({k: v for k, v in (extra or {}).items()}),
+                }
+                headers = {"Content-Type": "application/json"}
+                if _HUB_RELAY_SECRET:
+                    headers["X-Relay-Secret"] = _HUB_RELAY_SECRET
+                req = _ur2.Request(f"{_HUB_RELAY_URL}/v1/hub-usage", data=_j2.dumps(payload).encode(),
+                    headers=headers, method="POST")
                 _ur2.urlopen(req, timeout=5)
             except Exception:
                 pass
-        threading.Thread(target=_send_telemetry, daemon=True).start()
+        threading.Thread(target=_send_telemetry_via_relay, daemon=True).start()
 
 # ── M1516: hub_session_aggregates — CTX-equivalent 15-field session aggregate ─
 # Privacy model: k-anonymity gate(threshold = k_min, dynamic by user count) + no raw text + schema_version
