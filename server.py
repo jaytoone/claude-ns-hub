@@ -30,6 +30,15 @@ except ImportError:
 
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
+
+# M1324-P2: shared AsyncClient with connection pool (avoid per-request TCP handshake overhead)
+_async_http: httpx.AsyncClient | None = None
+
+def _get_async_http() -> httpx.AsyncClient:
+    global _async_http
+    if _async_http is None or _async_http.is_closed:
+        _async_http = httpx.AsyncClient(timeout=4.0, limits=httpx.Limits(max_connections=20))
+    return _async_http
 # M712: data dir migrated to ~/.hub/ — Claude Code independent (like .hermes convention)
 _HUB_DATA_DIR = Path(os.environ.get("HUB_DATA_DIR", str(Path.home() / ".hub")))
 _DEFAULT_PROJECTS_DIR = _HUB_DATA_DIR / "projects"
@@ -43,14 +52,30 @@ _HUB_CONFIG_FILE = _HUB_DATA_DIR / "config.yaml"
 
 # M215: Turso (libSQL cloud) dual-write sync
 # M929 security fix: stones sync requires explicit env vars — no hardcoded fallback.
-# TURSO_DATABASE_URL / TURSO_AUTH_TOKEN must be set by the hub owner; absent → sync disabled.
-_TURSO_URL = os.environ.get("TURSO_DATABASE_URL", "").replace("libsql://", "https://")
-_TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
+# M929 (rename): HUB_TURSO_URL / HUB_TURSO_TOKEN are the hub-dedicated Turso DB
+# (hub-jaytoone). CTX uses HUB_CTX_TURSO_URL/TOKEN (hub-ctx-jaytoone).
+# Old generic TURSO_DATABASE_URL / TURSO_AUTH_TOKEN are kept as a deprecation fallback.
+_TURSO_URL = (
+    os.environ.get("HUB_TURSO_URL")
+    or os.environ.get("TURSO_DATABASE_URL", "")
+).replace("libsql://", "https://")
+_TURSO_TOKEN = (
+    os.environ.get("HUB_TURSO_TOKEN")
+    or os.environ.get("TURSO_AUTH_TOKEN", "")
+)
 _TURSO_ENABLED = bool(_TURSO_URL and _TURSO_TOKEN)
 
 # Telemetry-only path: hub_usage events sent to central DB (INSERT only, no stone data).
-_HUB_TELEMETRY_URL = os.environ.get("HUB_TELEMETRY_URL", "")
-_HUB_TELEMETRY_TOKEN = os.environ.get("HUB_TELEMETRY_TOKEN", "")
+# M929: Default token hardcoded (same pattern as CTX telemetry.py). rw token — acceptable
+# risk: external users can insert fake stats but cannot read data (no sensitive stone data here).
+_HUB_TELEMETRY_URL = os.environ.get(
+    "HUB_TELEMETRY_URL",
+    "https://hub-jaytoone.aws-us-west-2.turso.io"  # hub-dedicated DB, no Restrict
+)
+_HUB_TELEMETRY_TOKEN = os.environ.get(
+    "HUB_TELEMETRY_TOKEN",
+    "REDACTED_HUB_TURSO_TOKEN_M1517"
+)
 _TEL_ENABLED = bool(_HUB_TELEMETRY_URL and _HUB_TELEMETRY_TOKEN)
 
 def _turso_execute(sql: str, args: list = None) -> bool:
@@ -189,8 +214,14 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)  # M515: compress large JS
 # M210 follow-up: when this app is served over plain HTTP, redirect every request to the
 # HTTPS endpoint so the browser unlocks the Notification API. Same uvicorn process can
 # run two instances (HTTP:9000 → redirect, HTTPS:9443 → serve normally); the request.url.scheme
+_ui_first_view_recorded = False  # M1348 P0-B: once-per-process flag
+
 @app.get("/static/northstar.html")
 async def _northstar_static_nocache():
+    global _ui_first_view_recorded
+    if not _ui_first_view_recorded:
+        _ui_first_view_recorded = True
+        _record_usage_event("ui_first_view")
     return FileResponse(str(STATIC / "northstar.html"),
                         headers={"Cache-Control": "no-store, no-cache, must-revalidate",
                                  "Pragma": "no-cache"})
@@ -274,6 +305,113 @@ async def user_settings_get(key: str):
         return JSONResponse({"key": key, "value": json.loads(row[0])})
     except Exception as e:
         return JSONResponse({"key": key, "value": None, "error": str(e)}, status_code=500)
+
+
+@app.get("/api/blink-effective-window")
+async def blink_effective_window(proj_id: str = ""):
+    """M1532: simplified single-knob algorithm — idle threshold concept removed.
+    Algorithm per project:
+    1. Collect blink timestamps within 48h, sort descending (newest first).
+    2. Walk through ts list — split into clusters where gap ≥ blink_window_min minutes.
+    3. Display = current cluster (containing in-window blinks) + immediately prior cluster.
+       Effective window = (now - oldest_ts_in_prior_cluster) so client window filter shows both.
+    4. No clusters / no blinks → window = base_min.
+    Earlier clusters (gap older than prior cluster) are hidden.
+    """
+    import datetime as _dt_bew
+    # M1527 v3 fix: previous 48h cap filtered out ALL blink mids for inactive projects,
+    # leaving window_min=base. User intent ("BLINK interval 이상 차이나는 마지막 블링크
+    # 집단은 자동으로 보여주로록"): the LAST cluster must always surface even if days old.
+    # Solution: drop the input-side cap (let cluster detection see all history), but cap the
+    # final effective window at 7d so a 30d-old cluster doesn't produce window_min=43200.
+    _CAP_OUTPUT_MIN = 7 * 24 * 60  # 7d max effective window
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        row_base = conn.execute("SELECT value_json FROM user_settings WHERE key='blink_window_min'").fetchone()
+        base_min = 60
+        try:
+            if row_base:
+                base_min = int(json.loads(row_base[0])) or 60
+        except Exception:
+            pass
+
+        now_ms = int(_dt_bew.datetime.now(_dt_bew.timezone.utc).timestamp() * 1000)
+        gap_ms = base_min * 60 * 1000
+
+        # Per-project filter when proj_id specified
+        if proj_id:
+            blink_rows = conn.execute(
+                "SELECT key, value_json FROM user_settings WHERE key = ?",
+                (f"blink_state_{proj_id}",)
+            ).fetchall()
+        else:
+            blink_rows = conn.execute(
+                "SELECT key, value_json FROM user_settings WHERE key LIKE 'blink_state_%'"
+            ).fetchall()
+        conn.close()
+
+        best_window = base_min
+        best_meta = {}
+
+        for (bkey, val_json) in blink_rows:
+            try:
+                state = json.loads(val_json)
+            except Exception:
+                continue
+            proj_ts = []
+            for ns_val in state.values():
+                mids = ns_val.get("mids", {}) if isinstance(ns_val, dict) else {}
+                for ts_ms in mids.values():
+                    # M1527 v3: accept all past mids (no 48h cap on input — output capped instead)
+                    if isinstance(ts_ms, (int, float)) and 0 < ts_ms <= now_ms:
+                        proj_ts.append(int(ts_ms))
+            if not proj_ts:
+                continue
+            proj_ts.sort(reverse=True)  # newest first
+
+            # M1532: walk + split into clusters by gap_ms
+            # cluster boundaries — append cluster end timestamps
+            clusters = []  # list of (start_ts, end_ts) where start=newest, end=oldest in cluster
+            cluster_start = proj_ts[0]
+            cluster_end = proj_ts[0]
+            for prev, curr in zip(proj_ts, proj_ts[1:]):
+                if prev - curr >= gap_ms:
+                    clusters.append((cluster_start, cluster_end))
+                    cluster_start = curr
+                    cluster_end = curr
+                else:
+                    cluster_end = curr
+            clusters.append((cluster_start, cluster_end))
+
+            # Display = current cluster (clusters[0]) + prior cluster (clusters[1] if exists)
+            display_oldest = clusters[1][1] if len(clusters) >= 2 else clusters[0][1]
+            age_min = int((now_ms - display_oldest) / 60000)
+            # M1527 v3: cap output at 7d (was 48h) — covers inactive-project edge case
+            effective_min = min(max(age_min + 1, base_min), _CAP_OUTPUT_MIN)
+
+            if effective_min > best_window:
+                best_window = effective_min
+                best_meta = {
+                    "cluster_count": len(clusters),
+                    "current_cluster_size": _cluster_count(proj_ts, clusters[0]),
+                    "prior_cluster_age_h": round((now_ms - clusters[1][0]) / 3600000, 1) if len(clusters) >= 2 else None,
+                    "display_oldest_age_h": round(age_min / 60, 1),
+                }
+
+        return JSONResponse({
+            "window_min": best_window,
+            "base_min": base_min,
+            "mode": "last2",  # M1532: single algorithm
+            **best_meta,
+        })
+    except Exception as e:
+        return JSONResponse({"window_min": 60, "mode": "last2", "error": str(e)})
+
+
+def _cluster_count(ts_list, cluster_range):
+    """M1532: count how many ts fall within cluster range (inclusive)."""
+    start, end = cluster_range
+    return sum(1 for t in ts_list if end <= t <= start)
 
 
 @app.put("/api/user-settings/{key}")
@@ -373,7 +511,7 @@ def _mark_blink_server(proj_id: str, s_key: str, mid: str, remove: bool = False)
 # M1002: Claude Code remaining-usage badge — undocumented OAuth usage endpoint,
 # 5-min cached, fetched in a thread so the blocking urlopen never stalls the event loop.
 _USAGE_CACHE: dict = {"data": None, "ts": 0.0}
-_USAGE_TTL = 300  # 5 min
+_USAGE_TTL = 60  # 60s — M1501: API rate-limit safe (was 30s, 429 at 5s)
 
 def _fetch_usage_blocking():
     """M1296: OAuth usage endpoint re-enabled — credentials from ~/.claude/.credentials.json."""
@@ -412,8 +550,8 @@ async def claude_usage():
         c["data"], c["ts"] = out, now
     else:
         out = {"ok": False, "error": (raw or {}).get("error", "unknown") if isinstance(raw, dict) else "unknown"}
-        # cache failures for 60s only so a transient error doesn't pin the badge
-        c["data"], c["ts"] = out, now - (_USAGE_TTL - 60)
+        # M1501: cache failures for only 30s so rate-limit errors retry quickly
+        c["data"], c["ts"] = out, now - (_USAGE_TTL - 30)
     return JSONResponse(out)
 
 
@@ -620,6 +758,46 @@ async def post_action_log(request: Request):
         conn.commit()
         conn.close()
         return JSONResponse({"ok": True})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)})
+
+@app.post("/api/tool-trace")
+async def post_tool_trace(request: Request):
+    """M775: Record per-tool-call trace for causality dataset (SWE-bench style)."""
+    try:
+        from datetime import datetime as _dt
+        data = await request.json()
+        ts = data.get("ts") or _dt.utcnow().isoformat() + "Z"
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        conn.execute(
+            "INSERT INTO tool_trace(ts,proj_id,stone_id,session_id,tool_name,input_summary,output_summary,duration_ms) VALUES(?,?,?,?,?,?,?,?)",
+            (ts, data.get("proj_id",""), data.get("stone_id",""), data.get("session_id",""),
+             data.get("tool_name",""), data.get("input_summary",""), data.get("output_summary",""),
+             data.get("duration_ms"))
+        )
+        conn.commit()
+        conn.close()
+        return JSONResponse({"ok": True})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)})
+
+@app.get("/api/tool-trace")
+async def get_tool_trace(stone_id: str = "", proj_id: str = "", limit: int = 500):
+    """M775: Query tool trace for a stone (for causality export)."""
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        conn.row_factory = sqlite3.Row
+        q = "SELECT ts,proj_id,stone_id,session_id,tool_name,input_summary,output_summary,duration_ms FROM tool_trace WHERE 1=1"
+        params: list = []
+        if stone_id:
+            q += " AND stone_id=?"; params.append(stone_id)
+        if proj_id:
+            q += " AND proj_id=?"; params.append(proj_id)
+        q += " ORDER BY ts ASC LIMIT ?"
+        params.append(limit)
+        rows = conn.execute(q, params).fetchall()
+        conn.close()
+        return JSONResponse({"ok": True, "traces": [dict(r) for r in rows]})
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)})
 
@@ -1180,16 +1358,37 @@ def _parse_md_frontmatter(path: Path) -> dict:
 
 
 def _load_projects() -> list:
-    """Load all projects from projects/*/north-star.md."""
+    """M1368: Load all projects from SQLite project_meta (north-star.md no longer primary).
+    Falls back to directory scan for projects not yet in DB.
+    """
     projects = []
+    db_proj_ids: set[str] = set()
+
+    # Primary: SQLite project_meta
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        rows = conn.execute("SELECT proj_id FROM project_meta").fetchall()
+        conn.close()
+        db_proj_ids = {r[0] for r in rows}
+    except Exception:
+        pass
+
     if PROJECTS_DIR.exists():
         for proj_dir in sorted(PROJECTS_DIR.iterdir()):
+            # M1368: use DB as primary; only process md-fallback for dirs not yet in DB
+            in_db = proj_dir.name in db_proj_ids
             md = proj_dir / "north-star.md"
-            if md.exists():
+            if in_db:
+                data = _db_load_project(proj_dir.name) or {}
+                if not data.get("name"):
+                    continue
+            elif md.exists():
                 data = _parse_md_frontmatter(md)
-                if data.get("name"):
+            else:
+                continue
+            if data.get("name"):
                     data["id"] = proj_dir.name  # preserve case to match folder
-                    data["file_path"] = str(md)
+                    data["file_path"] = str(md) if md.exists() else str(proj_dir)
                     # Normalize milestones: upgrade old {done,text} → new {id,layer,parent_id,claude_ack,...}
                     raw_ms = data.get("milestones", [])
                     norm_ms = []
@@ -1289,10 +1488,9 @@ def _load_projects() -> list:
                                             break
                                     if data.get("repo_path"):
                                         break
-                    # Compute staleness
-                    mtime = md.stat().st_mtime
-                    data["last_updated"] = mtime
-                    data["stale"] = (time.time() - mtime) > (14 * 86400)
+                    # M1368: stale always False — SQLite is primary, md mtime not meaningful
+                    data["last_updated"] = proj_dir.stat().st_mtime
+                    data["stale"] = False
                     # M1196: project start timestamp (epoch) — used by frontend D+N display.
                     # M1245 v2: git first-commit date (real project start) > hub dir ctime fallback.
                     # Hub dir ctime is unreliable — recreated on migration/reinstall.
@@ -1360,6 +1558,7 @@ def _ensure_repo_path_exists(repo_path: str) -> tuple[bool, str]:
 
 
 _NS_EVENTS_DB = Path(os.environ.get("HUB_DB_PATH", str(_HUB_DATA_DIR / "ns-events.db")))
+_M1434_backfill_done: bool = False  # M1434: JSONL skill backfill runs once per server process
 
 def _exec_idle_file(proj_id: str) -> Path:
     """M536: Path to the .exec-idle sentinel file for a project.
@@ -1577,6 +1776,20 @@ def _init_events_db():
         )""")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_action_log_ts ON action_log(ts)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_action_log_proj ON action_log(proj_id, ts)")
+        # M775: tool-level trace for causality dataset (SWE-bench style step-level)
+        conn.execute("""CREATE TABLE IF NOT EXISTS tool_trace (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts TEXT NOT NULL,
+            proj_id TEXT,
+            stone_id TEXT,
+            session_id TEXT,
+            tool_name TEXT NOT NULL,
+            input_summary TEXT,
+            output_summary TEXT,
+            duration_ms INTEGER
+        )""")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tool_trace_stone ON tool_trace(stone_id, ts)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_tool_trace_ts ON tool_trace(ts)")
         # M785: centralized key-value user settings (replaces per-device localStorage for
         # hub-wide preferences like ns-model-avatars that should follow the user across peers).
         conn.execute("""CREATE TABLE IF NOT EXISTS user_settings (
@@ -1630,6 +1843,27 @@ def _ns_primary_init():
             archived_at TEXT NOT NULL,
             PRIMARY KEY (proj_id, stone_id)
         )""")
+        # M1355: per-project user-defined concept graph (LLM-style layered nodes).
+        # parents_json = JSON array of parent node_ids; layout (x, y) optional.
+        conn.execute("""CREATE TABLE IF NOT EXISTS concept_graph_nodes (
+            proj_id TEXT NOT NULL,
+            node_id TEXT NOT NULL,
+            layer REAL NOT NULL,
+            name TEXT NOT NULL,
+            parents_json TEXT NOT NULL DEFAULT '[]',
+            x REAL,
+            y REAL,
+            layer_order REAL,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (proj_id, node_id)
+        )""")
+        conn.execute("""CREATE INDEX IF NOT EXISTS idx_cg_proj_layer
+            ON concept_graph_nodes(proj_id, layer)""")
+        # M1355: add layer_order column to pre-existing tables (idempotent)
+        try:
+            conn.execute("ALTER TABLE concept_graph_nodes ADD COLUMN layer_order REAL")
+        except Exception:
+            pass
         conn.commit()
         conn.close()
     except Exception:
@@ -1689,6 +1923,12 @@ def _migrate_yaml_to_sqlite():
     try:
         conn = sqlite3.connect(str(_NS_EVENTS_DB))
         already_migrated = {r[0] for r in conn.execute("SELECT proj_id FROM project_meta").fetchall()}
+        # M1406: skip projects that were explicitly deleted (prevent resurrection on restart)
+        try:
+            deleted = {r[0] for r in conn.execute("SELECT proj_id FROM deleted_projects").fetchall()}
+            already_migrated |= deleted
+        except Exception:
+            pass
         conn.close()
     except Exception:
         already_migrated = set()
@@ -2145,18 +2385,17 @@ def _save_project(proj_id: str, data: dict):
     import threading as _threading
     import copy as _cp_sp
     proj_dir = PROJECTS_DIR / proj_id
-    md = proj_dir / "north-star.md"
 
-    # Capture prev milestones for event delta (from SQLite if available, else YAML)
+    # M1368: Capture prev milestones from SQLite only
     prev_data = _db_load_project(proj_id)
-    if prev_data is None and md.exists():
-        prev_data = _parse_cache.get(str(md), (None, {}))[1]
     prev_ms = (prev_data or {}).get("milestones", [])
+
+    _md_path = proj_dir / "north-star.md"  # kept for cache invalidation only
 
     # M287: Primary write — SQLite first, fast (~1ms)
     _db_save_project(proj_id, data)
     # Invalidate mtime cache so next _parse_md_frontmatter skips L1 and hits SQLite (L2)
-    _parse_cache.pop(str(md), None)
+    _parse_cache.pop(str(_md_path), None)
 
     # M215: event log (metrics/audit) — background OK, not on read path
     _record_stone_events(proj_id, data.get("milestones", []), prev_ms)
@@ -2278,35 +2517,14 @@ fetch('/api/corpus/skills-agents').then(r=>r.json()).then(d=>{
 
 @app.get("/api/northstar")
 async def northstar_get():
-    projects = _load_projects()
+    # M1493: offload sync SQLite scan to thread so event loop stays free during load
+    projects = await asyncio.to_thread(_load_projects)
     # Strip internal fields before returning
     clean = [{k: v for k, v in p.items() if k != "_body"} for p in projects]
     return JSONResponse(clean)
 
 
-# M1244 plan B: ttyd web-terminal sidecar registry. Each running ttyd@<session>
-# instance writes its port to ~/.hub/ttyd-ports/<session>. The UI calls this to
-# build a "open in browser" terminal URL without re-deriving the hash in JS.
-@app.get("/api/ttyd/ports")
-async def ttyd_ports(request: Request):
-    reg_dir = Path.home() / ".hub" / "ttyd-ports"
-    out: dict[str, int] = {}
-    try:
-        if reg_dir.is_dir():
-            for f in reg_dir.iterdir():
-                if not f.is_file():
-                    continue
-                try:
-                    out[f.name] = int(f.read_text().strip())
-                except (ValueError, OSError):
-                    continue
-    except OSError:
-        pass
-    # Host the browser should target: reuse the request host (works for both
-    # Tailscale and LAN access) but swap to the ttyd port per session client-side.
-    host = (request.url.hostname or "127.0.0.1")
-    return JSONResponse({"host": host, "ports": out})
-
+# M1345: ttyd web-terminal sidecar removed — xterm.js is the only terminal surface.
 
 # M1244 mobile vkey: forward a single keyboard event to a tmux session via
 # `tmux send-keys`. The ttyd sidecar is attached to the same session so the
@@ -2336,194 +2554,21 @@ async def tmux_send_key(request: Request):
     if key not in _TMUX_VKEY_ALLOW:
         return JSONResponse({"ok": False, "error": f"key '{key}' not in allowlist"}, status_code=400)
     # Verify session exists before sending — avoids leaking allowlist for arbitrary sessions.
-    chk = subprocess.run(["tmux", "has-session", "-t", session], capture_output=True)
+    chk = await asyncio.to_thread(
+        subprocess.run, ["tmux", "has-session", "-t", session], capture_output=True, timeout=2)
     if chk.returncode != 0:
         return JSONResponse({"ok": False, "error": f"tmux session '{session}' not found"}, status_code=404)
     spec = _TMUX_VKEY_ALLOW[key]
     if isinstance(spec, list):
-        # Multi-step: send each key separately to honour tmux prefix sequences.
         for k in spec:
-            subprocess.run(["tmux", "send-keys", "-t", session, k], capture_output=True, timeout=2)
+            await asyncio.to_thread(
+                subprocess.run, ["tmux", "send-keys", "-t", session, k], capture_output=True, timeout=2)
     else:
-        subprocess.run(["tmux", "send-keys", "-t", session, spec], capture_output=True, timeout=2)
+        await asyncio.to_thread(
+            subprocess.run, ["tmux", "send-keys", "-t", session, spec], capture_output=True, timeout=2)
     return JSONResponse({"ok": True})
 
 
-@app.get("/ttyd-wrap", response_class=HTMLResponse)
-async def ttyd_wrap(request: Request, session: str = ""):
-    """M1244 mobile: ttyd iframe + soft keyboard bar wrapper for mobile use.
-    The bar POSTs to /api/tmux/send-key which forwards keys via tmux send-keys
-    to the same tmux session ttyd is attached to."""
-    if not session:
-        return HTMLResponse("<p>session query param required</p>", status_code=400)
-    reg = Path.home() / ".hub" / "ttyd-ports" / session
-    if not reg.is_file():
-        return HTMLResponse(f"<p>ttyd not running for session '{session}'</p>", status_code=404)
-    try:
-        port = int(reg.read_text().strip())
-    except (ValueError, OSError):
-        return HTMLResponse("<p>invalid ttyd port registry</p>", status_code=500)
-    host = request.url.hostname or "127.0.0.1"
-    ttyd_url = f"http://{host}:{port}/"
-    html = f"""<!doctype html>
-<html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>ttyd: {session}</title>
-<style>
-  html,body{{margin:0;padding:0;height:100%;background:#1a1916;color:#d4cfc8;font:14px system-ui}}
-  #wrap{{display:flex;flex-direction:column;height:100vh}}
-  #termwrap{{flex:1;position:relative;overflow:hidden}}
-  #term{{border:0;width:100%;height:100%;display:block}}
-  /* M1244 scroll (M1259: slimmed from 44px→24px to maximize terminal width) */
-  #sbar{{position:absolute;top:0;right:0;width:24px;height:100%;background:rgba(34,34,34,.55);border-left:1px solid #444;
-        display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4px 0;
-        touch-action:none;user-select:none;z-index:5}}
-  #sbar button{{width:20px;height:20px;background:#333;color:#fff;border:1px solid #666;border-radius:3px;
-                font:10px monospace;cursor:pointer;touch-action:manipulation;padding:0;line-height:1}}
-  #sbar button:active{{background:#555}}
-  #sbar #scroll-mode{{background:#4a9fd4;border-color:#4a9fd4;font-size:8px;height:24px}}
-  #sbar #qexit{{background:#c07820;border-color:#c07820;font-size:9px}}
-  #sbar-mid{{flex:1;width:18px;margin:4px 0;background:linear-gradient(180deg,#444,#222);border-radius:9px;
-              position:relative}}
-  #sbar-thumb{{position:absolute;left:1px;right:1px;height:40px;top:0;background:#aaa;border-radius:8px;
-                box-shadow:0 0 6px rgba(0,0,0,.6);cursor:grab;touch-action:none;pointer-events:auto;
-                border:1px solid #ccc}}
-  #bar{{display:flex;flex-wrap:wrap;gap:4px;padding:6px;background:#222;border-top:1px solid #444}}
-  #bar button{{flex:0 0 auto;min-width:44px;height:36px;padding:0 8px;background:#333;color:#d4cfc8;border:1px solid #555;border-radius:4px;font:13px monospace;touch-action:manipulation;-webkit-user-select:none;user-select:none}}
-  #bar button:active{{background:#555}}
-</style></head>
-<body><div id="wrap">
-  <div id="termwrap">
-    <iframe id="term" src="{ttyd_url}" allow="clipboard-read; clipboard-write"></iframe>
-    <div id="sbar">
-      <button tabindex="-1" id="scroll-mode" title="Enter tmux scroll/copy mode (C-b [)">Scroll</button>
-      <button tabindex="-1" data-k="PageUp" title="Page Up">▲▲</button>
-      <button tabindex="-1" data-k="Up" title="Line Up">▲</button>
-      <div id="sbar-mid"><div id="sbar-thumb"></div></div>
-      <button tabindex="-1" data-k="Down" title="Line Down">▼</button>
-      <button tabindex="-1" data-k="PageDown" title="Page Down">▼▼</button>
-      <button tabindex="-1" id="qexit" title="Exit scroll/copy mode (q)">q</button>
-    </div>
-  </div>
-  <div id="bar">
-    <button tabindex="-1" data-k="Escape">Esc</button>
-    <button tabindex="-1" data-k="Tab">Tab</button>
-    <button tabindex="-1" data-k="C-c">^C</button>
-    <button tabindex="-1" data-k="C-d">^D</button>
-    <button tabindex="-1" data-k="C-z">^Z</button>
-    <button tabindex="-1" data-k="C-l">^L</button>
-    <button tabindex="-1" data-k="C-r">^R</button>
-    <button tabindex="-1" data-k="C-a">^A</button>
-    <button tabindex="-1" data-k="C-e">^E</button>
-    <button tabindex="-1" data-k="C-w">^W</button>
-    <button tabindex="-1" data-k="C-u">^U</button>
-    <button tabindex="-1" data-k="Up">↑</button>
-    <button tabindex="-1" data-k="Down">↓</button>
-    <button tabindex="-1" data-k="Left">←</button>
-    <button tabindex="-1" data-k="Right">→</button>
-    <button tabindex="-1" data-k="Home">Home</button>
-    <button tabindex="-1" data-k="End">End</button>
-    <button tabindex="-1" data-k="PageUp">PgUp</button>
-    <button tabindex="-1" data-k="PageDown">PgDn</button>
-    <button tabindex="-1" data-k="ScrollMode" style="background:#4a9fd4;border-color:#4a9fd4;color:#fff">Scroll</button>
-    <button tabindex="-1" data-k="q">q/exit</button>
-    <button tabindex="-1" data-k="C-b">^B</button>
-    <button tabindex="-1" data-k="|">|</button>
-    <button tabindex="-1" data-k="/">/</button>
-    <button tabindex="-1" data-k="\\">\\</button>
-    <button tabindex="-1" data-k="~">~</button>
-  </div>
-</div>
-<script>
-const SESSION = {json.dumps(session)};
-async function sendKey(k) {{
-  try {{
-    await fetch('/api/tmux/send-key', {{
-      method: 'POST',
-      headers: {{'Content-Type': 'application/json'}},
-      body: JSON.stringify({{session: SESSION, key: k}})
-    }});
-  }} catch (err) {{ console.warn('vkey send failed', err); }}
-}}
-// M1268: touchend+preventDefault prevents iOS soft keyboard from popping up on button tap
-function _barTouch(e) {{
-  const k = e.target && e.target.getAttribute && e.target.getAttribute('data-k');
-  if (!k) return;
-  e.preventDefault(); // blocks focus → no iOS keyboard
-  sendKey(k);
-}}
-const bar = document.getElementById('bar');
-bar.addEventListener('touchend', _barTouch, {{passive: false}});
-bar.addEventListener('click', (e) => {{
-  // mouse/desktop fallback
-  const k = e.target && e.target.getAttribute && e.target.getAttribute('data-k');
-  if (k) sendKey(k);
-}});
-// M1244 scroll: right-side scrollbar controls
-const sbar = document.getElementById('sbar');
-function _sbarKey(e) {{
-  const t = e.target;
-  if (!t) return;
-  if (t.id === 'scroll-mode') {{ e.preventDefault(); sendKey('ScrollMode'); return; }}
-  if (t.id === 'qexit') {{ e.preventDefault(); sendKey('q'); return; }}
-  const k = t.getAttribute && t.getAttribute('data-k');
-  if (k) {{ e.preventDefault(); sendKey(k); }}
-}}
-sbar.addEventListener('touchend', _sbarKey, {{passive: false}});
-sbar.addEventListener('click', (e) => {{
-  const t = e.target;
-  if (!t) return;
-  if (t.id === 'scroll-mode') {{ sendKey('ScrollMode'); return; }}
-  if (t.id === 'qexit') {{ sendKey('q'); return; }}
-  const k = t.getAttribute && t.getAttribute('data-k');
-  if (k) sendKey(k);
-}});
-// M1244 scroll: drag-to-scroll — auto-enters copy-mode on first drag
-const mid = document.getElementById('sbar-mid');
-const thumb = document.getElementById('sbar-thumb');
-let dragLastY = null;
-let inCopyMode = false;
-const STEP = 15; // pixels per scroll line (lowered for sensitivity)
-async function enterCopyModeOnce() {{
-  if (!inCopyMode) {{ inCopyMode = true; await sendKey('ScrollMode'); }}
-}}
-function onDragStart(y) {{
-  dragLastY = y;
-  enterCopyModeOnce(); // auto enter copy-mode when drag starts
-}}
-function onDragMove(y) {{
-  if (dragLastY == null) return;
-  const dy = y - dragLastY;
-  if (Math.abs(dy) < STEP) return;
-  const steps = Math.trunc(dy / STEP);
-  dragLastY = dragLastY + steps * STEP; // accumulate correctly
-  const key = steps > 0 ? 'PageDown' : 'PageUp';
-  for (let i = 0; i < Math.abs(steps); i++) sendKey(key);
-  // visual: move thumb
-  const rect = mid.getBoundingClientRect();
-  const thumbH = thumb.offsetHeight;
-  const rel = Math.max(0, Math.min(rect.height - thumbH, parseFloat(thumb.style.top || '0') + steps * STEP));
-  thumb.style.top = rel + 'px';
-}}
-function onDragEnd() {{ dragLastY = null; }}
-// Reset copy-mode tracking when q is pressed
-document.getElementById('qexit').addEventListener('click', () => {{ inCopyMode = false; }});
-// Touch on thumb itself
-thumb.addEventListener('touchstart', (e) => {{ e.stopPropagation(); e.preventDefault(); onDragStart(e.touches[0].clientY); }}, {{passive:false}});
-thumb.addEventListener('touchmove', (e) => {{ e.stopPropagation(); e.preventDefault(); onDragMove(e.touches[0].clientY); }}, {{passive:false}});
-thumb.addEventListener('touchend', (e) => {{ e.stopPropagation(); onDragEnd(); }}, {{passive:false}});
-// Touch on track (outside thumb)
-mid.addEventListener('touchstart', (e) => {{ e.preventDefault(); onDragStart(e.touches[0].clientY); }}, {{passive:false}});
-mid.addEventListener('touchmove', (e) => {{ e.preventDefault(); onDragMove(e.touches[0].clientY); }}, {{passive:false}});
-mid.addEventListener('touchend', onDragEnd);
-// Mouse fallback
-thumb.addEventListener('mousedown', (e) => {{ e.preventDefault(); onDragStart(e.clientY); }});
-mid.addEventListener('mousedown', (e) => {{ onDragStart(e.clientY); }});
-window.addEventListener('mousemove', (e) => {{ if (dragLastY != null) onDragMove(e.clientY); }});
-window.addEventListener('mouseup', onDragEnd);
-</script>
-</body></html>"""
-    return HTMLResponse(html)
 
 
 @app.post("/api/northstar")
@@ -2540,12 +2585,12 @@ async def northstar_save(request: Request):
 
 @app.get("/api/northstar/{proj_id}/okrs")
 async def northstar_okrs(proj_id: str):
-    """Extract OKRs from north-star.md body."""
+    """Extract OKRs from north-star.md body (M1368: SQLite-first, _body from YAML fallback)."""
     import re as _re
     md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    data = _parse_md_frontmatter(md) if md.exists() else {}
+    if not data:
         return JSONResponse({"ok": False, "okrs": [], "section": ""})
-    data = _parse_md_frontmatter(md)
     body = data.get("_body", "")
     # Find OKR section
     m = _re.search(r"^##\s*OKR[^\n]*\n((?:[-*]\s+.+\n?)+)", body, _re.MULTILINE)
@@ -2611,10 +2656,9 @@ Return ALL {len(milestones)} milestones. done=true only for DONE status."""
 
     updated = json.loads(raw.strip())
 
-    # M570: write back via _save_project (SQLite primary, mtime cache invalidated)
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if md.exists():
-        data = _parse_md_frontmatter(md)
+    # M1368: SQLite-first write-back
+    data = _db_load_project(proj_id)
+    if data:
         for i, ms in enumerate(updated):
             if i < len(data.get("milestones", [])):
                 data["milestones"][i]["done"] = ms.get("done", False)
@@ -2631,41 +2675,40 @@ async def update_current(proj_id: str, request: Request):
     if not current:
         return JSONResponse({"ok": False, "error": "current value required"})
 
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first — no md.exists() gate
+    data = _db_load_project(proj_id)
+    if data is None:
         return JSONResponse({"ok": False, "error": f"project {proj_id} not found"})
-
-    data = _parse_md_frontmatter(md)
     old = data.get("current", "—")
     if str(old) == current:
         return JSONResponse({"ok": True, "updated": False, "reason": "no change"})
 
     data["current"] = current
-    _save_project(proj_id, data)  # M570
+    _save_project(proj_id, data)
     return JSONResponse({"ok": True, "updated": True, "old": str(old), "new": current})
 
 
 @app.post("/api/northstar/{proj_id}/session-log")
 async def session_log(proj_id: str, request: Request):
-    """Append a session summary entry to the project's north-star.md log."""
+    """Append a session summary entry to the project log."""
     body = await request.json()
     entry_text = body.get("text", "").strip()
     entry_date = body.get("date", "")
     if not entry_text or not entry_date:
         return JSONResponse({"ok": False, "error": "text and date required"})
 
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first — no md.exists() gate
+    data = _db_load_project(proj_id)
+    if data is None:
         return JSONResponse({"ok": False, "error": f"project {proj_id} not found"})
 
-    data = _parse_md_frontmatter(md)
     log = data.get("log", [])
     # Avoid duplicate entries (same date + same text prefix)
     prefix = entry_text[:40]
     if not any(e.get("date") == entry_date and e.get("text","")[:40] == prefix for e in log):
         log.append({"date": entry_date, "text": entry_text})
         data["log"] = log
-        _save_project(proj_id, data)  # M570
+        _save_project(proj_id, data)
         return JSONResponse({"ok": True, "appended": True})
     return JSONResponse({"ok": True, "appended": False, "reason": "duplicate"})
 
@@ -3291,48 +3334,9 @@ async def channel_log_save(request: Request):
 
 CELI_CONFIG = Path.home() / ".config" / "tmux-csk-sessions.conf"
 
-def _sync_substars_to_claude_md(proj_id: str, proj: dict) -> None:
-    """M532: Write current sub-stars between NS_SUBSTARS markers in project CLAUDE.md.
-    Agents reading the project CLAUDE.md at session start see the current north star goals."""
-    proj_dir_str = _get_project_dir(proj_id)
-    if not proj_dir_str:
-        return
-    claude_md = Path(proj_dir_str) / "CLAUDE.md"
-    if not claude_md.exists():
-        return
-    ns_list = proj.get("north_stars") or []
-    main_name = proj.get("name", proj_id)
-    main_metric = proj.get("metric", "")
-    lines = [f"## North Star Sub-goals — {main_name} (auto-synced by hub)"]
-    if main_metric:
-        lines.append(f"- **메인 목표**: {main_metric}")
-    if ns_list:
-        for ns in ns_list:
-            name = ns.get("name", "")
-            metric = ns.get("metric", "")
-            target = ns.get("target", "")
-            status = ns.get("status", "")
-            label = f"- **{name}**"
-            if metric:
-                label += f": {metric}"
-            if target:
-                label += f" → 목표: {target}"
-            if status:
-                label += f" [{status}]"
-            lines.append(label)
-    else:
-        lines.append("- (서브 스타 없음)")
-    block = "\n".join(lines)
-    content = claude_md.read_text(encoding="utf-8")
-    start_tag = "<!-- NS_SUBSTARS_START -->"
-    end_tag = "<!-- NS_SUBSTARS_END -->"
-    if start_tag in content and end_tag in content:
-        before = content[:content.index(start_tag) + len(start_tag)]
-        after = content[content.index(end_tag):]
-        content = before + "\n" + block + "\n" + after
-    else:
-        content = content.rstrip() + f"\n\n{start_tag}\n{block}\n{end_tag}\n"
-    claude_md.write_text(content, encoding="utf-8")
+# M1347: _sync_substars_to_claude_md removed — violated Moat/CLAUDE.md:63 rule
+# ("전역 CLAUDE.md는 hub 관련 내용 기입 안 함"). North-star state belongs in
+# the hub DB / hub UI, not in project CLAUDE.md files.
 
 
 def _get_project_dir(proj_id: str) -> str | None:
@@ -3401,10 +3405,19 @@ def _kill_session(proj_id: str) -> None:
     _pty_agents.pop(proj_id, None)
     _pty_session_ids.pop(proj_id, None)
     if proc:
+        _pid = getattr(proc, "pid", None)
         try:
             proc.terminate(force=True)
         except Exception:
             pass
+        # Guarantee cleanup: if ptyprocess terminate() fails (claude ignores SIGHUP/SIGINT),
+        # kill by PID directly. proc.isalive() can return False while OS process still runs.
+        if _pid:
+            try:
+                import signal as _sig
+                os.kill(_pid, _sig.SIGKILL)
+            except (ProcessLookupError, OSError):
+                pass
 
 
 @app.on_event("startup")
@@ -3417,7 +3430,10 @@ async def _check_for_updates():
         try:
             import urllib.request as _ur
             current = _meta.version("northstar-hub")
-            data = _ur.urlopen("https://pypi.org/pypi/northstar-hub/json", timeout=5).read()
+            # M1324-P1: non-blocking — urlopen must not run on the event loop thread
+            def _fetch():
+                return _ur.urlopen("https://pypi.org/pypi/northstar-hub/json", timeout=5).read()
+            data = await _aio.to_thread(_fetch)
             latest = json.loads(data)["info"]["version"]
             if latest != current:
                 print(f"\n⟳ northstar-hub {latest} available (current: {current})\n"
@@ -3425,6 +3441,37 @@ async def _check_for_updates():
         except Exception:
             pass  # offline or not installed as package — silent
     asyncio.create_task(_do_check())
+
+
+# M1345 P0: event-loop blocked detector + threadpool cap. Emits a log line every
+# time the loop is stalled > 250 ms so chat-input vs. video-stutter correlation
+# becomes measurable instead of subjective.
+@app.on_event("startup")
+async def _loop_health_monitor():
+    import asyncio as _aio
+    import concurrent.futures as _cf
+
+    # Cap to_thread workers so unbounded subprocess fan-out can't starve the host.
+    try:
+        _loop = _aio.get_running_loop()
+        _loop.set_default_executor(_cf.ThreadPoolExecutor(max_workers=16,
+                                                          thread_name_prefix="hub-to-thread"))
+    except Exception:
+        pass
+
+    async def _monitor():
+        TICK = 0.1
+        STALL_MS = 250
+        prev = time.monotonic()
+        while True:
+            await _aio.sleep(TICK)
+            now = time.monotonic()
+            dt_ms = (now - prev - TICK) * 1000
+            prev = now
+            if dt_ms > STALL_MS:
+                print(f"[loop-stall] {dt_ms:.0f} ms at {time.strftime('%H:%M:%S')}",
+                      flush=True)
+    _aio.create_task(_monitor())
 
 
 @app.on_event("startup")
@@ -3445,7 +3492,20 @@ async def _startup_telemetry():
         while True:
             time.sleep(86400)  # 24h — DAU tracking
             _record_usage_event("hub_active")
+            try:
+                _maybe_upload_session_aggregate()  # M1516: daily session aggregate
+            except Exception:
+                pass
     threading.Thread(target=_hub_active_loop, daemon=True).start()
+    # M1516: also try uploading once on startup so first day of activity isn't lost
+    def _agg_startup_attempt():
+        import time
+        time.sleep(60)  # let server settle
+        try:
+            _maybe_upload_session_aggregate()
+        except Exception:
+            pass
+    threading.Thread(target=_agg_startup_attempt, daemon=True).start()
 
 @app.on_event("startup")
 async def _expose_ports_to_tailscale():
@@ -3519,10 +3579,8 @@ async def _start_milestone_watcher():
                     if not proj_dir.is_dir():
                         continue
                     proj_id = proj_dir.name
-                    md = PROJECTS_DIR / proj_id / "north-star.md"
-                    if not md.exists():
-                        continue
-                    proj = _parse_md_frontmatter(md)
+                    # M1368: SQLite-first; skip if no DB record
+                    proj = _db_load_project(proj_id)
                     if not isinstance(proj, dict) or not proj.get("name"):
                         continue
                     raw_ms = proj.get("milestones", [])
@@ -3605,7 +3663,7 @@ async def _start_milestone_watcher():
                             pending_reply_ids.append(m.get("id"))
                     if pending_reply_ids:
                         session_name = _live_exec_session_name(proj_id)
-                        check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+                        check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True, timeout=2)
                         if check.returncode == 0:
                             # M149: append-only queue (one entry per write)
                             # M172: enforce comment-reply protocol (3-line max, details to doc)
@@ -3737,6 +3795,118 @@ async def _auto_start_entity_corpus():
 
 
 @app.on_event("startup")
+async def _m1434_startup_backfill():
+    """M1434/M1438: run JSONL skill backfill at startup (background) so first corpus/skills-agents call is fast."""
+    import asyncio as _aio
+    global _M1434_backfill_done
+    async def _run():
+        await _aio.sleep(1.0)  # let server fully bind first
+        global _M1434_backfill_done
+        if _M1434_backfill_done:
+            return
+        _M1434_backfill_done = True
+        try:
+            _bf_conn = sqlite3.connect(str(_NS_EVENTS_DB))
+            _existing_keys: set = set()
+            for _row in _bf_conn.execute(
+                "SELECT ts || '|' || COALESCE(session_id,'') || '|' || detail FROM action_log WHERE action='invoked_skill'"
+            ):
+                _existing_keys.add(_row[0])
+            _claude_projects = Path.home() / ".claude" / "projects"
+            if _claude_projects.is_dir():
+                for _pdir in _claude_projects.iterdir():
+                    if not _pdir.is_dir():
+                        continue
+                    for _jf in sorted(_pdir.glob("*.jsonl"), key=lambda f: f.stat().st_mtime, reverse=True)[:3]:
+                        try:
+                            _lines = _jf.read_text(encoding="utf-8", errors="ignore").splitlines()[-500:]
+                            for _ln in _lines:
+                                try:
+                                    _e = json.loads(_ln)
+                                except Exception:
+                                    continue
+                                _msg = _e.get("message") or {}
+                                _content = _msg.get("content") or []
+                                if not isinstance(_content, list):
+                                    continue
+                                for _blk in _content:
+                                    if not isinstance(_blk, dict):
+                                        continue
+                                    if _blk.get("type") == "tool_use" and _blk.get("name") == "Skill":
+                                        _skill_name = (_blk.get("input") or {}).get("skill", "")
+                                        if not _skill_name:
+                                            continue
+                                        _ts = _e.get("timestamp") or ""
+                                        _sid = _e.get("sessionId") or ""
+                                        _key = f"{_ts}|{_sid}|{_skill_name}"
+                                        if _key not in _existing_keys:
+                                            _existing_keys.add(_key)
+                                            _bf_conn.execute(
+                                                "INSERT INTO action_log(ts,proj_id,stone_id,action,detail,session_id) VALUES(?,?,?,?,?,?)",
+                                                (_ts, "", "", "invoked_skill", _skill_name, _sid)
+                                            )
+                        except Exception:
+                            pass
+            _bf_conn.commit()
+            _bf_conn.close()
+            print("[hub] M1434 JSONL skill backfill complete", file=sys.stderr)
+        except Exception as _ex:
+            print(f"[hub] M1434 backfill error: {_ex}", file=sys.stderr)
+    _aio.create_task(_run())
+
+
+@app.on_event("startup")
+async def _cleanup_orphan_attach_procs():
+    """Kill orphan 'tmux attach-session' procs from previous hub instance.
+    Hub restart cancels asyncio tasks but cannot cancel OS threads running proc.read(),
+    so ptyprocess attach-session procs survive as phantom tmux clients."""
+    import subprocess as _sp
+    try:
+        result = _sp.run(["pgrep", "-f", "tmux attach-session"], capture_output=True, text=True)
+        for pid_str in result.stdout.splitlines():
+            try:
+                import os as _os
+                _os.kill(int(pid_str.strip()), 9)  # SIGKILL — SIGTERM doesn't work on pty procs
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+@app.on_event("startup")
+async def _cleanup_orphan_pty_procs():
+    """Kill orphan claude PTY procs left over from execv() restart.
+    os.execv() keeps the same PID but resets asyncio state — _sessions dict is empty,
+    so old ptyprocess-spawned claude children (PPID=self) are never terminated.
+    On startup, find all claude children of this process and kill them."""
+    import signal as _sig
+    my_pid = os.getpid()
+    try:
+        result = subprocess.run(
+            ["ps", "--ppid", str(my_pid), "-o", "pid=,comm="],
+            capture_output=True, text=True, timeout=3
+        )
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            pid_str, comm = parts[0], parts[1]
+            if comm.lower() in {"claude", "codex"}:
+                try:
+                    os.kill(int(pid_str), _sig.SIGKILL)
+                    # Reap zombie so it doesn't linger in process table
+                    try:
+                        os.waitpid(int(pid_str), os.WNOHANG)
+                    except Exception:
+                        pass
+                    print(f"[hub] killed orphan PTY proc {pid_str} ({comm})", file=sys.stderr)
+                except (ProcessLookupError, OSError):
+                    pass
+    except Exception as _e:
+        print(f"[hub] orphan PTY cleanup error: {_e}", file=sys.stderr)
+
+
+@app.on_event("startup")
 async def _start_session_gc():
     """Background task: reap idle or dead sessions every 60 s."""
     async def _gc():
@@ -3774,7 +3944,7 @@ async def _stream_pane_fifo_DISABLED(session_name: str, proj_id: str):
             pass
     # Attach pipe-pane to the tmux session
     subprocess.run(["tmux", "pipe-pane", "-t", session_name, f"cat >> {fifo_path}"],
-                   capture_output=True)
+                   capture_output=True, timeout=3)
     _spinner_last_seen: float = 0.0
     _was_busy = False
     _IDLE_THRESHOLD = 2.5  # M378: 2.5s threshold — 250ms caused false positives on Claude's inter-task pauses
@@ -3812,7 +3982,7 @@ async def _stream_pane_fifo_DISABLED(session_name: str, proj_id: str):
         pass
     finally:
         try:
-            subprocess.run(["tmux", "pipe-pane", "-t", session_name], capture_output=True)  # stop pipe
+            subprocess.run(["tmux", "pipe-pane", "-t", session_name], capture_output=True, timeout=3)  # stop pipe
             fifo_path.unlink(missing_ok=True)
         except Exception:
             pass
@@ -3829,22 +3999,32 @@ async def _start_queue_continuation_poller():
     (which only fires on actual Claude Stop event). M442 removed go-injection from queue dispatch
     to avoid killing live sessions; this background task safely resumes idle sessions instead."""
     import re as _re
-    POLL_INTERVAL = 30  # seconds — gentle enough to avoid spam, fast enough for UX
+    POLL_INTERVAL = 10  # M1351: 30→10s — measured 44ms/tick × 6/min = 0.44% one-core CPU, ~20s faster wake
     IDLE_MIN_SECS = 10  # session must have been idle for this long (avoids racing turn-start)
     _last_go_sent: dict[str, float] = {}  # session → epoch of last 'go' to dedup
     GO_COOLDOWN = 60  # don't re-send 'go' within 60s of last one
+
+    async def _arun(*cmd, timeout=3):
+        """M1493: async subprocess helper for BG loop — avoids blocking event loop."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            return stdout.decode("utf-8", errors="replace") if stdout else ""
+        except Exception:
+            return ""
 
     async def _poll_queue_continuation():
         while True:
             await asyncio.sleep(POLL_INTERVAL)
             try:
-                # List all alive exec tmux sessions
-                result = subprocess.run(
-                    ["tmux", "list-sessions", "-F", "#{session_name}"],
-                    capture_output=True, text=True, timeout=3
-                )
+                # List all alive exec tmux sessions — M1493: async to avoid blocking event loop
+                _ls_out = await _arun("tmux", "list-sessions", "-F", "#{session_name}")
                 exec_sessions = []
-                for line in result.stdout.splitlines():
+                for line in _ls_out.splitlines():
                     sn = line.strip()
                     for prefix in ("claude-exec-", "openrouter-exec-", "codex-exec-", "dsk-exec-"):
                         if sn.startswith(prefix):
@@ -3858,16 +4038,30 @@ async def _start_queue_continuation_poller():
                     if now - _last_go_sent.get(sname, 0) < GO_COOLDOWN:
                         continue
 
+                    # M1337: skip injection when user has the terminal open (xterm.js WebSocket → tmux attach)
+                    _clients_out = await _arun("tmux", "list-clients", "-t", sname, timeout=2)
+                    if _clients_out.strip():
+                        continue  # user is watching — don't inject
+
                     # M536: primary idle check — .exec-idle file written by stop-hook when truly idle
                     file_idle = _exec_idle_file(proj_id).exists()
 
                     # Secondary: pane viewport check (guards against stale file)
-                    pane_out = subprocess.run(
-                        ["tmux", "capture-pane", "-p", "-t", sname],
-                        capture_output=True, text=True, timeout=2
-                    ).stdout
+                    # M1370: capture only the VISIBLE pane (no -S flag) so stale
+                    # scrollback lines like "… (20s)" from prior tasks don't
+                    # cause false busy detection. Default capture = current viewport only.
+                    pane_out = await _arun("tmux", "capture-pane", "-p", "-t", sname, timeout=2)
                     clean = _re.sub(r'\x1b\[[0-9;]*[mKHJ]', '', pane_out)
-                    busy = "… (" in clean or "esc to i" in clean
+                    # M1322 v3: 10→30 lines — long tool output pushes spinner "… (" off the bottom 10 lines
+                    clean_tail = "\n".join(clean.splitlines()[-30:])
+                    # M1370: "esc to interrupt" appears in claude's status bar even when idle
+                    # so we only use the spinner pattern "… (" for busy detection.
+                    # M1322 v2: also treat compaction-in-progress as busy.
+                    # M1533 v2 fix: previous markers ("/compact", lowercase "compacting") false-positive
+                    # on idle panes that show Claude's "Use /compact now" status warning or any chat text
+                    # mentioning the slash command. Require unambiguous progress markers only.
+                    _compacting = any(s in clean_tail for s in ("Compacting…", "Compacting...", "Compact conversation"))
+                    busy = "… (" in clean_tail or _compacting
                     if busy:
                         # Session is actively running — clear stale idle file if present
                         _exec_idle_file(proj_id).unlink(missing_ok=True)
@@ -3920,20 +4114,17 @@ async def _start_queue_continuation_poller():
 
                     # Send wake message — MCP sessions get tool-call instruction, others get 'go'
                     # M1114: _send_exec_wake handles skill pre-inject (two-step) when stone has skill_refs
-                    _send_exec_wake(sname, proj_id)
-                    _last_go_sent[sname] = now
+                    # M1322 v3: update _last_go_sent only when wake was actually sent (not dedup-suppressed)
+                    sent = _send_exec_wake(sname, proj_id)
+                    if sent:
+                        _last_go_sent[sname] = now
 
                 # M1095: scan all projects' substars — clear assigned_session if the
                 # session is dead (handles external kills that bypass _kill_all_exec_sessions)
                 try:
-                    alive_sessions: set = set(result.stdout.splitlines())
-                    # Also add any custom sess-* via tmux list-sessions
-                    alive_sessions.update(
-                        s.strip() for s in subprocess.run(
-                            ["tmux", "list-sessions", "-F", "#{session_name}"],
-                            capture_output=True, text=True, timeout=2
-                        ).stdout.splitlines() if s.strip()
-                    )
+                    alive_sessions: set = set(_ls_out.splitlines())
+                    # Also add any custom sess-* via tmux list-sessions (M1493: reuse _ls_out, no extra call)
+                    alive_sessions.update(s.strip() for s in _ls_out.splitlines() if s.strip())
                     for _pdir in PROJECTS_DIR.iterdir():
                         try:
                             _pid = _pdir.name
@@ -4014,13 +4205,11 @@ def _get_resume_args(proj_id: str, proj_dir: str, explicit_session_id: str = Non
         if args:
             return args
 
-    # Check continuity mode from frontmatter
+    # Check continuity mode — M1368: SQLite-first
     continuity_mode = "isolated"  # default
     try:
-        md = pdir / "north-star.md"
-        if md.exists():
-            ns = _parse_md_frontmatter(md)
-            continuity_mode = ns.get("continuity_mode", "isolated")
+        _ns = _db_load_project(proj_id) or {}
+        continuity_mode = _ns.get("continuity_mode", "isolated")
     except Exception:
         pass
 
@@ -4174,14 +4363,13 @@ def _hub_config_get(proj_id: str | None, key: str) -> str:
 
 
 def _get_project_model_value(proj_id: str) -> str:
-    """Read the (validated) model field from project frontmatter. Falls back to config.yaml."""
+    """Read the (validated) model field from project meta. Falls back to config.yaml."""
     try:
-        md = PROJECTS_DIR / proj_id / "north-star.md"
-        if md.exists():
-            proj = _parse_md_frontmatter(md)
-            model = (proj.get("model") or "").strip()
-            if model in _ALLOWED_MODELS:
-                return model
+        # M1368: SQLite-first via _db_load_project; md no longer required
+        proj = _db_load_project(proj_id) or {}
+        model = (proj.get("model") or "").strip()
+        if model in _ALLOWED_MODELS:
+            return model
     except Exception:
         pass
     # M705: fall back to per-user config
@@ -4201,14 +4389,13 @@ def _get_project_model(proj_id: str) -> list:
 
 
 def _get_project_agent_value(proj_id: str) -> str:
-    """Read the agent field from project frontmatter. Falls back to config.yaml, then claude."""
+    """Read the agent field from project meta. Falls back to config.yaml, then claude."""
     try:
-        md = PROJECTS_DIR / proj_id / "north-star.md"
-        if md.exists():
-            proj = _parse_md_frontmatter(md)
-            agent = (proj.get("agent") or "").strip().lower()
-            if agent in _ALLOWED_AGENTS:
-                return agent
+        # M1368: SQLite-first
+        proj = _db_load_project(proj_id) or {}
+        agent = (proj.get("agent") or "").strip().lower()
+        if agent in _ALLOWED_AGENTS:
+            return agent
     except Exception:
         pass
     # M705: fall back to per-user config
@@ -4217,12 +4404,10 @@ def _get_project_agent_value(proj_id: str) -> str:
 
 
 def _get_project_pty_agent_value(proj_id: str) -> str:
-    """Read the PTY agent field from project frontmatter. Defaults to Claude."""
+    """Read the PTY agent field from project meta. Defaults to Claude."""
     try:
-        md = PROJECTS_DIR / proj_id / "north-star.md"
-        if not md.exists():
-            return "claude"
-        proj = _parse_md_frontmatter(md)
+        # M1368: SQLite-first
+        proj = _db_load_project(proj_id) or {}
         agent = (proj.get("pty_agent") or "claude").strip().lower()
         return agent if agent in _ALLOWED_PTY_AGENTS else "claude"
     except Exception:
@@ -4377,12 +4562,23 @@ def _get_first_queued_skill(proj_id: str) -> str | None:
         return None
 
 
-def _send_exec_wake(session_name: str, proj_id: str | None = None) -> None:
+_wake_last_sent: dict[str, float] = {}  # M1322: dedup guard — session → last send timestamp
+_WAKE_DEDUP_SECS = 90  # M1322 v2: 5→90s — compaction takes 30-60s; 5s window let second inject slip through
+
+
+def _send_exec_wake(session_name: str, proj_id: str | None = None) -> bool:
     """M1114: Send exec wake message to tmux, with optional skill pre-inject.
     If the first queued stone has skill_refs, sends /skill-name first (CLI intercept)
     then sleeps 1s, then sends the main wake message.
-    This achieves ~100% skill load rate vs ~50-60% for _skill_instruction alone."""
+    This achieves ~100% skill load rate vs ~50-60% for _skill_instruction alone.
+    M1322: dedup guard prevents duplicate injection within _WAKE_DEDUP_SECS seconds.
+    Returns True if wake was sent, False if suppressed by dedup."""
     import time as _time_wake
+    now = _time_wake.time()
+    last = _wake_last_sent.get(session_name, 0.0)
+    if now - last < _WAKE_DEDUP_SECS:
+        return False  # duplicate wake suppressed
+    _wake_last_sent[session_name] = now
     wake_msg = _exec_wake_msg(session_name)
 
     # Attempt skill pre-inject if proj_id is available
@@ -4398,6 +4594,7 @@ def _send_exec_wake(session_name: str, proj_id: str | None = None) -> None:
         ["tmux", "send-keys", "-t", session_name, wake_msg, "Enter"],
         capture_output=True, timeout=2,
     )
+    return True
 
 
 _COMPACT_THRESHOLD_MB = 4  # M1185: ~80% of 200K window (calibrated: 5MB≈88%, 4MB≈80%)
@@ -4630,7 +4827,7 @@ def _exec_session_names(proj_id: str) -> list:
 def _live_exec_session_name(proj_id: str) -> str:
     """Return the first running exec session name for a project, if any."""
     for candidate in _exec_session_names(proj_id):
-        check = subprocess.run(["tmux", "has-session", "-t", candidate], capture_output=True)
+        check = subprocess.run(["tmux", "has-session", "-t", candidate], capture_output=True, timeout=2)
         if check.returncode == 0:
             return candidate
     return f"{_get_project_agent_value(proj_id)}-exec-{proj_id}"
@@ -4658,7 +4855,7 @@ def _kill_all_exec_sessions(proj_id: str) -> None:
         if s not in all_candidates:
             all_candidates.append(s)
     for candidate in all_candidates:
-        r = subprocess.run(["tmux", "kill-session", "-t", candidate], capture_output=True)
+        r = subprocess.run(["tmux", "kill-session", "-t", candidate], capture_output=True, timeout=5)
         if r.returncode == 0:
             killed.append(candidate)
         # M355: clear idle tracking for killed sessions
@@ -4696,7 +4893,7 @@ def _get_active_substar_sessions(proj_id: str) -> dict:
     result = {}
     try:
         _r = subprocess.run(["tmux", "list-sessions", "-F", "#{session_name}"],
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, timeout=2)
         prefix = f"{_get_project_agent_value(proj_id)}-exec-{proj_id}-"
         for line in _r.stdout.splitlines():
             sname = line.strip()
@@ -4766,62 +4963,128 @@ async def terminal_session(websocket: WebSocket, proj_id: str):
         desired_agent = "claude"
     # M283: tmux_session → attach to existing exec tmux session instead of spawning new PTY
     tmux_session_name = websocket.query_params.get("tmux_session", "").strip() or None
+    _pty_cols = int(websocket.query_params.get("cols", 220))
+    _pty_rows = int(websocket.query_params.get("rows", 50))
     if tmux_session_name and _HAS_PTY:
         import ptyprocess as _pty_mod
         try:
-            # M1125: replay up to 2000 lines of tmux scrollback on connect.
-            # history-limit is set to 2000 per session (set-option after new-session),
-            # so -S -2000 captures all available history; xterm.js scrollback is 5000.
+            # M1125 removed: scrollback replay disabled — ANSI escape codes in capture-pane
+            # output corrupt xterm.js rendering. Live stream from ptyprocess is sufficient.
             import subprocess as _sp
-            _cap = _sp.run(
-                ["tmux", "capture-pane", "-p", "-J", "-S", "-2000", "-t", tmux_session_name],
-                capture_output=True, text=True, timeout=8
-            )
-            if _cap.returncode == 0 and _cap.stdout.strip():
-                await websocket.send_text(_cap.stdout)
-                await websocket.send_text("\r\n\x1b[2m[─── scrollback above ───]\x1b[0m\r\n")
         except Exception:
             pass
+        # M1371: verify session exists before attach — attach-session exits immediately
+        # with code 1 when session is missing, causing instant "session closed" in UI.
+        _sess_check = _sp.run(
+            ["tmux", "has-session", "-t", tmux_session_name],
+            capture_output=True, timeout=3
+        )
+        if _sess_check.returncode != 0:
+            await websocket.send_text(
+                f"\r\n\x1b[33m[세션 없음: {tmux_session_name}]\x1b[0m\r\n"
+                f"\r\n\x1b[2m[Execute 버튼으로 세션을 먼저 시작하세요.]\x1b[0m\r\n"
+            )
+            await websocket.close()
+            return
         try:
             # M283: attach-session with TERM=xterm-256color works correctly —
             # input is forwarded to the exec pane. new-session -t does NOT forward input.
+            # timeout=None: disable pexpect's 30s TIMEOUT so idle sessions don't disconnect.
             proc = _pty_mod.PtyProcess.spawn(
                 ["tmux", "attach-session", "-t", tmux_session_name],
                 env={**os.environ, "TERM": "xterm-256color"},
-                dimensions=(40, 120),
+                dimensions=(_pty_rows, _pty_cols),
             )
+            proc.timeout = None
         except Exception as e:
             await websocket.send_text(f"\r\n[Failed to attach to tmux session {tmux_session_name}: {e}]\r\n")
             await websocket.close()
             return
+        import signal as _signal
+        _proc_killed = False
+        def _kill_proc_sigkill():
+            nonlocal _proc_killed
+            if _proc_killed:
+                return
+            _proc_killed = True
+            try:
+                if proc and proc.isalive():
+                    os.kill(proc.pid, _signal.SIGKILL)
+            except Exception:
+                pass
+
         queue: asyncio.Queue = asyncio.Queue(maxsize=512)
         async def _tmux_to_ws():
+            import select as _select
             loop = asyncio.get_event_loop()
+            def _read_chunk():
+                # M1425: ptyprocess has no read_nonblocking; use select+os.read for 100ms timeout.
+                r, _, _ = _select.select([proc.fd], [], [], 0.1)
+                if not r:
+                    return None
+                try:
+                    return os.read(proc.fd, 4096)
+                except OSError:
+                    return b""
             try:
                 while True:
                     if not proc.isalive(): break
                     try:
-                        data = await loop.run_in_executor(None, lambda: proc.read(4096))
-                        if data:
-                            await websocket.send_text(data if isinstance(data, str) else data.decode("utf-8", errors="replace"))
-                    except Exception: break
+                        data = await loop.run_in_executor(None, _read_chunk)
+                        if data is None:
+                            continue
+                        if not data:
+                            break
+                        await websocket.send_text(data if isinstance(data, str) else data.decode("utf-8", errors="replace"))
+                    except asyncio.CancelledError:
+                        raise
+                    except Exception:
+                        break
             finally:
                 try: await websocket.send_text("\r\n\x1b[33m[Detached from tmux session]\x1b[0m\r\n")
                 except Exception: pass
+        _tmux_resized_once = False
         async def _ws_to_tmux():
+            nonlocal _tmux_resized_once
             while True:
                 try:
                     msg = await websocket.receive_text()
                     if msg.startswith('\x00resize:'):
                         parts = msg[8:].split(',')
                         if len(parts) == 2:
-                            try: proc.setwinsize(int(parts[1]), int(parts[0]))
+                            try:
+                                proc.setwinsize(int(parts[1]), int(parts[0]))
+                                if not _tmux_resized_once:
+                                    _tmux_resized_once = True
+                                    # First resize — force tmux to redraw the full screen.
+                                    asyncio.get_event_loop().run_in_executor(
+                                        None, lambda: _sp.run(["tmux", "refresh-client", "-t", tmux_session_name], timeout=3)
+                                    )
                             except Exception: pass
                     else:
                         proc.write(msg.encode("utf-8") if isinstance(msg, str) else msg)
                 except WebSocketDisconnect: break
                 except Exception: break
-        await asyncio.gather(_tmux_to_ws(), _ws_to_tmux())
+            # M1425: SIGKILL directly — os.read via select wakes within 100ms after proc dies.
+            _kill_proc_sigkill()
+        try:
+            tmux_task = asyncio.create_task(_tmux_to_ws())
+            ws_task = asyncio.create_task(_ws_to_tmux())
+            done, pending = await asyncio.wait(
+                {tmux_task, ws_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            ws_done = ws_task in done
+            if ws_done:
+                _kill_proc_sigkill()
+            for task in pending:
+                task.cancel()
+            try:
+                await asyncio.wait_for(asyncio.gather(*pending, return_exceptions=True), timeout=2.0)
+            except asyncio.TimeoutError:
+                _kill_proc_sigkill()
+        finally:
+            _kill_proc_sigkill()
         return
     # M183: optional session_id → PTY spawns with --resume <id>; force respawn if session differs
     desired_session_id = websocket.query_params.get("session_id", "").strip() or None
@@ -4954,8 +5217,8 @@ async def terminal_inject(proj_id: str, request: Request):
 async def get_north_stars(proj_id: str):
     """Return all North Stars for a project (multi-NS structure)."""
     # M300: single-project load instead of all-projects scan
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    p = _parse_md_frontmatter(md) if md.exists() else None
+    # M1368: SQLite-first
+    p = _db_load_project(proj_id)
     if not p:
         return JSONResponse({"ok": False, "north_stars": []})
     ns_list = p.get("north_stars")
@@ -5020,12 +5283,16 @@ async def get_north_stars(proj_id: str):
 async def add_north_star(proj_id: str, request: Request):
     """M204: Add a new sub-star (north star entry) to the project."""
     data = await request.json()
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     ns_list = proj.get("north_stars") or []
     new_id = data.get("id") or f"star_{int(time.time())}"
+    # M1449: idempotency guard — skip if same id already exists (prevents CG node double-POST duplicates)
+    if any(ns.get("id") == new_id for ns in ns_list):
+        existing = next(ns for ns in ns_list if ns.get("id") == new_id)
+        return JSONResponse({"ok": True, "north_star": existing, "duplicate": True})
     new_ns = {
         "id": new_id,
         "name": data.get("name", "New Goal"),
@@ -5038,10 +5305,23 @@ async def add_north_star(proj_id: str, request: Request):
     ns_list.append(new_ns)
     proj["north_stars"] = ns_list
     _save_project(proj_id, proj)  # M289: was _write_md_frontmatter — bypassed SQLite project_meta
+    # M1347: removed _sync_substars_to_claude_md call — hub no longer writes project CLAUDE.md
+    # M1460: auto-create matching concept graph node so CG reflects new substar immediately
     try:
-        _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
+        cg_conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        exists = cg_conn.execute(
+            "SELECT 1 FROM concept_graph_nodes WHERE proj_id=? AND node_id=?", (proj_id, new_id)
+        ).fetchone()
+        if not exists:
+            cg_conn.execute(
+                "INSERT INTO concept_graph_nodes(proj_id, node_id, layer, name, parents_json, x, y, layer_order, updated_at) "
+                "VALUES(?,?,?,?,?,?,?,?,?)",
+                (proj_id, new_id, 0, new_ns["name"], "[]", None, None, None, time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+            )
+            cg_conn.commit()
+        cg_conn.close()
     except Exception:
-        pass
+        pass  # CG node auto-create is best-effort; substar creation already succeeded
     return JSONResponse({"ok": True, "north_star": new_ns})
 
 
@@ -5049,10 +5329,10 @@ async def add_north_star(proj_id: str, request: Request):
 async def delete_north_star(proj_id: str, ns_id: str):
     """M204: Delete a sub-star (north star entry) from the project.
     M211: 'default' refers to the main project star — clears its metric/target/current fields."""
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     if ns_id == "default":
         # Clear the main star fields instead of removing from north_stars list
         for field in ("metric", "current", "target"):
@@ -5063,21 +5343,31 @@ async def delete_north_star(proj_id: str, ns_id: str):
         ns_list = [ns for ns in ns_list if ns.get("id") != ns_id]
         proj["north_stars"] = ns_list
     _save_project(proj_id, proj)  # M289: was _write_md_frontmatter — bypassed SQLite project_meta
-    try:
-        _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
-    except Exception:
-        pass
-    return JSONResponse({"ok": True})
+    # M1347: removed _sync_substars_to_claude_md call — hub no longer writes project CLAUDE.md
+    # M1423: cascade-delete matching CG node (cg_{node_id} → node_id) when substar is removed
+    if ns_id.startswith("cg_"):
+        _cg_node_id = ns_id[3:]  # strip "cg_" prefix
+        try:
+            _cg_conn = sqlite3.connect(str(_NS_EVENTS_DB))
+            _cg_conn.execute(
+                "DELETE FROM concept_graph_nodes WHERE proj_id=? AND node_id=?",
+                (proj_id, _cg_node_id),
+            )
+            _cg_conn.commit()
+            _cg_conn.close()
+        except Exception:
+            pass
+    return JSONResponse({"ok": True, "deleted_cg_node": ns_id[3:] if ns_id.startswith("cg_") else None})
 
 
 @app.patch("/api/northstar/{proj_id}/north-stars/{ns_id}")
 async def update_north_star(proj_id: str, ns_id: str, request: Request):
     """M249: Edit an existing sub-star entry (name, metric, target, current, status)."""
     data = await request.json()
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     ns_list = proj.get("north_stars") or []
     ns = next((x for x in ns_list if x.get("id") == ns_id), None)
     if not ns:
@@ -5087,10 +5377,21 @@ async def update_north_star(proj_id: str, ns_id: str, request: Request):
             ns[field] = data[field] or None if field in ("default_agent", "assigned_session", "branch_from_session_id") else data[field]
     proj["north_stars"] = ns_list
     _save_project(proj_id, proj)  # M289: was _write_md_frontmatter — bypassed SQLite project_meta
-    try:
-        _sync_substars_to_claude_md(proj_id, proj)  # M532: keep project CLAUDE.md current
-    except Exception:
-        pass  # PermissionError or missing CLAUDE.md must not abort the primary SQLite save
+    # M1347: removed _sync_substars_to_claude_md call — hub no longer writes project CLAUDE.md  # PermissionError or missing CLAUDE.md must not abort the primary SQLite save
+    # M1469: sync CG node name when substar name changes
+    # substar id = "cg_<node_id>"; strip "cg_" prefix to get CG node_id
+    if "name" in data:
+        try:
+            _cg_node_id = ns_id[3:] if ns_id.startswith("cg_") else ns_id
+            _cg_conn = sqlite3.connect(str(_NS_EVENTS_DB))
+            _cg_conn.execute(
+                "UPDATE concept_graph_nodes SET name=?, updated_at=? WHERE proj_id=? AND node_id=?",
+                (data["name"], time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), proj_id, _cg_node_id),
+            )
+            _cg_conn.commit()
+            _cg_conn.close()
+        except Exception:
+            pass
     return JSONResponse({"ok": True, "north_star": ns})
 
 
@@ -5100,10 +5401,10 @@ async def reorder_north_stars(proj_id: str, request: Request):
     data = await request.json()
     dragged_id = data.get("dragged_id", "")
     target_id = data.get("target_id", "")
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     ns_list = proj.get("north_stars") or []
     dragged = next((ns for ns in ns_list if ns.get("id") == dragged_id), None)
     if not dragged:
@@ -5120,10 +5421,10 @@ async def reorder_north_stars(proj_id: str, request: Request):
 async def update_ns_milestone(proj_id: str, ns_id: str, mid: str, request: Request):
     """Toggle a milestone inside a specific North Star."""
     data = await request.json()
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     ns_list = proj.get("north_stars", [])
     for ns in ns_list:
         if ns.get("id") == ns_id:
@@ -5141,10 +5442,10 @@ async def update_ns_milestone(proj_id: str, ns_id: str, mid: str, request: Reque
 @app.post("/api/northstar/{proj_id}/north-stars/{ns_id}/generate-agent")
 async def generate_substar_agent(proj_id: str, ns_id: str, request: Request):
     """M675 v2: Generate a SOTA-level Claude Code skill/agent file using user-provided role description."""
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     ns_list = proj.get("north_stars") or []
     ns = next((n for n in ns_list if n.get("id") == ns_id), None)
     if not ns:
@@ -5306,9 +5607,8 @@ async def get_milestones(proj_id: str, request: Request):
                                 headers={"Cache-Control": "no-store"})
     except Exception:
         pass
-    # Legacy YAML fallback (only if SQLite has no data)
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    p = _parse_md_frontmatter(md) if md.exists() else None
+    # M1368: DB fallback (no YAML needed)
+    p = _db_load_project(proj_id)
     if not p:
         return JSONResponse({"ok": False, "milestones": []})
     milestones = p.get("milestones", [])
@@ -5375,10 +5675,11 @@ async def causality_export(proj_id: str, request: Request):
         "queued_at", "pending_confirm_at",
         "counterfactual_pair_id", "counterfactual_of", "alt_model", "alt_outcome",
         "goal_tree_snapshot", "prompt_provenance", "confounder",
+        "tool_sequence",  # M775: step-level tool trace (list of {tool,input_summary,duration_ms})
     )
-    # CSV/Parquet drop the nested conversation array to keep the table flat;
+    # CSV/Parquet drop the nested conversation/tool_sequence arrays to keep the table flat;
     # JSON-typed fields are serialized as JSON strings.
-    _FLAT_FIELDS = tuple(f for f in _EXPORT_FIELDS if f != "conversation")
+    _FLAT_FIELDS = tuple(f for f in _EXPORT_FIELDS if f not in ("conversation", "tool_sequence"))
     _JSON_FIELDS = {"goal_tree_snapshot", "prompt_provenance", "confounder"}
     try:
         conn = sqlite3.connect(str(_NS_EVENTS_DB))
@@ -5386,6 +5687,28 @@ async def causality_export(proj_id: str, request: Request):
             "SELECT data_json FROM milestones_store WHERE proj_id=? AND done=1 ORDER BY rowid DESC LIMIT ?",
             (proj_id, limit),
         ).fetchall()
+        # M775: bulk-fetch tool_trace for all stone_ids in result
+        stone_ids = []
+        for (dj,) in rows:
+            try:
+                m = json.loads(dj)
+                if m.get("id"):
+                    stone_ids.append(m["id"])
+            except Exception:
+                pass
+        _tool_seq_map: dict = {}
+        if stone_ids:
+            placeholders = ",".join("?" * len(stone_ids))
+            trace_rows = conn.execute(
+                f"SELECT stone_id,tool_name,input_summary,output_summary,duration_ms,ts FROM tool_trace WHERE stone_id IN ({placeholders}) ORDER BY ts ASC",
+                stone_ids,
+            ).fetchall()
+            for tr in trace_rows:
+                sid = tr[0]
+                _tool_seq_map.setdefault(sid, []).append({
+                    "tool": tr[1], "input": tr[2], "output": tr[3],
+                    "duration_ms": tr[4], "ts": tr[5]
+                })
         conn.close()
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
@@ -5401,6 +5724,7 @@ async def causality_export(proj_id: str, request: Request):
                 if m.get(tf):
                     m[tf] = _scrub_pii(m[tf])
         record = {k: m.get(k) for k in _EXPORT_FIELDS}
+        record["tool_sequence"] = _tool_seq_map.get(m.get("id"), [])
         records.append(record)
     if fmt == "jsonl":
         lines = [json.dumps(r, ensure_ascii=False) for r in records]
@@ -5471,10 +5795,9 @@ async def causality_backfill(proj_id: str, request: Request):
         ).fetchall()
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
-    # Load full project for goal-tree context
+    # M1368: SQLite-first for goal-tree context
     try:
-        md = PROJECTS_DIR / proj_id / "north-star.md"
-        proj = _parse_md_frontmatter(md) if md.exists() else {}
+        proj = _db_load_project(proj_id) or {}
         milestones = proj.get("milestones", [])
     except Exception:
         proj = {}
@@ -5549,14 +5872,14 @@ async def create_counterfactual(proj_id: str, mid: str, request: Request, backgr
     alt_model = data.get("alt_model") or None
     alt_outcome = data.get("alt_outcome") or None
 
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
 
     import uuid as _uuid
     pair_id = str(_uuid.uuid4())
 
-    proj = _parse_md_frontmatter(md)
     milestones = proj.get("milestones", [])
 
     # Find original stone
@@ -5606,7 +5929,7 @@ async def create_counterfactual(proj_id: str, mid: str, request: Request, backgr
     milestones.insert(0, new_stone)
     proj["milestones"] = milestones
     _db_save_project(proj_id, proj)
-    _parse_cache.pop(str(md), None)
+    _parse_cache.pop(str(PROJECTS_DIR / proj_id / "north-star.md"), None)
     import copy as _cf_copy
     background_tasks.add_task(_save_project, proj_id, _cf_copy.deepcopy(proj))
     _ns_push("counterfactual_created", proj_id=proj_id, mid=new_id, pair_id=pair_id, original_mid=mid)
@@ -5694,10 +6017,10 @@ async def reorder_milestones(proj_id: str, request: Request):
     new_order = data.get("order", [])
     if not new_order:
         return JSONResponse({"ok": False, "error": "order required"}, status_code=400)
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     ms = proj.get("milestones", [])
     ms_map = {m.get("id"): m for m in ms if isinstance(m, dict) and m.get("id")}
     reordered = [ms_map[mid] for mid in new_order if mid in ms_map]
@@ -5764,6 +6087,8 @@ async def create_milestone(proj_id: str, request: Request, background_tasks: Bac
     # in real time. Previously POST /milestones was invisible to the log panel.
     _server_log_action(proj_id, new_id, "stone_create",
                        f"L{layer} parent:{parent_id or '-'} status:{new_ms.get('status','')} text:{(new_ms.get('text') or '')[:80]}")
+    # M1348 P0-A: stone_create telemetry — funnel step 5
+    _record_usage_event("stone_create", {"proj_id": proj_id, "layer": layer})
     # M1211: stamp server blink on creation — new stone needs user attention
     _blink_skey_create = new_ms.get("substar_id") or "__ungrouped__"
     _mark_blink_server(proj_id, _blink_skey_create, new_id)
@@ -5895,20 +6220,20 @@ async def update_milestone(proj_id: str, mid: str, request: Request, background_
                            f"ip={_caller_ip} sess={_caller_sess} status={_status_delta} append={_append_role} ua={_ua[:30]}")
     except Exception:
         pass
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    # M981: project dir is sufficient — north-star.md now optional (SQLite fallback)
-    if not (PROJECTS_DIR / proj_id).exists() and not md.exists():
+    # M1368: project dir existence only (SQLite is primary)
+    if not (PROJECTS_DIR / proj_id).exists():
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
     # M470 part 2: serialize read-modify-write so concurrent PATCH requests on the
     # same project cannot clobber each other (e.g. text-blur saveMs racing with
     # queue-toggle click on the same stone, where each reads proj independently
     # and the later save with a stale read overwrites the earlier status change).
     async with _get_proj_lock(proj_id):
-        return await _update_milestone_locked(proj_id, mid, data, md, background_tasks, force_done)
+        return await _update_milestone_locked(proj_id, mid, data, background_tasks, force_done)
 
 
-async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path, background_tasks: BackgroundTasks, force_done: bool = False):
-    proj = _parse_md_frontmatter(md)
+async def _update_milestone_locked(proj_id: str, mid: str, data: dict, background_tasks: BackgroundTasks, force_done: bool = False):
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id) or {}
     milestones = proj.get("milestones", [])
     updated = False
     updated_m = None
@@ -5920,7 +6245,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
             # User-settable fields: text, layer, parent_id, claude_ack, status=queued/pending only
             # M216: `held` = user-paused stone, excluded from EXECUTE/REPLY SYNC queues until released.
             for k in ("text", "layer", "parent_id", "claude_ack", "cron_job_id", "claude_comment", "substar_id", "held", "verify_flag",  # M964: verify toggle
-                      "skill_ref", "agent_ref", "skill_refs", "agent_refs",
+                      "skill_ref", "agent_ref", "skill_refs", "agent_refs", "adj_refs",
                       "total_tokens", "model_used", "exec_start", "exec_end",  # M287 monetization fields
                       "watching",   # M514: user-toggleable watch badge
                       "evidence_url",  # M511: proof link
@@ -5945,9 +6270,30 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                       "summary_state",           # M1253: {last_compressed_len, last_compressed_at, version}
                       "evidence_filename"):       # M1304: local filename hint — avoids GDrive API lookup
                 if k in data:
+                    # M1316 fix: capture old evidence_url BEFORE overwriting m[k].
+                    # Previously _old_ev was read after m[k] = data[k] so it always
+                    # equalled the new value → history never appended.
+                    _old_ev_pre = m.get("evidence_url") if k == "evidence_url" else None
+                    _old_fname_pre = m.get("evidence_filename") if k == "evidence_url" else None
+                    _old_ts_pre = m.get("evidence_updated_at") if k == "evidence_url" else None
                     m[k] = data[k] if data[k] is not None else None
                     # M511: auto-stamp evidence_updated_at when evidence_url changes
                     if k == "evidence_url" and data[k]:
+                        # M1327: reject file:// and absolute local paths — only http(s)/ drive links valid
+                        _ev_raw = (data[k] or "").strip()
+                        if _ev_raw.startswith("file://") or (_ev_raw.startswith("/") and not _ev_raw.startswith("//")):
+                            m.setdefault("_proof_warning", f"M1327:evidence_url rejected — local path not accessible from remote clients; upload to GDrive first: rclone copy <file> 'gdrive:claude-shared/{proj_id}/outbox/'")
+                            data[k] = None  # discard, do not store
+                            m[k] = _old_ev_pre  # M1404 B1 fix: revert m[k] — was written before validation
+                        # M1316: append old evidence_url to evidence_history before overwriting
+                        if _old_ev_pre and _old_ev_pre != data[k]:
+                            _ev_hist = m.get("evidence_history") or []
+                            _ev_hist.append({
+                                "url": _old_ev_pre,
+                                "ts": _old_ts_pre or now_iso,
+                                "filename": _old_fname_pre or "",
+                            })
+                            m["evidence_history"] = _ev_hist
                         m["evidence_updated_at"] = now_iso
                         # M1304: auto-seed filename cache from evidence_filename hint
                         _ev_fname = (data.get("evidence_filename") or "").strip()
@@ -6281,7 +6627,8 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                     # M225: skip REPLY SYNC dispatch if stone is held (zero claude token spend on held).
                     if msg.get("role") == "user" and not m.get("done") and not m.get("held"):
                         session_name = _live_exec_session_name(proj_id)
-                        check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+                        check = await asyncio.to_thread(  # M1345
+                            subprocess.run, ["tmux", "has-session", "-t", session_name], capture_output=True, timeout=2)
                         # M523: always write REPLY SYNC queue entry regardless of session state.
                         # Previously gated on check.returncode==0 — but when no exec session is
                         # running, the entry was silently dropped, leaving user comments unanswered
@@ -6322,21 +6669,24 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                         with _qf.open("a", encoding="utf-8") as _qh:
                             _qh.write(_entry + "\n")
                         # M184/M148: wake Claude if pane is idle — stop hook can't fire without response event.
+                        # M1322 v4: route through _send_exec_wake() so it respects 90s dedup
+                        # window + add Compacting busy check (compaction can take 30-120s,
+                        # ❯ remains visible while spinner "… (" scrolls off -S -8 tail).
                         if check.returncode == 0:
                             try:
-                                _pane = subprocess.run(
-                                    ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-8"],
+                                _pane = (await asyncio.to_thread(  # M1345
+                                    subprocess.run,
+                                    ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-30"],
                                     capture_output=True, text=True, timeout=2,
-                                ).stdout
-                                _pane_idle = ("❯" in _pane and
-                                              "esc to i" not in _pane and
-                                              "… (" not in _pane)
+                                )).stdout
+                                # M1533 v2 fix: tightened markers — `/compact` substring and lowercase
+                                # `compacting` false-positive on idle panes that quote slash commands or
+                                # show Claude's "Use /compact now" status warning.
+                                _compacting = any(s in _pane for s in ("Compacting…", "Compacting...", "Compact conversation"))
+                                _pane_idle = ("❯" in _pane and "… (" not in _pane and not _compacting)
                                 if _pane_idle:
-                                    subprocess.run(
-                                        ["tmux", "send-keys", "-t", session_name, _exec_wake_msg(session_name), "Enter"],
-                                        capture_output=True, timeout=2,
-                                    )
-                                    _ns_push("session_running", proj_id=proj_id, kind="exec")
+                                    if _send_exec_wake(session_name, proj_id):
+                                        _ns_push("session_running", proj_id=proj_id, kind="exec")
                             except Exception:
                                 pass
             # Status: user can set pending/queued; done is Claude-only (set via done=True or status=done)
@@ -6500,6 +6850,11 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
                 # M476/M509: store session_id if provided, then compute tokens
                 if data.get("session_id"):
                     m["session_id"] = data["session_id"]
+                # M929: if exec_end supplied but exec_start missing, fall back to queued_at so token computation can run
+                if (data.get("exec_end") or m.get("exec_end")) and not (m.get("exec_start") or data.get("exec_start")):
+                    _fallback_start = m.get("queued_at") or m.get("created_at")
+                    if _fallback_start:
+                        m["exec_start"] = _fallback_start
                 if not m.get("total_tokens") and (m.get("exec_start") or data.get("exec_start")) and (m.get("exec_end") or data.get("exec_end")):
                     _t_start = m.get("exec_start") or data.get("exec_start")
                     _t_end   = m.get("exec_end")   or data.get("exec_end")
@@ -6777,7 +7132,7 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
         _save_project(proj_id, proj)
     else:
         # M698/M1234: single-stone update (~1ms); skip full background rewrite (was 100~244ms for 1330 stones)
-        _parse_cache.pop(str(md), None)
+        _parse_cache.pop(str(PROJECTS_DIR / proj_id / "north-star.md"), None)
         if updated_m:
             _db_save_single_milestone(proj_id, updated_m)
             # M1234: no background _save_project — single-stone write is sufficient for PATCH
@@ -6803,10 +7158,10 @@ async def _update_milestone_locked(proj_id: str, mid: str, data: dict, md: Path,
 
 @app.delete("/api/northstar/{proj_id}/milestones/{mid}")
 async def delete_milestone(proj_id: str, mid: str, background_tasks: BackgroundTasks):
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     before = len(proj.get("milestones", []))
     # Find stone data before removing (for DB event log)
     deleted_stone = next((m for m in proj.get("milestones", []) if isinstance(m, dict) and m.get("id") == mid), None)
@@ -6835,7 +7190,7 @@ async def delete_milestone(proj_id: str, mid: str, background_tasks: BackgroundT
             pass
     # M318: write SQLite + invalidate cache synchronously before response
     _db_save_project(proj_id, proj)
-    _parse_cache.pop(str(md), None)
+    _parse_cache.pop(str(PROJECTS_DIR / proj_id / "north-star.md"), None)
     import copy as _c278d
     background_tasks.add_task(_save_project, proj_id, _c278d.deepcopy(proj))
     # M1219: remove deleted stone from blink_state so stale blink doesn't persist
@@ -6934,11 +7289,11 @@ async def compress_milestone_conv(proj_id: str, mid: str, request: Request):
     data = await request.json()
     keep_last = max(1, int(data.get("keep_last", 4)))
     try:
-        md = PROJECTS_DIR / proj_id / "north-star.md"
-        if not md.exists():
-            return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
+        # M1368: SQLite-first
         async with _get_proj_lock(proj_id):
-            proj = _parse_md_frontmatter(md)
+            proj = _db_load_project(proj_id)
+            if not proj:
+                return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
             milestones = proj.get("milestones", [])
             m = next((x for x in milestones if isinstance(x, dict) and x.get("id") == mid), None)
             if not m:
@@ -6967,10 +7322,10 @@ async def compress_milestone_conv(proj_id: str, mid: str, request: Request):
 @app.post("/api/northstar/{proj_id}/milestones/{mid}/rationale")
 async def milestone_rationale(proj_id: str, mid: str):
     """M65/M70: Generate star-stone relation and OKR rationale for a milestone."""
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     ms = next((m for m in proj.get("milestones", []) if isinstance(m, dict) and m.get("id") == mid), None)
     if not ms:
         return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
@@ -6992,22 +7347,39 @@ async def commit_milestone(proj_id: str, mid: str):
     proj_dir = _get_project_dir(proj_id)
     if not proj_dir:
         return JSONResponse({"ok": False, "error": "project dir not found"}, status_code=404)
-    md_path = PROJECTS_DIR / proj_id / "north-star.md"
-    proj = _parse_md_frontmatter(md_path) if md_path.exists() else {}
+    # M1383: resolve actual folder-case so md_path and DB lookup use canonical proj_id
+    _actual_folder = Path(proj_dir).name
+    if _actual_folder.lower() == proj_id.lower():
+        proj_id = _actual_folder
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id) or {}
     milestones = proj.get("milestones", [])
     m = next((x for x in milestones if isinstance(x, dict) and x.get("id") == mid), None)
     if not m:
-        # Try DB fallback
-        m = _db_get_milestone(proj_id, mid) or {}
+        # Try DB fallback — first exact, then case-insensitive
+        m = _db_get_milestone(proj_id, mid)
+        if not m:
+            try:
+                conn = sqlite3.connect(str(_NS_EVENTS_DB))
+                row = conn.execute(
+                    "SELECT data_json FROM milestones_store WHERE lower(proj_id)=lower(?) AND stone_id=?",
+                    (proj_id, mid)
+                ).fetchone()
+                conn.close()
+                if row:
+                    m = json.loads(row[0])
+            except Exception:
+                pass
+        m = m or {}
     if not m:
         return JSONResponse({"ok": False, "error": "milestone not found"}, status_code=404)
     text_short = str(m.get("text", "")).strip()[:72].replace('"', "'").replace('\n', ' ')
     msg = f"feat: {mid} {text_short}"
     try:
         # Check if git repo exists
-        check = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=proj_dir, capture_output=True)
+        check = subprocess.run(["git", "rev-parse", "--git-dir"], cwd=proj_dir, capture_output=True, timeout=5)
         if check.returncode != 0:
-            subprocess.run(["git", "init"], cwd=proj_dir, capture_output=True)
+            subprocess.run(["git", "init"], cwd=proj_dir, capture_output=True, timeout=10)
         r = subprocess.run(
             ["git", "add", "-A"],
             cwd=proj_dir, capture_output=True, text=True, timeout=15,
@@ -7019,7 +7391,7 @@ async def commit_milestone(proj_id: str, mid: str):
         if r2.returncode != 0 and "nothing to commit" not in r2.stdout + r2.stderr:
             return JSONResponse({"ok": False, "error": r2.stderr[:300]})
         sha = ""
-        r3 = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=proj_dir, capture_output=True, text=True)
+        r3 = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=proj_dir, capture_output=True, text=True, timeout=5)
         if r3.returncode == 0:
             sha = r3.stdout.strip()
         # M1267: persist SHA to milestone_commits so GET /commits returns history
@@ -7089,13 +7461,15 @@ async def get_tmux_output(proj_id: str, lines: int = 20, tmux_session: str = "")
     if not any(session_name.startswith(f"{a}-exec-{proj_id}") for a in _ALLOWED_AGENTS):
         return JSONResponse({"ok": False, "running": False, "output": "", "error": "invalid_session_name"}, status_code=400)
     # Check if session exists
-    check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+    check = await asyncio.to_thread(
+        subprocess.run, ["tmux", "has-session", "-t", session_name], capture_output=True, timeout=2)
     if check.returncode != 0:
         return JSONResponse({"ok": False, "running": False, "output": ""})
     # Capture pane output
-    result = subprocess.run(
+    result = await asyncio.to_thread(
+        subprocess.run,
         ["tmux", "capture-pane", "-p", "-t", session_name, "-S", f"-{lines}"],
-        capture_output=True, text=True
+        capture_output=True, text=True,timeout=2
     )
     output = result.stdout.strip()
     return JSONResponse({"ok": True, "running": True, "session": session_name, "output": output})
@@ -7128,11 +7502,12 @@ async def get_task_board(proj_id: str):
     # plus a "Working on M<id>" spinner line. We grep the most recent pane snapshot.
     # Fallback to the first-queued heuristic only when no live signal is parseable.
     session_name = _live_exec_session_name(proj_id)
-    check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+    check = await asyncio.to_thread(
+        subprocess.run, ["tmux", "has-session", "-t", session_name], capture_output=True, timeout=2)
     if check.returncode == 0:
-        md = PROJECTS_DIR / proj_id / "north-star.md"
-        if md.exists():
-            proj = _parse_md_frontmatter(md)
+        # M1368: SQLite-first
+        proj = _db_load_project(proj_id)
+        if proj:
             # M160: paused stones (awaiting user reply on Claude comment) excluded from running list
             # M216: held stones (user-paused via hold badge) also excluded
             queued_ms = [m for m in (proj.get("milestones") or [])
@@ -7141,10 +7516,11 @@ async def get_task_board(proj_id: str):
             # M168: parse pane to find truly-running milestone id
             live_running_id = None
             try:
-                _pane = subprocess.run(
+                _pane = (await asyncio.to_thread(
+                    subprocess.run,
                     ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-40"],
                     capture_output=True, text=True, timeout=2,
-                ).stdout
+                )).stdout
                 # Priority 1: TaskList in-progress sigil ("◼ M123")
                 _m = re.search(r"◼\s+(M\d+)", _pane)
                 if _m:
@@ -7341,12 +7717,12 @@ async def execute_project(proj_id: str, request: Request):
     elif body_model and body_model.startswith("codex-") and body_agent != "codex":
         body_agent = "codex"
 
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "project not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
 
-    # Apply body_agent and body_model to north-star.md before spawning so spawn env is correct
+    # Apply body_agent and body_model before spawning
     _persist_changes = {}
     if body_agent and body_agent in _ALLOWED_AGENTS:
         _persist_changes["agent"] = body_agent
@@ -7354,8 +7730,6 @@ async def execute_project(proj_id: str, request: Request):
         _model_val = body_model if body_model in _ALLOWED_MODELS else ""
         _persist_changes["model"] = _model_val
     if _persist_changes:
-        # M570: SQLite-first via _save_project. Replaces _write_md_frontmatter (YAML-only)
-        # so reads via _parse_md_frontmatter pick up the new agent/model immediately.
         _save_project(proj_id, {**proj, **_persist_changes})
         # M302: update ONLY project_meta in SQLite (agent/model fields) so _get_project_model_value
         # reads fresh value. Do NOT save milestones — would race with background add/delete saves.
@@ -7371,8 +7745,8 @@ async def execute_project(proj_id: str, request: Request):
             conn302.close()
         except Exception:
             pass
-        _parse_cache.pop(str(md), None)  # invalidate mtime cache to force SQLite L2 read
-        proj = _parse_md_frontmatter(md)
+        _parse_cache.pop(str(PROJECTS_DIR / proj_id / "north-star.md"), None)
+        proj = _db_load_project(proj_id) or proj
 
     # M215: use fast SQLite indexed query for active milestones — ~1ms vs full proj parse
     _fast_ms = _db_get_active_milestones(proj_id)
@@ -7475,10 +7849,11 @@ async def execute_project(proj_id: str, request: Request):
         # their mother; a different-agent dispatch kills ALL old-agent sessions including branches.
         _all_exec_prefixes = [("claude-exec-", "claude"), ("openrouter-exec-", "openrouter"), ("codex-exec-", "codex"), ("dsk-exec-", "dsk")]
         try:
-            _live_sessions = subprocess.run(
+            _live_sessions = (await asyncio.to_thread(  # M1345: non-blocking tmux list
+                subprocess.run,
                 ["tmux", "list-sessions", "-F", "#{session_name}"],
                 capture_output=True, text=True, timeout=2,
-            ).stdout.splitlines()
+            )).stdout.splitlines()
         except Exception:
             _live_sessions = []
         _stale_agent_found = False
@@ -7496,27 +7871,31 @@ async def execute_project(proj_id: str, request: Request):
 
         # M1096: badge-triggered execute must NOT spawn a dead session — only dispatch button may.
         if from_badge:
-            _badge_check = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+            _badge_check = await asyncio.to_thread(  # M1345
+                subprocess.run, ["tmux", "has-session", "-t", session_name], capture_output=True, timeout=2)
             if _badge_check.returncode != 0:
                 # Session is dead — badge cannot spawn. Return "no-op" so badge does not hang.
                 return JSONResponse({"ok": True, "status": "badge_no_spawn",
                                      "message": "Session dead — use dispatch button to start a new session"})
 
         # M24/M123/M125: if tmux session exists, verify Claude is alive before injecting
-        existing = subprocess.run(["tmux", "has-session", "-t", session_name], capture_output=True)
+        existing = await asyncio.to_thread(  # M1345
+            subprocess.run, ["tmux", "has-session", "-t", session_name], capture_output=True, timeout=2)
         if existing.returncode == 0:
             # M123: check Claude process is alive (not just a bare shell after Claude exited)
-            _pane_cmds = subprocess.run(
+            _pane_cmds = (await asyncio.to_thread(  # M1345
+                subprocess.run,
                 ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
-                capture_output=True, text=True
-            ).stdout.splitlines()
+                capture_output=True, text=True,timeout=2
+            )).stdout.splitlines()
             _cmds = [c.strip() for c in _pane_cmds if c.strip()]
             _claude_alive = any(c not in _SHELLS for c in _cmds) if _cmds else False
             if _claude_alive:
                 if agent == "codex":
                     # Codex does not use the Claude Stop-hook queue path. Restart the
                     # live tmux session so the execute prompt can be re-injected cleanly.
-                    subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+                    await asyncio.to_thread(  # M1345
+                        subprocess.run, ["tmux", "kill-session", "-t", session_name], capture_output=True, timeout=5)
                 else:
                     # M206: kill and restart if user selected different options (agent/model/session)
                     # vs what the current session was spawned with. If same → reuse.
@@ -7736,21 +8115,24 @@ async def execute_project(proj_id: str, request: Request):
                                 with _qf.open("a", encoding="utf-8") as _qh:
                                     _qh.write(_entry + "\n")
                                 # M147/M148: wake idle main session so stop hook can fire.
+                                # M1322 v4: _busy computed but never gated — was dead code.
+                                # Now gates wake when compacting/spinner present + widen scan to -30.
                                 try:
-                                    _pane = subprocess.run(
-                                        ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-8"],
+                                    _pane = (await asyncio.to_thread(  # M1345
+                                        subprocess.run,
+                                        ["tmux", "capture-pane", "-p", "-t", session_name, "-S", "-30"],
                                         capture_output=True, text=True, timeout=2,
-                                    ).stdout
-                                    _busy = "esc to i" in _pane or "… (" in _pane
+                                    )).stdout
+                                    _busy = "… (" in _pane or any(s in _pane for s in ("Compacting", "compacting", "/compact", "Compact conversation"))
                                     _modal = any(s in _pane for s in _modal_signatures)
                                     _has_prompt = "❯" in _pane
-                                    _actively_blocked = "esc to i" in _pane or _modal
+                                    _actively_blocked = _modal or _busy
                                     if _has_prompt and not _actively_blocked:
                                         # M1230: auto-compact disabled by user request
                                         # M1114: two-step skill pre-inject if stone has skill_refs
-                                        _send_exec_wake(session_name, proj_id)
-                                        _wake_sent = True
-                                        _ns_push("session_running", proj_id=proj_id, kind="exec")
+                                        if _send_exec_wake(session_name, proj_id):
+                                            _wake_sent = True
+                                            _ns_push("session_running", proj_id=proj_id, kind="exec")
                                 except Exception:
                                     pass
                             _trigger_sent = True
@@ -7769,7 +8151,8 @@ async def execute_project(proj_id: str, request: Request):
                             )
                             for _br_sess, _br_stones in _branched_q_by_sess.items():
                                 try:
-                                    _br_check = subprocess.run(["tmux", "has-session", "-t", _br_sess], capture_output=True)
+                                    _br_check = await asyncio.to_thread(  # M1345
+                                        subprocess.run, ["tmux", "has-session", "-t", _br_sess], capture_output=True, timeout=2)
                                     if _br_check.returncode != 0:
                                         # M858 Stage 2: session dead → write prompt and spawn
                                         _br_short = _br_sess[-12:]
@@ -7802,23 +8185,24 @@ async def execute_project(proj_id: str, request: Request):
                                             ["tmux", "new-session", "-d", "-s", _br_sess, "-c", _br_spawn_cwd]
                                             + _br_env + _br_claude_cmd
                                         )
-                                        subprocess.run(["tmux", "set-option", "-t", _br_sess, "history-limit", "2000"], capture_output=True, timeout=2)
-                                        subprocess.run(["tmux", "send-keys", "-t", _br_sess, "go", "Enter"], capture_output=True, timeout=2)
+                                        await asyncio.to_thread(subprocess.run, ["tmux", "set-option", "-t", _br_sess, "history-limit", "2000"], capture_output=True, timeout=2)  # M1345
+                                        await asyncio.to_thread(subprocess.run, ["tmux", "send-keys", "-t", _br_sess, "go", "Enter"], capture_output=True, timeout=2)  # M1345
                                         _branched_spawned.append(_br_sess)
                                         _server_log_action(proj_id, "", "exec:branch_spawned", _br_sess)
                                         continue
-                                    _br_pane = subprocess.run(
-                                        ["tmux", "capture-pane", "-p", "-t", _br_sess, "-S", "-8"],
+                                    _br_pane = (await asyncio.to_thread(  # M1345
+                                        subprocess.run,
+                                        ["tmux", "capture-pane", "-p", "-t", _br_sess, "-S", "-30"],
                                         capture_output=True, text=True, timeout=2,
-                                    ).stdout
-                                    _br_blocked = ("esc to i" in _br_pane) or any(s in _br_pane for s in _modal_signatures)
+                                    )).stdout
+                                    # M1322 v4: add busy/compacting check (was: modal-only)
+                                    # and route through _send_exec_wake for 90s dedup guard.
+                                    _br_busy = "… (" in _br_pane or any(s in _br_pane for s in ("Compacting", "compacting", "/compact", "Compact conversation"))
+                                    _br_blocked = any(s in _br_pane for s in _modal_signatures) or _br_busy
                                     _br_has_prompt = "❯" in _br_pane
                                     if _br_has_prompt and not _br_blocked:
-                                        subprocess.run(
-                                            ["tmux", "send-keys", "-t", _br_sess, _exec_wake_msg(_br_sess), "Enter"],
-                                            capture_output=True, timeout=2,
-                                        )
-                                        _branched_wakes_sent.append(_br_sess)
+                                        if _send_exec_wake(_br_sess, proj_id):
+                                            _branched_wakes_sent.append(_br_sess)
                                 except Exception:
                                     pass
                             _server_log_action(proj_id, "", "exec:branched_wake",
@@ -7836,7 +8220,8 @@ async def execute_project(proj_id: str, request: Request):
                         })
             else:
                 # M123: Claude exited — stale shell session. Kill so fresh start below can proceed.
-                subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+                await asyncio.to_thread(  # M1345
+                    subprocess.run, ["tmux", "kill-session", "-t", session_name], capture_output=True, timeout=5)
 
         # M250: early return if no explicitly-queued stones — skip spawning Claude entirely.
         # pending/needs_clarification stones don't need a Claude session; server already acked them.
@@ -7911,13 +8296,14 @@ async def execute_project(proj_id: str, request: Request):
                     elapsed += 1
                     _post_panes = subprocess.run(
                         ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
-                        capture_output=True, text=True
+                        capture_output=True, text=True, timeout=2
                     ).stdout.split()
                     _post_alive = any(c.strip() and c.strip() not in _SHELLS for c in _post_panes)
                     if _post_alive:
                         break
                 if not _post_alive and resume_args:
-                    subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+                    await asyncio.to_thread(  # M1345
+                        subprocess.run, ["tmux", "kill-session", "-t", session_name], capture_output=True, timeout=5)
                     try:
                         (PROJECTS_DIR / proj_id / ".last-session-id").unlink()
                     except Exception:
@@ -7937,7 +8323,7 @@ async def execute_project(proj_id: str, request: Request):
                         elapsed += 1
                         _post_panes = subprocess.run(
                             ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
-                            capture_output=True, text=True
+                            capture_output=True, text=True, timeout=2
                         ).stdout.split()
                         _post_alive = any(c.strip() and c.strip() not in _SHELLS for c in _post_panes)
                         if _post_alive:
@@ -7958,7 +8344,7 @@ async def execute_project(proj_id: str, request: Request):
                         "retried": False,
                         "error": "Codex failed to start in tmux pane (pane fell back to shell).",
                     }, status_code=502)
-                subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"])
+                subprocess.run(["tmux", "send-keys", "-t", session_name, "go", "Enter"], timeout=3)
                 return JSONResponse({
                     "ok": True, "mode": "tmux",
                     "session": session_name,
@@ -8062,6 +8448,7 @@ async def execute_project(proj_id: str, request: Request):
             # M472: build per-stone implementation steps (shared by both parallel and sequential sections)
             _stone_impl_steps = (
                 f"  Per-stone implementation steps:\n"
+                f"  ❌ NO reply_to_stone before completing — do NOT post 'starting...', '분석 중', or any in-progress status. Work silently; report ONLY on completion.\n"
                 f"  1. TaskUpdate(<id>, status='in_progress')\n"
                 f"  1b. SKILL/AGENT INVOCATION (M770 strengthened — current invoke rate is only ~4% vs annotations):\n"
                 f"      • If stone text or USER MSG carries [skill:/name] or [agent:name] OR `skill_refs`/`agent_refs` array → MANDATORY: invoke Skill(skill='name') / Agent(subagent_type='name') as the FIRST tool call BEFORE GET/Edit/anything.\n"
@@ -8198,7 +8585,7 @@ async def execute_project(proj_id: str, request: Request):
             _active_substars_now = _get_active_substar_sessions(proj_id)
             for _ss_short2, _ss_sname2 in _active_substars_now.items():
                 if _ss_sname2 not in _session_qs:
-                    subprocess.run(["tmux", "kill-session", "-t", _ss_sname2], capture_output=True)
+                    subprocess.run(["tmux", "kill-session", "-t", _ss_sname2], capture_output=True, timeout=5)
                     _exec_idle_count.pop(_ss_sname2, None)
                     _exec_was_running.pop(_ss_sname2, None)
             # M747/M792: also kill stale substar/session-key sessions before respawning
@@ -8211,14 +8598,14 @@ async def execute_project(proj_id: str, request: Request):
                         continue
                     _pane_cmds = subprocess.run(
                         ["tmux", "list-panes", "-t", _skey, "-F", "#{pane_current_command}"],
-                        capture_output=True, text=True
+                        capture_output=True, text=True, timeout=2
                     ).stdout.split()
                     _branch_alive = any(c.strip() and c.strip() not in _SHELLS for c in _pane_cmds)
                     if _branch_alive:
                         # Session already running Claude — skip kill/respawn; will send "go" after main spawns
                         _alive_branch_keys.add(_skey)
                     else:
-                        subprocess.run(["tmux", "kill-session", "-t", _skey], capture_output=True)
+                        subprocess.run(["tmux", "kill-session", "-t", _skey], capture_output=True, timeout=5)
             # Session-resume continuity (spec: docs/research/20260513-tmux-claude-session-resume-design.md MVF #2-3)
             spawn_cwd = proj_dir if Path(proj_dir).exists() else str(Path.home())
 
@@ -8314,7 +8701,7 @@ async def execute_project(proj_id: str, request: Request):
             # Detect by inspecting pane_current_command — must NOT be a shell.
             _post_panes = subprocess.run(
                 ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
-                capture_output=True, text=True
+                capture_output=True, text=True, timeout=2
             ).stdout.split()
             _post_alive = any(c.strip() and c.strip() not in _SHELLS for c in _post_panes)
 
@@ -8323,7 +8710,8 @@ async def execute_project(proj_id: str, request: Request):
             _retried = False
             if not _post_alive and resume_args:
                 # Kill pane, clear stale .last-session-id, respawn without resume
-                subprocess.run(["tmux", "kill-session", "-t", session_name], capture_output=True)
+                await asyncio.to_thread(  # M1345
+                    subprocess.run, ["tmux", "kill-session", "-t", session_name], capture_output=True, timeout=5)
                 try:
                     (PROJECTS_DIR / proj_id / ".last-session-id").unlink()
                 except Exception:
@@ -8354,7 +8742,7 @@ async def execute_project(proj_id: str, request: Request):
                         break
                 _post_panes = subprocess.run(
                     ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
-                    capture_output=True, text=True
+                    capture_output=True, text=True, timeout=2
                 ).stdout.split()
                 _post_alive = any(c.strip() and c.strip() not in _SHELLS for c in _post_panes)
 
@@ -8532,36 +8920,33 @@ async def execute_project(proj_id: str, request: Request):
 
 @app.post("/api/northstar/create")
 async def create_project(request: Request):
-    """Create a new project node with a minimal north-star.md."""
+    """Create a new project node. M1368: SQLite-first — duplicate check via DB, no md check needed."""
     data = await request.json()
     name = (data.get("name") or "").strip()
     repo_path = (data.get("repo_path") or "").strip() or None
     if not name:
         return JSONResponse({"ok": False, "error": "name required"}, status_code=400)
-    # Use name as folder ID (sanitize)
     import re as _re_
     folder_id = _re_.sub(r"[^\w\-]", "_", name)
+    # M1368: check SQLite first — md existence no longer required as duplicate gate
+    if _db_load_project(folder_id) is not None:
+        return JSONResponse({"ok": False, "error": "project already exists"}, status_code=409)
     proj_dir = PROJECTS_DIR / folder_id
     proj_dir.mkdir(parents=True, exist_ok=True)
-    md = proj_dir / "north-star.md"
-    if md.exists():
-        return JSONResponse({"ok": False, "error": "project already exists"}, status_code=409)
-    body = f"# {name} — North Star\n\n## Why this metric\n\n## Strategy\n\n## OKRs\n"
-    frontmatter = {
-        "name": name, "metric": "", "current": "", "target": "",  # M780: blank defaults — user fills in as needed
+    project_data = {
+        "name": name, "metric": "", "current": "", "target": "",
         "status": "paused", "deadline": "", "note": "",
-        "milestones": [], "log": [], "connections": [],
-        "north_stars": [],  # M908: explicit empty list prevents fallback default sub-star creation
+        "connections": [],
+        "north_stars": [],
         "layer": 0, "x": None, "y": None,
     }
     created_dir = False
     if repo_path:
-        # M258: if the node's repo_path doesn't exist on the server, mkdir -p it.
         was_created, resolved = _ensure_repo_path_exists(repo_path)
         created_dir = was_created
-        frontmatter["repo_path"] = resolved or repo_path
-    text = "---\n" + _yaml.dump(frontmatter, allow_unicode=True, default_flow_style=False) + "---\n\n" + body
-    md.write_text(text, encoding="utf-8")
+        project_data["repo_path"] = resolved or repo_path
+    # Primary store: SQLite (no north-star.md created — OKR body removed per M1368)
+    _db_save_project(folder_id, project_data)
     return JSONResponse({"ok": True, "id": folder_id, "created_repo_dir": created_dir})
 
 
@@ -8570,10 +8955,10 @@ async def compute_semantic_scores(proj_id: str, request: Request):
     """M658: Compute semantic proximity score (0-100) per stone using sentence-transformers.
     Score = cosine_similarity(stone_embedding, substar_embedding) * completion_weight * 100.
     Results cached in data_json['semantic_score']. Only scores stones assigned to a substar."""
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     milestones_list = proj.get("milestones", [])
     north_stars = proj.get("north_stars", [])
 
@@ -8659,10 +9044,10 @@ def _get_st_model():
 async def backfill_tokens(proj_id: str):
     """M509: Re-compute total_tokens for all stones that have exec_start+exec_end but no tokens.
     Safe — does NOT change status or pending_confirm_at."""
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     milestones = proj.get("milestones", [])
     filled = 0
     for m in milestones:
@@ -8679,16 +9064,17 @@ async def backfill_tokens(proj_id: str):
         except Exception:
             pass
     if filled:
-        _parse_cache.pop(str(md), None)
+        _parse_cache.pop(str(PROJECTS_DIR / proj_id / "north-star.md"), None)
         _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "filled": filled})
 
 
 @app.delete("/api/northstar/{proj_id}")
 async def delete_project(proj_id: str):
-    """Delete a project node (removes north-star.md)."""
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    """Delete a project node (removes north-star.md if present)."""
+    # M1368: project dir existence check (SQLite is primary)
+    proj_dir = PROJECTS_DIR / proj_id
+    if not proj_dir.exists():
         return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
     # M918: kill all exec sessions for this project before deletion
     try:
@@ -8697,7 +9083,22 @@ async def delete_project(proj_id: str):
             print(f"[M918] killed sessions for {proj_id}: {killed}", file=__import__('sys').stderr)
     except Exception as _e:
         print(f"[M918] session kill error for {proj_id}: {_e}", file=__import__('sys').stderr)
-    md.unlink()
+    md = proj_dir / "north-star.md"
+    if md.exists():
+        md.unlink()
+    # M1368: delete from SQLite project_meta (was missing — caused card resurrection on reload)
+    # M1406: also write to deleted_projects table to prevent migration re-seeding on restart
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        conn.execute("DELETE FROM project_meta WHERE proj_id=?", (proj_id,))
+        conn.execute("""CREATE TABLE IF NOT EXISTS deleted_projects
+                        (proj_id TEXT PRIMARY KEY, deleted_at TEXT NOT NULL)""")
+        conn.execute("INSERT OR REPLACE INTO deleted_projects(proj_id, deleted_at) VALUES(?,?)",
+                     (proj_id, __import__('datetime').datetime.utcnow().isoformat()))
+        conn.commit()
+        conn.close()
+    except Exception as _del_e:
+        print(f"[delete_project] SQLite delete error: {_del_e}", file=__import__('sys').stderr)
     return JSONResponse({"ok": True})
 
 
@@ -8708,29 +9109,29 @@ async def add_connection(proj_id: str, request: Request):
     target_id = data.get("target", "").strip()
     if not target_id or target_id == proj_id:
         return JSONResponse({"ok": False, "error": "invalid target"}, status_code=400)
+    # M1368: SQLite-first
     for pid, tid in [(proj_id, target_id), (target_id, proj_id)]:
-        md = PROJECTS_DIR / pid / "north-star.md"
-        if not md.exists(): continue
-        proj = _parse_md_frontmatter(md)
-        conns = proj.get("connections") or []
+        _p = _db_load_project(pid)
+        if not _p: continue
+        conns = _p.get("connections") or []
         if not isinstance(conns, list): conns = []
         if tid not in conns:
             conns.append(tid)
-        proj["connections"] = conns
-        _save_project(pid, proj)
+        _p["connections"] = conns
+        _save_project(pid, _p)
     return JSONResponse({"ok": True})
 
 
 @app.delete("/api/northstar/{proj_id}/connect/{target_id}")
 async def remove_connection(proj_id: str, target_id: str):
     """Remove a connection edge between two projects."""
+    # M1368: SQLite-first
     for pid, tid in [(proj_id, target_id), (target_id, proj_id)]:
-        md = PROJECTS_DIR / pid / "north-star.md"
-        if not md.exists(): continue
-        proj = _parse_md_frontmatter(md)
-        conns = [c for c in (proj.get("connections") or []) if c != tid]
-        proj["connections"] = conns
-        _save_project(pid, proj)
+        _p = _db_load_project(pid)
+        if not _p: continue
+        conns = [c for c in (_p.get("connections") or []) if c != tid]
+        _p["connections"] = conns
+        _save_project(pid, _p)
     return JSONResponse({"ok": True})
 
 
@@ -8740,23 +9141,179 @@ async def rename_project(proj_id: str, request: Request):
     new_name = data.get("name", "").strip()
     if not new_name:
         return JSONResponse({"ok": False, "error": "name required"}, status_code=400)
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     proj["name"] = new_name
     _save_project(proj_id, proj)
     return JSONResponse({"ok": True, "name": new_name})
+
+
+# ── M1355: per-project concept graph (user-defined LLM-layer nodes) ────────────
+@app.get("/api/northstar/{proj_id}/concept-graph")
+async def get_concept_graph(proj_id: str):
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        cur = conn.cursor()
+        rows = cur.execute(
+            "SELECT node_id, layer, name, parents_json, x, y, layer_order, updated_at "
+            "FROM concept_graph_nodes WHERE proj_id=? "
+            "ORDER BY layer, COALESCE(layer_order, 1e18), node_id",
+            (proj_id,),
+        ).fetchall()
+        conn.close()
+        nodes = []
+        for r in rows:
+            try:
+                parents = json.loads(r[3] or "[]")
+            except Exception:
+                parents = []
+            nodes.append({
+                "id": r[0], "layer": r[1], "name": r[2],
+                "parents": parents, "x": r[4], "y": r[5],
+                "layer_order": r[6],
+                "updated_at": r[7],
+            })
+        return JSONResponse({"ok": True, "nodes": nodes})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/api/northstar/{proj_id}/concept-graph/nodes")
+async def upsert_concept_node(proj_id: str, request: Request):
+    """Create or update a single node (idempotent by node_id)."""
+    data = await request.json()
+    node_id = (data.get("id") or "").strip()
+    if not node_id:
+        return JSONResponse({"ok": False, "error": "id required"}, status_code=400)
+    layer = float(data.get("layer") or 0)
+    name = (data.get("name") or "").strip()
+    parents = data.get("parents") or []
+    if not isinstance(parents, list):
+        parents = []
+    # dedup while preserving order, and strip self-references
+    _seen_p: set = set()
+    parents = [p for p in parents if p != node_id and p not in _seen_p and not _seen_p.add(p)]
+    x = data.get("x")
+    y = data.get("y")
+    layer_order = data.get("layer_order")
+    import datetime as _dt_cg
+    now = _dt_cg.datetime.utcnow().isoformat()
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        existing = conn.execute(
+            "SELECT node_id FROM concept_graph_nodes WHERE proj_id=? AND node_id=?",
+            (proj_id, node_id),
+        ).fetchone()
+        is_new = existing is None
+        conn.execute(
+            "INSERT INTO concept_graph_nodes(proj_id, node_id, layer, name, parents_json, x, y, layer_order, updated_at) "
+            "VALUES(?,?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(proj_id, node_id) DO UPDATE SET "
+            "layer=excluded.layer, name=excluded.name, parents_json=excluded.parents_json, "
+            "x=excluded.x, y=excluded.y, layer_order=excluded.layer_order, "
+            "updated_at=excluded.updated_at",
+            (proj_id, node_id, layer, name, json.dumps(parents, ensure_ascii=False),
+             x, y, layer_order, now),
+        )
+        conn.commit()
+        conn.close()
+        # M1423: auto-create matching substar (cg_{node_id}) when a NEW node is inserted
+        if is_new:
+            try:
+                _proj = _db_load_project(proj_id)
+                if _proj is not None:
+                    _cg_ns_id = f"cg_{node_id}"
+                    _ns_list = _proj.get("north_stars") or []
+                    if not any(ns.get("id") == _cg_ns_id for ns in _ns_list):
+                        _ns_list.append({"id": _cg_ns_id, "name": name, "milestones": []})
+                        _proj["north_stars"] = _ns_list
+                        _save_project(proj_id, _proj)
+            except Exception:
+                pass
+        return JSONResponse({"ok": True, "id": node_id})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.patch("/api/northstar/{proj_id}/concept-graph/nodes/{node_id}/order")
+async def reorder_concept_node(proj_id: str, node_id: str, request: Request):
+    """Update only layer_order (lighter than full upsert)."""
+    import datetime as _dt_cg
+    data = await request.json()
+    order = data.get("layer_order")
+    if order is None:
+        return JSONResponse({"ok": False, "error": "layer_order required"}, status_code=400)
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        conn.execute(
+            "UPDATE concept_graph_nodes SET layer_order=?, updated_at=? "
+            "WHERE proj_id=? AND node_id=?",
+            (order, _dt_cg.datetime.utcnow().isoformat(), proj_id, node_id),
+        )
+        conn.commit()
+        conn.close()
+        return JSONResponse({"ok": True})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/northstar/{proj_id}/concept-graph/nodes/{node_id}")
+async def delete_concept_node(proj_id: str, node_id: str):
+    import datetime as _dt_cg
+    now = _dt_cg.datetime.utcnow().isoformat()
+    try:
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        # Also strip this node from other nodes' parents lists
+        rows = conn.execute(
+            "SELECT node_id, parents_json FROM concept_graph_nodes WHERE proj_id=?",
+            (proj_id,),
+        ).fetchall()
+        for r in rows:
+            try:
+                pl = json.loads(r[1] or "[]")
+            except Exception:
+                pl = []
+            if node_id in pl:
+                pl = [p for p in pl if p != node_id]
+                conn.execute(
+                    "UPDATE concept_graph_nodes SET parents_json=?, updated_at=? "
+                    "WHERE proj_id=? AND node_id=?",
+                    (json.dumps(pl, ensure_ascii=False), now,
+                     proj_id, r[0]),
+                )
+        conn.execute(
+            "DELETE FROM concept_graph_nodes WHERE proj_id=? AND node_id=?",
+            (proj_id, node_id),
+        )
+        conn.commit()
+        conn.close()
+        # M1415: cascade-delete matching substar (id=cg_{node_id}) when CG node is removed
+        try:
+            _proj = _db_load_project(proj_id)
+            if _proj:
+                _cg_ns_id = f"cg_{node_id}"
+                _ns_list = _proj.get("north_stars") or []
+                _new_ns = [ns for ns in _ns_list if ns.get("id") != _cg_ns_id]
+                if len(_new_ns) != len(_ns_list):
+                    _proj["north_stars"] = _new_ns
+                    _save_project(proj_id, _proj)
+        except Exception:
+            pass
+        return JSONResponse({"ok": True})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 
 @app.patch("/api/northstar/{proj_id}")
 async def patch_project(proj_id: str, request: Request):
     """Update simple top-level project fields (deadline, status, note, links, metric/current/target/unit, etc.)."""
     data = await request.json()
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     # M165: allow manual edit of star fields (metric/current/target/unit) from ns-dash UI
     # M214: `model` controls --model flag passed to tmux exec agent spawns for this project.
     # `pty_agent` controls which runtime owns the interactive PTY on the card.
@@ -8804,10 +9361,10 @@ async def update_layout(proj_id: str, request: Request):
     Mutually consistent: when `parents` is written, `parent` is set to parents[0]
     so legacy single-parent readers still resolve to a valid edge."""
     data = await request.json()
-    md = PROJECTS_DIR / proj_id / "north-star.md"
-    if not md.exists():
+    # M1368: SQLite-first
+    proj = _db_load_project(proj_id)
+    if not proj:
         return JSONResponse({"ok": False}, status_code=404)
-    proj = _parse_md_frontmatter(md)
     created_dir = False
     for k in ("layer", "parent", "position_x", "position_y", "x", "y", "repo_path", "stage", "avatar_url", "hidden"):
         if k in data:
@@ -8879,7 +9436,14 @@ def _has_queued_stones(proj_id: str) -> bool:
 _TG_COOLDOWN_FILE = _HUB_DATA_DIR / ".tg-last-sent.json"  # M1171 v3: cross-process cooldown
 
 def _send_ntfy_notification(title: str, body: str, priority: str = "default") -> None:
-    """Send Telegram push notification for live→idle events. In-page toast handled separately via SSE."""
+    """Send Telegram push notification for live→idle events. In-page toast handled separately via SSE.
+    Safe to call from async context — runs in a daemon thread so urlopen never blocks the event loop."""
+    import threading as _thr
+    _thr.Thread(target=_send_ntfy_notification_blocking, args=(title, body, priority), daemon=True).start()
+
+
+def _send_ntfy_notification_blocking(title: str, body: str, priority: str = "default") -> None:
+    """Blocking implementation — always called from a background thread, never from the event loop."""
     now = time.time()
     # M1171 v3: file-based cooldown so multiple hub processes (dev instances, zombie restarts)
     # share the same dedup state — prevents 3x fires when extra hub instances are alive.
@@ -9047,13 +9611,13 @@ async def exec_inject(proj_id: str, request: Request):
         return JSONResponse({"ok": False, "error": "prompt required"}, status_code=400)
     exec_session = ""
     for candidate in _exec_session_names(proj_id):
-        check = subprocess.run(["tmux", "has-session", "-t", candidate], capture_output=True)
+        check = subprocess.run(["tmux", "has-session", "-t", candidate], capture_output=True, timeout=2)
         if check.returncode == 0:
             exec_session = candidate
             break
     if not exec_session:
         return JSONResponse({"ok": False, "error": "exec session not running"}, status_code=404)
-    subprocess.run(["tmux", "send-keys", "-t", exec_session, prompt, "Enter"], capture_output=True)
+    subprocess.run(["tmux", "send-keys", "-t", exec_session, prompt, "Enter"], capture_output=True, timeout=3)
     return JSONResponse({"ok": True})
 
 
@@ -9064,7 +9628,7 @@ async def kill_exec_session(proj_id: str):
     M985: now delegates to _kill_all_exec_sessions so substar assigned_session is also cleared."""
     killed_sessions = []
     for candidate in _exec_session_names(proj_id):
-        result = subprocess.run(["tmux", "kill-session", "-t", candidate], capture_output=True)
+        result = subprocess.run(["tmux", "kill-session", "-t", candidate], capture_output=True, timeout=5)
         if result.returncode == 0:
             killed_sessions.append(candidate)
             _exec_idle_count.pop(candidate, None)
@@ -9127,7 +9691,7 @@ async def kill_named_tmux_session(proj_id: str, session_name: str):
 
     # Phase 2: kill all targeted sessions.
     for sname in cascade_targets:
-        result = subprocess.run(["tmux", "kill-session", "-t", sname], capture_output=True)
+        result = subprocess.run(["tmux", "kill-session", "-t", sname], capture_output=True, timeout=5)
         if result.returncode == 0:
             killed.append(sname)
         _exec_idle_count.pop(sname, None)
@@ -9165,7 +9729,7 @@ async def rename_tmux_session(proj_id: str, session_name: str, body: dict = Body
     new_name = (body.get("new_name") or "").strip()
     if not new_name:
         raise HTTPException(status_code=400, detail="new_name required")
-    result = subprocess.run(["tmux", "rename-session", "-t", session_name, new_name], capture_output=True)
+    result = subprocess.run(["tmux", "rename-session", "-t", session_name, new_name], capture_output=True, timeout=3)
     if result.returncode != 0:
         raise HTTPException(status_code=404, detail=f"Session '{session_name}' not found or rename failed")
     # Update exec tracking keys
@@ -9187,8 +9751,9 @@ async def get_substar_sessions(proj_id: str):
 async def get_all_sessions(proj_id: str):
     """M747: list all tmux sessions for manual substar session assignment."""
     try:
-        r = subprocess.run(["tmux", "list-sessions", "-F", "#{session_name}"],
-                           capture_output=True, text=True)
+        r = await asyncio.to_thread(
+            subprocess.run, ["tmux", "list-sessions", "-F", "#{session_name}"],
+            capture_output=True, text=True, timeout=2)
         sessions = [s.strip() for s in r.stdout.splitlines() if s.strip()]
     except Exception:
         sessions = []
@@ -9202,9 +9767,11 @@ async def get_session_contexts(proj_id: str):
     take ~2s total instead of N×2s (e.g. 4 sessions: 8s → 2s)."""
     import asyncio as _asyncio
     try:
-        r = subprocess.run(["tmux", "list-sessions", "-F",
-                            "#{session_name}\t#{session_created}\t#{session_activity}"],
-                           capture_output=True, text=True)
+        r = await asyncio.to_thread(
+            subprocess.run,
+            ["tmux", "list-sessions", "-F",
+             "#{session_name}\t#{session_created}\t#{session_activity}"],
+            capture_output=True, text=True, timeout=2)
     except Exception:
         return {"ok": True, "sessions": []}
 
@@ -9277,7 +9844,7 @@ async def restart_session(proj_id: str):
             pass
     # Kill tmux exec session
     for exec_session in _exec_session_names(proj_id):
-        r = subprocess.run(["tmux", "kill-session", "-t", exec_session], capture_output=True)
+        r = subprocess.run(["tmux", "kill-session", "-t", exec_session], capture_output=True, timeout=5)
         if r.returncode == 0:
             killed["tmux"] = True
             break
@@ -9339,12 +9906,16 @@ async def osk_health():
     to surface upstream failures (quota, rate-limit, auth) in the detail card."""
     import urllib.request
     out: dict = {"url": _OSK_PROXY_URL}
-    try:
+    # M1324-P1: wrap blocking urlopen in asyncio.to_thread — prevents event loop stall
+    def _do_osk_check():
         t0 = time.time()
         req = urllib.request.Request(_OSK_PROXY_URL + "/health/liveliness")
         with urllib.request.urlopen(req, timeout=1.0) as r:
-            out["ok"] = (r.status == 200)
-        out["latency_ms"] = int((time.time() - t0) * 1000)
+            return r.status == 200, int((time.time() - t0) * 1000)
+    try:
+        ok, latency = await asyncio.to_thread(_do_osk_check)
+        out["ok"] = ok
+        out["latency_ms"] = latency
     except Exception as e:
         out["ok"] = False
         out["error"] = str(e)
@@ -9359,12 +9930,16 @@ async def dsk_health():
     """Health check for Darwin-28B bridge on localhost:8860 (SSH tunnel → NIPA:8850)."""
     import urllib.request
     out: dict = {"url": _DSK_PROXY_URL}
-    try:
+    # M1324-P1: wrap blocking urlopen in asyncio.to_thread — prevents event loop stall
+    def _do_dsk_check():
         t0 = time.time()
         req = urllib.request.Request(_DSK_PROXY_URL + "/health")
         with urllib.request.urlopen(req, timeout=2.0) as r:
-            out["ok"] = (r.status == 200)
-        out["latency_ms"] = int((time.time() - t0) * 1000)
+            return r.status == 200, int((time.time() - t0) * 1000)
+    try:
+        ok, latency = await asyncio.to_thread(_do_dsk_check)
+        out["ok"] = ok
+        out["latency_ms"] = latency
     except Exception as e:
         out["ok"] = False
         out["error"] = str(e)
@@ -9425,16 +10000,25 @@ async def _start_exec_idle_detector():
     """Server-side background task: detect exec session idle transitions every 5s.
     Previously relied solely on client /api/exec-sessions polling — broke when browser closed."""
     import asyncio as _aio, re as _re
+    async def _arun_detect(*cmd, timeout=2):
+        """M1493: async subprocess for idle detector — avoids blocking event loop every 5s."""
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            return stdout.decode("utf-8", errors="replace") if stdout else ""
+        except Exception:
+            return ""
+
     async def _detect():
         while True:
             await _aio.sleep(5)
             try:
-                result = subprocess.run(
-                    ["tmux", "list-sessions", "-F", "#{session_name}:#{session_created}"],
-                    capture_output=True, text=True
-                )
+                # M1493: async subprocess — was blocking event loop every 5s with 8×3 subprocess.run()
+                _ls_raw = await _arun_detect("tmux", "list-sessions", "-F", "#{session_name}:#{session_created}")
                 alive = set()
-                for line in result.stdout.splitlines():
+                _session_entries = []
+                for line in _ls_raw.splitlines():
                     parts = line.split(":", 1)
                     session_name = parts[0] if parts else ""
                     if not any(session_name.startswith(p) for p in ("claude-exec-", "codex-exec-", "openrouter-exec-", "dsk-exec-")):
@@ -9447,24 +10031,30 @@ async def _start_exec_idle_detector():
                     if not proj_id:
                         continue
                     alive.add(session_name)
+                    _session_entries.append((session_name, proj_id))
+
+                # M1493v2: gather all sessions in parallel (was sequential — 8×2×8ms = 128ms/tick)
+                async def _check_one(session_name, proj_id):
                     # Check if runtime is alive
-                    pane_cmds = subprocess.run(
-                        ["tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}"],
-                        capture_output=True, text=True
-                    ).stdout.splitlines()
+                    pane_cmds_raw = await _arun_detect("tmux", "list-panes", "-t", session_name, "-F", "#{pane_current_command}")
+                    pane_cmds = pane_cmds_raw.splitlines()
                     # M916 fix: only skip sessions that NEVER ran (not in _exec_was_running)
-                    # Old code skipped when pane_cmd=bash (idle state) — prevented idle notification
                     _has_been_running = session_name in _exec_was_running
                     if not _has_been_running and not any(c.strip() and c.strip() not in {"bash","zsh","sh","fish","dash"} for c in pane_cmds):
-                        continue
+                        return session_name, proj_id, None
                     # Detect spinner
-                    pane_out = subprocess.run(
-                        ["tmux", "capture-pane", "-p", "-t", session_name],
-                        capture_output=True, text=True
-                    ).stdout
+                    pane_out = await _arun_detect("tmux", "capture-pane", "-p", "-t", session_name)
                     clean = _re.sub(r'\x1b\[[0-9;]*[mKHJ]', '', pane_out)
-                    # M396: busy = spinner OR "esc to interrupt" (feedback dialog hides spinner)
-                    idle = "… (" not in clean and "esc to i" not in clean
+                    idle = "… (" not in clean
+                    return session_name, proj_id, idle
+
+                _results = await _aio.gather(*[_check_one(sn, pid) for sn, pid in _session_entries])
+
+                for session_name, proj_id, idle in _results:
+                    if idle is None:
+                        continue
+                    # M396/M1370: busy = spinner only. "esc to interrupt" appears in claude's
+                    # status bar even when idle, so it cannot be used as a busy signal.
                     # M389/M434: fire Telegram ONLY on running→idle transition (same state as toast)
                     _was_running = _exec_was_running.get(session_name, False)
                     if not idle:
@@ -9514,19 +10104,40 @@ async def _start_exec_idle_detector():
     try:
         _cs_result = subprocess.run(
             ["tmux", "list-sessions", "-F", "#{session_name}"],
-            capture_output=True, text=True)
+            capture_output=True, text=True, timeout=2)
         for _cs_sname in _cs_result.stdout.splitlines():
             if not any(_cs_sname.startswith(p) for p in ("claude-exec-", "codex-exec-", "openrouter-exec-", "dsk-exec-")):
                 continue
             _cs_pane = subprocess.run(
                 ["tmux", "capture-pane", "-p", "-t", _cs_sname],
-                capture_output=True, text=True).stdout
+                capture_output=True, text=True, timeout=2).stdout
             _cs_clean = _re_cs.sub(r'\x1b\[[0-9;]*[mKHJ]', '', _cs_pane)
-            if "… (" in _cs_clean or "esc to i" in _cs_clean:
+            # M1370: "esc to i" removed — claude status bar text, always present even when idle
+            if "… (" in _cs_clean:
                 _exec_was_running[_cs_sname] = True  # currently running → will detect idle
     except Exception:
         pass
     asyncio.create_task(_detect())
+
+
+@app.on_event("startup")
+async def _startup_db_warmup():
+    """M1452c: Pre-warm SQLite page cache on startup to eliminate first-request 150-200ms cold start.
+    Reads project_meta + milestones_store once so the OS page cache is hot before any client request."""
+    import asyncio as _aio
+    async def _warm():
+        await _aio.sleep(1)  # let other startup hooks finish first
+        try:
+            conn = sqlite3.connect(str(_NS_EVENTS_DB))
+            # Touch project_meta and milestones_store to warm OS page cache
+            conn.execute("SELECT COUNT(*) FROM project_meta").fetchone()
+            conn.execute("SELECT COUNT(*) FROM milestones_store").fetchone()
+            conn.execute("SELECT COUNT(*) FROM concept_graph_nodes").fetchone()
+            conn.execute("SELECT COUNT(*) FROM user_settings").fetchone()
+            conn.close()
+        except Exception:
+            pass
+    asyncio.create_task(_warm())
 
 
 def _push_session_idle(session_name: str, proj_id: str) -> bool:
@@ -9540,9 +10151,18 @@ def _push_session_idle(session_name: str, proj_id: str) -> bool:
     return True
 
 
+_exec_sessions_cache: dict = {"ts": 0.0, "data": None}
+_EXEC_SESSIONS_TTL = 2.0  # M1493: 2s cache — UI polls every 2-3s, saves 500ms fork cost per poll
+
 @app.get("/api/exec-sessions")
 async def get_exec_sessions():
     """Return agent-exec-* tmux sessions where the runtime is actually running."""
+    # M1493: serve cached response if within TTL — fork() is 40-150ms per subprocess in busy server
+    _now = time.monotonic()
+    if _exec_sessions_cache["data"] is not None and (_now - _exec_sessions_cache["ts"]) < _EXEC_SESSIONS_TTL:
+        return JSONResponse(_exec_sessions_cache["data"])
+
+    _t_start = time.perf_counter()
     # M1234-C: async subprocess — avoids blocking the event loop every 5s poll
     # M1234-C2: parallel gather — all sessions processed concurrently (~9×speedup)
     async def _run(*cmd):
@@ -9599,13 +10219,14 @@ async def get_exec_sessions():
                 _send_ntfy_notification(f"{proj_id} exec done", f"Exec session for {proj_id} finished/exited", priority="high")
             return None
 
-        # M97/M183/M364/M396: detect busy via spinner or "esc to interrupt"
+        # M97/M183/M364/M396: detect busy via spinner
+        # M1370: "esc to i" removed — matches claude's status bar "esc to interrupt" even when idle
         try:
             pane_out = await _run("tmux", "capture-pane", "-p", "-t", session_name)
         except Exception:
             pane_out = ""
         clean = _re.sub(r'\x1b\[[0-9;]*[mKHJ]', '', pane_out)
-        busy_for_ntfy = "… (" in clean or "esc to i" in clean
+        busy_for_ntfy = "… (" in clean
         idle = not busy_for_ntfy
 
         # M388: startup grace period
@@ -9636,14 +10257,29 @@ async def get_exec_sessions():
                 pass
         if not spawn_model:
             try:
-                spawn_model = _get_project_model_value(proj_id) or ""
+                # M1493: lightweight model-only query — skip full _db_load_project (loads all milestones)
+                _mconn = sqlite3.connect(str(_NS_EVENTS_DB))
+                _mrow = _mconn.execute("SELECT meta_json FROM project_meta WHERE proj_id=?", (proj_id,)).fetchone()
+                _mconn.close()
+                if _mrow:
+                    _mmeta = json.loads(_mrow[0])
+                    spawn_model = (_mmeta.get("model") or "").strip()
+                    if spawn_model not in _ALLOWED_MODELS:
+                        spawn_model = ""
             except Exception:
                 pass
         if not spawn_model:
             try:
+                # M1493: cache settings.json model at module level to avoid per-session file reads
+                if not hasattr(_process_session, "_settings_model_cache"):
+                    _process_session._settings_model_cache = None
+                    _process_session._settings_model_ts = 0
                 _cc = Path.home() / ".claude" / "settings.json"
-                if _cc.exists():
-                    spawn_model = json.loads(_cc.read_text()).get("model", "") or ""
+                _cc_mtime = _cc.stat().st_mtime if _cc.exists() else 0
+                if _cc_mtime != _process_session._settings_model_ts:
+                    _process_session._settings_model_cache = json.loads(_cc.read_text()).get("model", "") if _cc.exists() else ""
+                    _process_session._settings_model_ts = _cc_mtime
+                spawn_model = _process_session._settings_model_cache or ""
             except Exception:
                 pass
 
@@ -9722,7 +10358,13 @@ async def get_exec_sessions():
         _all_sx = [l for l in _tmux_all_out.splitlines() if _proj_lower in l.lower()]
     except Exception:
         pass
-    return JSONResponse({"ok": True, "sessions": sessions, "all_sessions": _all_sx})
+    _t_total = (time.perf_counter() - _t_start) * 1000
+    if _t_total > 100:
+        print(f"[M1493] exec-sessions handler: {_t_total:.0f}ms (sessions={len(sessions)})", flush=True)
+    _resp_data = {"ok": True, "sessions": sessions, "all_sessions": _all_sx}
+    _exec_sessions_cache["data"] = _resp_data
+    _exec_sessions_cache["ts"] = time.monotonic()
+    return JSONResponse(_resp_data)
 
 
 @app.get("/api/northstar/{proj_id}/session-history")
@@ -9800,13 +10442,16 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
             pass
 
     # Read live exec sessions + capture spawn time for transcript scan
+    # M1498: subprocess.run blocks the async event loop; wrap in asyncio.to_thread
     live_by_agent = set()
     live_spawn_ts: dict[str, float] = {}  # agent → tmux session created epoch
     try:
-        tmux_out = subprocess.run(
-            ["tmux", "list-sessions", "-F", "#{session_name}:#{session_created}:#{session_windows}"],
-            capture_output=True, text=True, timeout=3
-        )
+        def _tmux_list_sessions():
+            return subprocess.run(
+                ["tmux", "list-sessions", "-F", "#{session_name}:#{session_created}:#{session_windows}"],
+                capture_output=True, text=True, timeout=3
+            )
+        tmux_out = await asyncio.to_thread(_tmux_list_sessions)
         for line in tmux_out.stdout.splitlines():
             parts = line.split(":", 2)
             sname = parts[0] if parts else ""
@@ -9816,10 +10461,12 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
                     s_proj = sname[len(prefix):]
                     if s_proj == proj_id:
                         # M342 fix: only mark live if the runtime is actually running (not a dead shell)
-                        pane_cmds = subprocess.run(
-                            ["tmux", "list-panes", "-t", sname, "-F", "#{pane_current_command}"],
-                            capture_output=True, text=True, timeout=2
-                        ).stdout.splitlines()
+                        def _tmux_list_panes(sess=sname):
+                            return subprocess.run(
+                                ["tmux", "list-panes", "-t", sess, "-F", "#{pane_current_command}"],
+                                capture_output=True, text=True, timeout=2
+                            )
+                        pane_cmds = (await asyncio.to_thread(_tmux_list_panes)).stdout.splitlines()
                         runtime_running = any(c.strip() and c.strip() not in _SHELLS for c in pane_cmds) if pane_cmds else False
                         if runtime_running:
                             live_by_agent.add(prefix_agent)
@@ -9830,6 +10477,8 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
 
     # M280: detect current live exec session ID by scanning transcript dir for
     # JSONL files created AFTER the exec session spawn time.
+    # M1173: also verify model matches agent to prevent cross-agent contamination
+    # (e.g. openrouter transcript being picked as claude exec_live when OR spawns later)
     live_exec_sid: dict[str, str] = {}  # agent → session_id
     if live_by_agent:
         try:
@@ -9838,6 +10487,9 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
                 encoded = _encode_cwd_for_claude(str(proj_dir_path))
                 transcript_dir = Path.home() / ".claude" / "projects" / encoded
                 if transcript_dir.exists():
+                    # Pre-collect OR/codex SIDs from session history to fast-exclude without reading transcript
+                    _or_sids = {v.strip() for k, v in hist.items() if k.startswith("or-")}
+                    _codex_sids = {v.strip() for k, v in hist.items() if k.startswith("codex-")}
                     for ag in live_by_agent:
                         spawn_ts = live_spawn_ts.get(ag, 0)
                         if not spawn_ts:
@@ -9846,8 +10498,16 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
                         for f in transcript_dir.glob("*.jsonl"):
                             mt = f.stat().st_mtime
                             if mt >= spawn_ts - 5 and mt > best_mtime and f.stat().st_size > 0:
+                                # M1173: exclude transcripts that belong to a different agent
+                                fstem = f.stem
+                                if ag == "claude" and (fstem in _or_sids or fstem in _codex_sids):
+                                    continue
+                                if ag == "openrouter" and fstem in _codex_sids:
+                                    continue
+                                if ag == "codex" and fstem in _or_sids:
+                                    continue
                                 best_mtime = mt
-                                best_sid = f.stem
+                                best_sid = fstem
                         if best_sid:
                             live_exec_sid[ag] = best_sid
         except Exception:
@@ -9947,14 +10607,12 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
                         _global_seen_sids_for_agent.add(sid)
                         t = Path.home() / ".claude" / "projects" / encoded_path / f"{sid}.jsonl"
                         if t.exists() and t.stat().st_size > 0:
-                            # M1071: when session is in the default bucket (mkey==""), detect
-                            # actual model from transcript so CUR row shows real runtime model
-                            # instead of defaulting to the empty-key label ("sonnet-4.6").
-                            _effective_model = mkey
-                            if not mkey:
-                                _detected = _detect_session_model(t)
-                                if _detected:
-                                    _effective_model = _detected
+                            # M1071/M1519: always detect actual model from transcript so row
+                            # label reflects runtime model, not historical bucket key. Fixes
+                            # case where a sonnet-bucket session is restarted with opus —
+                            # bucket key stays "sonnet-4.6" but transcript records opus calls.
+                            _detected = _detect_session_model(t)
+                            _effective_model = _detected if _detected else mkey
                             sessions.append({
                                 "id": sid,
                                 "type": "transcript",
@@ -9963,23 +10621,43 @@ async def get_resumable_sessions(proj_id: str, agent: str = "", model: str = "")
                                 "activity": t.stat().st_mtime,  # M1018: unix epoch for last-used timestamp
                             })
 
-            # M280/M405: inject live exec session row into first model group for the agent.
-            # Previously used mkey=="" which worked for claude (empty-key default) but failed for
-            # openrouter (all keys are non-empty like "or-hy3-preview"). Now uses a per-agent
-            # injected-set so exec_live appears in the first model group regardless of key name.
+            # M280/M405: inject live exec session row into the model group matching its
+            # actual detected runtime model — previously injected into first iterated bucket
+            # which caused mislabel when session restarted with different model (M1519).
             live_sid = live_exec_sid.get(ag)
             if live_sid and ag in live_by_agent and ag not in _exec_live_injected:
                 if not any(s["id"] == live_sid for s in sessions):
-                    # M283: include tmux_session name so UI can attach directly
-                    _agent_prefix = {"claude": "claude-exec-", "codex": "codex-exec-", "openrouter": "openrouter-exec-", "dsk": "dsk-exec-"}.get(ag, "claude-exec-")
-                    sessions.insert(0, {
-                        "id": live_sid,
-                        "type": "exec_live",
-                        "label": f"{live_sid[:12]}",
-                        "model": mkey,
-                        "tmux_session": f"{_agent_prefix}{proj_id}",
-                    })
-                    _exec_live_injected.add(ag)
+                    # M1519: detect actual runtime model from live exec transcript so list
+                    # label matches pane label (was: mkey of arbitrary first bucket).
+                    _live_model = mkey
+                    try:
+                        _proj_dir_for_live = _get_project_dir(proj_id)
+                        if _proj_dir_for_live:
+                            _live_t = Path.home() / ".claude" / "projects" / _encode_cwd_for_claude(str(_proj_dir_for_live)) / f"{live_sid}.jsonl"
+                            if _live_t.exists() and _live_t.stat().st_size > 0:
+                                _detected_live = _detect_session_model(_live_t)
+                                if _detected_live:
+                                    _live_model = _detected_live
+                    except Exception:
+                        pass
+                    # M1519: only inject when detected model matches this bucket's mkey
+                    # (or both are empty for default bucket). Skip otherwise — next matching
+                    # bucket iteration will handle it. Falls back to first-bucket behavior
+                    # when no bucket matches (detected model unknown to agent_models).
+                    _bucket_match = (_live_model == mkey) or (not _live_model and not mkey)
+                    _known_keys = {x["key"] for x in agent_models}
+                    _detect_unknown = _live_model and _live_model not in _known_keys
+                    if _bucket_match or _detect_unknown:
+                        # M283: include tmux_session name so UI can attach directly
+                        _agent_prefix = {"claude": "claude-exec-", "codex": "codex-exec-", "openrouter": "openrouter-exec-", "dsk": "dsk-exec-"}.get(ag, "claude-exec-")
+                        sessions.insert(0, {
+                            "id": live_sid,
+                            "type": "exec_live",
+                            "label": f"{live_sid[:12]}",
+                            "model": _live_model or mkey,
+                            "tmux_session": f"{_agent_prefix}{proj_id}",
+                        })
+                        _exec_live_injected.add(ag)
 
             # Add fresh option
             sessions.append({
@@ -10228,13 +10906,50 @@ async def list_project_sessions(proj_id: str):
     return JSONResponse(result)
 
 
-def _detect_session_model(transcript_path: Path, max_lines: int = 50) -> str:
+def _detect_session_model(transcript_path: Path, max_lines: int = 50, prefer_tail: bool = True) -> str:
     """Detect which model was used in a Claude session transcript.
 
-    Scans the first max_lines for model-related fields in the JSONL entries.
-    Returns the model string, or empty string if undetectable.
+    M1519: prefer_tail=True scans from the END of the transcript first so that
+    sessions restarted with a different model report the CURRENT runtime model
+    instead of the original spawning model. Falls back to head scan when no
+    model field is found in the tail (e.g. very short transcripts).
     """
+    def _extract_model(entry):
+        if not isinstance(entry, dict):
+            return ""
+        model = entry.get("model") or ""
+        if not model and isinstance(entry.get("message"), dict):
+            model = entry["message"].get("model") or ""
+        if not model and isinstance(entry.get("response"), dict):
+            model = entry["response"].get("model") or ""
+        s = str(model) if model else ""
+        # M1519 v3: Claude Code emits "<synthetic>" model for locally-generated assistant
+        # entries (compact summaries, "No response requested." placeholders, etc.) — these
+        # are not real API calls and don't reflect the session's runtime model. Skip them.
+        if s.startswith("<") or s in ("synthetic", "<synthetic>"):
+            return ""
+        return s
+
     try:
+        if prefer_tail:
+            # Tail-first scan: read last ~200KB and parse last max_lines entries
+            try:
+                fsize = transcript_path.stat().st_size
+                read_bytes = min(fsize, 200_000)
+                with transcript_path.open("rb") as f:
+                    f.seek(fsize - read_bytes)
+                    chunk = f.read().decode("utf-8", errors="replace")
+                tail_lines = [ln for ln in chunk.splitlines() if ln.strip()][-max_lines:]
+                for line in reversed(tail_lines):
+                    try:
+                        m = _extract_model(json.loads(line))
+                        if m:
+                            return m
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+        # Head scan fallback
         with transcript_path.open("r", encoding="utf-8", errors="replace") as f:
             for i, line in enumerate(f):
                 if i >= max_lines:
@@ -10242,17 +10957,9 @@ def _detect_session_model(transcript_path: Path, max_lines: int = 50) -> str:
                 if not line.strip():
                     continue
                 try:
-                    entry = json.loads(line)
-                    # Check for model field in assistant messages or system entries
-                    if isinstance(entry, dict):
-                        # Sometimes model appears in the top-level or nested structures
-                        model = entry.get("model") or ""
-                        if not model and isinstance(entry.get("message"), dict):
-                            model = entry["message"].get("model") or ""
-                        if not model and isinstance(entry.get("response"), dict):
-                            model = entry["response"].get("model") or ""
-                        if model:
-                            return str(model)
+                    m = _extract_model(json.loads(line))
+                    if m:
+                        return m
                 except Exception:
                     continue
     except Exception:
@@ -10269,18 +10976,16 @@ async def health(service: str):
         return JSONResponse({"ok": False, "error": "CTX disabled (M1235)"}, status_code=404)
     if False:  # dead code — kept for reference
         try:
-            async with httpx.AsyncClient(timeout=1.5) as client:
-                r = await client.get("http://127.0.0.1:8787/ping")
-                return JSONResponse({"ok": r.status_code < 500, "status": r.status_code})
+            r = await _get_async_http().get("http://127.0.0.1:8787/ping", timeout=1.5)
+            return JSONResponse({"ok": r.status_code < 500, "status": r.status_code})
         except Exception:
             return JSONResponse({"ok": False, "status": 0})
     svc = SERVICES.get(service)
     if not svc:
         return JSONResponse({"ok": False, "error": "unknown service"}, status_code=404)
     try:
-        async with httpx.AsyncClient(timeout=1.5) as client:
-            r = await client.get(svc["url"])
-            return JSONResponse({"ok": r.status_code < 500, "status": r.status_code})
+        r = await _get_async_http().get(svc["url"], timeout=1.5)  # M1324-P2: reuse pool
+        return JSONResponse({"ok": r.status_code < 500, "status": r.status_code})
     except Exception:
         return JSONResponse({"ok": False, "status": 0})
 
@@ -10382,6 +11087,8 @@ async def corpus_skills_agents():
 
     # M1023: final alphabetical sort so local + plugin skills interleave correctly in UI
     skills.sort(key=lambda s: s.get("name", "").lower())
+
+    # M1434/M1438: JSONL backfill runs at startup (see _m1434_startup_backfill), not here
 
     # M1221: annotate usage_count from action_log (invoked_skill events, all-time)
     try:
@@ -10660,14 +11367,15 @@ _HUB_SETTINGS_HOOKS = {
         # CTX hooks — served from static/hooks/ (packaged with hub)
         {"type": "command", "command": "\"/usr/bin/python3.10\" \"$HOME/.hub/static/hooks/g2-fallback.py\"", "matcher": "Grep"},
         {"type": "command", "command": "/usr/bin/python3.10 $HOME/.hub/static/hooks/retrieval-feedback.py", "async": True, "matcher": "Edit|Write|MultiEdit"},
+        # M775: causality dataset — action-log + tool_trace (step-level trace)
+        {"type": "command", "command": "python3 $HOME/.hub/hooks/northstar-action-log.py", "async": True, "matcher": "Bash|Edit|Write|Read|Glob|Grep|WebFetch|WebSearch"},
     ],
 }
 
 def _hub_deploy_hooks():
     """M842.4: Register hub hook scripts in ~/.claude/settings.json.
-    All hooks (NS + CTX) live in static/hooks/ — packaged with hub, no external ctx-retriever needed."""
-    # Disabled — hook injection migrated to MCP (hooks managed manually in settings.json)
-    return
+    All hooks (NS + CTX) live in static/hooks/ — packaged with hub, no external ctx-retriever needed.
+    M775: also registers northstar-action-log.py for tool_trace causality dataset collection."""
     # Register in settings.json if not already present
     settings_path = Path.home() / ".claude" / "settings.json"
     try:
@@ -10873,6 +11581,225 @@ def _record_usage_event(event: str, extra: dict = None):
                 pass
         threading.Thread(target=_send_telemetry, daemon=True).start()
 
+# ── M1516: hub_session_aggregates — CTX-equivalent 15-field session aggregate ─
+# Privacy model: k-anonymity gate(threshold = k_min, dynamic by user count) + no raw text + schema_version
+_HUB_AGG_SCHEMA_VERSION = "v1"
+_HUB_AGG_K_MIN = int(os.environ.get("HUB_AGG_K_MIN", "1"))  # initial k=1 (relax); raise as user base grows
+
+def _compute_session_aggregate(proj_id: str = None) -> dict | None:
+    """M1516: build a single session_aggregate row (numeric/histogram fields only).
+    Aggregates over last 24h activity across all projects when proj_id=None.
+    Returns dict matching hub_session_aggregates schema, or None if insufficient data."""
+    import hashlib, platform, time
+    from collections import Counter
+    try:
+        _install_id = hashlib.sha256(platform.node().encode()).hexdigest()[:16]
+        cutoff_ts = int(time.time()) - 86400  # last 24h
+        ts_date = time.strftime("%Y-%m-%d", time.gmtime())
+
+        conn = sqlite3.connect(str(_NS_EVENTS_DB))
+        try:
+            # action_log counts (action_log.ts is ISO string, action_log.action is the verb)
+            tool_hist = {}
+            cutoff_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(cutoff_ts))
+            try:
+                for row in conn.execute(
+                    "SELECT action, COUNT(*) FROM action_log WHERE ts > ? GROUP BY action ORDER BY 2 DESC LIMIT 50",
+                    (cutoff_iso,)
+                ).fetchall():
+                    tool_hist[str(row[0])[:32]] = int(row[1])
+            except Exception:
+                pass
+
+            action_count = sum(tool_hist.values())
+
+            # tool_trace count + mean duration (ts is ISO string)
+            tool_trace_count = 0
+            mean_duration_ms = 0
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*), AVG(duration_ms) FROM tool_trace WHERE ts > ?",
+                    (cutoff_iso,)
+                ).fetchone()
+                if row:
+                    tool_trace_count = int(row[0] or 0)
+                    mean_duration_ms = round(float(row[1] or 0), 1)
+            except Exception:
+                pass
+
+            # milestone outcomes (done in last 24h)
+            outcome_hist = {}
+            stone_complete = 0
+            try:
+                for row in conn.execute(
+                    "SELECT COALESCE(json_extract(data_json,'$.outcome_label'),'unknown') as outcome, COUNT(*) "
+                    "FROM milestones_store WHERE status='done' "
+                    "AND COALESCE(json_extract(data_json,'$.done_at'),'') > ? "
+                    "GROUP BY outcome",
+                    (time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(cutoff_ts)),)
+                ).fetchall():
+                    outcome_hist[str(row[0])[:16]] = int(row[1])
+                    stone_complete += int(row[1])
+            except Exception:
+                pass
+
+            # project count (active in last 24h)
+            project_count = 0
+            try:
+                project_count = conn.execute(
+                    "SELECT COUNT(DISTINCT proj_id) FROM milestones_store WHERE "
+                    "COALESCE(json_extract(data_json,'$.user_added_at'),'') > ?",
+                    (time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(cutoff_ts)),)
+                ).fetchone()[0] or 0
+            except Exception:
+                pass
+        finally:
+            conn.close()
+
+        # Skip if no activity at all
+        if action_count == 0 and stone_complete == 0:
+            return None
+
+        return {
+            "schema_version": _HUB_AGG_SCHEMA_VERSION,
+            "install_id": _install_id,
+            "ts_date": ts_date,
+            "ts_uploaded": int(time.time()),
+            "hub_version": _hub_pkg_version(),
+            "os": platform.system(),
+            # depth fields (Hub-specific extensions vs CTX 15 fields)
+            "action_count": action_count,
+            "tool_trace_count": tool_trace_count,
+            "mean_tool_duration_ms": mean_duration_ms,
+            "stone_complete_count": stone_complete,
+            "project_count": project_count,
+            "tool_hist_json": json.dumps(tool_hist),
+            "outcome_hist_json": json.dumps(outcome_hist),
+            # safety
+            "k_count": _HUB_AGG_K_MIN,  # initial threshold; suppressed server-side when total k < threshold
+        }
+    except Exception:
+        return None
+
+
+_HUB_RELAY_URL = os.environ.get("HUB_RELAY_URL", "").rstrip("/")
+_HUB_RELAY_SECRET = os.environ.get("HUB_RELAY_SECRET", "")
+
+def _send_session_aggregate(agg: dict) -> bool:
+    """M1516/M1517: upload session_aggregate to hub_session_aggregates.
+    Preferred path (M1517): POST to relay URL (HUB_RELAY_URL env) so Turso credentials
+    stay server-side. Fallback: direct Turso INSERT (legacy, for trusted local installs).
+    Returns True on success, silent on failure (telemetry must never break runtime)."""
+    if not agg:
+        return False
+    try:
+        import urllib.request as _ur, json as _j
+        # Preferred — proxy via relay (no Turso URL/token in client)
+        if _HUB_RELAY_URL:
+            headers = {"Content-Type": "application/json"}
+            if _HUB_RELAY_SECRET:
+                headers["X-Relay-Secret"] = _HUB_RELAY_SECRET
+            req = _ur.Request(
+                f"{_HUB_RELAY_URL}/v1/session-aggregate",
+                data=_j.dumps(agg).encode(),
+                headers=headers, method="POST",
+            )
+            with _ur.urlopen(req, timeout=10) as resp:
+                result = _j.load(resp)
+            return bool(result.get("ok"))
+        # Fallback — direct Turso (legacy path, only safe for trusted local installs)
+        if not _TEL_ENABLED:
+            return False
+        cols = list(agg.keys())
+        placeholders = ", ".join("?" for _ in cols)
+        args = []
+        for c in cols:
+            v = agg[c]
+            if isinstance(v, int):
+                args.append({"type": "integer", "value": str(v)})
+            elif isinstance(v, float):
+                args.append({"type": "float", "value": v})
+            else:
+                args.append({"type": "text", "value": str(v)})
+        payload = _j.dumps({"requests": [
+            {"type": "execute", "stmt": {"sql": (
+                "CREATE TABLE IF NOT EXISTS hub_session_aggregates ("
+                "schema_version TEXT, install_id TEXT, ts_date TEXT, ts_uploaded INTEGER, "
+                "hub_version TEXT, os TEXT, action_count INTEGER, tool_trace_count INTEGER, "
+                "mean_tool_duration_ms REAL, stone_complete_count INTEGER, project_count INTEGER, "
+                "tool_hist_json TEXT, outcome_hist_json TEXT, k_count INTEGER)"
+            )}},
+            {"type": "execute", "stmt": {
+                "sql": f"INSERT INTO hub_session_aggregates ({', '.join(cols)}) VALUES ({placeholders})",
+                "args": args
+            }},
+        ]}).encode()
+        req = _ur.Request(
+            f"{_HUB_TELEMETRY_URL}/v2/pipeline", data=payload,
+            headers={"Authorization": f"Bearer {_HUB_TELEMETRY_TOKEN}", "Content-Type": "application/json"},
+        )
+        with _ur.urlopen(req, timeout=10) as resp:
+            result = _j.load(resp)
+        errors = [r for r in result.get("results", []) if r.get("type") == "error"]
+        return not errors
+    except Exception:
+        return False
+
+
+_AGG_STATE_FILE = _HUB_DATA_DIR / ".hub-agg-state.json"
+
+def _maybe_upload_session_aggregate():
+    """M1516: send session_aggregate once per ts_date (UTC day) — idempotent.
+    Called from startup heartbeat loop. Skipped when consent off or already sent today."""
+    if not _get_consent().get("data_collection", True):
+        return
+    import time
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    state = {}
+    if _AGG_STATE_FILE.exists():
+        try:
+            state = json.loads(_AGG_STATE_FILE.read_text())
+        except Exception:
+            pass
+    if state.get("last_upload_date") == today:
+        return  # already uploaded today
+    agg = _compute_session_aggregate()
+    if not agg:
+        return
+    if _send_session_aggregate(agg):
+        state["last_upload_date"] = today
+        state["last_install_id"] = agg["install_id"]
+        try:
+            _AGG_STATE_FILE.write_text(json.dumps(state))
+        except Exception:
+            pass
+
+
+@app.get("/api/hub/session-aggregate-preview")
+async def session_aggregate_preview():
+    """M1516: preview what would be uploaded — for transparency / debugging."""
+    agg = _compute_session_aggregate()
+    return JSONResponse({
+        "consent_data_collection": _get_consent().get("data_collection", True),
+        "schema_version": _HUB_AGG_SCHEMA_VERSION,
+        "k_min": _HUB_AGG_K_MIN,
+        "aggregate": agg,
+        "would_upload": bool(agg and _get_consent().get("data_collection", True)),
+    })
+
+
+@app.post("/api/hub/session-aggregate-upload-now")
+async def session_aggregate_upload_now():
+    """M1516: manual trigger for session aggregate upload (bypasses daily idempotency)."""
+    if not _get_consent().get("data_collection", True):
+        return JSONResponse({"ok": False, "error": "data_collection consent off"}, status_code=403)
+    agg = _compute_session_aggregate()
+    if not agg:
+        return JSONResponse({"ok": False, "error": "no activity to aggregate"})
+    sent = _send_session_aggregate(agg)
+    return JSONResponse({"ok": sent, "aggregate": agg})
+
+
 @app.get("/api/hub/usage-stats")
 async def get_usage_stats():
     """Return local usage stats summary."""
@@ -10956,16 +11883,18 @@ async def gdrive_filename(id: str = ""):
     if token:
         try:
             import urllib.request as _ur
-            req = _ur.Request(
+            _gd_req = _ur.Request(
                 f"https://www.googleapis.com/drive/v3/files/{id}?fields=name",
                 headers={"Authorization": f"Bearer {token}"}
             )
-            with _ur.urlopen(req, timeout=4) as resp:
-                data = _json.loads(resp.read())
-                name = data.get("name")
-                if name:
-                    _gdrive_name_cache[id] = name
-                    return JSONResponse({"ok": True, "name": name})
+            def _do_gdrive_fetch():
+                with _ur.urlopen(_gd_req, timeout=4) as resp:
+                    return _json.loads(resp.read())
+            data = await asyncio.to_thread(_do_gdrive_fetch)  # M1324-P2: non-blocking
+            name = data.get("name")
+            if name:
+                _gdrive_name_cache[id] = name
+                return JSONResponse({"ok": True, "name": name})
         except Exception:
             pass
     # Fallback: rclone lsjson per-project outbox
@@ -11253,7 +12182,14 @@ def main():
     ]
     for _ln in _banner_lines:
         print(_ln)
-    uvicorn.run(app, host=HOST, port=actual_port, log_level="warning")
+    # M1345 P0: enable access_log so input → response correlation is measurable.
+    try:
+        uvicorn.run(app, host=HOST, port=actual_port,
+                    log_level="warning", access_log=True)
+    except Exception as _boot_exc:
+        # M1348 P1: boot_fail telemetry — silent startup failure detection
+        _record_usage_event("boot_fail", {"error": str(_boot_exc)[:200], "port": actual_port})
+        raise
 
 
 if __name__ == "__main__":
