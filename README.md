@@ -139,8 +139,7 @@ hub install-global
 ├── static/            — web UI (northstar.html, index.html)
 ├── corpora/           — local corpus collections (skills, agents, docs)
 ├── ee/                — enterprise extensions (source-available)
-├── relay/             — optional Cloudflare Workers relay for remote access
-└── ctx-dashboard/     — context telemetry dashboard
+└── relay/             — optional Cloudflare Workers relay for remote access
 ```
 
 ---

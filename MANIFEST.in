@@ -1,0 +1,17 @@
+# Explicitly exclude private data files from sdist
+exclude hub-dataset-export.py
+exclude hub-dataset-stats.py
+exclude hub-windows-install.bat
+exclude *.db *.db-shm *.db-wal *.log *.jsonl
+exclude config.yaml
+prune dataset
+prune docs
+prune scripts
+prune corpora
+prune corpus
+prune entity
+prune uploads
+prune certs
+prune ctx-dashboard
+prune _archive-from-claude-20260603
+prune backup-*
