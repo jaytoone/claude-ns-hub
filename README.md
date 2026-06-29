@@ -73,6 +73,16 @@ The entire loop runs without touching a computer.
 
 ![Corpus browser](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/corpus-browser.png)
 
+### Mobile dark mode
+
+| North Star swimlane | Detail card | CG panel |
+|---|---|---|
+| ![North Star mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-northstar.png) | ![Detail card mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-detail-card-open.png) | ![CG panel mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-cg-panel.png) |
+
+| Corpus browser | Live terminal overlay | Hub index |
+|---|---|---|
+| ![Corpus mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-corpus.png) | ![Terminal overlay](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-terminal-overlay.png) | ![Hub index mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-hub-index.png) |
+
 ---
 
 ## Install (60 seconds)
