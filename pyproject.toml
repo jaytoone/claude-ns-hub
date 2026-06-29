@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-ns-hub"
-version = "0.3.2"
+version = "0.3.3"
 description = "Personal AI project management hub — North Star milestone tracking, live Claude sessions, CTX context alignment."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -46,7 +46,48 @@ packages = ["hub"]
 package-dir = {"hub" = "."}
 
 [tool.setuptools.package-data]
-hub = ["static/*", "static/**/*"]
+hub = [
+  "static/northstar.html",
+  "static/index.html",
+  "static/landing.html",
+  "static/favicon.svg",
+  "static/characters/*",
+  "static/hooks/*.py",
+  "static/hooks/*.sh",
+]
 
 [tool.setuptools.exclude-package-data]
-hub = ["static/hooks/*"]
+hub = [
+  "hub-dataset-export.py",
+  "hub-dataset-stats.py",
+  "hub-windows-install.bat",
+  "dataset/*",
+  "docs/*",
+  "ARCHITECTURE.md",
+  "*.db",
+  "*.db-shm",
+  "*.db-wal",
+  "*.bak*",
+  "*.log",
+  "*.json",
+  "*.jsonl",
+  "*.yaml",
+  "*.yml",
+  "scripts/*",
+  "dist/*",
+  "build/*",
+  "__pycache__/*",
+  "*.pyc",
+  "*.egg-info/*",
+  "backup-*",
+  "_archive-*",
+  "corpora/*",
+  "corpus/*",
+  "entity/*",
+  "uploads/*",
+  "certs/*",
+  "ctx-dashboard/*",
+  "task-locks/*",
+  "task-queue/*",
+  "task-results/*",
+]
