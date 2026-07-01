@@ -2,7 +2,7 @@
 
 [![PyPI Downloads](https://img.shields.io/pypi/dm/claude-ns-hub?label=downloads%2Fmonth&color=orange)](https://pypi.org/project/claude-ns-hub/)
 [![PyPI Version](https://img.shields.io/pypi/v/claude-ns-hub?color=blue)](https://pypi.org/project/claude-ns-hub/)
-[![GitHub Stars](https://img.shields.io/github/stars/jaytoone/claude-ns-hub?style=flat&color=yellow)](https://github.com/jaytoone/claude-ns-hub)
+[![GitHub Stars](https://img.shields.io/github/stars/pluto2060/claude-ns-hub?style=flat&color=yellow)](https://github.com/pluto2060/claude-ns-hub)
 [![Python](https://img.shields.io/pypi/pyversions/claude-ns-hub)](https://pypi.org/project/claude-ns-hub/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
@@ -12,7 +12,7 @@ Note apps, memo pads, anything that requires you to sit at a computer — none o
 
 > _"Why even geniuses lose their ideas"_ — the answer is here.
 
-![NS Hub — Second Brain for Claude Code users](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/ns-hub-banner-v9.png)
+![NS Hub — Second Brain for Claude Code users](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/ns-hub-banner-v9.png)
 
 ---
 
@@ -68,21 +68,21 @@ The entire loop runs without touching a computer.
 
 **North Star swimlane** — all projects, all lanes, live execution indicators:
 
-![North Star swimlane](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/northstar-swimlane.png)
+![North Star swimlane](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/northstar-swimlane.png)
 
 **Corpus browser** — 58 skills · 54 agents · 75 docs, all searchable inline:
 
-![Corpus browser](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/corpus-browser.png)
+![Corpus browser](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/corpus-browser.png)
 
 ### Mobile dark mode
 
 | North Star swimlane | Detail card | CG panel |
 |---|---|---|
-| ![North Star mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-northstar.png) | ![Detail card mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-detail-card-open.png) | ![CG panel mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-cg-panel.png) |
+| ![North Star mobile](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/mobile-northstar.png) | ![Detail card mobile](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/mobile-detail-card-open.png) | ![CG panel mobile](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/mobile-cg-panel.png) |
 
 | Corpus browser | Live terminal overlay | Hub index |
 |---|---|---|
-| ![Corpus mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-corpus.png) | ![Terminal overlay](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-terminal-overlay.png) | ![Hub index mobile](https://raw.githubusercontent.com/jaytoone/claude-ns-hub/master/assets/mobile-hub-index.png) |
+| ![Corpus mobile](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/mobile-corpus.png) | ![Terminal overlay](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/mobile-terminal-overlay.png) | ![Hub index mobile](https://raw.githubusercontent.com/pluto2060/claude-ns-hub/master/assets/mobile-hub-index.png) |
 
 ---
 
@@ -247,4 +247,4 @@ This project is licensed under the **GNU Affero General Public License v3.0** (A
 
 If you run a modified version of this software as a network service, you must make the complete corresponding source code available to users of that service. See [LICENSE](LICENSE) for full terms.
 
-Personal use, self-hosting, and community contributions are always free. © 2026 jaytoone — be2jay67@gmail.com
+Personal use, self-hosting, and community contributions are always free. © 2026 pluto2060 — be2jay67@gmail.com

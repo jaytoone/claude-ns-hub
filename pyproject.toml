@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
-  {name = "jaytoone", email = "be2jay67@gmail.com"},
+  {name = "pluto2060", email = "be2jay67@gmail.com"},
 ]
 keywords = ["ai", "project-management", "claude", "northstar", "milestones", "productivity"]
 classifiers = [
@@ -38,8 +38,8 @@ claude-ns-hub = "hub.server:main"
 northstar-hub = "hub.server:main"
 
 [project.urls]
-Homepage = "https://github.com/jaytoone/claude-ns-hub"
-Issues   = "https://github.com/jaytoone/claude-ns-hub/issues"
+Homepage = "https://github.com/pluto2060/claude-ns-hub"
+Issues   = "https://github.com/pluto2060/claude-ns-hub/issues"
 
 [tool.setuptools]
 packages = ["hub"]
