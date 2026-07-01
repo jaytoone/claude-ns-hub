@@ -4,6 +4,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/claude-ns-hub?color=blue)](https://pypi.org/project/claude-ns-hub/)
 [![GitHub Stars](https://img.shields.io/github/stars/jaytoone/claude-ns-hub?style=flat&color=yellow)](https://github.com/jaytoone/claude-ns-hub)
 [![Python](https://img.shields.io/pypi/pyversions/claude-ns-hub)](https://pypi.org/project/claude-ns-hub/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 **You lose ideas every day.**
 
@@ -242,4 +243,8 @@ curl http://localhost:9001/api/metrics?proj_id=MOAT
 
 ## License
 
-MIT. If commercial redistribution becomes an issue, we may adopt [Elastic License v2 (ELv2)](https://www.elastic.co/licensing/elastic-license) — source-available, free for personal/internal use, restricted for managed-service resale only. Community PRs and personal deployments will always remain free.
+This project is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0-or-later).
+
+If you run a modified version of this software as a network service, you must make the complete corresponding source code available to users of that service. See [LICENSE](LICENSE) for full terms.
+
+Personal use, self-hosting, and community contributions are always free. © 2026 jaytoone — be2jay67@gmail.com
